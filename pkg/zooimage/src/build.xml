@@ -1,0 +1,74 @@
+<project name="ZooImage ImageJ Plugins" basedir="." default="build" >
+  
+	<!--{{{ properties -->
+	<property file="build.properties" />
+	<property name="target" value="../inst/imagej" />
+	<property name="jar_imagej" value="${target}/ij.jar" />
+	<!--}}}-->
+
+	<!--{{{ classpath -->
+	<path id="zooimage.class.path">
+		<pathelement location="${jar_imagej}" />
+	</path>
+	<!--}}}-->
+
+	<!--{{{ clean -->
+	<target name="clean">
+    <delete dir="build"/>
+		<delete dir="dist"/>
+		<delete dir="bin"/>
+	</target>
+	<!--}}}-->
+
+  <!--{{{ compile the java files -->
+  <target name="compile" depends="clean">
+    <mkdir dir="bin"/>
+		<javac srcdir="src" destdir="bin" source="1.5" target="1.5" debug="true"
+			debuglevel="lines,vars,source"> 
+			<classpath refid="zooimage.class.path"/>
+		</javac>
+	</target>
+	<!--}}}-->
+
+	<!--{{{ build the jar file -->
+  <target name="build" depends="compile">
+    
+    <jar jarfile="${target}/plugins/_zooimage.jar">
+			<fileset dir="bin" />
+			<fileset dir="src">
+				<include name="*.xml" />
+				<include name="**/*.props" />
+				<include name="**/*.properties" />
+				<include name="**/*.html" />
+				<include name="**/*.gif" />
+				<include name="**/*.png" />
+				<include name="**/*.txt" />
+			</fileset>
+			<fileset dir="data">
+				<include name="**" />
+			</fileset>
+		</jar>	
+  </target>
+	<!--}}}-->
+
+	<!--{{{javadoc-->
+	<target name="javadoc" >
+    <javadoc
+           access="public"
+           destdir="javadoc"
+           author="true"
+           version="true"
+           use="true"
+           windowtitle="ZooImage"
+       >
+        
+			 <fileset dir="src" defaultexcludes="yes">
+            <include name="**/*.java"/>
+        </fileset>
+				
+		</javadoc>
+	</target>
+	<!--}}}-->
+	
+	
+</project>

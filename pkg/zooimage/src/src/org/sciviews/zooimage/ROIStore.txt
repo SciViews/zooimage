@@ -1,0 +1,197 @@
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.Wand;
+import ij.io.RoiDecoder;
+import ij.io.RoiEncoder;
+import ij.measure.ResultsTable;
+import ij.process.ImageProcessor;
+import ij.ImageJ;
+
+import java.awt.Rectangle;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+import java.util.Arrays;
+/**
+PlanktonJ Image ROI Store,
+by Nick Mortimer (nick.mortimer@csiro.au).
+license: GPL 2 or above at your convenience.
+*/
+
+public class ROIStore {
+	Hashtable rois = new Hashtable();
+    /**
+     * saveRois to a zip file
+     * @param path The full path and name of the ini file to be used.
+     */
+	public boolean saveRoiZip(String path) {
+		try {
+			Object [] ob = rois.keySet().toArray();
+			String [] Keys= new String [ob.length];
+			for (int i=0;i<ob.length;i++)
+				Keys[i] = ob[i].toString();
+			Arrays.sort(Keys);
+			ZipOutputStream zos = new ZipOutputStream(
+					new FileOutputStream(path));
+			DataOutputStream out = new DataOutputStream(
+					new BufferedOutputStream(zos));
+			RoiEncoder re = new RoiEncoder(out);
+			for (int i=0;i<Keys.length;i++) {
+				Roi roi = (Roi) rois.get(Keys[i]);
+				String label = Keys[i];
+				if (!label.endsWith(".roi"))
+					label += ".roi";
+				zos.putNextEntry(new ZipEntry(label));
+				re.write(roi);
+				out.flush();
+			}
+			out.close();
+		} catch (IOException e) {
+			IJ.error("" + e);
+			return false;
+		}
+		return true;
+	}
+    /**
+     * openRoiZip to a zip file
+     * @param path The full path and name of the ini file to be opend.
+     */
+	public void openRoiZip(String path) {
+		ZipInputStream in = null;
+		ByteArrayOutputStream out;
+		int nRois = 0;
+		try {
+			in = new ZipInputStream(new FileInputStream(path));
+			byte[] buf = new byte[1024];
+			int len;
+			ZipEntry entry = in.getNextEntry();
+			while (entry != null) {
+				String name = entry.getName();
+				if (name.endsWith(".roi")) {
+					out = new ByteArrayOutputStream();
+					while ((len = in.read(buf)) > 0)
+						out.write(buf, 0, len);
+					out.close();
+					byte[] bytes = out.toByteArray();
+					RoiDecoder rd = new RoiDecoder(bytes, name);
+					Roi roi = rd.getRoi();
+					if (roi != null) {
+						name = name.substring(0, name.length() - 4);
+						rois.put(name, roi);
+						nRois++;
+					}
+				}
+				entry = in.getNextEntry();
+			}
+			in.close();
+		} catch (IOException e) {
+			IJ.error(e.toString());
+		}
+		if (nRois == 0)
+			IJ
+					.error("This ZIP archive does not appear to contain \".roi\" files");
+	}
+	
+    /**
+     * get roi
+     * @param key The key for the roi.
+     */
+	public Roi get(String key){
+		return ((Roi) rois.get(key));
+	}
+	
+	/**
+     * remove roi 
+     * @param key The key for the roi.
+     */	
+	public void remove(String key){
+		rois.remove(key);
+	}
+	
+	/**
+     * add roi
+     * @param key for the roi.
+     * @param roi for the roi.
+     */
+	
+	public void add(String Key,Roi roi ) {
+		rois.put(Key, roi.clone());
+	 	   
+	}
+	
+	/**
+     * addParticles
+     * @param sourceImg mask image
+     * @param rt results table
+     * @param BaseName results table (Type of roi eg. ROI)
+     * @param offx x offset if needed
+     * @param offy y offset if needed
+     */
+	
+	public void addParticles(ImagePlus sourceImg, ResultsTable rt, String BaseName, int offx,int offy ){
+		ImageProcessor ip = sourceImg.getProcessor();
+		double t1 = ip.getMinThreshold();
+		int xcol = rt.getColumnIndex("XStart");
+		int ycol = rt.getColumnIndex("YStart");
+		int partcol = rt.getColumnIndex(PJUtils.PARTNO);
+		for (int i=0;i<rt.getCounter();i++){
+			int x = (int)rt.getValue(xcol,i);
+			int y = (int)rt.getValue(ycol,i);
+			int part = (int) rt.getValue(partcol,i);
+			Wand w = new Wand(ip);
+			w.autoOutline(x, y, t1, ip.getMaxThreshold());
+			if (w.npoints>0) {
+				Roi roi = new PolygonRoi(w.xpoints, w.ypoints, w.npoints, Roi.TRACED_ROI);
+				String label = PJUtils.makehashkey(i+1,part,BaseName);
+				roi.setName(label);
+				Rectangle rect =roi.getBoundingRect();
+				roi.setLocation(rect.x+offx,rect.y+offy);
+				rois.put(label, roi.clone());
+			}
+		
+		}
+	}
+	
+	/**
+     * addParticles
+     * @param sourceImg mask image
+     * @param startx start x point of item
+     * @param starty start y point of item
+     * @param BaseName results table (Type of roi eg. ROI)
+     * @param offx x offset if needed
+     * @param offy y offset if needed
+     */
+	public void addParticles(ImagePlus sourceImg,int startx,int starty, String BaseName,int item, int offx,int offy ){
+		ImageProcessor ip = sourceImg.getProcessor();
+		double t1 = ip.getMinThreshold();
+		Wand w = new Wand(ip);
+		w.autoOutline(startx, starty, t1, ip.getMaxThreshold());
+			if (w.npoints>0) {
+				Roi roi = new PolygonRoi(w.xpoints, w.ypoints, w.npoints, Roi.TRACED_ROI);
+				String start="";
+				if (item<10)
+					start="00";
+				else if (item<100)
+					start="0";
+				String label = start+item+"_"+BaseName;
+				roi.setName(label);
+				Rectangle rect =roi.getBoundingRect();
+				roi.setLocation(rect.x+offx,rect.y+offy);
+				rois.put(label, roi.clone());
+			}
+		
+		}
+	}
+	
+
