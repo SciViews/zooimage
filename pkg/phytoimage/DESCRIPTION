@@ -1,0 +1,18 @@
+Package: phytoimage
+Type: Package
+Title: Analysis of numerical phytoplankton images
+Version: 1.2-1
+Date: 2007-05-29
+Author: Ph. Grosjean & K. Denis
+Maintainer: Ph. Grosjean <Philippe.Grosjean@umh.ac.be>
+Depends: R (>= 2.4.0), tcltk, tcltk2, svMisc
+Suggests: zooimage
+Description: PhytoImage is a free (open source) solution for analyzing digital
+	images of phytoplankton. In combination with ImageJ, a free image analysis
+	system, it processes digital images, measures individuals, trains for
+	automatic identification of taxa, and finally, measures phytoplankton samples
+	(abundances, total and partial size spectra or biomasses, etc.)
+License: GPL2 or above at your convenience. Send metadata and reprints to maintainer
+	for every series you analyze and every paper you publish using PhytoImage (see the
+	web site for further informations).
+URL: http://www.sciviews.org/phytoimage

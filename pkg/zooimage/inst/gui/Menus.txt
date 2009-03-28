@@ -1,0 +1,15 @@
+# ZooImage1 menu
+# by Ph. Grosjean, 2005 <phgrosjean@sciviews.org>
+
+# Add menus to the RGui console (Windows only)
+$ConsoleMain
+|$ZooImage
+||Assistant...							~~ ZIDlg()
+||-
+||Exit ZooImage							~~ ExitZI()
+||About ...								~~ AboutZI()
+
+# Add menu to the RGui console popup (Windows only)
+$ConsolePopup
+|$ZooImage
+||Asssitant...							~~ ZIDlg()

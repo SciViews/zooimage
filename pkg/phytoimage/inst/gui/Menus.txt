@@ -1,0 +1,15 @@
+# PhytoImage1 menu
+# by Ph. Grosjean, 2006 <phgrosjean@sciviews.org>
+
+# Add menus to the RGui console (Windows only)
+$ConsoleMain
+|$PhytoImage
+||Assistant...							~~ ZIDlg()
+||-
+||Exit PhytoImage						~~ ExitPgm()
+||About ...								~~ AboutZI()
+
+# Add menu to the RGui console popup (Windows only)
+$ConsolePopup
+|$PhytoImage
+||Asssitant...							~~ ZIDlg()

@@ -1,0 +1,122 @@
+# PhytoImage1 Tk menu
+# by Ph. Grosjean, 2006 <phgrosjean@sciviews.org>
+
+# Create a Tk menu (intended for a window called 'ZIDlgWin')
+$Tk.ZIDlgWin
+|$Analyze
+||&Acquire images...	Ctrl+A			~~ acquireImg()
+||&Import images...	Ctrl+I				~~ importImg()
+||&Process images...	Ctrl+J			~~ processImg()
+||Make .&zid files...	Ctrl+Z			~~ makeZid()
+||-
+||&Make training set...	Ctrl+M			~~ makeTrain()
+||&Read training set..	Ctrl+T			~~ readTrain()
+||Make &classifier...	Ctrl+C			~~ makeClass()
+||A&nalyze classifier...	Ctrl+N		~~ analyzeClass()
+||--
+||Edit samples &description...	Ctrl+D	~~ editDescription()
+||Process &samples...	Ctrl+S			~~ processSamples()
+||&View results...	Ctrl+V				~~ viewResults()
+||&Export results...	Ctrl+E			~~ exportResults()
+||---
+||$E&xit
+|||From the &assistant	Ctrl+X			~~ closeAssistant()
+|||From &PhytoImage						~~ closePhytoImage()
+|$Objects
+||&Load									~~ loadObjects()
+||&Save									~~ saveObjects()
+||-
+||&List									~~ listObjects()
+||&Remove								~~ removeObjects()
+|$Apps
+||&R Console	Ctrl+R					~~ focusR()
+||Active R &Graph	Ctrl+G				~~ focusGraph()
+||-
+||Image &viewer (XnView)				~~ startPgm("ImageViewer")
+||Image &analyzer (ImageJ)				~~ startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)
+||&Metadata editor (Sc1)				~~ startPgm("ZIEditor", cmdline = selectFile("ZimZis"))
+||--
+||&Zip-Zid viewer (Filzip)				~~ startPgm("ZipViewer", cmdline = selectFile("ZipZid"))
+||CD-DVD &burner (DeepBurner)			~~ startPgm("DVDBurner")
+||---
+||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
+|$Functions
+||$PhytoImage &Metadata (zim)
+|||create.zim()                         ~~ guiDlgFunction("create.zim")
+|||edit.zim()                           ~~ guiDlgFunction("edit.zim")
+|||-
+|||make.zim()                           ~~ guiDlgFunction("make.zim")
+|||verify.zim()                         ~~ guiDlgFunction("verify.zim")
+|||--
+|||e&xtract.zims()                      ~~ guiDlgFunction("extract.zims")
+|||refresh.zims()                       ~~ guiDlgFunction("refresh.zims")
+||$PhytoImage &Picture (zip)
+|||zip.img()							~~ guiDlgFunction("zip.img")
+|||zip.img.&all()						~~ guiDlgFunction("zip.img.all")
+|||-
+|||unzip.img()							~~ guiDlgFunction("unzip.img")
+|||u&nzip.img.all()						~~ guiDlgFunction("unzip.img.all")
+||$PhytoImage &Data (zid)
+|||make.RData()							~~ guiDlgFunction("make.RData")
+|||read.zid()							~~ guiDlgFunction("read.zid")
+|||zid.extract()						~~ guiDlgFunction("zid.extract")
+|||-
+|||verify.zid()							~~ guiDlgFunction("verify.zid")
+|||verify.zid.&all()						~~ guiDlgFunction("verify.zid.all")
+|||--
+|||compress.zid()						~~ guiDlgFunction("compress.zid")
+|||c&ompress.zid.all()					~~ guiDlgFunction("compress.zid.all")
+|||---
+|||uncompress.zid()						~~ guiDlgFunction("uncompress.zid")
+|||u&ncompress.zid.all()				~~ guiDlgFunction("uncompress.zid.all")
+||$PhytoImage &Samples Metadata (zis)
+|||createZis()                          ~~ guiDlgFunction("createZis")
+|||editZis()                            ~~ guiDlgFunction("editZis")
+|||-
+|||read.description()                   ~~ guiDlgFunction("read.description")
+||--
+||$PhytoImage &Training set
+|||prepare.ZITrain()					~~ guiDlgFunction("prepare.ZITrain")
+|||get.ZITrain()						~~ guiDlgFunction("get.ZITrain")
+|||-
+|||read.ZITrain()						~~ guiDlgFunction("read.ZITrain")
+|||write.ZITrain()						~~ guiDlgFunction("write.ZITrain")
+|||--
+|||zip.ZITrain()						~~ guiDlgFunction("zip.ZITrain")
+|||unzip.ZITrain()						~~ guiDlgFunction("unzip.ZITrain")
+|||---
+|||re&code.ZITrain()					~~ guiDlgFunction("recode.ZITrain")
+|||make.ZIRecode.level()				~~ guiDlgFunction("make.ZIRecode.level()")
+||$PhytoImage &Classifier
+|||ZIClass()							~~ guiDlgFunction("ZIClass")
+|||predict()							~~ guiDlgFunction("predict.ZIClass")
+|||-
+|||confu()								~~ guiDlgFunction("confu")
+|||confu.&map()							~~ guiDlgFunction("confu.map")
+||$PhytoImage &Results
+|||process.sample()						~~ guiDlgFunction("process.sample")
+|||p&rocess.samples()					~~ guiDlgFunction("process.samples")
+|||-
+|||Abd.sample()							~~ guiDlgFunction("Abd.sample")
+|||Bio.sample()							~~ guiDlgFunction("Bio.sample")
+|||Spectrum.sample()					~~ guiDlgFunction("Spectrum.sample")
+|$Utilities
+||Calibrate grayscale (16bit)			~~ calib()
+||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
+||-
+||$R Graphs
+|||&New									~~ windows()
+|||&Activate next						~~ {dev.set(); bringToTop()}
+|||&Close all							~~ graphics.off()
+|$Options
+||Change &active dir...                 ~~ Setwd(paste(tkchooseDirectory(), collapse = " "))
+||-
+||Define decimal separator...			~~ optInOutDecimalSep()
+
+|$Help
+||&Online help							~~ browseURL(findhtmlhelp("zooimage"))
+||&Manual	Ctrl+H						~~ viewManual()
+||&Web site...							~~ browseURL("http://www.sciviews.org/zooimage")
+||-
+||&About PhytoImage...					~~ AboutZI(graphical = TRUE)
+
