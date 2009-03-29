@@ -7,11 +7,11 @@
 		tkwm.deiconify(ZIDlgWin)
     	return(invisible())
 	}
-	
+
 	(require(tcltk2) || stop("Package 'tcltk2' is required. Please, install it first!"))
 	(require(svMisc) || stop("Package 'svMisc' (bundle 'SciViews') is required. Please, install it first!"))
 	(require(svWidgets) || stop("Package 'svWidgets' is required. Please, install it first!"))
-	
+
 	# Construct the window
 	tkWinAdd("ZIDlgWin", title = paste(getTemp("ZIname"), "assistant"), pos = "-10+10")
 	ZIDlgWin <- WinGet("ZIDlgWin")
@@ -43,7 +43,7 @@
 	#tkconfigure(getTemp("statusProg"), value = 50)
 	## Change text of the statusbar
 	#tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
-	
+
 	# Disable menu pointing to nonexisten software
 	if (!isWin()) {
 		# The activate R console & R graph do not work elsewhere
@@ -74,7 +74,7 @@
 # Function for the RGui menu
 "AboutZI" <-
 	function(graphical = FALSE){
-	msg <- getTemp("ZIverstring") 
+	msg <- getTemp("ZIverstring")
 	### TODO: add more information here (copyright, authors, check satellite pgms, ...)
 	if (graphical) {
 		tkmessageBox(message = msg, title = "About...", icon = "info", type = "ok")
@@ -297,7 +297,7 @@
 	# or you can access other processes that automatically build .zim files
 	# and/or import images/data, including custom processes defined in
 	# separate 'ZIEimport' objects (see FlowCAM import routine for an example)
-	
+
 	# Get a list of 'ZIEimport' objects currently loaded in memory
 	### TODO... Rework everything. What follows is old code!
 	ImgFilters <- as.matrix(data.frame(title = c("Tiff image files (*.tif)",
@@ -486,7 +486,7 @@
 	if (isWin()) {
 	    name <- winDialogString("Name for the ZITrain object:",
 			default = "ZItrain")
-	} else {	
+	} else {
 		name <- guiDlgInput("Name for the ZITrain object:",
 			"Reading a manual training set", default = "ZItrain")
 	}
@@ -513,7 +513,7 @@
 	# Return a ZIClass object
   defval <- "linear discriminant analysis"
 	opts <- c("linear discriminant analysis",
-			  "recursive partitioning (tree)", 
+			  "recursive partitioning (tree)",
 			  "k-nearest neighbour",
 			  "learning vector quantization",
 			  "neural network",
@@ -545,7 +545,7 @@
 		`support vector machine` = "svm",
 		`k-nearest neighbour` = "ipredknn",
 		`learning vector quantization` = "lvq",
-		`neural network` = "nnet2")	
+		`neural network` = "nnet2")
     package <- switch(res,
 		`linear discriminant analysis` = "MASS",
 		`recursive partitioning (tree)` = "rpart",
@@ -565,7 +565,7 @@
 	if (isWin()) {
 	    name <- winDialogString("Name for the ZIClass object to create:",
 			default = "ZIclass")
-	} else {	
+	} else {
 		name <- guiDlgInput("Name for the ZIClass object:",
 			"Creating a classifier", default = "ZIclass")
 	}
@@ -604,7 +604,7 @@
 		`support vector machine` = "svm",
 		`k-nearest neighbour` = "ipredknn",
 		`learning vector quantization` = "lvq",
-		`neural network` = "nnet2")	
+		`neural network` = "nnet2")
     package <- switch(res,
 		`linear discriminant analysis` = "MASS",
 		`recursive partitioning (tree)` = "rpart",
@@ -624,7 +624,7 @@
 	if (isWin()) {
 	    name <- winDialogString("Name for the ZIClass object to create:",
 			default = "ZIclass")
-	} else {	
+	} else {
 		name <- guiDlgInput("Name for the ZIClass object:",
 			"Creating a classifier", default = "ZIclass")
 	}
@@ -633,9 +633,9 @@
 	# Calculate formula using variables of the training set
     form <- FormVarsSelect(get(ZIT, envir = .GlobalEnv))
 	# Calculate results using formula created by variables selection
-    res <- ZIClass(get(ZIT, envir = .GlobalEnv), algorithm = algorithm, package = package, Formula = form)    
-  }	
-  # Print results  
+    res <- ZIClass(get(ZIT, envir = .GlobalEnv), algorithm = algorithm, package = package, Formula = form)
+  }
+  # Print results
   assign(name, res, envir = .GlobalEnv)
 	print(res)
 	cat("\n")
@@ -705,8 +705,8 @@
 			initialfile = "Description.zis", title = "Create a new ZIS file")), collapse = " ")
 		if (length(res) == 0 || res == "") return(invisible())
 		if (regexpr("[.][zZ][iI][sS]$", res) < 0) res <- paste(res, ".zis", sep = "")
-		zisfile <- createZis(res)		
-	} else { # Edit a Zis file 	
+		zisfile <- createZis(res)
+	} else { # Edit a Zis file
 	    zisfile <- editZis(NULL)
 	}
 	# Remember the last zis file
@@ -722,15 +722,15 @@
 	zisfile <- getTemp("ZI.LastZIS")
 	if (is.null(zisfile) || !file.exists(zisfile)) zisfile <- ""
     # Ask for a file
-	if (zisfile != "") {	
+	if (zisfile != "") {
 		zisfile <- paste(as.character(tkgetOpenFile(filetypes = "{{ZooImage samples description} {.zis}}",
-			initialfile = basename(zisfile), initialdir = dirname(zisfile), title = "Select a ZIS file")), collapse = " ")		
+			initialfile = basename(zisfile), initialdir = dirname(zisfile), title = "Select a ZIS file")), collapse = " ")
 	} else if (file.exists(file.path(getwd(), "Description.zis"))) {
 		zisfile <- paste(as.character(tkgetOpenFile(filetypes = "{{ZooImage samples description} {.zis}}",
-			initialfile = "Description.zis", initialdir = getwd(), title = "Select a ZIS file")), collapse = " ")		
+			initialfile = "Description.zis", initialdir = getwd(), title = "Select a ZIS file")), collapse = " ")
 	} else {
 		zisfile <- paste(as.character(tkgetOpenFile(filetypes = "{{ZooImage samples description} {.zis}}",
-			title = "Select a ZIS file")), collapse = " ")		
+			title = "Select a ZIS file")), collapse = " ")
 	}
 	if (length(zisfile) == 0 || zisfile == "") return(invisible())
 	# Option dialog box
@@ -753,7 +753,7 @@
 	smpdesc <- read.description(zisfile)
 	smplist <- list.samples(smpdesc)
 	# Are there samples in it?
-	if (length(smplist) == 0) stop("No sample found in the description file!")	
+	if (length(smplist) == 0) stop("No sample found in the description file!")
 	# Are there corresponding .zid files for all samples?
 	zisdir <- dirname(zisfile)
 	if (zisdir == ".") zisdir <- getwd()
@@ -766,8 +766,8 @@
 	ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
 		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
 	if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
-	ZICobj <- get(ZIC, envir = .GlobalEnv)	
-	
+	ZICobj <- get(ZIC, envir = .GlobalEnv)
+
 	# Read a conversion table from disk (from /etc/Conversion.txt) or an other position
 	# First read the registry to determine which file to use...
 	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"), "Conversion.txt"))
@@ -782,12 +782,12 @@
 	conv <- read.table(ConvFile2, header = TRUE, sep = "\t")
 	# Save this config for later use
 	setKey("ConversionFile", ConvFile2)
-	
+
 	# Get class breaks for size spectra
 	if (isWin()) {
 	    brks <- winDialogString("Breaks for size spectrum classes (empty for no spectrum):",
 			default = "seq(0.25, 2, by = 0.1)")
-	} else {	
+	} else {
 		brks <- guiDlgInput("Breaks for size spectrum classes (empty for no spectrum):",
 			"Size spectrum classes", default = "seq(0.25, 2, by = 0.1)")
 	}
@@ -798,7 +798,7 @@
 	if (isWin()) {
 	    name <- winDialogString("Name for the ZIRes object to create:",
 			default = "ZIres")
-	} else {	
+	} else {
 		name <- guiDlgInput("Name for the ZIRes object:",
 			"Process samples", default = "ZIres")
 	}
@@ -834,7 +834,7 @@
 	vars <- vars[!vars == "Note"]
 	# Add the spectra graphs
 	spec <- attr(ZIR, "spectrum")
-	varspec <- paste("spectrum of", names(spec))	
+	varspec <- paste("spectrum of", names(spec))
 	Vars <- c(vars, varspec)
 	Keep <- select.list(Vars, multiple = TRUE, title = "Select 1 to 12 graphs:")
 	lKeep <- length(Keep)
@@ -863,13 +863,13 @@
 	for (i in 1:lKeep) {
     	# Determine if it is a x/y graph, or a size spectrum
 		if (regexpr("^spectrum of ", Keep[i]) > 0) {	# Size spectrum
-			Ser <- sub("^spectrum of ", "", Keep[i])      
+			Ser <- sub("^spectrum of ", "", Keep[i])
 			plot(spec[[Ser]][["total"]], lwd = 3, col = "gray", type = "h",  main = Ser, ylab = "Frequency")
-			if (Pspec != "[none]"){            
+			if (Pspec != "[none]"){
 				Spec <- spec[[Ser]][[Pspec]]
 				Spec[Spec == 0] <- NA
 				points(Spec, lwd = 6, col = 2, type = "h")
-			} 		
+			}
 		} else { # x/y graph
 			 # If there is NA everywhere in a variable, the plot generates an error
 			 Xdat <- ZIR[, "Date"]
@@ -900,7 +900,7 @@
 		# 1) Results [name].txt
 		# 2) Metadata [name]_metadata.txt
 		# 3) Size spectra [name]_spect_[sample].txt
-		obj <- get(res[i], envir = .GlobalEnv) 
+		obj <- get(res[i], envir = .GlobalEnv)
 		write.table(obj,  file = paste(filenames[i], "_AbdBio.txt", sep = ""),
 			quote = FALSE, sep = "\t", eol = "\n", na = "NA", dec = getDec(),
 			row.names = FALSE, col.names = TRUE, qmethod = c("escape", "double"))
@@ -916,12 +916,12 @@
 				spctab <- spctab[ , seq(2, ncol(spctab), by = 2)]
 				names(spctab) <- names(spc1)
 				spctab <- data.frame(breaks = breaks, spctab)
-				write.table(spctab, 
+				write.table(spctab,
 					file = paste(filenames[i], "_Spectrum_", spcnames[j], ".txt", sep = ""),
 					quote = FALSE, sep = "\t", eol = "\n", na = "NA", dec = getDec(),
 					row.names = FALSE, col.names = TRUE, qmethod = c("escape", "double"))
-			} 
-		} 
+			}
+		}
 	}
 	cat(i, "ZIRes object(s) exported in'", dir, "'\n")
 }
@@ -931,14 +931,14 @@
 	file <- choose.files(caption = "Select a RData file...", multi = FALSE,
 			filters = c("R data (*.RData)", "*.RData"))
 		if (file == "") return(invisible()) # Cancelled dialog box
-	if (file.exists(file)) load(file, envir = .GlobalEnv)	
+	if (file.exists(file)) load(file, envir = .GlobalEnv)
 }
 
 "saveObjects" <-
 	function(){
 	Objects <- getVar(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes", "ZIRecode"), multi = TRUE,
 		title = paste("Choose", getTemp("ZIname"), "object(s):"), warn.only = FALSE)
-	if (length(Objects) == 0 || (length(Objects) == 1 && Objects == "")) return(invisible())	
+	if (length(Objects) == 0 || (length(Objects) == 1 && Objects == "")) return(invisible())
 	file <- paste(as.character(tkgetSaveFile(filetypes = "{{R data} {.RData}}",
 			initialfile = paste(getTemp("ZIname"), ".RData", sep = ""), title = paste("Save", getTemp("ZIname"), "data under..."))), collapse = " ")
 	if (length(file) == 0 || file == "") return(invisible())
@@ -950,7 +950,7 @@
 	function() {
     varlist <- objects(pos = 1)
 	Filter <- NULL
-	for (i in 1:length(varlist)) Filter[i] <- inherits(get(varlist[i]), 
+	for (i in 1:length(varlist)) Filter[i] <- inherits(get(varlist[i]),
 		c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes", "ZIRecode"))
 	varlist <- varlist[Filter]
 	if (length(varlist) == 0) {
@@ -985,7 +985,7 @@
 		if (length(attr(res, "msg")) > 0)
 			cat("\nTake care:\n")
 			cat(paste(attr(res, "msg"), collapse = "\n"), "\n")
-	}	
+	}
 }
 
 "optInOutDecimalSep" <-
@@ -1003,6 +1003,5 @@
     setKey("OptionInOutDecimalSep", DecSel)
     # Indicate change
     cat("In/Out decimal separator changed to '", DecSel, "'\n", sep = "")
- 	return(invisible(DecSel))   
+ 	return(invisible(DecSel))
 }
-

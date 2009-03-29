@@ -3,7 +3,7 @@ function(libname, pkgname) {
 	(require(svMisc) || stop("Package 'svMisc' from SciViews bundle is required!"))
 	(require(svWidgets) || stop("Package 'svWidgets' from SciViews bundle is required!"))
 	(require(tcltk2) || stop("Package 'tcltk2' is required!"))
-	
+
 	# Define name and icon we want for the ZooImage application
 	ZIname <- "PhytoImage1"
 	assignTemp("ZIname", ZIname)
@@ -21,10 +21,10 @@ function(libname, pkgname) {
 	# Indicate that other GUI resources should be loaded from the phytoimage package
 	ZIguiPackage <- "phytoimage"
 	assignTemp("ZIguiPackage", ZIguiPackage)
-	
+
 	# Make sure that ZooImage will not overwrite these entries
 	options(ZIredefine = TRUE)
-	
+
 	# Load the initial zooimage package now
 	(require(zooimage) || stop("Package 'zooimage' is required!"))
 }
