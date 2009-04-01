@@ -1,3 +1,21 @@
+# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
+
 "process.sample" <-
 	function(ZidFile, ZIClass, ZIDesc,
 		abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
@@ -107,15 +125,11 @@
 		}
 	}
 	Progress (imax + 1, imax)	 # To dismiss the Progress() indication
-	if (bell) Bell <- "\a" else Bell <- ""   # \a rings the bell on most platforms!
-	if (ok) {
-		logProcess("\n-- OK, no error found. --")
-		cat(Bell, "-- Done! --\n")
-	} else {
-		logProcess("-- Error(s)! --")
-		cat(Bell, " -- Done! [ERROR(S) FOUND] --\n")
-	}
-	if (show.log) logView()
+	
+	# {{{ Final report
+	finish.loopfunction( ok = ok, show.log = show.log, bell = bell )
+	# }}}
+
 	return(restot)
 }
 

@@ -1,3 +1,20 @@
+# Copyright (c) 2004-2007, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
 # Functions for manipulating .zim files (ZooImage Metadata/measurements)
 # These .zim files contain metadata required to analyze plankton images
 # and to record the way they were processed. Measurements on each identified
@@ -5,21 +22,30 @@
 # the usual extension is '_dat1.zim' to indicate that data processed with
 # ZooImage version 1 are present in the file).
 #
-# Copyright (c) 2004-2007, Ph. Grosjean <phgrosjean@sciviews.org>
 
-"make.zim" <-
-	function(dir = ".", pattern = "\\.[tT][iI][fF]$",
+# {{{ make.zim
+# HANDLE: verify.zim might throw an error
+# HANDLE: create.zim
+"make.zim" <- function(dir = ".", pattern = "\\.[tT][iI][fF]$",
 	images = list.files(dir, pattern), show.log = TRUE, bell = FALSE) {
+	
+	# {{{ check that there are images to process
 	if (length(images) < 1) {
-		logProcess("no images to process!", show.log = show.log); return(invisible(FALSE)) }
-	# Name of images is something like SCS.xxxx-xx-xx.SS+Ann.tif
+		stop("no images to process!" )
+	}
+	# }}}
+	
+	# {{{ Name of images is something like SCS.xxxx-xx-xx.SS+Ann.tif
 	# We make the same .zim file for all ...+Ann images, so, reduce the list
 	zims <- sort(unique(get.sampleinfo(images, type = "fraction", ext = pattern)))
 	zims <- file.path(dir, paste(zims, "zim", sep = "."))
 	ok <- TRUE
 	zmax <- length(zims)
 	cat("Making & checking .zim files...\n")
-	template <- NULL	# Start with a default template
+	# }}}
+	
+	# {{{ Start with a default template
+	template <- NULL	
 	for (z in 1:zmax) {
 		Progress(z, zmax)
 		if (!file.exists(zims[z])) { 	#.zim file does not exists... create it
@@ -32,242 +58,349 @@
 		res <- verify.zim(zims[z])
 		if (!res == 0) ok <- FALSE
 	}
-	Progress (zmax + 1, zmax)	 # To dismiss the Progress() indication
-	if (bell) Bell <- "\a" else Bell <- ""   # \a rings the bell on most platforms!
-	if (ok) {
-		logProcess("\n-- OK, no error found. --")
-		cat(Bell, "-- Done! --\n")
-	} else {
-		logProcess("\n-- One or several errors found! --")
-		cat(Bell, " -- Done! [ERROR(S) FOUND] --\n")
-	}
-	if (show.log) logView()
-	return(invisible(ok))
-}
-
-"is.zim" <-
-	function(zimfile, check.ext = FALSE) {
-	# Check if a file is a "(_dat1).zim" file (must start with "ZI1" and have a '.zim' extension)
-	if (!file.exists(zimfile) || file.info(zimfile)$isdir)
-		return(FALSE)
-	if (check.ext && length(grep("\\.zim$", tolower(zimfile))) != 1)
-		return(FALSE)
-	Line1 <- scan(zimfile, character(), nmax = 1, quiet = TRUE)
-	return(Line1 == "ZI1")
-}
-
-"verify.zim" <-
-	function(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE) {
-    # Verify a "(_dat1).zim" file (all required fields + return the number of items in it)
-	# If it succeeds, return the number of measured items as numeric
-	# Otherwise, return an explicit error message as character
+	# }}}
 	
+	Progress (zmax + 1, zmax)	 # To dismiss the Progress() indication
+	
+	# {{{ cleans up
+	finish.loopfunction( ok, bell = bell, show.log = show.log )
+	# }}}
+}
+# }}}
+
+# {{{ is.zim
+# Check if a file is a "(_dat1).zim" file (must start with "ZI1" and have a '.zim' extension)
+"is.zim" <- function(zimfile, check.ext = FALSE ) {
+	
+	# {{{ check if the file does not exist or is a directory
+	if (!file.exists(zimfile) ){ 
+		return( structure( FALSE, reason = sprintf( '"%s" does not exist' ) ) )
+	}
+	if( file.info(zimfile)$isdir){
+		return( structure( FALSE, reason = sprintf( '"%s" is a directory' ) ) )
+	}
+	# }}}
+
+	# {{{ check the extension, must be zim
+	if (check.ext && !grepl("\\.zim$", zimfile, ignore.case = TRUE ) ){
+		return( structure( FALSE, reason = sprintf( "File extension is incorrect (not '.zim')" ) ) )
+	}
+	# }}} 
+	
+	# {{{ check the first line
+	Line1 <- scan(zimfile, character(), nmax = 1, quiet = TRUE)
+	if( Line1 != "ZI1") {
+		return( structure( FALSE, 
+			reason = "File does not appears to be a ZooImage version 1 file, or it is corrupted!" ) )
+	}
+	# }}}
+	
+	# {{{ verything has passed
+	return( TRUE )
+	# }}}
+}
+# }}}
+
+# {{{ verify.zim
+#' Verify a "(_dat1).zim" file
+#' 
+#' Verify a "(_dat1).zim" file (all required fields + return the number of items in it)
+#' If it succeeds, return the number of measured items as numeric
+#' Otherwise, an error is generated by stop (see errorHandling for how errors are 
+#' thrown and captured using calling handlers)
+# TODO: check all functions calling verify.zim since it does not 
+#       return the problem anymore but rather calls stop with the 
+#       message
+# HANDLE: 
+# STOP: on extra verify function
+# STOP: if file is not zim
+# STOP: if file is empty (after first line)
+# STOP: missing fields
+# STOP: missing process fields
+# STOP: missing columns in the table
+# STOP: no data
+# STOP: unable to read table of measurements
+# STOP: no measurements found in the file
+"verify.zim" <- function(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE) {
+    
+	# {{{ Required fields
 	# Here are predefined required fields before measurements
 	reqfields <- c("[Image]", "Author", "Hardware", "Software",
         "ImageType", "[Fraction]", "Code", "Min", "Max", "[Subsample]",
         "SubPart", "SubMethod", "CellPart", "Replicates", "VolIni",
         "VolPrec")
+		
 	# Then required fields when measurements are done    
 	reqfields2 <- c("[Process]")
 	# Finally, required column headers
     reqcols <- c("!Item", "Label", "BX", "BY", "Width", "Height")
+	# }}}
 	
-	# Determine if there are custom verification rules defined and if they are active
+	# {{{ Determine if there are custom verification rules defined and if they are active
     newRules <- getOption("ZI.zim")
     if (!is.null(newRules) && newRules$active == TRUE) {
-        # Should we delegate the whole process to a custom verification function?
+        # {{{ Should we delegate the whole process to a custom verification function?
 		verify.all <- newRules$verify.all
         if (!is.null(verify.all) && inherits(verify.all, "function"))
             return(verify.all(zimfile = zimfile, check.ext = check.ext,
                 is.dat1 = is.dat1, chack.table = check.table))
-        # Should we use additional verification code instead?
+		# }}}
+        
+		# {{{ Should we use additional verification code instead?
 		verify <- newRules$verify
         reqfields <- c(reqfield, newRules$zim.required)
         reqfields2 <- c(reqfields2, newRules$dat1.zim.required)
         reqcols <- c(reqcol, newRules$dat1.data.required)
+		# }}}
     } else verify <- NULL
+	# }}}
 
-    if (!file.exists(zimfile) || file.info(zimfile)$isdir)
-        return("File not found!")
-    # Verify that the file extension is .zim
-	if (check.ext && length(grep("\\.zim$", tolower(zimfile))) != 1)
-        return("File extension is incorrect (not '.zim')")
-    # Verify it is a zimfile
-	Line1 <- scan(zimfile, character(), nmax = 1, quiet = TRUE)
-    if (Line1 != "ZI1")
-        return("File does not appears to be a ZooImage version 1 file, or it is corrupted!")
-    
-	# Run first the extra verification code
+	# {{{ check that it is a zimfile
+	ok <- is.zim( zimfile, check.ext = check.ext )
+	if( !ok ){
+		stop( attr( ok, "reason") )
+	}
+	# }}}
+	
+	# {{{ Run first the extra verification code
 	if (!is.null(verify) && inherits(verify, "function")) {
-        res <- verify(zimfile, check.ext = check.ext, is.dat1 = is.dat1,
-            check.table = check.table)
-    } else res <- ""	# No problems!
+		# we need to grab the error here and call stop from here to maintain 
+		# the old API and to allow the custom version of stop to be called
+		# with the correct context of the "verify.zim" function
+		res <- try( verify(zimfile, check.ext = check.ext, is.dat1 = is.dat1,
+            check.table = check.table), silent = TRUE )
+		if( inherits( res, "try-error" ) ){
+			stop( extractMessage( res ) )  
+		} else if( is.character(res) && nchar( res ) > 0 ) { 
+			stop( res ) 
+		}
+    } 
+	# }}}
 
-	# Read the file...
+	# {{{ Read the file...
+	# Equal sign is used as comment char, in order to read only the field names
     Lines <- scan(zimfile, character(), sep = "\t", skip = 1,
-        flush = TRUE, quiet = TRUE, blank.lines.skip = FALSE, comment.char = "=")
-        # Equal sign is used as comment char, in order to read only the field names
+        flush = TRUE, quiet = TRUE, blank.lines.skip = FALSE, 
+		comment.char = "=") 
+        
     if (length(Lines) < 1)
-        return("File is empty!")
-    # Trim leading and trailing white spaces
+        stop("File is empty!")
+    
+	# Trim leading and trailing white spaces
 	Lines <- trim(Lines)
+	# }}}
 
-	# Check that all required fields are present for a simple .zim file
+	# {{{ Check that all required fields are present for a simple .zim file
     misfields <- reqfields[!(reqfields %in% Lines)]
     if (length(misfields) > 0) {
-        res2 <- paste("Missing fields:", paste(misfields, collapse = ", "))
-        if (res == "") return(res2) else return(paste(res, res2, collapse = "\n"))
+        stop( paste( "Missing fields:", paste(misfields, collapse = ", ") ) )
     }
+	# }}}
 
-	# Check if this is a _dat1.zim file with measurements
+	# {{{ Check if this is a _dat1.zim file with measurements
     if ("[Data]" %in% Lines) {
-        misfields2 <- reqfields2[!(reqfields2 %in% Lines)]
+        # {{{ check for missing fields
+		misfields2 <- reqfields2[!(reqfields2 %in% Lines)]
         if (length(misfields2) > 0) {
-            res2 <- paste("Missing [Process] fields:", paste(misfields2,
-                collapse = ", "))
-            if (res == "") return(res2) else return(paste(res, res2, collapse = "\n"))
+            stop( paste("Missing [Process] fields:", paste(misfields2, collapse = ", ")) )
         }
+		# }}}
         
-		# Check for required column headers
+		# {{{ Check for required column headers
 		posHeaders <- grep("^\\[Data\\]$", Lines)[1] + 1
         LineHeader <- scan(zimfile, character(), sep = "%", skip = posHeaders,
-        nmax = 1, flush = TRUE, quiet = TRUE, comment.char = "=")
+			nmax = 1, flush = TRUE, quiet = TRUE, comment.char = "=")
         Headers <- trim(strsplit(LineHeader, "\t")[[1]])
         misHeaders <- reqcols[!(reqcols %in% Headers)]
         if (length(misHeaders) > 0) {
-            res2 <- paste("Missing columns in the table:", paste(misHeaders,
-                collapse = ", "))
-            if (res == "") return(res2) else return(paste(res, res2, collapse = "\n"))
+            stop( paste("Missing columns in the table:", paste(misHeaders, collapse = ", ")) )
         }
+		# }}}
 
-		# Check that the table can be read 
+		# {{{ Check that the table can be read 
         if (check.table) {
+			# {{{ check the [Data] section
             posMes <- grep("^\\[Data\\]$", Lines)
             if (length(posMes) == 0) {
-                return("Trying to read the table of measurements but no [Data] section found!")
+                stop("Trying to read the table of measurements but no [Data] section found!")
             } else { # The [Data] section is found
-                Mes <- try(read.table(zimfile, sep = "\t", header = TRUE,
+				# we try to call read.table, catch the error, and throw it again 
+				# from here, because stop might have a different meaning 
+				# in the context of the verify.zim function
+				# allowing to use the zooImage calling handlers, see errorHandling.R
+				# COMMENT: maybe the alternative stop should be revised so that 
+				#          it throws the message using the driver that is the 
+				#          deapest in the call stack, that way we are 
+				#          sure that we get a context and we don't have grab 
+				#          errors to rethrow them right away
+				#          not sure this will work with namespaces, ...
+				Mes <- try(read.table(zimfile, sep = "\t", header = TRUE,
                   skip = posMes + 1), silent = TRUE)
                 if (inherits(Mes, "try-error")) {
-                  return("Unable to read the table of measurements!")
+                  stop( paste( "Unable to read the table of measurements! : ", extractMessage( Mes) ) )
                 } else { 	# Successful reading of the table of measurements
                   return(nrow(Mes))	# Return the number of items measured
                 }
-            }
-        } else { # We don't read the table, use a different method to get the number of entries in it
+            } 
+			# }}}
+        } else { 
+			# {{{ Alternative method that does not read the table
+			 # We don't read the table, use a different method to get the number of entries in it
             # Read the last entry in Lines and convert it to a numeric value: should be the number of items measured
 			nItems <- Lines[length(Lines)]
             if (sub("^[0-9]+$", "", nItems) != "")
-                return("Impossible to determine the number of items measured!")
-            return(as.numeric(nItems))
+                stop("Impossible to determine the number of items measured!")
+            return(as.integer(nItems))
+			# }}}
         }
+		# }}}
     } else {
-        if (is.dat1) return("No measurements found in this file")
+        if (is.dat1) stop("No measurements found in this file")
         else return(0)
     }
+	# }}}
 }
+# }}}
 
-"list.zim" <-
-	function(zidir) {
+# {{{ list.zim
+"list.zim" <- function(zidir) {
 	# Is this a directory and does it exists?
-	if (!file.exists(zidir) || !file.info(zidir)$isdir) return(NA)
+	if (!file.exists(zidir) || !file.info(zidir)$isdir) {
+		return(NA)
+	}
 	# Get a list of all ".zim" files in this directory
 	res <- dir(zidir, pattern = "\\.[zZ][iI][mM]$")
 	return(res)
 }
+# }}}
 
-"list.dat1.zim" <-
-	function(zidir) {
+# {{{ list.dat1.zim
+"list.dat1.zim" <- function(zidir) {
 	# Is this a directory and does it exists?
-	if (!file.exists(zidir) || !file.info(zidir)$isdir) return(NA)
+	if (!file.exists(zidir) || !file.info(zidir)$isdir) {
+		return(NA)
+	}
 	# Get a list of all "_dat1.zim" files in this directory
 	res <- dir(zidir, pattern = "_[dD][aA][tT]1\\.[zZ][iI][mM]$")
 	return(res)
 }
+# }}}
 
+# {{{ extract.zims
+# Extract notes from .zip files and place them in .zim files
+# STOP: All zip files must be located in the same directory!
+# STOP: this is not a valid directory!
+# STOP: One or several files not found!
+# STOP: sprintf( "%s: is not a valid directory!", path)
+# STOP: Done, no file to process!
 "extract.zims" <-
 	function(zipdir = ".", zipfiles = list.files(zipdir, pattern = "\\.[zZ][iI][pP]$"),
 		path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE) {
-    # Extract notes from .zip files and place them in .zim files
-	# This requires the 'unzip' program!
-	# Make sure it is available
-	cmd <- paste('"', ZIpgm("unzip", "misc"), '" -h', sep = "")
-	if (check.unzip && (system(cmd, invisible = TRUE) != 0)) {
-		logProcess("'unzip' program from Info-Zip not found!", "zip", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-    # Make sure all zipfiles are in the same directory
+    
+	# {{{ This requires the 'unzip' program!, Make sure it is available
+	checkUnzipAvailable( )
+	# }}}
+	
+	# {{{ Make sure all zipfiles are in the same directory
 	zipdirs <- dirname(zipfiles)
 	if (length(unique(zipdirs)) > 1) {
-		logProcess("All zip files must be located in the same directory!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-	# Move to zipdir
-    inidir <- getwd()
-	# Check that the dir exists!
+		stop("All zip files must be located in the same directory!" ) 
+	}
+	# }}}
+	
+	# {{{ Check that the dir exists!
 	if (!file.exists(zipdir) || !file.info(zipdir)$isdir) {
-		logProcess("this is not a valid directory!", zipdir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-	setwd(zipdir)
-	on.exit(setwd(inidir))
+		stop( sprintf( "%s: this is not a valid directory!", zipdir ) ) 
+	}
+	# }}}
+	
+	# {{{ Move to zipdir
+    inidir <- getwd()
+	setwd(zipdir); on.exit(setwd(inidir))
 	zipdir <- getwd()   # That way, if we had ".", it is now expanded
-	# Use only basenames for zip files
+	# }}}
+	
+	# {{{ Use only basenames for zip files
 	zipfiles <- sort(basename(zipfiles))
-	# Check that zipfiles exist
+	# }}}
+	
+	# {{{ Check that zipfiles exist
 	if (!all(file.exists(zipfiles))) {
-		logProcess("One or several files not found!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-	# Look at the path where to place .zim files
+		stop("One or several files not found!")
+	}
+	# }}}
+	
+	# {{{ Look at the path where to place .zim files
 	if (is.null(path)) {
 		# The rule is the following one:
 		# 1) if last subdir is "_raw", then place .zim file up one level
 		# 2) else, place them in the same dir as the zip files
 		path <- zipdir
-		if (tolower(basename(path)) == "_raw")
+		if (tolower(basename(path)) == "_raw"){
 			path <- dirname(path)
+		}
 	} else {    # Look if this is a valid directory
 		path <- path[1]
 		if (!file.exists(path) || !file.info(path)$isdir) {
-			logProcess("is not a valid directory!", path, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+			stop( sprintf( "%s: is not a valid directory!", path) ) 
+		}
 	}
-	# Compute the names of .zim files from the names of .zip files
+	# }}}
+	
+	# {{{ Compute the names of .zim files from the names of .zip files
 	# Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from SCS.xxxx-xx-xx.SS+Fnn)
 	# If there are duplicates, only extract first one
-	zimfiles <- paste(get.sampleinfo(zipfiles, "fraction", ext = "\\.[zZ][iI][pP]$"), ".zim", sep = "")
+	zimfiles <- sprintf( "%s.zim", 
+		get.sampleinfo(zipfiles, "fraction", ext = "\\.[zZ][iI][pP]$") )
 	keep <- !duplicated(zimfiles)
 	zimfiles <- zimfiles[keep]
 	zipfiles <- zipfiles[keep]
-    # Make full path for zimfiles
+	# }}}
+	
+	# {{{ Make full path for zimfiles
 	zimfiles <- file.path(path, zimfiles)
-	# If replace == FALSE, eliminate existing .zim files from the list
+	# }}}
+	
+	# {{{ If replace == FALSE, eliminate existing .zim files from the list
 	if (!replace) {
 		keep <- !file.exists(zimfiles)
 		zimfiles <- zimfiles[keep]
 		zipfiles <- zipfiles[keep]
 	}
-	# Are there files left
+	# }}}
+	
+	# {{{ Are there files left
 	if (length(zimfiles) == 0) {
-		logProcess("Done, no file to process!", show.log = show.log); return(invisible(FALSE)) }
-	# Extract .zim files, one at a time, and check them
+		stop("Done, no file to process!" )
+	}
+	# }}}
+	
+	# {{{ Extract .zim files, one at a time, and check them
 	zmax <- length(zimfiles)
 	ok <- rep(TRUE, zmax)
 	for (i in 1:zmax) {
-		# Make sure that old versions are eliminated
-		if (file.exists(zimfiles[i])) unlink(zimfiles[i])
+		
 		# Extract the .zim file from zip comment
-		cmd <- paste('"', ZIpgm("unzip", "misc"), '" -pz "', zipfiles[i], '"', sep = "")
-		zimdat <- system(cmd, intern = TRUE, show.output.on.console = FALSE, invisible = TRUE)
-		cat(paste(paste(zimdat, collapse = "\n"), "\n", sep = ""), file = zimfiles[i])
+		zipnote( zipfiles[i], zimfiles[i] )
+		
 		# Check that the .zim file is created
-		if (!file.exists(zimfiles[i]) || verify.zim(zimfiles[i]) != 0) ok[i] <- FALSE
+		if (!file.exists(zimfiles[i]) || verify.zim(zimfiles[i]) != 0){
+			ok[i] <- FALSE
+		}
 	}
-	# Check the results
-	if (all(ok)) {
-        logProcess(paste(zmax, ".zim files correctly extracted"), show.log = FALSE)
-	} else { # One or several errors
-        logProcess(paste(sum(!ok), "files not correctly extracted on", zmax), show.log = FALSE)
-	}
-	# Display the log file, if required
-    if (show.log) logView()
-    if (bell) cat("\a")   # \a rings the bell on most platforms!
-	# Invisibly indicate success (if no errors)
-	return(invisible(all(ok)))
+	# }}}
+	
+	# {{{ cleans up
+	finish.loopfunction( ok = all(ok), 
+		ok.console.msg = "", nok.console.msg = "", 
+		bell = bell, show.log = show.log, 
+		ok.log.msg = paste(zmax, ".zim files correctly extracted"), 
+		nok.log.msg = paste(sum(!ok), "files not correctly extracted on", zmax) )
+	# }}}
 }
+# }}}
 
+# {{{ refresh.zims
 "refresh.zims" <-
 	function(zipdir = ".", zipfiles = list.files(zipdir, pattern = "\\.[zZ][iI][pP]$"),
 		zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE, bell = FALSE) {
@@ -337,7 +470,9 @@
 		logProcess("\n-- OK, no error found. --")
 		cat("-- Done! --\n")		
 	} else {
-		logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log); 
+		return(invisible(FALSE))
+	}
 	# If everything is OK, update comments in the zip files with the content of the .zim files
 	imax <- length(zipfiles)
 	cat("Update of .zip comments...\n")
@@ -351,18 +486,14 @@
 		if (res != 0) ok <- FALSE else logProcess("OK", zipfiles[i])
 	}
 	Progress (imax + 1, imax)	 # To dismiss the Progress() indication
-	if (bell) Bell <- "\a" else Bell <- ""   # \a rings the bell on most platforms!
-	if (ok) {
-		logProcess("\n-- OK, no error found. --")
-		cat(Bell, "-- Done! --\n")
-	} else {
-		logProcess("-- Error(s)! --")
-		cat(Bell, " -- Done! [ERROR(S) FOUND] --\n")
-	}
-	if (show.log) logView()
-	return(invisible(ok))
+	
+	# {{{ cleans up
+	finish.loopfunction( ok, bell = bell, show.log = show.log )
+	# }}}
 }
+# }}}
 
+# {{{ create.zim
 "create.zim" <-
 	function(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
 	edit = TRUE, wait = FALSE) {
@@ -404,7 +535,9 @@
 	# Edit this new file
 	if (edit) startPgm("ZIEditor", cmdline = zimfile, wait = wait)
 }
+# }}}
 
+# {{{ edit.zim
 "edit.zim" <-
 	function(zimfile, editor = getOption("ZIEditor"), wait = FALSE) {
 	# Edit a .zim file
@@ -424,3 +557,5 @@
 	# Everything is fine, open the document for editing...
 	startPgm("ZIEditor", cmdline = zimfile, wait = wait)
 }
+# }}}
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

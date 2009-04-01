@@ -1,6 +1,21 @@
-# Various utility functions used by ZooImage
-#
 # Copyright (c) 2004-2006, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
+# Various utility functions used by ZooImage
 
 # Get the name of one or several variables of a given class
 "getVar" <-
@@ -163,7 +178,7 @@
 		id = sub("^.*\\..*\\.(.*)\\+.*$", "\\1", base),
 		frac = sub("^.*\\+([a-zA-Z]).*$", "\\1",base),
 		imgnbr = as.numeric(sub("^.*\\+[a-zA-Z]([0-9.]*)$", "\\1", base)),
-		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'"))
+		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'") )
 	### TODO: check results
 	return(res)
 }
@@ -454,3 +469,56 @@
 	if (!Dec %in% DecList) Dec <- "."
 	return(Dec)
 }
+
+#' transforms a file extension to a pattern for ignore.case matching of the 
+#' extension
+#' 
+#' @param extension extension (with or without the dot at the beginning)
+#' @returns a regular expression pattern that can be used
+#'          to match files with this extension
+#' @examples
+#' extensionPattern( "tif" )
+extensionPattern <- function( extension = "tif" ){
+  extensionLetters <- substring( extension, 1:nchar(extension), 1:nchar(extension) )
+  parts <- paste( "[", extensionLetters, casefold( extensionLetters, upper = TRUE ) , "]", sep = "")
+  pattern <- paste( parts, collapse = "" ) 
+  if( !length( grep( "^\\.", extension)) ){
+	pattern <- paste( "[.]", pattern, sep = "" )
+  } 
+  paste( pattern, "$", sep = "" )
+}
+
+
+getZooImageCapability <- function( cap = "zip" ){
+  ZOOIMAGEENV[[ cap ]]
+}
+
+zooImageCapabilities <- function( ... ){
+  dots <- list( ... )
+  if( length(dots) == 1 && is.list(dots[[1]]) ){
+	dots <- dots[[1]]
+  }
+  snapshot <- structure( as.list( ZOOIMAGEENV ), class = "zooimagecapabilities" )
+  
+  if( length(dots) ) {
+  	# checking that dots have names
+  	if( is.null(names(dots)) || any( names( dots ) == "" ) ){
+		stop( "capabilities must have names" )
+  	}
+  	 
+  	# checking that each capability is a logicial of length one
+  	check <- function( x ){
+		is.logical(x) && length(x) == 1
+  	}
+  	if( any( ! sapply( dots, check ) ) ){
+		stop( "capability are logicals of length one" )
+  	}
+  	
+  	# store the capability in the .zooimageenv environment
+  	for( cap in names(dots) ){
+		ZOOIMAGEENV[[cap]] <- dots[[cap]]
+  	}   
+  }
+  snapshot 
+}
+

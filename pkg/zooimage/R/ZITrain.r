@@ -1,3 +1,20 @@
+# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
 "prepare.ZITrain" <-
 	function(dir, subdir = "_train", zidfiles, groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL,
 		check.unzip = TRUE, show.log = TRUE, bell = FALSE, start.viewer = FALSE) {
@@ -85,13 +102,13 @@
 	### TODO: relocate vignettes in subdirectories, if ident is not NULL
 	
 	
+	finish.loopfunction( ok = TRUE, bell = bell, show.log = show.log, 
+	  ok.console.msg = " -- Done! --\n" ,
+	  ok.log.msg = "\n-- Done! --" )
 	
-	if (bell) Bell <- "\a" else Bell <- ""   # \a rings the bell on most platforms!
-	logProcess("\n-- Done! --")
-	cat(Bell, " -- Done! --\n")
-	if (show.log) logView()
-	# Do we have to start the image viewer in this directory,
-	if (start.viewer) startPgm("ImageViewer", cmdline = paste('"', dir_, '"', sep = ""))
+	if (start.viewer) {
+	  startPgm("ImageViewer", cmdline = paste('"', dir_, '"', sep = ""))
+	}
 	return(invisible(TRUE))
 }
 

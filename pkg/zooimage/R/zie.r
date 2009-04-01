@@ -1,3 +1,21 @@
+# Copyright (c) 2006, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
+
 # Specific functions for manipulating .zie files (ZooImage Import/Export)
 # These .zie files contain specifications for importing a series of images
 # and creating their corresponding .zim files (ZooImage Metadata) automatically.
@@ -7,7 +25,6 @@
 # They are all 'ZIE' objects, with respective subclasses 'ZIEimport' and
 # 'ZIEexport'.
 #
-# Copyright (c) 2006, Ph. Grosjean <phgrosjean@sciviews.org>
 
 ### TODO: check image filename during importation!!!
 ### TODO: a routine that lists all ZIEimport objects + summary of them.
@@ -608,22 +625,18 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		unlink(paste(noext(BlankField), "img", sep = "."))
 	}
 
-	if (bell) Bell <- "\a" else Bell <- ""   # \a rings the bell on most platforms!
-	if (ok) {
-		# Move the .zie files in _raw!
+	
+	if( ok ){
 		if (move.to.raw)
 			file.rename(Filemap, file.path(getwd(), "_raw", Filemap))
 		# There is a bug: a 'fileconv.tif' file is created, delete it for the moment
 		unlink("fileconv.tif")
-		cat("...OK!\n")
-		logProcess("\n-- OK, no error found. --")
-		cat(Bell, "-- Done! --\n")
-	} else {
-		logProcess("\n-- One or several errors found! --")
-		cat(Bell, " -- Done! [ERROR(S) FOUND] --\n")
 	}
-	if (show.log) logView()
-	return(invisible(ok))
+	
+	# {{{ cleans up
+	finish.loopfunction( ok, bell = bell, show.log = show.log )
+	# }}}
+
 }
 
 #Setwd("g:/zooplankton/Madagascar2Macro")	# My example directory

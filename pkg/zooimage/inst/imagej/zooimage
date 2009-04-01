@@ -1,0 +1,4 @@
+#!/bin/bash
+
+java -Xmx900m -cp .:ij.jar:plugins/_zooimage.jar org.sciviews.zooimage.ZooImage $@
+
