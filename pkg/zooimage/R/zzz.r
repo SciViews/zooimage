@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-
 # Loading and unloading ZooImage.
 # TODO: modify this since we have a NAMESPACE now
 
@@ -189,8 +188,7 @@
 # }}}
 
 # {{{ Unloading ZooImage
-".Last.lib" <-
-function(libpath) {
+".Last.lib" <- function(libpath) {
 	# Eliminate the ZooImage menu entries
 	if (.Platform$GUI[1] == "Rgui") {
 		require(svWidgets)
