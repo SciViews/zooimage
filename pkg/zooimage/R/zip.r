@@ -257,63 +257,6 @@
 }
 #}}}
 
-#{{{ checkZipAvailable
-#' utility that checks if the zip program is available
-checkZipAvailable <- function( ){
-	checkCapabilityAvailable( "zip", 
-		sprintf('"%s" -h %s', ZIpgm("zip", "misc"), if( !isWin() ) " > /dev/null"  ), 
-		"zip - program from Info-Zip not found!" )
-}
-
-checkUnzipAvailable <- function( ){
-	checkCapabilityAvailable( "unzip", 
-		sprintf('"%s" -h %s', ZIpgm("unzip", "misc"), if( !isWin() ) " > /dev/null"  ), 
-		"unzip - program from Info-Zip not found!" )
-}
-
-checkZipnoteAvailable <- function( ){
-	checkCapabilityAvailable( "zipnote", 
-		sprintf('"%s" -h %s', ZIpgm("zipnote", "misc"), if( !isWin() ) " > /dev/null"  ), 
-		"zipnote - program from Info-Zip not found!" )
-}
-
-checkCapabilityAvailable <- function( cap, cmd, msg ){
-
-	# function called when zip is not available
-	stopHere <- function( ){
-		stop( msg ) 
-	}
-	
-	# check if we don't already know about that
-	zipCap <- getZooImageCapability( cap )
-	if( !is.null( zipCap ) ){
-		if( !isTRUE(zipCap) ){
-			stopHere( ) 
-		} else{
-			return( invisible( NULL ) )
-		}
-	}
-	
-	# [RF,20090219] the invisible flag gives a warning outside of windows
-	#               and we do not want this warning to be captured by our
-	#               error trapping
-	ok <- if( isWin() ){
-		system(cmd, invisible = TRUE) == 0
-	} else {
-		system(cmd, ignore.stderr = TRUE) == 0
-	}
-				
-	# cache the result for next time, so that we don't have to check again
-	arguments <- list( cap = ok )
-	names( arguments ) <- cap
-	zooImageCapabilities( argument )
-	if( !ok ) {
-	   stopHere()
-	} 
-	
-} 
-#}}}
-
 # {{{ zip
 #' zip the content of the directory into the zipfile
 #' 

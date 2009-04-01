@@ -1,0 +1,81 @@
+# Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
+#{{{ checkZipAvailable
+#' utility that checks if the zip program is available
+checkZipAvailable <- function( ){
+	checkCapabilityAvailable( "zip", 
+		sprintf('"%s" -h %s', ZIpgm("zip", "misc"), if( !isWin() ) " > /dev/null"  ), 
+		"zip - program from Info-Zip not found!" )
+}
+# }}}
+
+#{{{ checkUnzipAvailable
+checkUnzipAvailable <- function( ){
+	checkCapabilityAvailable( "unzip", 
+		sprintf('"%s" -h %s', ZIpgm("unzip", "misc"), if( !isWin() ) " > /dev/null"  ), 
+		"unzip - program from Info-Zip not found!" )
+}
+#}}}
+
+#{{{ checkZipnoteAvailable
+checkZipnoteAvailable <- function( ){
+	checkCapabilityAvailable( "zipnote", 
+		sprintf('"%s" -h %s', ZIpgm("zipnote", "misc"), if( !isWin() ) " > /dev/null"  ), 
+		"zipnote - program from Info-Zip not found!" )
+}
+# }}}
+
+#{{{ checkCapabilityAvailable
+checkCapabilityAvailable <- function( cap, cmd, msg ){
+
+	# function called when zip is not available
+	stopHere <- function( ){
+		stop( msg ) 
+	}
+	
+	# check if we don't already know about that
+	zipCap <- getZooImageCapability( cap )
+	if( !is.null( zipCap ) ){
+		if( !isTRUE(zipCap) ){
+			stopHere( ) 
+		} else{
+			return( invisible( NULL ) )
+		}
+	}
+	
+	# [RF,20090219] the invisible flag gives a warning outside of windows
+	#               and we do not want this warning to be captured by our
+	#               error trapping
+	ok <- if( isWin() ){
+		system(cmd, invisible = TRUE) == 0
+	} else {
+		system(cmd, ignore.stderr = TRUE) == 0
+	}
+				
+	# cache the result for next time, so that we don't have to check again
+	arguments <- list( cap = ok )
+	names( arguments ) <- cap
+	zooImageCapabilities( argument )
+	if( !ok ) {
+	   stopHere()
+	} 
+	
+} 
+#}}}
+
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
