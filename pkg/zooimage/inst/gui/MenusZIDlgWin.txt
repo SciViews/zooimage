@@ -105,8 +105,8 @@ $Tk.ZIDlgWin
 ||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
 ||-
 ||$R Graphs
-|||&New									~~ windows()
-|||&Activate next						~~ {dev.set(); bringToTop()}
+|||&New									~~ plot.new()
+|||&Activate next						~~ {dev.set(); if( isWin() ) bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
 ||Change &active dir...                 ~~ Setwd(paste(tkchooseDirectory(), collapse = " "))
