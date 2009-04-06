@@ -74,10 +74,10 @@
 	
 	# {{{ check if the file does not exist or is a directory
 	if (!file.exists(zimfile) ){ 
-		return( structure( FALSE, reason = sprintf( '"%s" does not exist' ) ) )
+		return( structure( FALSE, reason = sprintf( '"%s" does not exist', zimfile ) ) )
 	}
 	if( file.info(zimfile)$isdir){
-		return( structure( FALSE, reason = sprintf( '"%s" is a directory' ) ) )
+		return( structure( FALSE, reason = sprintf( '"%s" is a directory', zimfile ) ) )
 	}
 	# }}}
 

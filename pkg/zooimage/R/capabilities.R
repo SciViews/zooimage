@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
+ZOOIMAGEENV <- new.env()
+
 #{{{ checkZipAvailable
 #' utility that checks if the zip program is available
 checkZipAvailable <- function( ){
@@ -70,12 +72,49 @@ checkCapabilityAvailable <- function( cap, cmd, msg ){
 	# cache the result for next time, so that we don't have to check again
 	arguments <- list( cap = ok )
 	names( arguments ) <- cap
-	zooImageCapabilities( argument )
+	zooImageCapabilities( arguments )
 	if( !ok ) {
 	   stopHere()
 	} 
 	
 } 
 #}}}
+
+#{{{ getZooImageCapability
+getZooImageCapability <- function( cap = "zip" ){
+  ZOOIMAGEENV[[ cap ]]
+}
+# }}}
+
+# {{{ zooImageCapabilities
+zooImageCapabilities <- function( ... ){
+  dots <- list( ... )
+  if( length(dots) == 1 && is.list(dots[[1]]) ){
+	dots <- dots[[1]]
+  }
+  snapshot <- structure( as.list( ZOOIMAGEENV ), class = "zooimagecapabilities" )
+  
+  if( length(dots) ) {
+  	# checking that dots have names
+  	if( is.null(names(dots)) || any( names( dots ) == "" ) ){
+		stop( "capabilities must have names" )
+  	}
+  	 
+  	# checking that each capability is a logicial of length one
+  	check <- function( x ){
+		is.logical(x) && length(x) == 1
+  	}
+  	if( any( ! sapply( dots, check ) ) ){
+		stop( "capability are logicals of length one" )
+  	}
+  	
+  	# store the capability in the .zooimageenv environment
+  	for( cap in names(dots) ){
+		ZOOIMAGEENV[[cap]] <- dots[[cap]]
+  	}   
+  }
+  snapshot 
+}
+# }}}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

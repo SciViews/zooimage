@@ -224,8 +224,9 @@
 		stop("no data for this sample/taxa in ZIDat")
 	# Add P1/P2/P3 conversion params to the table
 	if (inherits(conv, "data.frame")) {
-		if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")||c("Group", "a", "b", "c"))
+		if (  ! all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ) || !all(names(conv)[1:4] == c("Group", "a", "b", "c") ) ){
 			stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
+		}
 		IdSmp <- as.character(Smp$Ident)
 		IdSmpU <- unique(IdSmp)
 		IdConv <- as.character(conv$Group)

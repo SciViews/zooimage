@@ -489,36 +489,3 @@ extensionPattern <- function( extension = "tif" ){
 }
 
 
-getZooImageCapability <- function( cap = "zip" ){
-  ZOOIMAGEENV[[ cap ]]
-}
-
-zooImageCapabilities <- function( ... ){
-  dots <- list( ... )
-  if( length(dots) == 1 && is.list(dots[[1]]) ){
-	dots <- dots[[1]]
-  }
-  snapshot <- structure( as.list( ZOOIMAGEENV ), class = "zooimagecapabilities" )
-  
-  if( length(dots) ) {
-  	# checking that dots have names
-  	if( is.null(names(dots)) || any( names( dots ) == "" ) ){
-		stop( "capabilities must have names" )
-  	}
-  	 
-  	# checking that each capability is a logicial of length one
-  	check <- function( x ){
-		is.logical(x) && length(x) == 1
-  	}
-  	if( any( ! sapply( dots, check ) ) ){
-		stop( "capability are logicals of length one" )
-  	}
-  	
-  	# store the capability in the .zooimageenv environment
-  	for( cap in names(dots) ){
-		ZOOIMAGEENV[[cap]] <- dots[[cap]]
-  	}   
-  }
-  snapshot 
-}
-

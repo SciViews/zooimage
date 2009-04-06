@@ -17,9 +17,20 @@
 
 
 # {{{ verify.zid
-"verify.zid" <-
-	function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE) {
+#' check consistancy of a zoo image directory
+#' 
+#' @param zidir the directory to check
+#' @param type must be ZI1 
+#' @param check.vignettes do we check vignettes as well
+#' @param show.log do we show a log at the end
+verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE) {
 	
+	# {{{ using the catcher mechanism
+	if( is.null( getCatcher() ) ){
+		return( catch(match.call()) ) 
+	}
+	# }}}
+
 	# {{{ check the format of the file
 	# This should be a directory containing XXX+YY_dat1.zim files + .jpg files
 	if (type != "ZI1") {
@@ -40,36 +51,31 @@
     # {{{ Check the content of all these "_dat1.zim" files 
 	#     and retrieve the number of items measured
 	dat1files <- sort(dat1files)
-	nitems <- rep( -1, length(dat1files) )	 # Default to -1 for corrupted dat1 files
+	# Default to -1 for corrupted dat1 files
+	nitems <- rep( -1, length(dat1files) )	 
 	for (i in 1:length(dat1files)) {
-		nitems[i] <- withRestarts( 
-			withCallingHandlers( {
-				# verify.zim returns the number of lines if everything goes well
-				# if not, it will throw a zooImageVerifyZimError (zooImageError)
-				# when this happens, we log the error ( with the handler)
-				# we invoke the restart which returns the default value (-1)
-				# indicating a problem
-				verify.zim(file.path(zidir, dat1files[i]), is.dat1 = TRUE)
-			}, 
-				zooImageError = function( e ){
-					logError( e ) 
-					invokeRestart( "zooImageError" )
-				}), 
-			zooImageError = function( e ){ 
-				-1  # indicates corrupted data file
-			} )
+		
+		# this might generate an error, which is dealt with
+		# in the catcher associated with this function
+		res <- verify.zim(file.path(zidir, dat1files[i]), is.dat1 = TRUE)
+		if( length( res ) ){
+			nitems[i] <- res
+		}
+		
 	}
 	ok <- any( nitems == -1 )
 	# }}}
 	
 	# {{{ check the vignettes
 	if (check.vignettes) {
+		
         # {{{ Check that we have corresponding vignettes (XXX+YY_ZZZ.jpg files)
     	samples <- sub("_dat1[.]zim$", "", dat1files)
 		# }}}
 		
     	# {{{ Check the content of the directory for .jpg files
     	for (i in 1:length(samples)) {
+			
 			# {{{ list the jpegs
     		regex <- gsub("[+]", "[+]", samples[i])
     		regex <- gsub("[.]", "[.]", regex)
@@ -79,7 +85,10 @@
 			
     		# {{{ Get their numbers, sort them, and make sure none are missing
     		n <- nitems[i]
-    		if (n < 1) n <- length(jpgs)	# If impossible to know how many items, just count vignettes
+    		if (n < 1) {
+				# If impossible to know how many items, just count vignettes
+				n <- length(jpgs)	
+			}
     		
 			# Construct a vector with names of vignettes as they should be
     		chkjpgs <- paste(samples[i], "_", 1:n, ".jpg", sep = "")
@@ -98,14 +107,30 @@
 	# }}} 
 	
 	# {{{ Report results
-	if (ok) logProcess("OK", zidir)
-	if (show.log) logView()
+	if (ok){
+		logProcess("OK", zidir, show.log = show.log)
+	}
 	# }}}
 	
 	# TODO: we should not return ok here ?
 	return(invisible(ok))
 	
 }
+attr( verify.zid, "catcher" ) <- function( call ){
+	
+	withCallingHandlers( eval( call ), 
+		"zooImageError_verify.zim" = function( e ){
+			# we get an error from verify.zim, we want to log the error
+			# but keep going
+			logError( e )			
+		} )
+	
+}
+
+
+
+
+
 # }}}
 
 # {{{ verify.zid.all

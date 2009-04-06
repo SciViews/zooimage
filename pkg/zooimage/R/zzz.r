@@ -19,8 +19,7 @@
 # TODO: modify this since we have a NAMESPACE now
 
 # {{{ Loading ZooImage
-".First.lib" <- function(libname, pkgname) {
-	
+".onAttach" <- function(libname, pkgname) {
 	# {{{ check package dependencies
 	(require(utils) || stop("Package 'utils' is required!"))
 	(require(svMisc) || stop("Package 'svMisc' from SciViews bundle is required!"))
@@ -48,7 +47,7 @@
 	# }}}
 	
 	# {{{ Create some strings in TempEnv
-	ZIversion <- packageDescription( "utils", field = "Version" )
+	ZIversion <- packageDescription( "zooimage", field = "Version" )
 	assignTemp("ZIversion", ZIversion)
 
 	ZIname <- getTemp("ZIname")
@@ -88,7 +87,7 @@
 
 	# {{{ Load the various image resources
 	if (!redef){
-		tkImgReadPackage("zooimage")
+		ImgReadPackage("zooimage")
 	}
 	# }}}
 	
@@ -118,13 +117,17 @@
 	}
 	# }}}
 		
+	# {{{ the directory that contains binary executables
+	bindir <- system.file( "bin", package = "zooimage" )
+	# }}}
+	
 	# {{{ Determine where to find ImageJ
 	## TODO... currently, it is in a fixed position
 	# TODO: no need to ship the exe file, we can just ship a simple
 	#       bat file with 
 	#       java -jar ij.jar -ijpath=./plugins
-	ImageJExe <- file.path(bindir, "ImageJ", "ImageJ.exe")
 	if( isWin() ){
+		ImageJExe <- file.path(bindir, "ImageJ", "ImageJ.exe")
 		if (file.exists(ImageJExe)){
 			options(ImageEditor = ImageJExe)
 		}
@@ -175,7 +178,9 @@
 
 	# {{{ Possibly load the ZooImage assistant
 	LoadIt <- getOption("ZIAssistant")
-	if (is.null(LoadIt) || LoadIt == TRUE) ZIDlg()
+	if (is.null(LoadIt) || LoadIt == TRUE) {
+		ZIDlg()
+	}
 	# }}}
 	
 	# {{{ Switch to the default directory, if defined
@@ -184,11 +189,12 @@
         Setwd(defdir)
 	}
 	# }}}
+
 }
 # }}}
 
 # {{{ Unloading ZooImage
-".Last.lib" <- function(libpath) {
+".onUnload" <- function(libpath) {
 	# Eliminate the ZooImage menu entries
 	if (.Platform$GUI[1] == "Rgui") {
 		require(svWidgets)

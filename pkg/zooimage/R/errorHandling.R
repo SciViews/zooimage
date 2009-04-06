@@ -33,11 +33,12 @@
 #' @param domain see ?stop
 stop <- function( ..., call.= TRUE, domain = NULL ){
    calls <- sapply( sys.calls(), function(.) as.character( .[[1]] ) )
-   if( all( regexpr( "\\.all$", calls ) == -1 ) ){
+   if( ! tail(calls,2)[1] %in% names( zooImageErrorDrivers) ){
      base:::stop( ..., call.=call., domain = domain )
    } else{
      message <- do.call( paste, list(...) )
-	 signalCondition( getZooImageErrorFunction( calls )(message, env = parent.frame() ) )
+	 condfun <- getZooImageErrorFunction( calls )
+	 signalCondition( condfun(message, env = parent.frame() ) )
    }
 }
 # }}}
@@ -85,15 +86,15 @@ warning <- function( ..., call.= TRUE, immediate.= FALSE, domain = NULL ){
 #' @param msg the error message
 #' @param env the environment in which the problem occured
 zooImageError <- function( msg = "error", env = parent.frame(), errorClass = NULL, context = NULL ){
- err <- simpleError( message = msg )
- err$env <- env             
- if( !is.null( context ) ){
-   if( context %in% names( env ) ){
-	 err$context <- env[[ context ]]
-   }
- }
- class( err ) <- c(errorClass, "zooImageError", "error", "condition" )
- err
+ 	err <- simpleError( message = msg )
+ 	err$env <- env             
+	# if( !is.null( context ) ){
+	#   if( context %in% ls( env ) ){
+	# 	  err$context <- env[[ context ]]
+	#   }
+	# }
+ 	class( err ) <- c(errorClass, "zooImageError", "error", "condition" )
+ 	err
 }
 # }}}
 
@@ -148,18 +149,18 @@ zooImageWarningContext <- function( fun, context ) {
 #{{{ getZooImageConditionFunction
 #' Get the appropriate condition generating function
 getZooImageConditionFunction <- function( calls, drivers, default, context.fun ){
-	fun <- tail(calls)[1]
+	fun <- tail(calls,2)[1]
 	driver <- drivers[[ fun ]]
 	if( is.character( driver ) ){
 		driver <- context.fun( fun, driver )
 	} else if( is.null( fun ) ){
-		 driver <- default
-	 } 
-	 # TODO: maybe further checking on the arguments of the driver
-	 if( !inherits( driver, "function" ) ){
-		 stop( "wrong driver" )
-	 }
-	 driver
+		driver <- default
+	} 
+	# TODO: maybe further checking on the arguments of the driver
+	if( !inherits( driver, "function" ) ){
+		stop( "wrong driver" )
+	}      
+	driver
 }
 #}}}
 

@@ -14,45 +14,56 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
-            
-"ZIDlg" <-
-	function() {
-	# If the window is already created, just activate it...
+    
+# {{{ ZIDlg
+ZIDlg <- function() {
+	# {{{ If the window is already created, just activate it...
 	if ("ZIDlgWin" %in% WinNames()) {
 		ZIDlgWin <- WinGet("ZIDlgWin")
 		tkfocus(ZIDlgWin)  	# Doesn't work with Rgui.exe, but next command does
 		tkwm.deiconify(ZIDlgWin)
     	return(invisible())
 	}
+	# }}}
 
+	# {{{ Check dependencies. This is not necessary
 	(require(tcltk2) || stop("Package 'tcltk2' is required. Please, install it first!"))
 	(require(svMisc) || stop("Package 'svMisc' (bundle 'SciViews') is required. Please, install it first!"))
 	(require(svWidgets) || stop("Package 'svWidgets' is required. Please, install it first!"))
+	# }}}
 
-	# Construct the window
+	# {{{ Construct the window
 	tkWinAdd("ZIDlgWin", title = paste(getTemp("ZIname"), "assistant"), pos = "-10+10")
 	ZIDlgWin <- WinGet("ZIDlgWin")
-    tkwm.withdraw(ZIDlgWin)	# Do not show it until it is completelly constructed!
+    
+	# Do not show it until it is completelly constructed!
+	tkwm.withdraw(ZIDlgWin)	
 	on.exit(tkwm.deiconify(ZIDlgWin))
+	
 	# Change the icon of that window (if under Windows)
-	if (isWin()) tk2ico.set(ZIDlgWin, getTemp("ZIico"))
+	if (isWin()) {
+		tk2ico.set(ZIDlgWin, getTemp("ZIico"))
+	}
+	
 	# Add a menu (load it from a spec file)
-	Pkg <- getTemp("ZIguiPackage")
-	if (is.null(Pkg)) Pkg <- "zooimage"
+	Pkg <- getTemp("ZIguiPackage", default = "zooimage" )
 	MenuReadPackage(Pkg, file = "MenusZIDlgWin.txt")
+	# }}}
 
-	# Add a toolbar (read it from file 'ToolbarZIDlgWin.txt')
+	# {{{ Add a toolbar (read it from file 'ToolbarZIDlgWin.txt')
 	ToolRead(file.path(getTemp("ZIgui"), "ToolbarsZIDlgWin.txt"))
+	# }}}
 
-	# Add a statusbar with a text and a progressbar
+	# {{{ Add a statusbar with a text and a progressbar
 	status <- tk2frame(ZIDlgWin)
 	statusText <- tk2label(status, text = paste("Ready -", getwd()), justify = "left",
 		anchor = "w", width = 60)
-	statusProg <- tk2progress(status, orient = "horizontal", from = 0,  to = 100)
+	statusProg <- tk2progress(status, orient = "horizontal", maximum = 100)
 	tkpack(statusProg, side = "right")
 	tkpack(statusText, side = "left", fill= "x")
 	tkpack(status, side = "bottom", fill = "x")
 	tkpack(tk2separator(ZIDlgWin), side = "bottom", fill = "x")
+	
 	# Keep track of statusText / statusProg
 	assignTemp("statusText", statusText)
 	assignTemp("statusProg", statusProg)
@@ -60,14 +71,17 @@
 	#tkconfigure(getTemp("statusProg"), value = 50)
 	## Change text of the statusbar
 	#tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
+	# }}}
 
-	# Disable menu pointing to nonexisten software
+	# {{{ Disable menu pointing to nonexisten software
 	if (!isWin()) {
 		# The activate R console & R graph do not work elsewhere
         MenuStateItem("$Tk.ZIDlgWin/Apps", "&R Console", FALSE)
 		MenuStateItem("$Tk.ZIDlgWin/Apps", "Active R &Graph", FALSE)
 	}
-	# For each of the six external programs, look if they are accessible, otherwise, inactivate
+	# }}}
+	
+	# {{{ For each of the six external programs, look if they are accessible, otherwise, inactivate
 	if (is.null(getOption("ZIEditor")))
          MenuStateItem("$Tk.ZIDlgWin/Apps", "&Metadata editor (Sc1)", FALSE)
     if (is.null(getOption("ImageEditor")))
@@ -80,13 +94,18 @@
          MenuStateItem("$Tk.ZIDlgWin/Apps", "CD-DVD &burner (DeepBurner)", FALSE)
     if (is.null(getOption("VueScan")))
          MenuStateItem("$Tk.ZIDlgWin/Apps", "Simple acquisition (&VueScan)", FALSE)
+	# }}}
 
-	# Change the window to non resizable and topmost (f under Windows)
-	if (isWin()) tcl("wm", "attributes", ZIDlgWin, topmost = 1)
+	# {{{ Change the window to non resizable and topmost (f under Windows)
+	if (isWin()) {
+		tcl("wm", "attributes", ZIDlgWin, topmost = 1)
+	}
 	tkwm.resizable(ZIDlgWin, 0, 0)
 	# Focus on that window
 	tkfocus(ZIDlgWin)	# Doesn't work with Rgui.exe, but tkwm.deiconify does
+	# }}}
 }
+# }}}
 
 # Function for the RGui menu
 "AboutZI" <-
@@ -1022,3 +1041,7 @@
     cat("In/Out decimal separator changed to '", DecSel, "'\n", sep = "")
  	return(invisible(DecSel))
 }
+
+
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
+

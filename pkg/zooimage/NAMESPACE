@@ -1,0 +1,171 @@
+import( utils )
+import( tcltk )
+import( tcltk2 )
+import( svMisc )
+import( svWidgets )
+import( svDialogs )
+
+export(Abd.sample)
+export(AboutZI)
+export(acquireImg)
+export(analyzeClass)
+export(BFcorrection)
+export(Bio.sample)
+export(calc.vars)
+export(calib)
+export(calibrate)
+export(checkBF)
+export(clean.after.zid)
+export(closeAssistant)
+export(closeZooImage)
+export(compareExif)
+export(compile.zie)
+export(compress.zid)
+export(compress.zid.all)
+export(confu)
+export(confu.map)
+export(confusion.bar)
+export(confusion.tree)
+export(create.zim)
+export(createZis)
+export(ecd)
+export(editDescription)
+export(edit.zim)
+export(editZis)
+export(ExitZI)
+export(expand.ZITrain)
+export(exportResults)
+export(extract.zims)
+export(focusGraph)
+export(focusR)
+export(FormVarsSelect)
+export(getDec)
+export(getKey)
+export(getList)
+export(get.sampleinfo)
+export(gettextZI)
+export(getVar)
+export(get.ZITrain)
+export(histSpectrum)
+export(importImg)
+export(isTestFile)
+export(is.zim)
+export(list.add)
+export(list.dat1.zim)
+export(list.merge)
+export(listObjects)
+export(list.samples)
+export(list.zim)
+export(loadObjects)
+export(logClear)
+export(logError)
+export(logProcess)
+export(logView)
+export(logWarning)
+export(lvq)
+export(makeClass)
+export(make.Id)
+export(make.RData)
+export(makeTrain)
+export(makeZid)
+export(make.zie)
+export(make.zim)
+export(make.ZIRecode.level)
+export(merge.ZITable)
+export(modalAssistant)
+export(nnet2)
+export(noext)
+export(optInOutDecimalSep)
+export(parse.ini)
+export(plotAbdBio)
+export(plot.ZITable)
+export(predict.lvq)
+export(predict.nnet2)
+export(predict.ZIClass)
+export(prepare.ZITrain)
+export(print.ZIClass)
+export(print.ZIE)
+export(processImg)
+export(process.sample)
+export(process.samples)
+export(processSamples)
+export(Progress)
+export(RawConvert)
+export(read.description)
+export(readExifRaw)
+export(readTrain)
+export(read.zid)
+export(read.ZITrain)
+export(recode.ZITrain)
+export(refresh.zims)
+export(removeObjects)
+export(saveObjects)
+export(selectFile)
+export(setKey)
+export(Setwd)
+export(Spectrum)
+export(Spectrum.sample)
+export(startPgm)
+
+export(trim)
+export(uncompress.zid)
+export(uncompress.zid.all)
+export(underscore2space)
+export(unzip.img)
+export(unzip.img.all)
+export(unzip.ZITrain)
+export(verify.zid)
+export(verify.zid.all)
+export(verify.zim)
+export(viewManual)
+export(viewResults)
+export(write.ZITrain)
+export(ZIClass)
+export(zid.extract)
+export(ZIDlg)
+export(ZIE)
+export(ZIEimportJpg)
+export(ZIEimportTable)
+export(ZIEimportTif)
+export(ZIEimportZie)
+export(ZIpgm)
+export(ZIpgmhelp)
+export(zip.img)
+export(zip.img.all)
+export(zip.ZITrain)
+
+# catch                                                              
+# catch.env                                                          
+# checkCapabilityAvailable                                           
+# checkUnzipAvailable                                                
+# checkZipAvailable                                                  
+# checkZipnoteAvailable                                              
+# dummyCatcher                                                       
+# extensionPattern                                                   
+# extractMessage   
+# finish.loopfunction                                                
+# getCatcher                                                         
+# getZooImageCapability                                              
+# getZooImageConditionFunction                                       
+# getZooImageErrorFunction                                           
+# getZooImageWarningFunction                                         
+# grepl                                                              
+# unzip
+#warning
+# zip
+# zipnote
+# zooImageCapabilities
+# zooImageError
+# [[.zooImageError
+# zooImageErrorContext
+# zooImageErrorDrivers
+# zooImageWarning
+# [[.zooImageWarning
+# zooImageWarningContext
+# zooImageWarningDrivers
+
+# recallWithCatcher
+# resetCatcher
+# setCatcher
+# stop
+
