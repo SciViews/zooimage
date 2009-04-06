@@ -129,7 +129,7 @@ ZIDlg <- function() {
 # Functions for the assistant menu
 "closeAssistant" <-
 	function() {
-	tkWinDelete("ZIDlgWin")
+	tkWinDel("ZIDlgWin")
 }
 # }}}
 
@@ -212,7 +212,7 @@ ZIDlg <- function() {
 	ZIAssist <- WinGet("ZIAssist")
     tkbind(ZIAssist, "<Destroy>", function() {
 		tkgrab.release(ZIAssist)
-		tkWinDelete("ZIAssist")
+		tkWinDel("ZIAssist")
 		#tkfocus(WinGet("ZIDlgWin"))
 	})
 	# Assign cancel by default to the return value
@@ -254,12 +254,12 @@ ZIDlg <- function() {
     "onOK" <- function() {
         assignTemp("ZIret", tclvalue(resVar))
         tkgrab.release(ZIAssist)
-        tkWinDelete("ZIAssist")
+        tkWinDel("ZIAssist")
 		#tkfocus(WinGet("ZIDlgWin"))
     }
     "onCancel" <- function() {
         tkgrab.release(ZIAssist)
-        tkWinDelete("ZIAssist")
+        tkWinDel("ZIAssist")
 		#tkfocus(WinGet("ZIDlgWin"))
     }
     butbar <- tk2frame(ZIAssist)

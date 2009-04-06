@@ -202,7 +202,7 @@
 		try(MenuDel("$ConsolePopup/ZooImage"), silent = TRUE)
 	}
 	# Destroy the ZooImage Tk window, if it is currently displayed
-	tkWinDelete("ZIDlgWin")	 
+	tkWinDel("ZIDlgWin")	 
 }
 # }}}
 
