@@ -9,7 +9,7 @@ if( !isWin() ){
 		
 		call <- match.call( )
 		call[[1]] <- as.name( "tk_choose.files")
-		eval( call )	
+		eval( call, envir = parent.frame() )	
 	}
 }
 
