@@ -435,9 +435,13 @@
 "ZIpgm" <- function(pgm, subdir = "misc", ext = "exe") {
 	# Get the path of an executable, giving its name and subdirectory
 	if (isWin()) {
-		pathpgm <- file.path(system.file(subdir, "bin", package = "zooimage"), paste(pgm, ext, sep = "."))
+		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."), package = "zooimage")
 		if (!file.exists(pathpgm)) return("") else return(shortPathName(pathpgm))		
-	} else {	# Change nothing: should be directly executable
+	} else {	
+		# Change nothing: should be directly executable
+		if( pgm == "dc_raw" ) {
+			pgm <- "dcraw"
+		}
 		return(pgm)
 	}	
 }

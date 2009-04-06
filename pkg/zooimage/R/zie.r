@@ -152,30 +152,23 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# move processed .cr2 files into _raw; create associated .zim files
 
 	# This requires the 'dc_raw' and 'ppmtopgm' programs plus a couple of others!
+	# We need 'identify' and 'convert' from ImageMagick 16 bits!
 	# Make sure they are available
 	if (check) {
-		# We need 'identify' and 'convert' from ImageMagick 16 bits!
-		cmd <- paste('"', ZIpgm("identify", "imagemagick"), '" -version', sep = "")
-		res <- try(system(cmd, intern = TRUE, invisible = TRUE), silent = TRUE)
-		if (inherits(res, "try-error")) {
-			logProcess("program not found! Install ImageMagick 16 bit!", "identify.exe", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }	
-		cmd <- paste('"', ZIpgm("convert", "imagemagick"), '" -version', sep = "")
-		res <- try(system(cmd, intern = TRUE, invisible = TRUE), silent = TRUE)
-		if (inherits(res, "try-error")) {
-			logProcess("program not found! Install ImageMagick 16 bit!", "convert.exe", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }			
-		if (length(system(paste('"', ZIpgm("dc_raw", "misc"), '"', sep = ""), intern = TRUE, invisible = TRUE)) != 0) {
-			logProcess("program not found!", "dc_raw.exe", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-    	cmd <- paste('"', ZIpgm("ppmtopgm", "netpbm"), '" -help', sep = "")
-		if (system(cmd, invisible = TRUE) != 1) {
-			logProcess("program not found!", "ppmtopgm.exe", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-        cmd <- paste('"', ZIpgm("zip", "misc"), '" -h', sep = "")
-		if (zip.images != "" && (system(cmd, invisible = TRUE) != 0)) {
-			logProcess("program from Info-Zip not found!", "zip", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		checkCapable( "identify" )
+		checkCapable( "convert" )
+		checkCapable( "dc_raw" )
+		checkCapable( "ppmtopgm" )
+		checkCapable( "zip" )
 	}
+	
 	# First, switch to the root directory
 	inidir <- getwd()
 	if (!file.exists(path) || !file.info(path)$isdir) {
-		logProcess("Path does not exist, or it is not a directory!", path, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		logProcess("Path does not exist, or it is not a directory!", path, stop = TRUE, show.log = show.log); 
+		return(invisible(FALSE)) 
+	}
+	
 	### TODO If last subdir of path is "_raw", then, work with parent dir and do not move files in _raw subdir
 	
 	setwd(path)
@@ -185,17 +178,25 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# Read the Filemap
 	cat("Reading Filemap...\n")
 	if(!file.exists(Filemap) || file.info(Filemap)$isdir) {
-		logProcess("File not found, or not a file!", Filemap, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		logProcess("File not found, or not a file!", Filemap, stop = TRUE, show.log = show.log); 
+		return(invisible(FALSE)) 
+	}
 	if (length(grep("[.]zie$", tolower(Filemap))) == 0) {
-		logProcess("File is not a ZooImage Expanded definition (*.zie)!", Filemap, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		logProcess("File is not a ZooImage Expanded definition (*.zie)!", Filemap, stop = TRUE, show.log = show.log); 
+		return(invisible(FALSE)) 
+	}
 	# check first line for ZI1
 	Line1 <- scan(Filemap, character(), nmax = 1, quiet = TRUE)
 	if (Line1 != "ZI1") {
-		logProcess("This does not appear to be a ZooImage version 1 file, or it is corrupted!", Filemap, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		logProcess("This does not appear to be a ZooImage version 1 file, or it is corrupted!", Filemap, stop = TRUE, show.log = show.log); 
+		return(invisible(FALSE)) 
+	}
 	Lines <- scan(Filemap, character(), sep = "\t", skip = 1,
 		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "") # Note: we don't use comment.char = '#' because we want to read and rewrite those comments!
 	if (length(Lines) < 1) {
-		logProcess("The file is empty or corrupted!", Filemap, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		logProcess("The file is empty or corrupted!", Filemap, stop = TRUE, show.log = show.log);
+		return(invisible(FALSE)) 
+	}
 	# Get everything before '[Map]' as template data for the .zim file
 	posMap <- grep("[[]Map[]]", Lines)
 	if (length(posMap) == 0 || length(posMap) > 1) {

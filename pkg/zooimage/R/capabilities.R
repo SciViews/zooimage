@@ -17,6 +17,12 @@
 
 ZOOIMAGEENV <- new.env()
 
+checkCapable <- function( cap ){
+	if( cap %in% names( capabilities ) ){
+		capabilities[[cap]]()
+	} 
+}
+
 #{{{ checkZipAvailable
 #' utility that checks if the zip program is available
 checkZipAvailable <- function( ){
@@ -42,9 +48,56 @@ checkZipnoteAvailable <- function( ){
 }
 # }}}
 
+# {{{ checkIdentifyAvailable
+checkIdentifyAvailable <- function( ){
+	checkCapabilityAvailable( "identify", 
+		sprintf('"%s" -version ', ZIpgm("identify", "imagemagick") ), 
+		"program not found! Install ImageMagick 16 bit!" )
+}
+# }}}
+
+# {{{ checkConvertAvailable
+checkConvertAvailable <- function( ){
+	checkCapabilityAvailable( "convert", 
+		sprintf('"%s" -version ', ZIpgm("convert", "imagemagick") ), 
+		"program not found! Install ImageMagick 16 bit!" )
+}
+# }}}
+
+# {{{ checkPpmtopgmAvailable
+checkPpmtopgmAvailable <- function( ){
+	checkCapabilityAvailable( "ppmtopgm", 
+		sprintf('"%s" -help ', ZIpgm("ppmtopgm", "netpbm") ), 
+		"ppmtopgm : program not found!" )
+}
+# }}}
+
+# {{{ checkDcRawAvailable
+checkDcRawAvailable <- function( ){
+	checkCapabilityAvailable( "dc_raw", 
+		sprintf('"%s" -help ', ZIpgm("dc_raw", "misc") ), 
+		"dc_raw : program not found!" )
+}
+# }}}
+
+capabilities <- list(
+		"zip"      = checkZipAvailable , 
+		"unzip"    = checkUnzipAvailable, 
+		"zipnote"  = checkZipnoteAvailable ,
+		"identify" = checkIdentifyAvailable,
+		"convert"  = checkConvertAvailable,
+		"ppmtopgm" = checkPpmtopgmAvailable, 
+		"dc_raw"   = checkDcRawAvailable ) 
+
+
 #{{{ checkCapabilityAvailable
 checkCapabilityAvailable <- function( cap, cmd, msg ){
 
+	program <- cap
+	if( program == "dc_raw" && !isWin() ) {
+		program <- "dcraw"
+	}
+	
 	# function called when zip is not available
 	stopHere <- function( ){
 		stop( msg ) 
@@ -66,7 +119,9 @@ checkCapabilityAvailable <- function( cap, cmd, msg ){
 	ok <- if( isWin() ){
 		system(cmd, invisible = TRUE) == 0
 	} else {
-		system(cmd, ignore.stderr = TRUE) == 0
+		length( 
+			system( sprintf( " which %s 2> /dev/null" , program ), intern = TRUE )
+			) > 0
 	}
 				
 	# cache the result for next time, so that we don't have to check again
