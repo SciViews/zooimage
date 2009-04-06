@@ -142,7 +142,16 @@ ZIDlg <- function() {
 
 # {{{ viewManual
 "viewManual" <- function() {
-	 browseURL(file.path(getTemp("ZIetc"), "ZooImageManual.pdf"))
+	manual <- file.path(getTemp("ZIetc"), "ZooImageManual.pdf")
+	pdfviewer <- getOption( "pdfviewer" )
+	if( !is.null( pdfviewer ) ){
+		if (.Platform$OS.type == "windows") 
+            shell.exec(manual)
+        else system(paste(shQuote(getOption("pdfviewer")), shQuote(manual)), 
+            wait = FALSE)
+	} else{
+		browseURL(manual)
+	}
 }
 # }}}
 
