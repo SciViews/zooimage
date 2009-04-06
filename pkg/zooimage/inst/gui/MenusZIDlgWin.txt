@@ -113,7 +113,7 @@ $Tk.ZIDlgWin
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
 |$Help
-||&Online help							~~ browseURL(findhtmlhelp("zooimage"))
+||&Online help							~~ browseURL(help("zooimage", htmlhelp = TRUE))
 ||&Manual	Ctrl+H						~~ viewManual()
 ||&Web site...							~~ browseURL("http://www.sciviews.org/zooimage")
 ||-

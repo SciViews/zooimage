@@ -62,7 +62,7 @@ recallWithCatcher <- function( call, debug = FALSE ){
 	} 
 	
 	if( debug ){
-		print( sapply( sys.calls(), function(.) as.character(.[[1]] ) ) )
+		print( callStack() )
 	}
 	
 	logClear()

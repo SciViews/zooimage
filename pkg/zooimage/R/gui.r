@@ -107,7 +107,7 @@ ZIDlg <- function() {
 }
 # }}}
 
-# Function for the RGui menu
+# {{{ Function for the RGui menu
 "AboutZI" <-
 	function(graphical = FALSE){
 	msg <- getTemp("ZIverstring")
@@ -116,30 +116,35 @@ ZIDlg <- function() {
 		tkmessageBox(message = msg, title = "About...", icon = "info", type = "ok")
 	} else cat(msg, "\n")
 }
+# }}}
 
-"ExitZI" <-
-	function(){
+# {{{ ExitZI
+"ExitZI" <- function(){
 	detach("package:zooimage")	# This is useful to allow updating the package!
 	cat("zooimage package unloaded; To restart it, issue:\n> library(zooimage)\n")
 }
+# }}}
 
-
+# {{{ closeAssistant
 # Functions for the assistant menu
 "closeAssistant" <-
 	function() {
 	tkWinDelete("ZIDlgWin")
 }
+# }}}
 
-"closeZooImage" <-
-	function() {
+# {{{ closeZooImage
+"closeZooImage" <- function() {
 	closeAssistant()
 	ExitZI()
 }
+# }}}
 
-"viewManual" <-
-	function() {
+# {{{ viewManual
+"viewManual" <- function() {
 	 browseURL(file.path(getTemp("ZIetc"), "ZooImageManual.pdf"))
 }
+# }}}
 
 "focusR" <-
 	function() {
@@ -157,7 +162,8 @@ ZIDlg <- function() {
 	### TODO: notify this command is not available elsewhere (inactivate menu?)
    	require(grDevices)
 	if (is.null(dev.list())) {
-		windows()
+		device <- match.fun( getOption("device") )
+		device()
 	} else {
 		# Activate current graph window
 		if (isRgui()) bringToTop()
@@ -254,8 +260,7 @@ ZIDlg <- function() {
     	tkgrid(OK.but, Cancel.but, sticky = "e")
 	} else {    # Create also a help button
 		"onHelp" <- function() {
-			eval(parse(text = paste("browseURL(findhtmlhelp('", help.topic, "'))",
-				sep = "")), envir = .GlobalEnv)
+			eval( browseURL(help( help.topic , htmlhelp=TRUE)[1] ), envir = .GlobalEnv )
 		}
         Help.but <- tk2button(butbar, text = "  Help  ", command = onHelp)
         tkgrid(OK.but, Cancel.but, Help.but, sticky = "e")

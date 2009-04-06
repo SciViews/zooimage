@@ -488,4 +488,15 @@ extensionPattern <- function( extension = "tif" ){
   paste( pattern, "$", sep = "" )
 }
 
+#' Get the current call stack
+callStack <- function( ){
+	calls <- tail( sys.calls(), -1)
+	out <- lapply( calls, function(.) {
+		out <- try( as.character(.[[1]] ), silent = TRUE )
+		if( inherits( out, "try-error" ) ) NULL else out
+	} )
+	unlist( out ) 
+}
+
+
 

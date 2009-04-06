@@ -32,7 +32,7 @@
 #' @param call. see ?stop
 #' @param domain see ?stop
 stop <- function( ..., call.= TRUE, domain = NULL ){
-   calls <- sapply( sys.calls(), function(.) as.character( .[[1]] ) )
+   calls <- callStack()
    if( ! tail(calls,2)[1] %in% names( zooImageErrorDrivers) ){
      base:::stop( ..., call.=call., domain = domain )
    } else{
@@ -61,7 +61,7 @@ stop <- function( ..., call.= TRUE, domain = NULL ){
 #' @param immediate. See ?stop
 #' @param domain see ?stop
 warning <- function( ..., call.= TRUE, immediate.= FALSE, domain = NULL ){
-   calls <- sapply( sys.calls(), function(.) as.character( .[[1]] ) )
+   calls <- callStack()
    if( all( regexpr( "\\.all$", calls ) == -1 ) ){
      base:::warning( ..., call.=call., domain = domain )
    } else{
