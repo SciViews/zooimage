@@ -980,7 +980,7 @@ ZIDlg <- function() {
 	function(){
 	file <- choose.files(caption = "Select a RData file...", multi = FALSE,
 			filters = c("R data (*.RData)", "*.RData"))
-		if (file == "") return(invisible()) # Cancelled dialog box
+		if ( is.null(file) || length(file) == 0 || file == "") return(invisible()) # Cancelled dialog box
 	if (file.exists(file)) load(file, envir = .GlobalEnv)
 }
 
@@ -1025,7 +1025,7 @@ ZIDlg <- function() {
 		"Pgm image files (*.pgm)"),	pattern = c("*.tif", "*.pgm")))
 	file <- choose.files(caption = "Select a calibration image...",
 		multi = FALSE, filters = ImgFilters)
-		if (file == "") return(invisible()) # Cancelled
+		if (is.null(file) || length(file) == 0 || file == "") return(invisible()) # Cancelled
 	if (file.exists(file)) {
 		cat("Calibrating gray scale... [", basename(file), "]\n", sep = "")
 		flush.console()
