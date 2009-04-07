@@ -545,6 +545,19 @@ checkDirExists <- function( dir, message = 'Path "%s" does not exist or is not a
 	}
 }
 
+force.dir.create <- function( path, ... ){
+	
+	if( file.exists( path ) && file.info(path)$isdir ){
+		stop ( sprintf( "file '%s' is a directory", path ) )
+	}
+	out <- dir.create( path, ... )
+	if( !out ){
+		stop( sprintf("could not create directory '%s'", path) )
+	}
+	out
+	
+}
+
 
 #' test if x inherits from class y
 `%of%` <- function( x, y ){

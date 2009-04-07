@@ -260,25 +260,11 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	logProcess("Reading Filemap... OK!")
 	
 	# Make sure _raw, and _work subdirectories exists and have write access
-	if (!file.exists("_raw")) {
-		if (!dir.create("_raw")) {
-			logProcess("Impossible to create the '_raw' subdirectory!", stop = TRUE, show.log = show.log); 
-			return(invisible(FALSE)) 
-		}
-	} else {	# Check it is a directory
-    	if (!file.info("_raw")$isdir) {
-			logProcess("'_raw' exists, but is not a directory!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	force.dir.create( "_raw" )
+	if( Convert != "" || MoveToWork ){
+		force.dir.create( "_work" )
 	}
-	if (Convert != "" ||MoveToWork) {	# Only needed if we convert or move  the data!
-		if (!file.exists("_work")) {
-			if (!dir.create("_work")) {
-				logProcess("Impossible to create the '_work' subdirectory!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-		} else {	# Check it is a directory
-	    	if (!file.info("_work")$isdir) {
-				logProcess("'_work' exists, but is not a directory!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-		}
-	}
-
+	
 	# This function constructs image filename using possibly a FilenamePattern
 	MakeImageName <- function(x, pattern = FilePat) {
 		if (pattern == "") return(x)
