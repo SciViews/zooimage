@@ -194,11 +194,35 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	}
 	# }}}
 	
-	# {{{ Get everything before '[Map]' as template data for the .zim file
-	posMap <- grep("[[]Map[]]", Lines)
-	if (length(posMap) == 0 || length(posMap) > 1) {
-		stop( "The file is corrupted: no or duplicated [Map] section found!" ) 
+	# {{{ get the position of a section
+	getSectionPos <- function( section = "Map", message = "section '[%s]' found" ) {
+		rx <- sprintf( "[[]%s[]]", section )
+		out <- grep( rx, Lines )
+		if( length(out) != 1 ){
+			stop( sprintf( message, section ) )
+		}
+		return( out )
 	}
+	getSection <- function( section = "Map", to = c("next","end"), message = "The [Map] section is empty!" ){
+		to <- match.arg( to )
+		start <- getSectionPos( section )[1]
+		end <- switch( to, 
+			"next" = {
+				ends   <- getSectionPos( ".*" )
+				ends[ ends > start ][1] - 1
+			}, 
+			"end" = length(Lines )
+		)
+		out <- Lines[ seq.int( from = start + 1, to = end ) ]
+		if( length( out ) == 0 ){
+			stop( message )
+		}
+		out
+	}
+	# }}}
+	
+	# {{{ Get everything before '[Map]' as template data for the .zim file
+	posMap <- getSectionPos( "Map", "The file is corrupted: no or duplicated [Map] section found!" )
 	# }}}
 		
 	# {{{ setup the zim data
@@ -212,12 +236,12 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# {{{ property extractor
 	property <- function( property = "FilenamePattern", default = "" ){
 		rx <- sprintf( "^%s[[:space:]]*=[[:space:]]*(.*)", property )
-		if( any( gl <- grepl( rx, lines ) ) ){
-			sub( rx, "\\1", lines[ gl ][1] )
+		if( any( gl <- grepl( rx, Lines ) ) ){
+			sub( rx, "\\1", Lines[ gl ][1] )
 		} else default
 	}
 	# }}}
-
+	
 	FilePat    <- property( "FilenamePattern" )
 	FracPat    <- property( "FractionPattern" )
 	SubPat     <- property( "SubsamplePattern" )
@@ -227,23 +251,20 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	FileC      <- property( "FileC" )
 	FileExt2   <- property( "FileExt2", FileExt )
 	MoveToWork <- tolower(property( "MoveToWork" ) ) %in% c("true", "yes", "1")
-	
-	# Where is the location of the <exif> tag?
-	pos <- grep("^[<]exif[>]", Lines)
-	if (length(pos) > 0) Exif <- TRUE else Exif <- FALSE
+	Exif       <- property( "[<]exif[>]" ) != ""
 	attr(zimData, "Exif") <- "" # Nothing yet here
 
 	# Get the [Map] section
-	Lines <- Lines[(posMap + 1):length(Lines)]
-	nLines <- length(Lines)
-	if (nLines < 1) {
-		logProcess("The [Map] section is empty!", Filemap, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	Lines <- getSection( "Map", to = "end", "The [Map] section is empty!" )
+	
 	logProcess("Reading Filemap... OK!")
 	
 	# Make sure _raw, and _work subdirectories exists and have write access
 	if (!file.exists("_raw")) {
 		if (!dir.create("_raw")) {
-			logProcess("Impossible to create the '_raw' subdirectory!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+			logProcess("Impossible to create the '_raw' subdirectory!", stop = TRUE, show.log = show.log); 
+			return(invisible(FALSE)) 
+		}
 	} else {	# Check it is a directory
     	if (!file.info("_raw")$isdir) {
 			logProcess("'_raw' exists, but is not a directory!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
