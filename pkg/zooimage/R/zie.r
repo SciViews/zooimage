@@ -525,17 +525,10 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 				}
 				# Eliminate dusts and smooth the image with a median filter on a 10 times reduced version of the image
 				# We need identify and convert form ImageMagick...16
-				cmd <- paste('"', ZIpgm("identify", "imagemagick"), '" -format "%w %h" "', FileConv, '"', sep ="")
-				Size <- system(cmd, intern = TRUE, invisible = TRUE)
-				# Interpret image size
-				Size <- as.numeric(strsplit(Size, " ")[[1]])
-				# Check results
-				if (is.na(Size) || is.null(Size) || length(Size) != 2 || Size[1] < 100 || Size[2] < 100) {
-					logProcess("Error while getting image size with 'identify'", FileConv, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+				Size <- imagemagick_identify( FileConv )
 				Size2 <- round(Size/10) # size of the resized image
-				# Smooth the blank-field image
-				cmd <- paste(ZIpgm("convert", "imagemagick"), ' "', FileConv, '" -resize ', Size2[1], 'x', Size2[2], ' -median 2.0 -resize ', Size[1], 'x', Size[2], '! "', FileConv, '"', sep = "")
-				res <- shell(cmd, intern = TRUE, invisible = TRUE)	# original image is overwritten!
+				imagemagick_convert( FileConv, Size, Size2 )
+				
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
 					
@@ -548,6 +541,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 					
 					# Delete the uncorrected file
 					unlink(FileConv)
+					
 					# Now, FileConv is the same file, but with a .tif extension
 					FileConv <- paste(noext(FileConv), "tif", sep = ".")
 					if (!file.exists(FileConv)) {
@@ -1050,9 +1044,10 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' @examples 
 #' Setwd("g:/zooplankton/madagascar2macro")
 #' BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
+#' @throws this calls many xite scripts and might generate errors
 "BFcorrection" <- function(File, BFfile, deleteBF = TRUE, check = TRUE) {
 	
-	# {{{ what to do on exit
+	# {{{ clean up on exit
 	on.exit( {
 		unlink(imgFile)
 		if (deleteBF) {
@@ -1205,8 +1200,6 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		
 	}
  	# }}}
-	
-	# }}}
 	
 	# Everything was fine
 	return(TRUE)

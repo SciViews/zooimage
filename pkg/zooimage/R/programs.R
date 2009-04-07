@@ -11,6 +11,11 @@ xite <- function( prog, args, ... ){
 	program( prog, args, ..., dir = "xite" )
 }
 
+imagemagick <- function( prog, args, ... ){
+	program( prog, args, ..., dir = "imagemagick" )
+}
+
+
 xite_pnm2biff <- function( input, output ){
 	if( !file.exists( output ) ){
 		xite( "pnm2biff", '"%s" "%s"', input, output)
@@ -37,5 +42,19 @@ xite_divide <- function( meangray, image, bf, cor ){
 xite_biff2tiff <- function( cor, tif ){
 	out <- xite( "biff2tiff", ' "%s" "%s"', cor, tif )
 	checkFileExists( tif, message = "Error while converting corrected image to TIFF format!" )
+}
+
+imagemagick_identify <- function( file ){
+	size <- imagemagick( "identify", '  -format "%s" %s', '%w %h', file )
+	size <- as.numeric( strsplit( size, " " ) [[1]] )
+	if (is.na(Size) || is.null(Size) || length(Size) != 2 || Size[1] < 100 || Size[2] < 100) {
+		stop("Error while getting image size with 'identify'", FileConv ) 
+	}
+	size
+}
+
+imagemagick_convert <- function( file, size1, size2 ){
+	imagemagick( "convert", ' "%s" -resize %dx%d -median 2.0 -resize %dx%d! "%s"', 
+		file, size2[1], size2[2], size1[1], size1[2], file )
 }
 
