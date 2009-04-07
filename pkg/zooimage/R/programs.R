@@ -61,4 +61,49 @@ imagemagick_convert <- function( file, size1, size2 ){
 }
 # }}}
 
+# {{{ misc
+
+misc <- function( prog, args, ... ){
+	program( prog, args, ..., dir = "misc" )
+}
+
+misc_dcraw <- function( file, arguments, output){
+	out <- try( misc( "dc_raw", '"%s" %s > "%s" ', file, args, output ), silent = T )
+	if( out %of% "try-error" ){
+		stop( sprintf("error converting '%s' with dc_raw", file ) )
+	}
+	out
+}
+# }}}
+
+# {{{ netpbm scripts
+netpbm <- function( prog, args, ... ){
+	program( prog, args, ..., dir = "netpbm" )
+}
+
+netpbm_tifftopnm <- function(input, output ){
+	unlink( output )
+	res <- netpbm( "tifftopnm", ' -byrow "%s" > "%s" ', input, output ) 
+	checkFileExists( output, message = "Impossible to convert into .pgm image" )
+	res
+}
+
+netpbm_pgmhist <- function( file, delete = TRUE ){
+
+	# Create a text file with the statistics of gray levels distribution and read it
+	res <- netpbm( "pgmhist", ' "%s" ', file )
+	if (delete) unlink(file)
+	if (length(res) < 100){
+		stop( sprintf("Error while getting histogram of '%s' ", file) )
+	}
+	res <- res[-(1:2)]	# Eliminate header
+	
+	# Keep only two first columns
+	res <- sub("\t.*$", "", sub("\t", " ", res))
+	
+	# Transform into a data frame of numerical values
+	BF <- as.data.frame(matrix(as.numeric(unlist(strsplit(res, " "))), ncol = 2, byrow = TRUE))
+	names(BF) <- c("Gray", "Count")
+	BF
+}
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
