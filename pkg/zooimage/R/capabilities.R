@@ -84,17 +84,46 @@ checkDcRawAvailable <- function( ){
 		"dc_raw : program not found!" )
 }
 # }}}
+
+# {{{ xite
+checkAvailable_pnm2biff <- function( ){
+	checkCapabilityAvailable( "pnm2biff", 
+		sprintf('"%s" -version ', ZIpgm("pnm2biff", "xite") ), 
+		"pnm2biff : program not found!" )
+}
+checkAvailable_divide <- function( ){
+	checkCapabilityAvailable( "divide", 
+		sprintf('"%s" -version ', ZIpgm("divide", "xite") ), 
+		"divide : program not found!" )
+}
+checkAvailable_statistics <- function( ){
+	checkCapabilityAvailable( "statistics", 
+		sprintf('"%s" -version ', ZIpgm("statistics", "xite") ), 
+		"statistics : program not found!" )
+}
+checkAvailable_biff2tiff <- function( ){
+	checkCapabilityAvailable( "biff2tiff", 
+		sprintf('"%s" -version ', ZIpgm("biff2tiff", "xite") ), 
+		"biff2tiff : program not found!" )
+}
+# }}}
+
 # }}}
 
 # {{{ capabilities
 capabilities <- list(
-		"zip"      = checkZipAvailable , 
-		"unzip"    = checkUnzipAvailable, 
-		"zipnote"  = checkZipnoteAvailable ,
-		"identify" = checkIdentifyAvailable,
-		"convert"  = checkConvertAvailable,
-		"ppmtopgm" = checkPpmtopgmAvailable, 
-		"dc_raw"   = checkDcRawAvailable ) 
+		"zip"        = checkZipAvailable , 
+		"unzip"      = checkUnzipAvailable, 
+		"zipnote"    = checkZipnoteAvailable ,
+		"identify"   = checkIdentifyAvailable,
+		"convert"    = checkConvertAvailable,
+		"ppmtopgm"   = checkPpmtopgmAvailable, 
+		"dc_raw"     = checkDcRawAvailable, 
+		"pnm2biff"   = checkAvailable_pnm2biff, 
+		"divide"     = checkAvailable_divide, 
+		"statistics" = checkAvailable_statistics, 
+		"biff2tiff"  = checkAvailable_biff2tiff
+		) 
 # }}}
 
 #{{{ checkCapabilityAvailable

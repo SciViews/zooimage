@@ -539,10 +539,13 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
 					
-					BFres <- try( BFcorrection(FileConv, BlankField, deleteBF = FALSE), silent = TRUE )
-					if( BFres %of% "try-error" ){
-						logProcess(BFres, File)
-					}
+					tryCatch( 
+						BFcorrection(FileConv, BlankField, deleteBF = FALSE), 
+						error=function(e){
+							logProcess( extractMessage( e ) , File)
+						}
+					)
+					
 					# Delete the uncorrected file
 					unlink(FileConv)
 					# Now, FileConv is the same file, but with a .tif extension
@@ -1047,15 +1050,30 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' @examples 
 #' Setwd("g:/zooplankton/madagascar2macro")
 #' BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
-"BFcorrection" <- function(File, BFfile, deleteBF = TRUE) {
+"BFcorrection" <- function(File, BFfile, deleteBF = TRUE, check = TRUE) {
+	
+	# {{{ what to do on exit
+	on.exit( {
+		unlink(imgFile)
+		if (deleteBF) {
+			unlink(imgBFfile)
+		}
+	} )
+	# }}}
 	
 	# {{{ check file existence
 	checkFileExists( File, "pgm" )
-	checkFileExists( BFfile, "pgm", 
-		message = "Blank-field file '%s' not found" )
+	checkFileExists( BFfile, "pgm", message = "Blank-field file '%s' not found" )
 	# }}}
-		
-	# Switch to the directory of File
+	
+	# {{{ check that the various scripts are available
+	checkCapable( "pnm2biff" )
+	checkCapable( "statistics" )
+	checkCapable( "divide" )
+	checkCapable( "biff2tiff" )
+	# }}}
+	
+	# {{{ Switch to the directory of File
 	filedir <- dirname(File)
 	if (filedir != ".") {
 		# Temporary change directory to the one where the file is located
@@ -1064,51 +1082,48 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		on.exit(setwd(inidir))
 		File <- basename(File)
 	}
-	# Determine the name of the various files
+	# }}}
+	
+	# {{{ Determine the name of the various files
 	imgFile <- paste(noext(File), "img", sep = ".")
 	imgcorrFile <- paste(noext(File), "coor.img", sep = "")
 	tifFile <- paste(noext(File), "tif", sep = ".")
 	imgBFfile <- paste(noext(basename(BFfile)), "img", sep = ".")
-	if (isWin()) BFfile <- shortPathName(BFfile)
+	if (isWin()) {
+		BFfile <- shortPathName(BFfile)
+	}
+	# }}}
 
-    # Is File a test file?
+    # {{{ Is File a test file?
 	if (isTestFile(File)) {
 		# We behave like if the file was corrected, but just copy the content of File into tifFile
 		file.copy(File, tifFile)
-		if (!deleteBF) file.copy(BFfile, imgBFfile)    # Simulate creation of the .img blank-field
+		
+		# Simulate creation of the .img blank-field
+		if (!deleteBF){
+			file.copy(BFfile, imgBFfile)    
+		}
 		return(TRUE)
 	}
+	# }}}
 
-	# Convert PGM files into BIFF
-	if (!file.exists(imgFile))
-		res <- shell(paste(ZIpgm("pnm2biff", "xite"), ' "', File, '" "', imgFile, '"', sep = ""), intern = TRUE, invisible = TRUE)
-	if (!file.exists(imgFile))
-		return(paste("Error while converting file '", File, "' to BIFF format", sep = ""))
-	if (!file.exists(imgBFfile))
-		res <- shell(paste(ZIpgm("pnm2biff", "xite"), ' "', BFfile, '" "', imgBFfile, '"', sep =""), intern = TRUE, invisible = TRUE)
-	if (!file.exists(imgBFfile)) {
-		unlink(imgFile)
-		return(paste("Error while converting file '", BFfile, "' to BIFF format", sep = ""))
-	}
-	# Get the mean gray level of the blank-field
-	meangray <- as.numeric(system(paste('"', ZIpgm("statistics", "xite"), '" -m "', imgBFfile, '"', sep =""), intern = TRUE, invisible = TRUE))
-	if (is.na(meangray)) {
-		unlink(imgFile)
-		if (deleteBF) unlink(imgBFfile)
-		return("Unable to get mean gray value from the blank-field image!")
-	}
-	# Eliminate the blank field
-	res <- shell(paste(ZIpgm("divide", "xite"), ' -s ', meangray, ' "', imgFile, '" "', imgBFfile, '" "', imgcorrFile, '"', sep = ""), intern = TRUE, invisible = TRUE)
-	unlink(imgFile)
-	if (deleteBF) unlink(imgBFfile)
-	if (!file.exists(imgcorrFile))
-		return(paste("Error while correcting blank-field for '", File, "'", sep = ""))
-	# Convert the resulting file into TIFF
-	res <- shell(paste(ZIpgm("biff2tiff", "xite"), ' "', imgcorrFile, '" "', tifFile, '"', sep = ""), intern = TRUE, invisible = TRUE)
-	# Eliminate the temporary corrected BIFF file
-	unlink(imgcorrFile)
-	if (!file.exists(tifFile))
-		return("Error while converting corrected image to TIFF format!")		
+	# {{{ Convert PGM files into BIFF
+	xite_pnm2biff( File, imgFile )
+	xite_pnm2biff( BFfile, imgBFfile )
+	# }}}
+	
+	# {{{ Get the mean gray level of the blank-field
+	meangray <- xite_statistics( imgBFfile )
+	# }}}
+	
+	# {{{ Eliminate the blank field
+	res <- xite_divide( meangray, imgFile, imgBFfile, imgcorrFile)
+	# }}}
+	
+	# {{{ make the tiff file
+	xite_biff2tiff( imgcorrFile, tifFile )
+	# }}}
+	
 	return(TRUE) # Everything is fine!
 }
 # }}}

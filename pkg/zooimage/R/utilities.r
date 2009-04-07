@@ -523,7 +523,7 @@ system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE,
 checkFileExists <- function( file, extension, message = "file not found : %s" ){
 	message <- sprintf( message, file )
 	if( !file.exists( file ) ) stop( message ) 
-	if( !grepl( extensionPattern(extension), file ) ){
+	if( !missing(extension) && !grepl( extensionPattern(extension), file ) ){
 		message <- sprintf( "%s , or not a '%s' file", message, extension )
 		stop( message )
 	}
