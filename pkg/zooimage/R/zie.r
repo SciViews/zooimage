@@ -1107,10 +1107,18 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
 
 # {{{ RawConvert
-#' Convert a RAW file (digital camera) into a pgm file
+#' Convert a RAW file (digital camera) into a pgm file  
+#' 
+#' @examples
+#' Setwd("d:/ZI examples/MacroG16-example")
+#' RawConvert("Image_3822.CR2", fake = TRUE)
+#' RawConvert("Image_3822.CR2")
+#' @todo can we not do this in the the ImageJ plugin directly
 "RawConvert" <- function(RawFile, OutputFile = "fileconv.pgm",
-	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE, check = TRUE) {
+	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", 
+	fake = FALSE, replace = FALSE, check = TRUE) {
 	
+	# {{{ checks 
 	# {{{ Check if the output file already exists
 	if (file.exists(OutputFile)) {
 		# If we want to replace existing file, delete it, otherwise, we are done
@@ -1120,8 +1128,9 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	
 	# {{{ Check if RawFile exists
 	if (!file.exists(RawFile)) {
-		return("'", RawFile, "' not found")
+		return( paste("'", RawFile, "' not found", sep = "") )
 	}
+	# }}}
 	# }}}
 	
 	# {{{ Do a fake convert
@@ -1132,7 +1141,6 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# }}}
 	
 	# {{{ Do the conversion using dc_raw
-	
 	# {{{ check that the system is capable of doing the conversion
 	if (check) {
 		checkCapable( "dc_raw" )
@@ -1140,21 +1148,41 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	}
 	# }}}
 	
-	# {{{ Convert the RAW file into PPM file (48bit color)
-	cmd <- paste(ZIpgm("dc_raw", "misc"), ' ', DcRawArgs, ' ',
-		RawFile, '" > RAWTEMP.PPM', sep = "")
-	res <- try(system(cmd, invisible = TRUE), silent = TRUE)
-	if (inherits(res, "try-error")) return("Error while converting RAW file ", Rawfile)
-	# }}}
+	if( isWin( ) ){
+		# {{{ Convert the RAW file into PPM file (48bit color)
+		# we have to do it in two steps because windows lack of proper 
+		# piping
+		cmd <- sprintf( '"%s" %s %s > RAWTEMP.PPM', 
+		ZIpgm("dc_raw", "misc"), DcRawArgs, RawFile )
+		res <- try(system(cmd, invisible = TRUE), silent = TRUE)
+		if (inherits(res, "try-error")) {
+			return("Error while converting RAW file ", Rawfile)
+		}
+		# }}}
+
+		# {{{ Convert from 48bit color to 16bit grayscale
+		cmd <- paste(Sys.getenv("COMSPEC"), ' /c type RAWTEMP.PPM | ', ZIpgm("ppmtopgm", "netpbm"), ' > ', OutputFile, sep = "")
+		res <- try(system(cmd, invisible = TRUE), silent = TRUE)
+		if (inherits(res, "try-error") || res > 0) {
+			return("Error while converting color to grayscale for ", Rawfile)
+		}
+		# Eliminate temporary file
+		unlink("RAWTEMP.PPM")
+		# }}}
 	
-	
-	# Convert from 48bit color to 16bit grayscale
-	#### TODO: the corresponding command for other platforms
-	cmd <- paste(Sys.getenv("COMSPEC"), ' /c type RAWTEMP.PPM | ', ZIpgm("ppmtopgm", "netpbm"), ' > ', OutputFile, sep = "")# > ', OutputFile, sep = "")
-	res <- try(system(cmd, invisible = TRUE), silent = TRUE)
-	if (inherits(res, "try-error") || res > 0) return("Error while converting color to grayscale for ", Rawfile)
-	# Eliminate temporary file
-	unlink("RAWTEMP.PPM")
+	} else{
+		
+		# {{{ one step conversion (no tempfile)
+		cmd <- sprintf( 'dcraw %s %s | ppmtopgm > "%s"' , 
+			DcRawArgs, RawFile, OutputFile )
+		res <- try(system(cmd ), silent = TRUE)
+		if (inherits(res, "try-error") || res > 0) {
+			return("Error while converting ", Rawfile)
+		}
+		# }}}
+		
+	}
+ 	# }}}
 	
 	# }}}
 	
@@ -1162,10 +1190,6 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	return(TRUE)
 }
 # }}}
-
-#Setwd("d:/ZI examples/MacroG16-example")
-#RawConvert("Image_3822.CR2", fake = TRUE)
-#RawConvert("Image_3822.CR2")
-
+ 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
 
