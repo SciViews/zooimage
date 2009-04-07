@@ -530,3 +530,8 @@ checkFileExists <- function( file, extension, message = "file not found : %s" ){
 	invisible( NULL )
 }
 
+#' test if x inherits from class y
+`%of%` <- function( x, y ){
+	inherits( x, y )
+}
+

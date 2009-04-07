@@ -538,8 +538,9 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 				res <- shell(cmd, intern = TRUE, invisible = TRUE)	# original image is overwritten!
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
-					BFres <- BFcorrection(FileConv, BlankField, deleteBF = FALSE)
-					if (is.character(BFres)) {
+					
+					BFres <- try( BFcorrection(FileConv, BlankField, deleteBF = FALSE), silent = TRUE )
+					if( BFres %of% "try-error" ){
 						logProcess(BFres, File)
 					}
 					# Delete the uncorrected file
