@@ -756,8 +756,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# Read most important EXIF data from a Digicam RAW file
 	# Make sure dc_raw is available and rawfile exists
 	if (check) {
-		if (length(system(paste('"', ZIpgm("dc_raw", "misc"), '"', sep = ""), intern = TRUE, invisible = TRUE)) != 0)
-			return("'dc_raw.exe' program not found!")
+		checkCapable( "dc_raw" )
 	}
 	if (!file.exists(rawfile))
     	return(paste("'", rawfile, "' not found!", sep = ""))
@@ -1123,11 +1122,8 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	} else {	# Do the conversion using dc_raw
 		if (check) {
 			# Check that dc_raw and ppmtopgm programs are accessibles
-			if (length(system(ZIpgm("dc_raw", "misc"), intern = TRUE, invisible = TRUE)) != 0)
-				return("'dc_raw' program not found")
-			cmd <- paste(ZIpgm("ppmtopgm", "netpbm"), ' -help', sep = "")
-			if (system(cmd, invisible = TRUE) != 1)
-				return("'ppmtopgm' program not found")
+			checkCapable( "dc_raw" )
+			checkCapable( "ppmtopgm" )
 		}
 		# Convert the RAW file into PPM file (48bit color)
 		cmd <- paste(ZIpgm("dc_raw", "misc"), ' ', DcRawArgs, ' ',

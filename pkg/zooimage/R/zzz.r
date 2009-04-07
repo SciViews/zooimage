@@ -16,7 +16,6 @@
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 # Loading and unloading ZooImage.
-# TODO: modify this since we have a NAMESPACE now
 
 # {{{ Loading ZooImage
 ".onAttach" <- function(libname, pkgname) {

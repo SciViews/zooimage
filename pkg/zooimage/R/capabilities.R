@@ -15,14 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
+# {{{ ZOOIMAGEENV
 ZOOIMAGEENV <- new.env()
+# }}}
 
+# {{{ checkCapable
 checkCapable <- function( cap ){
 	if( cap %in% names( capabilities ) ){
 		capabilities[[cap]]()
 	} 
 }
+# }}}
 
+# {{{ various check*Capability functions
 #{{{ checkZipAvailable
 #' utility that checks if the zip program is available
 checkZipAvailable <- function( ){
@@ -79,7 +84,9 @@ checkDcRawAvailable <- function( ){
 		"dc_raw : program not found!" )
 }
 # }}}
+# }}}
 
+# {{{ capabilities
 capabilities <- list(
 		"zip"      = checkZipAvailable , 
 		"unzip"    = checkUnzipAvailable, 
@@ -88,7 +95,7 @@ capabilities <- list(
 		"convert"  = checkConvertAvailable,
 		"ppmtopgm" = checkPpmtopgmAvailable, 
 		"dc_raw"   = checkDcRawAvailable ) 
-
+# }}}
 
 #{{{ checkCapabilityAvailable
 checkCapabilityAvailable <- function( cap, cmd, msg ){
