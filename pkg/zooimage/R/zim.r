@@ -88,8 +88,7 @@
 	# }}} 
 	
 	# {{{ check the first line
-	Line1 <- scan(zimfile, character(), nmax = 1, quiet = TRUE)
-	if( Line1 != "ZI1") {
+	if( ! checkFirstLine( zimfile, "ZI1" ) ){
 		return( structure( FALSE, 
 			reason = "File does not appears to be a ZooImage version 1 file, or it is corrupted!" ) )
 	}
@@ -100,6 +99,14 @@
 	# }}}
 }
 # }}}
+
+# {{{ checkFirstLine
+checkFirstLine <- function( file, expected = "ZI1" ){
+	Line1 <- scan(file, character(), nmax = 1, quiet = TRUE)
+	return( Line1 == expected )
+}
+# }}}
+
 
 # {{{ verify.zim
 #' Verify a "(_dat1).zim" file

@@ -520,15 +520,31 @@ system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE,
 #' @param file file to check
 #' @param extension if given the file should have this extension
 #' @param message message to give when the file is not found
-checkFileExists <- function( file, extension, message = "file not found : %s" ){
+checkFileExists <- function( file, extension, message = "file not found : %s", force.file = FALSE ){
 	message <- sprintf( message, file )
 	if( !file.exists( file ) ) stop( message ) 
+	if( force.file && file.info( file)$isdir ){
+		stop( sprintf( 'file "%s" is a directory', file ) )
+	}
 	if( !missing(extension) && !grepl( extensionPattern(extension), file ) ){
 		message <- sprintf( "%s , or not a '%s' file", message, extension )
 		stop( message )
 	}
 	invisible( NULL )
 }
+
+#' checks if a directory exists
+#'
+#' @param dir the directory to check
+#' @param message the message to throw into stop if the directory does
+#'  not exists or is not a directory
+checkDirExists <- function( dir, message = 'Path "%s" does not exist or is not a directory' ){
+	message <- sprintf( message, dir )
+	if( !file.exists( dir ) || !file.info(path)$isdir ){
+		stop( message )
+	}
+}
+
 
 #' test if x inherits from class y
 `%of%` <- function( x, y ){

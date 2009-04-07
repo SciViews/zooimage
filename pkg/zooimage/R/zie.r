@@ -32,10 +32,10 @@
 ## Definition of standard import/export classes provided by default with ZooImage
 ## See also 'FlowCam.r' for an example of such an extension
 
+# {{{ ZIE
 # The function that eases creation of a ZIE object
 ### TODO: add a 'message' entry = message to display at the end of the importation
-"ZIE" <-
-function(title, filter, description, pattern, command, author, version, date,
+"ZIE" <- function(title, filter, description, pattern, command, author, version, date,
 license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
 type = c("import", "export")) {
 	if (!is.character(title) || !is.character(filter) || !is.character(description) ||
@@ -71,7 +71,9 @@ function(x, ...) {
 	cat("URL:    ", x$url, "\n")
 	return(invisible(x))
 }
+# }}}
 
+# {{{ Various importers
 # Import plain .tif files, with manual creation of associated .zim files
 ZIEimportTif <- ZIE(title = "Tiff image files (*.tif)",
 	filter      = "*.tif",
@@ -139,12 +141,11 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	url         = "",
 	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
 	type        = "import")
-
 # Note: an example import plugin is provided in ./etc/FlowCam.r
-
+# }}}
 	
-"make.zie" <-
-	function(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
+# {{{ make.zie
+"make.zie" <- function(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
 	move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$", show.log = TRUE, bell = FALSE) {
 	# Example of use:
 	# Import Digicam RAW files (currently, only Canon .CR2 files)
@@ -164,10 +165,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	
 	# First, switch to the root directory
 	inidir <- getwd()
-	if (!file.exists(path) || !file.info(path)$isdir) {
-		logProcess("Path does not exist, or it is not a directory!", path, stop = TRUE, show.log = show.log); 
-		return(invisible(FALSE)) 
-	}
+	checkDirExists( path )
 	
 	### TODO If last subdir of path is "_raw", then, work with parent dir and do not move files in _raw subdir
 	
@@ -175,44 +173,51 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	on.exit(setwd(inidir))
 	path = getwd()	# Indicate we are now in the right path
 	
-	# Read the Filemap
+	# {{{ Read the Filemap
 	cat("Reading Filemap...\n")
-	if(!file.exists(Filemap) || file.info(Filemap)$isdir) {
-		logProcess("File not found, or not a file!", Filemap, stop = TRUE, show.log = show.log); 
-		return(invisible(FALSE)) 
+	checkFileExists( Filemap, extension = "zie", force.file = TRUE )
+	# }}}
+	
+	# {{{ check first line for ZI1
+	if( !checkFirstLine( Filemap ) ){
+		stop( 'File does not appear to be a ZooImage version 1 file, or it is corrupted!' )
 	}
-	if (length(grep("[.]zie$", tolower(Filemap))) == 0) {
-		logProcess("File is not a ZooImage Expanded definition (*.zie)!", Filemap, stop = TRUE, show.log = show.log); 
-		return(invisible(FALSE)) 
-	}
-	# check first line for ZI1
-	Line1 <- scan(Filemap, character(), nmax = 1, quiet = TRUE)
-	if (Line1 != "ZI1") {
-		logProcess("This does not appear to be a ZooImage version 1 file, or it is corrupted!", Filemap, stop = TRUE, show.log = show.log); 
-		return(invisible(FALSE)) 
-	}
+	# }}}
+	
+	# {{{ read the file and check it is not empty
+	# Note: we don't use comment.char = '#' because we want to read and rewrite those comments!
 	Lines <- scan(Filemap, character(), sep = "\t", skip = 1,
-		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "") # Note: we don't use comment.char = '#' because we want to read and rewrite those comments!
+		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, 
+		comment.char = "") 
 	if (length(Lines) < 1) {
-		logProcess("The file is empty or corrupted!", Filemap, stop = TRUE, show.log = show.log);
-		return(invisible(FALSE)) 
+		stop( 'Empty or corrupted!' )
 	}
-	# Get everything before '[Map]' as template data for the .zim file
+	# }}}
+	
+	# {{{ Get everything before '[Map]' as template data for the .zim file
 	posMap <- grep("[[]Map[]]", Lines)
 	if (length(posMap) == 0 || length(posMap) > 1) {
-		logProcess("The file is corrupted: no or duplicated [Map] section found!", Filemap, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		stop( "The file is corrupted: no or duplicated [Map] section found!" ) 
+	}
+	# }}}
+		
+	# {{{ setup the zim data
 	zimData <- Lines[1:(posMap - 1)]
 	attr(zimData, "Sample") <- NULL	# Currently, there is no sample!
 	attr(zimData, "MakeZim") <- FALSE
+	# }}}
+	
 	# Is there a FilenamePattern defined?
 	pos <- grep("^FilenamePattern", Lines)
 	if (length(pos) > 0) FilePat <- sub("[ ]*$", "", sub("^FilenamePattern[ ]*[=][ ]*", "", Lines[pos[1]])) else FilePat <- ""
-	pos <- grep("^SubsamplePattern", Lines)	
+	
 	# Are there FractionPattern and SubsamplePattern defined?
 	pos <- grep("^FractionPattern", Lines)
 	if (length(pos) > 0) FracPat <- sub("[ ]*$", "", sub("^FractionPattern[ ]*[=][ ]*", "", Lines[pos[1]])) else FracPat <- ""
+	
 	pos <- grep("^SubsamplePattern", Lines)
 	if (length(pos) > 0) SubPat <- sub("[ ]*$", "", sub("^SubsamplePattern[ ]*[=][ ]*", "", Lines[pos[1]])) else SubPat <- ""
+	
 	# Get also Convert, Return and FileExt
 	pos <- grep("^Convert", Lines)
 	if (length(pos) > 0) Convert <- sub("[ ]*$", "", sub("^Convert[ ]*[=][ ]*", "", Lines[pos[1]])) else Convert <- ""
@@ -229,6 +234,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		MoveToWork <- sub("[ ]*$", "", sub("^MoveToWork[ ]*[=][ ]*", "", Lines[pos[1]]))
 		if (tolower(MoveToWork) == "true" || tolower(MoveToWork) == "yes" || MoveToWork == "1") MoveToWork <- TRUE else MoveToWork <- FALSE
 	} else MoveToWork = FALSE
+	
 	# Where is the location of the <exif> tag?
 	pos <- grep("^[<]exif[>]", Lines)
 	if (length(pos) > 0) Exif <- TRUE else Exif <- FALSE
@@ -555,8 +561,9 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 			if (length(grep("^_CalibOD", NewFile)) > 0) {
 				Cal <- calibrate(FileConv)
 				Msg <- attr(Cal, "msg")
+				# Report the problem
 				if (!is.null(Msg) && length(Msg) > 0 && Msg != "") {
-					logProcess(paste(c("Warning! Problem(s) detected with O.D. calibration image:", attr(Cal, "msg")), collapse = "\n\t"))  # Report the problem
+					logProcess(paste(c("Warning! Problem(s) detected with O.D. calibration image:", attr(Cal, "msg")), collapse = "\n\t"))  
 				}
 				# Put calibration data in the .zim file
 				zimData <- SetCalib(zimData, "WhitePoint", round(Cal[1]))
@@ -890,6 +897,11 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #checkBF("test.pgm")
 #checkBF("test.tif")
 
+#{{{ calibrate
+#' calibrates
+#' @examples
+#' Setwd("g:/zooplankton/madagascar2macro")
+#' calibrate("test.tif")
 "calibrate" <- function(ODfile) {
 	### TODO: include also a spatial calibration procedure
 	#(with a black circle around the center of the image)
@@ -1030,9 +1042,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	attr(cal, "msg") <- msg
 	return(cal)
 }
-
-#Setwd("g:/zooplankton/madagascar2macro")
-#calibrate("test.tif")
+# }}}
 
 #{{{ BFcorrection
 #' Make a blank-field correction on File, given a BFfile (blank-field)

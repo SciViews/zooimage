@@ -117,7 +117,11 @@ zooImageErrorDrivers <- list(
 	# --------------------------------------- zim.R
 	"make.zim" = "images", 
 	"verify.zim" = "zimfile",
-	"extract.zims" = "zipfiles"
+	"extract.zims" = "zipfiles", 
+	
+	# --------------------------------------- zie.R
+	"make.zie" = "Filemap"
+	
 )
 # }}}
 
