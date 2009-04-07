@@ -1036,16 +1036,24 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #Setwd("g:/zooplankton/madagascar2macro")
 #calibrate("test.tif")
 
+#{{{ BFcorrection
+#' Make a blank-field correction on File, given a BFfile (blank-field)
+#' 
+#' both files must be 16bit gray PGM images
+#' the resulting file has same name as File, but with a .tif extension instead of .pgm
+#' The function returns TRUE in case of success... or an explicit error message
+#'
+#' @examples 
+#' Setwd("g:/zooplankton/madagascar2macro")
+#' BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
 "BFcorrection" <- function(File, BFfile, deleteBF = TRUE) {
-	# Make a blank-field correction on File, given a BFfile (blank-field)
-	# both files must be 16bit gray PGM images
-	# the resulting file has same name as File, but with a .tif extension instead of .pgm
-	# The function returns TRUE in case of success... or an explicit error message
-	if (!file.exists(File) || length(grep("\\.[pP][gG][mM]$", File)) == 0)
-		return(paste("File '", File, "' not found, or not a .pgm image!"))
-	if (!file.exists(BFfile) || length(grep("\\.[pP][gG][mM]$", BFfile)) == 0)
-		return(paste("Blank-field file '", BFfile, "' not found or not a .pgm image!"))
-
+	
+	# {{{ check file existence
+	checkFileExists( File, "pgm" )
+	checkFileExists( BFfile, "pgm", 
+		message = "Blank-field file '%s' not found" )
+	# }}}
+		
 	# Switch to the directory of File
 	filedir <- dirname(File)
 	if (filedir != ".") {
@@ -1102,9 +1110,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		return("Error while converting corrected image to TIFF format!")		
 	return(TRUE) # Everything is fine!
 }
-
-#Setwd("g:/zooplankton/madagascar2macro")
-#BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
+# }}}
 
 # {{{ RawConvert
 #' Convert a RAW file (digital camera) into a pgm file  
