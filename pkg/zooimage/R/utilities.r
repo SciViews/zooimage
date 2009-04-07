@@ -502,5 +502,15 @@ callStack <- function( ){
 	unlist( out ) 
 }
 
+#' masking system so that the warnings related to using windows arguments
 
+system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE, 
+    input = NULL, show.output.on.console = TRUE, minimized = FALSE, 
+    invisible = TRUE){ 
+		
+		call <- match.call( )
+		call[[1]] <- base::system
+		suppressWarnings( eval( call , envir = parent.frame() ) )
+	
+}
 

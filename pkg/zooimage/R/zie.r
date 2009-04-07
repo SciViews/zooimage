@@ -1106,43 +1106,66 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #Setwd("g:/zooplankton/madagascar2macro")
 #BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
 
+# {{{ RawConvert
+#' Convert a RAW file (digital camera) into a pgm file
 "RawConvert" <- function(RawFile, OutputFile = "fileconv.pgm",
 	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE, check = TRUE) {
-	# Convert a RAW file (digital camera) into a pgm file
-	# Check if the output file already exists
+	
+	# {{{ Check if the output file already exists
 	if (file.exists(OutputFile)) {
 		# If we want to replace existing file, delete it, otherwise, we are done
 		if (replace) unlink(OutputFile) else return(TRUE)
 	}
-	# Check if RawFile exists
-	if (!file.exists(RawFile)) return("'", RawFile, "' not found")
+	# }}}
+	
+	# {{{ Check if RawFile exists
+	if (!file.exists(RawFile)) {
+		return("'", RawFile, "' not found")
+	}
+	# }}}
+	
+	# {{{ Do a fake convert
 	if (fake) { # Create a test file with just ZItest in it
 		cat("ZItest\n", file = OutputFile)
 		return(TRUE)
-	} else {	# Do the conversion using dc_raw
-		if (check) {
-			# Check that dc_raw and ppmtopgm programs are accessibles
-			checkCapable( "dc_raw" )
-			checkCapable( "ppmtopgm" )
-		}
-		# Convert the RAW file into PPM file (48bit color)
-		cmd <- paste(ZIpgm("dc_raw", "misc"), ' ', DcRawArgs, ' ',
-			RawFile, '" > RAWTEMP.PPM', sep = "")
-		res <- try(system(cmd, invisible = TRUE), silent = TRUE)
-		if (inherits(res, "try-error")) return("Error while converting RAW file ", Rawfile)
-		# Convert from 48bit color to 16bit grayscale
-		#### TODO: the corresponding command for other platforms
-		cmd <- paste(Sys.getenv("COMSPEC"), ' /c type RAWTEMP.PPM | ', ZIpgm("ppmtopgm", "netpbm"), ' > ', OutputFile, sep = "")# > ', OutputFile, sep = "")
-		res <- try(system(cmd, invisible = TRUE), silent = TRUE)
-		if (inherits(res, "try-error") || res > 0) return("Error while converting color to grayscale for ", Rawfile)
-		# Eliminate temporary file
-		unlink("RAWTEMP.PPM")
-		
-		# Everything was fine
-		return(TRUE)
 	}
+	# }}}
+	
+	# {{{ Do the conversion using dc_raw
+	
+	# {{{ check that the system is capable of doing the conversion
+	if (check) {
+		checkCapable( "dc_raw" )
+		checkCapable( "ppmtopgm" )
+	}
+	# }}}
+	
+	# {{{ Convert the RAW file into PPM file (48bit color)
+	cmd <- paste(ZIpgm("dc_raw", "misc"), ' ', DcRawArgs, ' ',
+		RawFile, '" > RAWTEMP.PPM', sep = "")
+	res <- try(system(cmd, invisible = TRUE), silent = TRUE)
+	if (inherits(res, "try-error")) return("Error while converting RAW file ", Rawfile)
+	# }}}
+	
+	
+	# Convert from 48bit color to 16bit grayscale
+	#### TODO: the corresponding command for other platforms
+	cmd <- paste(Sys.getenv("COMSPEC"), ' /c type RAWTEMP.PPM | ', ZIpgm("ppmtopgm", "netpbm"), ' > ', OutputFile, sep = "")# > ', OutputFile, sep = "")
+	res <- try(system(cmd, invisible = TRUE), silent = TRUE)
+	if (inherits(res, "try-error") || res > 0) return("Error while converting color to grayscale for ", Rawfile)
+	# Eliminate temporary file
+	unlink("RAWTEMP.PPM")
+	
+	# }}}
+	
+	# Everything was fine
+	return(TRUE)
 }
+# }}}
 
 #Setwd("d:/ZI examples/MacroG16-example")
 #RawConvert("Image_3822.CR2", fake = TRUE)
 #RawConvert("Image_3822.CR2")
+
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
+
