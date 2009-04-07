@@ -207,33 +207,26 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	attr(zimData, "MakeZim") <- FALSE
 	# }}}
 	
-	# Is there a FilenamePattern defined?
-	pos <- grep("^FilenamePattern", Lines)
-	if (length(pos) > 0) FilePat <- sub("[ ]*$", "", sub("^FilenamePattern[ ]*[=][ ]*", "", Lines[pos[1]])) else FilePat <- ""
+	# {{{ EXtract various properties 
 	
-	# Are there FractionPattern and SubsamplePattern defined?
-	pos <- grep("^FractionPattern", Lines)
-	if (length(pos) > 0) FracPat <- sub("[ ]*$", "", sub("^FractionPattern[ ]*[=][ ]*", "", Lines[pos[1]])) else FracPat <- ""
-	
-	pos <- grep("^SubsamplePattern", Lines)
-	if (length(pos) > 0) SubPat <- sub("[ ]*$", "", sub("^SubsamplePattern[ ]*[=][ ]*", "", Lines[pos[1]])) else SubPat <- ""
-	
-	# Get also Convert, Return and FileExt
-	pos <- grep("^Convert", Lines)
-	if (length(pos) > 0) Convert <- sub("[ ]*$", "", sub("^Convert[ ]*[=][ ]*", "", Lines[pos[1]])) else Convert <- ""
-	pos <- grep("^Return", Lines)
-	if (length(pos) > 0) Return <- sub("[ ]*$", "", sub("^Return[ ]*[=][ ]*", "", Lines[pos[1]])) else Return <- ""
-	pos <- grep("^FileExt", Lines)
-	if (length(pos) > 0) FileExt <- sub("[ ]*$", "", sub("^FileExt[ ]*[=][ ]*", "", Lines[pos[1]])) else FileExt <- ""	
-	pos <- grep("^FileConv", Lines)
-	if (length(pos) > 0) FileC <- sub("[ ]*$", "", sub("^FileConv[ ]*[=][ ]*", "", Lines[pos[1]])) else FileC <- ""	
-    pos <- grep("^FileExt2", Lines)
-	if (length(pos) > 0) FileExt2 <- sub("[ ]*$", "", sub("^FileExt2[ ]*[=][ ]*", "", Lines[pos[1]])) else FileExt2 <- FileExt
-    pos <- grep("^MoveToWork", Lines)
-	if (length(pos) > 0) {
-		MoveToWork <- sub("[ ]*$", "", sub("^MoveToWork[ ]*[=][ ]*", "", Lines[pos[1]]))
-		if (tolower(MoveToWork) == "true" || tolower(MoveToWork) == "yes" || MoveToWork == "1") MoveToWork <- TRUE else MoveToWork <- FALSE
-	} else MoveToWork = FALSE
+	# {{{ property extractor
+	property <- function( property = "FilenamePattern", default = "" ){
+		rx <- sprintf( "^%s[[:space:]]*=[[:space:]]*(.*)", property )
+		if( any( gl <- grepl( rx, lines ) ) ){
+			sub( rx, "\\1", lines[ gl ][1] )
+		} else default
+	}
+	# }}}
+
+	FilePat    <- property( "FilenamePattern" )
+	FracPat    <- property( "FractionPattern" )
+	SubPat     <- property( "SubsamplePattern" )
+	Convert    <- property( "Convert" )
+	Return     <- property( "Return" )
+	FileExt    <- property( "FileExt" )
+	FileC      <- property( "FileC" )
+	FileExt2   <- property( "FileExt2", FileExt )
+	MoveToWork <- tolower(property( "MoveToWork" ) ) %in% c("true", "yes", "1")
 	
 	# Where is the location of the <exif> tag?
 	pos <- grep("^[<]exif[>]", Lines)

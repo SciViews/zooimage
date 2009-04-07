@@ -551,3 +551,4 @@ checkDirExists <- function( dir, message = 'Path "%s" does not exist or is not a
 	inherits( x, y )
 }
 
+
