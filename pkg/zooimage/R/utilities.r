@@ -430,8 +430,9 @@
 	setKey("DefaultDirectory", getwd())
 }
 
+#' Get the path of an executable, giving its name and subdirectory
 "ZIpgm" <- function(pgm, subdir = "misc", ext = "exe") {
-	# Get the path of an executable, giving its name and subdirectory
+	
 	if (isWin()) {
 		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."), package = "zooimage")
 		if (!file.exists(pathpgm)) return("") else return(shortPathName(pathpgm))		

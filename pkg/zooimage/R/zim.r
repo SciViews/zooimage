@@ -1,4 +1,4 @@
-# Copyright (c) 2004-2007, Ph. Grosjean <phgrosjean@sciviews.org>
+# {{{ Copyright (c) 2004-2007, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
 # 
@@ -14,6 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+# }}}
 
 # Functions for manipulating .zim files (ZooImage Metadata/measurements)
 # These .zim files contain metadata required to analyze plankton images
@@ -534,22 +535,31 @@
 	}
 	# }}}
 	
-	# If the file exists, edit existing version instead
-    if (file.exists(zimfile))
+	# {{{ If the file exists, edit existing version instead
+    if (file.exists(zimfile)){
 		if (edit) return(edit.zim(zimfile, wait = wait)) else return()
+	}
+	# }}}
+	
+	# {{{ find the meta data editor
 	Ed <- getOption("ZIEditor")
-	if (edit && (is.null(Ed) || !file.exists(Ed)))
-		stop("The metadata editor is not defined or not found!")
+	if (edit){
+		if(is.null(Ed) || !file.exists(Ed)){
+			stop("The metadata editor is not defined or not found!")
+		}
+	}
+	# }}}
+		
 	# Look for the template
 	if (is.null(template)) {
 		# Look for the default template
 		Edpath <- dirname(Ed)
 		template <- file.path(Edpath, "templates", "default.zim") 
 	}
-	if (!file.exists(template))
-		stop("Template file '", template, "' not found!")
-    if (!is.zim(template))
+	checkFileExists( template, message = "Template file '%s' not found" )
+	if (!is.zim(template)){
 		stop("Template '", template, "' is not a valid '.zim' file!")
+	}
 	
 	# Copy the template into the new file
 	file.copy(template, zimfile)
@@ -562,24 +572,25 @@
 # }}}
 
 # {{{ edit.zim
-"edit.zim" <-
-	function(zimfile, editor = getOption("ZIEditor"), wait = FALSE) {
-	# Edit a .zim file
-    if (is.null(zimfile) || zimfile == "") {
+#' Edit a .zim file
+"edit.zim" <- function(zimfile, editor = getOption("ZIEditor"), wait = FALSE) {
+	if (is.null(zimfile) || zimfile == "") {
 		zimfile <- selectFile("Zim")
 		if (zimfile == "")
 			return(invisible())
 	} else {
-		if (!file.exists(zimfile))
-			stop("the file '", zimfile, "' is not found!")
+		checkFileExists( zimfile, message = "the file '%s' is not found" )
 		if (!is.zim(zimfile))
 			stop("This is not a valid '.zim' file!")
 	}
 	Ed <- getOption("ZIEditor")
-	if (is.null(Ed) || !file.exists(Ed))
+	if (is.null(Ed) || !file.exists(Ed)){
 		stop("The metadata editor is not defined or not found!")
+	}
+	
 	# Everything is fine, open the document for editing...
 	startPgm("ZIEditor", cmdline = zimfile, wait = wait)
 }
 # }}}
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

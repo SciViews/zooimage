@@ -127,8 +127,7 @@ ZIDlg <- function() {
 
 # {{{ closeAssistant
 # Functions for the assistant menu
-"closeAssistant" <-
-	function() {
+"closeAssistant" <- function() {
 	tkWinDel("ZIDlgWin")
 }
 # }}}
@@ -155,8 +154,8 @@ ZIDlg <- function() {
 }
 # }}}
 
-"focusR" <-
-	function() {
+# {{{ focus
+"focusR" <- function() {
 	# Switch the focus to the R console
 	### TODO: notify this command is not available elsewhere (inactivate menu?)
 	if (isRgui()) {
@@ -165,8 +164,7 @@ ZIDlg <- function() {
 	}
 }
 
-"focusGraph" <-
-	function() {
+"focusGraph" <- function() {
 	# Switch the focus to the active R graph (create one if there is no graph device)
 	### TODO: notify this command is not available elsewhere (inactivate menu?)
    	require(grDevices)
@@ -178,9 +176,10 @@ ZIDlg <- function() {
 		if (isRgui()) bringToTop()
 	}
 }
+# }}}
 
-"startPgm" <-
-	function(program, cmdline = "", switchdir = FALSE, iconize = FALSE, wait = FALSE) {
+# {{{ startPgm
+"startPgm" <- function(program, cmdline = "", switchdir = FALSE, iconize = FALSE, wait = FALSE) {
 	# Look if the program path is recorded in the options
 	pgmPath <- getOption(program)
 	if (!is.null(pgmPath) && file.exists(pgmPath)) {
@@ -197,9 +196,10 @@ ZIDlg <- function() {
 	if (iconize && !is.null(WinGet("ZIDlgWin")))
 		tkwm.iconify(WinGet("ZIDlgWin"))
 }
+# }}}
 
-"modalAssistant" <-
-	function(title, text, init, options = NULL, check = NULL,
+# {{{ modalAssistant
+"modalAssistant" <- function(title, text, init, options = NULL, check = NULL,
 	select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL) {
 	# Create an assistant dialog box which behaves as a modal dialog box
 
@@ -286,7 +286,9 @@ ZIDlg <- function() {
     tkwait.window(ZIAssist)
     return(getTemp("ZIret"))
 }
+# }}}
 
+# {{{ Img
 "acquireImg" <-
 	function() {
 	# Show an assitant dialog box allowing to choose between VueScan and a different
@@ -340,8 +342,7 @@ ZIDlg <- function() {
     setKey("AcquisitionSoftware", Asoft)
 }
 
-"importImg" <-
-	function() {
+"importImg" <- function() {
 	# Import images... basically, you can select a series of images in a
 	# directory, and the program asks for writing the associated .zim files,
 	# or you can access other processes that automatically build .zim files
@@ -401,8 +402,7 @@ ZIDlg <- function() {
 	make.zim(dir = dir, pattern = pattern, images = Images, show.log = TRUE)
 }
 
-"processImg" <-
-	function() {
+"processImg" <- function() {
 	# Display a dialog box telling how to process images using ImageJ
 	# When the user clicks on 'OK', ImageJ is started... + the checkbox 'close R'
      res <- modalAssistant(paste(getTemp("ZIname"), "picture processing"),
@@ -425,9 +425,10 @@ ZIDlg <- function() {
 	# Do we have to close R?
 	if (res == "1") q()
 }
+#}}}
 
-"makeZid" <-
-	function() {
+# {{{ makeZid
+"makeZid" <- function() {
 	# Finalize .zid files (and possibly also .zip files by updating their comment)
     res <- modalAssistant(paste(getTemp("ZIname"), "data processing"),
 		c("You should have processed all your images now.",
@@ -456,9 +457,10 @@ ZIDlg <- function() {
 	# Make .zid files
     compress.zid.all(path = dir, check.vignettes = check.vignettes, replace = TRUE, delete.source = TRUE)
 }
+# }}}
 
-"makeTrain" <-
-	function() {
+# {{{ Train 
+"makeTrain" <- function() {
 	# Select samples, and a grouping template... and prepare for making a training set
     # First read the registry to determine which grouping in recorded there...
  	Grp <- getKey("DefaultGrouping", "[Basic]")
@@ -519,8 +521,7 @@ ZIDlg <- function() {
 	assignTemp("ZI.TrainDir", file.path(dir, subdir))
 }
 
-"readTrain" <-
-	function() {
+"readTrain" <- function() {
  	# Read a training set and create a ZITrain object
 	(require(svDialogs) || stop("Package 'svDialogs' from 'SciViews' bundle is required. Please, install it first!"))
 
@@ -554,10 +555,11 @@ ZIDlg <- function() {
 	print(table(res$Class) / length(res$Class) * 100)
 	return(invisible(TRUE))
 }
+# }}}
 
+# {{{ Class
 # new version to accept variables selection and/or new formula 1.2-2
-"makeClass" <-
-	function() {
+"makeClass" <- function() {
  	# Create a classifier, using a ZI1Class object (new version)
 	# Ask for an algorithm + additional parameters
 	# Return a ZIClass object
@@ -695,8 +697,7 @@ ZIDlg <- function() {
 }
 
 # New version of confusion matrix analysis v 1.2-2
-"analyzeClass" <-
-	function() {
+"analyzeClass" <- function() {
  # Analyze a classifier, using a ZI1Class object (new version)
 	# Ask for an option of analysis
  	defval <- "Confusion matrix"
@@ -727,10 +728,11 @@ ZIDlg <- function() {
   if(res == "False positive and negative") confusion.bar(conf)
 	#return(invisible(res))
 }
+# }}}
 
-"editDescription" <-
-	function() {
-	# Edit a samples description file... or create a new one!
+# {{{ editDescription
+#' Edit a samples description file... or create a new one!	
+"editDescription" <- function() {
 	res <- modalAssistant(paste(getTemp("ZIname"), "edit samples description"),
 		c("Samples are about to be analyzed and collected together",
 		"to form a series.",
@@ -762,7 +764,9 @@ ZIDlg <- function() {
 	# Remember the last zis file
     assignTemp("ZI.LastZIS", zisfile)
 }
+# }}}
 
+# {{{ processSamples
 "processSamples" <-
 	function() {
 	# Ask for a description.zis file, look at all samples described there
@@ -865,9 +869,10 @@ ZIDlg <- function() {
 	# Remember the name of the variable
 	assignTemp("ZI.LastRES", name)
 }
+# }}}
 
-"viewResults" <-
-	function() {
+# {{{ results
+"viewResults" <- function() {
  	# Make graphic representations of results...
 	ZIR <- getTemp("ZI.LastRES")
 	if (is.null(ZIR)) ZIR <- ""
@@ -935,8 +940,7 @@ ZIDlg <- function() {
 	return(invisible())
 }
 
-"exportResults" <-
-	function() {
+"exportResults" <- function() {
  	# Export one or more ZIRes objects to text files...
     res <- getVar("ZIRes", multi = TRUE, title = "Choose one or more ZIRes objects:", warn.only = FALSE)
 	if (length(res) == 0 || (length(res) == 1 && res == "")) return(invisible())
@@ -975,17 +979,17 @@ ZIDlg <- function() {
 	}
 	cat(i, "ZIRes object(s) exported in'", dir, "'\n")
 }
+# }}}
 
-"loadObjects" <-
-	function(){
+# {{{ objects
+"loadObjects" <- function(){
 	file <- choose.files(caption = "Select a RData file...", multi = FALSE,
 			filters = c("R data (*.RData)", "*.RData"))
 		if ( is.null(file) || length(file) == 0 || file == "") return(invisible()) # Cancelled dialog box
 	if (file.exists(file)) load(file, envir = .GlobalEnv)
 }
 
-"saveObjects" <-
-	function(){
+"saveObjects" <- function(){
 	Objects <- getVar(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes", "ZIRecode"), multi = TRUE,
 		title = paste("Choose", getTemp("ZIname"), "object(s):"), warn.only = FALSE)
 	if (length(Objects) == 0 || (length(Objects) == 1 && Objects == "")) return(invisible())
@@ -996,8 +1000,7 @@ ZIDlg <- function() {
 	save(list = Objects, file = file, compress = TRUE)
 }
 
-"listObjects" <-
-	function() {
+"listObjects" <- function() {
     varlist <- objects(pos = 1)
 	Filter <- NULL
 	for (i in 1:length(varlist)) Filter[i] <- inherits(get(varlist[i]),
@@ -1009,17 +1012,16 @@ ZIDlg <- function() {
     	print(varlist)
 	}
 }
-
-"removeObjects" <-
-	function() {
+"removeObjects" <- function() {
 	Objects <- getVar(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes", "ZIRecode"), multi = TRUE,
 	title = paste(getTemp("ZIname"), "object(s) to remove:"), warn.only = FALSE)
 	if (length(Objects) == 0 || (length(Objects) == 1 && Objects == "")) return(invisible())
 	rm(list = Objects, envir = .GlobalEnv)
 }
+# }}}
 
-"calib" <-
-	function() {
+# {{{ calib
+"calib" <- function() {
 	# Select a calibration file (*.tif or *.pgm) and calculate White/Black point
 	ImgFilters <- as.matrix(data.frame(title = c("Tiff image files (*.tif)",
 		"Pgm image files (*.pgm)"),	pattern = c("*.tif", "*.pgm")))
@@ -1037,9 +1039,10 @@ ZIDlg <- function() {
 			cat(paste(attr(res, "msg"), collapse = "\n"), "\n")
 	}
 }
+# }}}
 
-"optInOutDecimalSep" <-
-	function() {
+#{{{ optInOutDecimalSep
+"optInOutDecimalSep" <- function() {
 	# Defines what is the default numeric decimal separator for input and output
 
 	# First read the registry to determine current value...
@@ -1055,7 +1058,7 @@ ZIDlg <- function() {
     cat("In/Out decimal separator changed to '", DecSel, "'\n", sep = "")
  	return(invisible(DecSel))
 }
-
+# }}}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
 

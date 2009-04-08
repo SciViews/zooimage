@@ -989,17 +989,13 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	if (ext == "tif") {
 		# First, convert into a .pgm file
 		pgmfile <- paste(ODfile, "pgm", sep = ".")
-		unlink(pgmfile)
-		res <- shell(paste(ZIpgm("tifftopnm", "netpbm") , ' -byrow "', ODfile, '" > "', pgmfile, '"', sep = ""),
-			intern = TRUE, invisible = TRUE) 
-		if (!file.exists(pgmfile))
-			return(paste("Impossible to convert '", ODfile, "' into a .pgm image", sep = ""))
+		netpbm_tifftopnm( ODfile, pgmfile )
 		delfile <- TRUE
 		ext <- "pgm"
 	} else delfile <- FALSE
-	if (ext != "pgm")
-		return(paste("Unrecognized image format for '", ODfile, "'", sep = "")) 
-	
+	if (ext != "pgm"){
+		return(paste("Unrecognized image format for '", ODfile, "'", sep = ""))
+	}
 	OD <- netpbm_pgmhist( pgmfile, delete = delfile )
 	
 	# Make sure we work with 16bit images
@@ -1223,13 +1219,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		# }}}
 
 		# {{{ Convert from 48bit color to 16bit grayscale
-		cmd <- paste(Sys.getenv("COMSPEC"), ' /c type RAWTEMP.PPM | ', ZIpgm("ppmtopgm", "netpbm"), ' > ', OutputFile, sep = "")
-		res <- try(system(cmd, invisible = TRUE), silent = TRUE)
-		if (inherits(res, "try-error") || res > 0) {
-			return("Error while converting color to grayscale for ", Rawfile)
-		}
-		# Eliminate temporary file
-		unlink("RAWTEMP.PPM")
+		netpbm_ppmtopgm( "RAWTEMP.PPM", OutputFile )
 		# }}}
 	
 	} else{
@@ -1238,9 +1228,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 		cmd <- sprintf( 'dcraw %s %s | ppmtopgm > "%s"' , 
 			DcRawArgs, RawFile, OutputFile )
 		res <- try(system(cmd ), silent = TRUE)
-		if (inherits(res, "try-error") || res > 0) {
-			return("Error while converting ", Rawfile)
-		}
+		checkFileExists( OutputFile, message = "Error while converting" )
 		# }}}
 		
 	}

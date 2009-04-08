@@ -112,7 +112,8 @@
 			options( ZIEditor = getOption( "editor") )
 		}
 	} else{ 
-		options( ZIEditor = getOption( "editor") )
+		# fall back on the default editor
+		options( ZIEditor = system( sprintf( "which %s", getOption( "editor" ) ), intern = TRUE) )
 	}
 	# }}}
 		

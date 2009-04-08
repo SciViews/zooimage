@@ -21,11 +21,11 @@
  	# Prepare 'dir\subdir' for a manual classification by expanding all vignettes
 	# from a given number of zidfiles to the '_' subdir, and making
 	# a template for subdirs
-	# This requires the 'unzip' program!
-	# Make sure it is available
-	cmd <- paste('"', ZIpgm("unzip", "misc"), '" -h', sep = "")
-	if ((system(cmd, invisible = TRUE) != 0)) {
-		logProcess("program from Info-Zip not found!", "unzip", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	
+	# {{{ Make sure unzip is available
+	checkCapable( "unzip" )
+	# }}}
+	
 	# First, check that dir is valid
 	if (!file.exists(dir) || !file.info(dir)$isdir) {
 		logProcess("is not a valid directory!", dir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }

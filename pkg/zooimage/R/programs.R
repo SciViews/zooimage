@@ -125,6 +125,26 @@ netpbm_pgmhist <- function( file, delete = TRUE ){
 	names(BF) <- c("Gray", "Count")
 	BF
 }
+
+
+netpbm_ppmtopgm <- function( ppm, pgm ){
+	
+	cmd <- if( isWin( ) ){
+		sprintf( '%s /c type "%s" | %s > %s',
+			Sys.getenv("COMSPEC"), ppm, 
+			ZIpgm("ppmtopgm", "netpbm"), 
+			pgm )
+	} else {
+		sprintf( 'ppmtopgm < "%s" > "%s" ', ppm, pgm )
+	}
+	
+	res <- try(system(cmd, invisible = TRUE), silent = TRUE)
+	checkFileExists( pgm , message = "problem converting to '%s' using ppmtopgm" )
+	unlink( ppm ) 
+	res
+	
+}
+
 # }}}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

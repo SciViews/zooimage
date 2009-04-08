@@ -93,7 +93,6 @@
 	#{{{ Copy or move the image to a .zip compressed file
 	zippar <- if (delete.source) "-mqz9 " else "-qz9 "
 	# command is: type %~n1.zim | %~dp0zip -mqz9 _raw/%~n1.zip %1 
-	# cmd <- paste(Sys.getenv("COMSPEC"), ' /c type "', zimfile, '" | "', ZIpgm("zip", "misc"), '" ', zippar, '"', zipfile, '" "', imagefile, '"', sep = "")
 	if( isWin() ){
 		cmd <- sprintf( '%s /c type "%s" | "%s" %s %s %s ', 
 			Sys.getenv("COMSPEC"), zimfile, 
