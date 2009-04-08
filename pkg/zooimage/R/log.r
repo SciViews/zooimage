@@ -17,8 +17,7 @@
 
 # Functions for manipulating a log file for ZooImage.
 
-"logProcess" <-
-	function(message, topic = NULL, file = file.path(tempdir(), "ZooImage.log"),
+"logProcess" <- function(message, topic = NULL, file = file.path(tempdir(), "ZooImage.log"),
 	logit = TRUE, stop = FALSE, show.log = stop) {
 	if (!logit) {
 		if (stop) stop(message)
@@ -34,13 +33,11 @@
 	if (show.log) logView(file)
 }
 
-"logClear" <-
-	function(file = file.path(tempdir(), "ZooImage.log")) {
+"logClear" <- function(file = file.path(tempdir(), "ZooImage.log")) {
 	unlink(file)
 }
 
-"logView" <-
-	function(file = file.path(tempdir(), "ZooImage.log"), title = paste(getTemp("ZIname"), "log"), clear = TRUE, warn = FALSE) {
+"logView" <- function(file = file.path(tempdir(), "ZooImage.log"), title = paste(getTemp("ZIname"), "log"), clear = TRUE, warn = FALSE) {
 	if (file.exists(file)) {
     	file.show(file, title = title, delete.file = clear)
 	} else if (warn) warning("Log file '", file, "' is not found!")

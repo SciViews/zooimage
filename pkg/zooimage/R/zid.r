@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+#{{{ Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
 # 
@@ -14,7 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
-
+# }}}
 
 # {{{ verify.zid
 #' check consistancy of a zoo image directory
@@ -126,11 +126,6 @@ attr( verify.zid, "catcher" ) <- function( call ){
 		} )
 	
 }
-
-
-
-
-
 # }}}
 
 # {{{ verify.zid.all
@@ -622,15 +617,6 @@ attr( verify.zid, "catcher" ) <- function( call ){
 	tmpd <- tempdir()
 	unzip( zidfile, tmpd )
 	file.path( tmpd, file )
-	
-	#< if ((unzip <- getOption("unzip")) != "internal") {
-	#< 	if (!system(paste(unzip, " -oq \"", zidfile, "\" \"", file, "\" -d ", tmpd, sep = ""), invisible = TRUE))
-	#< 		file <- file.path(tmpd, file) else file <- ""
-	#< } else {
-	#< 	rc <- .Internal(int.unzip(zidfile, file, tmpd))
-	#< 	if (rc == 0) file <- file.path(tmpd, file) else file <- ""
-	#< }
-	#< return(file)
 }
 # }}}
 
@@ -642,24 +628,20 @@ attr( verify.zid, "catcher" ) <- function( call ){
 	sample <- noext(basename(zidfile))
 	RdataFile <- paste(sample, "_dat1.RData", sep ="")
 	deletefile <- FALSE
-	if (!file.exists(zidfile))
-		stop( sprintf( "%s not found!", zidfile) )
+	checkFileExists( zidfile, "%s not found!" )
 	# }}}
 	
 	# {{{ treat different kind of files
-	if(length(grep("[.][zZ][iI][dD]$", zidfile)) == 0) {
-		
+	if( !hasExtension( zidfile, "zid" ) ){
 		# {{{ Is it a directory?
 		if (file.info(zidfile)$isdir) {
-			# {{{ Is there a .RData file in this directory?
+			#  Is there a .RData file in this directory?
 			rdata <- file.path(zidfile, RdataFile)
 			if (!file.exists(rdata)) {
 				# Try to create it
 				make.RData(zidfile, show.log = FALSE)
-				if (!file.exists(rdata))
-					stop("Error creating the .RData file")
+				checkFileExists( rdata, "Error creating the .RData file")
 			}
-			# }}}
 		} else stop( sprintf( "Unrecognized file: %s", zidfile) )
 		# }}}
 		
