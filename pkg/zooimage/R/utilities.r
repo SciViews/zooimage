@@ -495,6 +495,10 @@ system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE,
 }
 
 # {{{ File utilities
+#' checks if the file has the extension
+hasExtension <- function( file, extension = "zip", pattern = extensionPattern(extension ) ){
+	grepl( pattern, file )
+}
 
 #' list files with given extension
 #' 

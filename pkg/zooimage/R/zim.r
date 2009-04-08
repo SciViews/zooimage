@@ -514,13 +514,10 @@
 # }}}
 
 # {{{ create.zim
-"create.zim" <-
-	function(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
+"create.zim" <- function(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
 	edit = TRUE, wait = FALSE) {
-	# Create a .zim file from a template and edit it
 	
-    (require(svDialogs) || stop("Package 'svDialogs' from 'SciViews' bundle is required. Please, install it first!"))
-
+	# {{{ Create a .zim file from a template and edit it
 	if (is.null(zimfile) || zimfile == "") {
 		if (isWin()) {
 	        zimfile <- winDialogString("Give a name for the new .zim file:",
@@ -531,9 +528,12 @@
 		}
 		if (is.null(zimfile) || length(zimfile) == 0 || zimfile == "")
 			return(invisible())
-		if (regexpr("\\.[zZ][iI][mM]$", zimfile) < 0)
-			zimfile <- paste(zimfile, "zim", sep = ".")
+		if ( !hasExtension( zimfile, "zim")){
+			zimfile <- sprintf( "%s.zim", zimfile )
+		}
 	}
+	# }}}
+	
 	# If the file exists, edit existing version instead
     if (file.exists(zimfile))
 		if (edit) return(edit.zim(zimfile, wait = wait)) else return()
@@ -550,10 +550,14 @@
 		stop("Template file '", template, "' not found!")
     if (!is.zim(template))
 		stop("Template '", template, "' is not a valid '.zim' file!")
+	
 	# Copy the template into the new file
 	file.copy(template, zimfile)
+	
 	# Edit this new file
-	if (edit) startPgm("ZIEditor", cmdline = zimfile, wait = wait)
+	if (edit) {
+		startPgm("ZIEditor", cmdline = zimfile, wait = wait)
+	}
 }
 # }}}
 
