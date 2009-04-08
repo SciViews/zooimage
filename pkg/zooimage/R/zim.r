@@ -419,7 +419,7 @@ checkFirstLine <- function( file, expected = "ZI1" ){
 	checkCapable( "zip" )
 	# }}}
 	
-    # Make sure we have full path for zip files
+    # {{{ Make sure we have full path for zip files
 	if (zipdir == ".") {
 		zipdir <- getwd()
 	}

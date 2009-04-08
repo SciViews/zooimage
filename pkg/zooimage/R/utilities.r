@@ -498,6 +498,15 @@ system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE,
 
 # {{{ File utilities
 
+#' list files with given extension
+#' 
+#' @param dir directory to list files
+#' @param extension file extension to accept. This will be 
+#' modified by extensionPattern so that the test is case independent
+list.files.ext <- function( dir, extension = "zip", ... ){
+	list.files( dir, pattern = extensionPattern( extension ) , ... )
+}
+
 #' transforms a file extension to a pattern for ignore.case matching of the 
 #' extension
 #' 
