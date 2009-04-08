@@ -242,27 +242,12 @@
 }
 # }}}
 
-# {{{ list.zim
-"list.zim" <- function(zidir) {
-	# Is this a directory and does it exists?
-	if (!file.exists(zidir) || !file.info(zidir)$isdir) {
-		return(NA)
-	}
-	# Get a list of all ".zim" files in this directory
-	res <- dir(zidir, pattern = "\\.[zZ][iI][mM]$")
-	return(res)
+# {{{ list.zim, list.dat1.zim
+"list.zim" <- function(zidir, ...) {
+	list.files.ext( zidir, extension = "zim", ... )
 }
-# }}}
-
-# {{{ list.dat1.zim
-"list.dat1.zim" <- function(zidir) {
-	# Is this a directory and does it exists?
-	if (!file.exists(zidir) || !file.info(zidir)$isdir) {
-		return(NA)
-	}
-	# Get a list of all "_dat1.zim" files in this directory
-	res <- dir(zidir, pattern = "_[dD][aA][tT]1\\.[zZ][iI][mM]$")
-	return(res)
+"list.dat1.zim" <- function(zidir, ...) {
+	list.files.ext( zidir, extension = "_dat1.zim", ... )
 }
 # }}}
 

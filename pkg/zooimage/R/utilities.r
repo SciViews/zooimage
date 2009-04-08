@@ -506,6 +506,7 @@ hasExtension <- function( file, extension = "zip", pattern = extensionPattern(ex
 #' @param extension file extension to accept. This will be 
 #' modified by extensionPattern so that the test is case independent
 list.files.ext <- function( dir, extension = "zip", ... ){
+	checkDirExists( dir )
 	list.files( dir, pattern = extensionPattern( extension ) , ... )
 }
 
@@ -517,13 +518,16 @@ list.files.ext <- function( dir, extension = "zip", ... ){
 #'          to match files with this extension
 #' @examples
 #' extensionPattern( "tif" )
-extensionPattern <- function( extension = "tif" ){
+extensionPattern <- function( extension = "tif", add.dot = !grepl("[.]", extension) ){
   extensionLetters <- substring( extension, 1:nchar(extension), 1:nchar(extension) )
-  parts <- paste( "[", extensionLetters, casefold( extensionLetters, upper = TRUE ) , "]", sep = "")
+  parts <- ifelse( extensionLetters %in% c(letters, LETTERS ), 
+  	paste( "[", extensionLetters, casefold( extensionLetters, upper = TRUE ) , "]", sep = ""), 
+	extensionLetters )
   pattern <- paste( parts, collapse = "" ) 
-  if( !length( grep( "^\\.", extension)) ){
-	pattern <- paste( "[.]", pattern, sep = "" )
-  } 
+  if( add.dot ){
+	pattern <- paste( ".", pattern, sep = "" )
+  }
+  pattern <- gsub( "[.]", "[.]", pattern )
   paste( pattern, "$", sep = "" )
 }
 
@@ -552,7 +556,7 @@ checkFileExists <- function( file, extension, message = "file not found : %s", f
 #'  not exists or is not a directory
 checkDirExists <- function( dir, message = 'Path "%s" does not exist or is not a directory' ){
 	message <- sprintf( message, dir )
-	if( !file.exists( dir ) || !file.info(path)$isdir ){
+	if( !file.exists( dir ) || !file.info(dir)$isdir ){
 		stop( message )
 	}
 }
