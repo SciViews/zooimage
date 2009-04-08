@@ -18,14 +18,10 @@
 #{{{ zip.img
 #' Zip a .tif image and embed the corresponding .zim file as comment
 #' This requires the 'zip' program!
-"zip.img" <-
-	function(imagefile, zimfile = NULL, verify.zimfile = TRUE, replace = FALSE,
+"zip.img" <- function(imagefile, zimfile = NULL, verify.zimfile = TRUE, replace = FALSE,
 		delete.source = TRUE, check.zip = TRUE, show.log = TRUE) {
  	
 	#{{{ Initial checks 
-	#{{{ check availability of "zip" 
-	checkZipAvailable( ) 
-	#}}} 
 	
 	#{{{ We need to switch to the root of sample dir first for correct path in the zip file
 	imagefile <- imagefile[1]
@@ -36,10 +32,9 @@
 	imagefile <- basename(imagefile)
 	#}}}
 	
-	#{{{ Check if imagefile exists
-	if (!file.exists(imagefile) || file.info(imagefile)$isdir) {
-		stop( sprintf( "%s doesn't exist, or is a directory!", imagefile ) )
-	}
+	# Check if imagefile exists
+	checkFileExists( imagefile, message = "%s doesn't exist, or is a directory!", 
+		force.file = TRUE)
 	# Is there an associated .zim file?
 	if (is.null(zimfile)){
 		sample.info <- get.sampleinfo(imagefile, "fraction", ext = extensionPattern( "tif" ) )
@@ -54,13 +49,10 @@
 			### TODO
 			stop( "creation of .zim file not implemented yet!" )
 	}
-	#}}}
 	
-	#{{{ Recheck .zim file
-	if (!file.exists(zimfile)) {
-		stop( sprintf( "%s - doesn't exist or is corrupted!", zimfile ) ) 
-	}
-	#}}}
+	# Recheck .zim file
+	checkFileExists( zimfile, 
+		message = "%s - doesn't exist or is corrupted!" ) 
 	#}}} 
 	
 	#{{{ Verify the content of the .zim file
@@ -73,43 +65,11 @@
 	zipfile <- paste(noext(imagefile), ".zip", sep = "")
 	zipfile <- file.path(".", "_raw", zipfile)
 	# Make sure that "_raw" subdir exists
-	if (!file.exists("_raw")) {
-		if (!dir.create("_raw")) {
-			stop( "Impossible to create the '_raw' subdirectory!" ) 
-		}
-	} else {	# Check it is a directory
-    	if (!file.info("_raw")$isdir) {
-			stop( "'_raw' exists, but is not a directory!" )
-		}
-	}
+	force.dir.create( "_raw" )
 	#}}} 
 	
-	#{{{ Delete old .zip file, if it exists (replace = TRUE), or exit
-	if (file.exists(zipfile)) {
-		if (replace) unlink(zipfile) else return(invisible(TRUE))
-	}
-	#}}} 
-		
 	#{{{ Copy or move the image to a .zip compressed file
-	zippar <- if (delete.source) "-mqz9 " else "-qz9 "
-	# command is: type %~n1.zim | %~dp0zip -mqz9 _raw/%~n1.zip %1 
-	if( isWin() ){
-		cmd <- sprintf( '%s /c type "%s" | "%s" %s %s %s ', 
-			Sys.getenv("COMSPEC"), zimfile, 
-			ZIpgm("zip", "misc"), zippar, zipfile, imagefile 
-			)
-		system(cmd, show.output.on.console = TRUE, invisible = TRUE)  	
-	} else{
-		# [RF] TODO: not tested on MAC, should be ok
-		cmd <- sprintf( 'zip %s "%s" "%s" < "%s" > /dev/null ', zippar, zipfile, imagefile, zimfile )
-		system(cmd)
-	}
-	#}}}
-	 
-	#{{{ Verify that the .zip file is created
-	if(!file.exists(zipfile)) { 
-		stop( sprintf("%s - Error creating the file!", zipfile) ) 
-	}
+	zip( zipfile, imagefile, comment.file = zimfile, delete.zipfile.first = replace )
 	#}}}
 	
 	#{{{ Invisibly indicate success
@@ -243,8 +203,7 @@
 #}}}
 
 #{{{ unzip.img.all 
-"unzip.img.all" <-
-	function(path = ".", zipfiles = NULL) {
+"unzip.img.all" <- function(path = ".", zipfiles = NULL) {
  	
 	# {{{ check that unzip is available	
 	checkUnzipAvailable( )
@@ -263,23 +222,18 @@
 #' and delete the directory if needed
 zip <- function( zipfile , directory, delete.source = FALSE, comment.file = NULL, delete.zipfile.first = TRUE ){
 	
-	# {{{ We need the system to be capable of zipping
+	# We need the system to be capable of zipping
 	checkZipAvailable( )
-	# }}}
 	
-	# {{{ Delete old zip file, if it exists
+	# Delete old zip file, if it exists
 	if (delete.zipfile.first && file.exists(zipfile)) {
 		unlink(zipfile)
 	}
-	# }}}
 	
-	# {{{ Test if we need and can add the comment file
+	# Test if we need and can add the comment file
 	comment <- !is.null(comment.file) && file.exists(comment.file)
-	# }}}
-	
-	# {{{ Build the list of parameters for zip
+	# Build the list of parameters for zip
 	zippar <- sprintf( "-rq9%s%s", if(delete.source) "m" else "", if(comment) "z" else "")
-	# }}}
 	
 	# {{{ create the basic command
 	cmd <- sprintf( '"%s" %s "%s" "%s"', 
@@ -291,34 +245,27 @@ zip <- function( zipfile , directory, delete.source = FALSE, comment.file = NULL
 	
 	# {{{ call the command
 	result <- if( isWin() ){
-		# {{{ modify the windows command so that the message is piped into the zip command
+		# modify the windows command so that the message is piped into the zip command
 		if( comment ){
 			cmd <- sprintf( '%s /c type "%s" | %s', 
 				Sys.getenv("COMSPEC"), 
 				comment.file, 
 				cmd )
 		}
-		# }}}
-		
-		# {{{ Call it 
 		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
-		# }}}
 	} else{ 
-		# {{{ modify the command if we need and can add the comment file
+		# modify the command if we need and can add the comment file
 		if( comment ){
 			cmd <- sprintf( '%s < "%s"', cmd, comment.file )
 		}
-		# }}}
-		
-		# {{{ send the error stream to the null device
+		# send the error stream to the null device
 		cmd <- paste( cmd, ' 2> /dev/null' )
-		# }}}
-		
-		# {{{ call the command 
+		# call the command 
 		system(cmd)
-		# }}}
 	}
 	# }}}
+	
+	checkFileExists( zipfile, message = "Error creating zip file '%s'" )
 	
 	invisible( result == 0 )
 }
@@ -348,7 +295,6 @@ zip_addcomments <- function( zip, comment.file,
 }
 		
 # }}}
-
 
 # {{{ unzip 
 #' unzip a zip file in a directory

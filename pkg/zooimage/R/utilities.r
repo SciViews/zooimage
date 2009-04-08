@@ -416,8 +416,7 @@
 }
 
 # Change the working directory and update the ZooImage assistant status bar
-"Setwd" <-
-	function(dir) {
+"Setwd" <- function(dir) {
 	### TODO: this does not work if dir is changed from Rgui menu or from setwd()!
 	# My own setwd() function that also updates the Tk window statusbar
 	.Internal(setwd(dir))
