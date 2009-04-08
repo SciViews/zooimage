@@ -544,13 +544,13 @@
 	
 	# Look for the template
 	if (is.null(template)) {
-		# Look for the default template
-		Edpath <- dirname(Ed)
-		template <- file.path(Edpath, "templates", "default.zim") 
-	}
-	checkFileExists( template, message = "Template file '%s' not found" )
-	if (!is.zim(template)){
-		stop("Template '", template, "' is not a valid '.zim' file!")
+		template <- template("default.zim") 
+	} else{ 
+		checkFileExists( template, message = "Template file '%s' not found" )
+		# TODO: rework is.zim so that it throws the error
+		if (!is.zim(template)){
+			stop("Template '", template, "' is not a valid '.zim' file!")
+		}
 	}
 	
 	# Copy the template into the new file
@@ -570,7 +570,7 @@
 		if (zimfile == "")
 			return(invisible())
 	} else {
-		checkFileExists( zimfile, message = "the file '%s' is not found" )
+		checkFileExists( zimfile, message = "the file '%s' is not found" )                    
 		if (!is.zim(zimfile))
 			stop("This is not a valid '.zim' file!")
 	}

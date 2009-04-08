@@ -129,24 +129,18 @@
 		return(editZis(zisfile, wait = wait))
 	}
 	
-	Ed <- getOption("ZIEditor")
-	if (is.null(Ed) || !file.exists(Ed))
-		stop("The metadata editor is not defined or not found!")
 	# Look for the template
 	if (is.null(template)) {
-		# Look for the default template
-		Edpath <- dirname(Ed)
-		template <- file.path(Edpath, "templates", "Description.zis") 
+		template <- template( "Description.zis" )
+	} else{
+		checkFileExists( template, "template '%s' not found", extension = "zis" )
 	}
-	if (!file.exists(template))
-		stop("Template file '", template, "' not found!")
-	if (regexpr("[.][zZ][iI][sS]$", template) < 0)    
-		stop("Template '", template, "' is not a valid '.zis' file!")
 	# Copy the template into the new file
 	file.copy(template, zisfile)
+	
 	# Edit this new file
-	startPgm("ZIEditor", cmdline = paste("\"", zisfile, "\"", sep = ""), wait = wait)
-	return(zisfile)
+	editor( zisfile, editor = editor )
+	
 }
 # }}}
 
