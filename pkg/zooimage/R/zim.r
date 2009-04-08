@@ -480,7 +480,7 @@
 # }}}
 
 # {{{ create.zim
-# TODO: store the templates in inst/templates
+# TODO; this looks a bit redundant with the edit.zim function
 "create.zim" <- function(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
 	edit = TRUE, wait = FALSE) {
 	
