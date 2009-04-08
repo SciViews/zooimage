@@ -100,14 +100,6 @@
 }
 # }}}
 
-# {{{ checkFirstLine
-checkFirstLine <- function( file, expected = "ZI1" ){
-	Line1 <- scan(file, character(), nmax = 1, quiet = TRUE)
-	return( Line1 == expected )
-}
-# }}}
-
-
 # {{{ verify.zim
 #' Verify a "(_dat1).zim" file
 #' 
@@ -411,7 +403,7 @@ checkFirstLine <- function( file, expected = "ZI1" ){
 #' Given a list of .zip files and a path where .zim files are located,
 #' the function updates comment fields of the .zip files with latest .zim content   
 "refresh.zims" <- function(zipdir = ".", 
-	zipfiles = list.files(zipdir, pattern = "\\.[zZ][iI][pP]$"),
+	zipfiles = list.files.ext(zipdir, "zip" ),
 	zimdir = NULL, check.zip = TRUE, check.zim = TRUE, 
 	show.log = TRUE, bell = FALSE) {
 	
@@ -424,41 +416,56 @@ checkFirstLine <- function( file, expected = "ZI1" ){
 		zipdir <- getwd()
 	}
 	zipfiles <- file.path(zipdir, zipfiles)
+	# }}}
 
-    # Check that zipfiles exist
+    # {{{ Check that zipfiles exist
 	if (!all(file.exists(zipfiles))) {
-		logProcess("One or several .zip files not found!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-    # Look for the path where .zim files are located
+		stop( "One or several .zip files not found!" )
+	}
+	# }}}
+    
+	# {{{ Look for the path where .zim files are located
 	if (is.null(zimdir)) {
 		# The rule is the following one:
 		# 1) if last subdir of .zip files is "_raw", then .zim files should be up one level
 		# 2) else, look at the same dir
 		zimdir <- zipdir
-		if (tolower(basename(zimdir)) == "_raw")
+		if (tolower(basename(zimdir)) == "_raw"){
 			zimdir <- dirname(zimdir)
+		}
 	} else {    # Look if this is valid directory
 		zimdir <- zimdir[1]
-		if (!file.exists(zimdir) || !file.info(zimdir)$isdir) {
-			logProcess("is not a valid directory!", zimdir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		checkDirExists( zimdir, message = "'%s' is not a valid directory!" )
 	}
-	# Switch to that dir
+	# }}}
+	
+	# {{{ Switch to that dir
 	inidir <- getwd()
 	setwd(zimdir)
 	on.exit(setwd(inidir))
-	# Compute the names of zim files from the names of zip files
+	# }}}
+	
+	# {{{ Compute the names of zim files from the names of zip files
 	# Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from SCS.xxxx-xx-xx.SS+Fnn)
 	# If there are duplicates, only extract first one
-	zimfiles <- paste(get.sampleinfo(zipfiles, "fraction", ext = "\\.[zZ][iI][pP]$"), ".zim", sep = "")
+	zimfiles <- sprintf( "%s.zim", 
+		get.sampleinfo(zipfiles, "fraction", ext = extensionPattern("zip") )
+	
 	# Eliminate path for zimfiles
 	zimfiles <- basename(zimfiles)
-    # Keep only existing .zim files
+    
+	# Keep only existing .zim files
 	keep <- file.exists(zimfiles)
 	zimfiles <- zimfiles[keep]
 	zipfiles <- zipfiles[keep]
+	
 	# Are there files left?
 	if (length(zimfiles) == 0) {
-		logProcess("Done, no file to update!", show.log = show.log); return(invisible(FALSE)) }
-	# Start the process
+		stop( "Done, no file to update!" )
+	}
+	# }}}
+	
+	# {{{ check the zim files using verify.zim if necessary
 	logClear()
 	ok <- TRUE
 	if (check.zim) {
@@ -469,34 +476,36 @@ checkFirstLine <- function( file, expected = "ZI1" ){
 		zmax <- length(zfiles)
 		for (z in 1:zmax) {
         	Progress(z, zmax)
-			res <- verify.zim(zfiles[z])
-			if (res != 0) { # Error
-            	logProcess(res, zfiles[z])
-				ok <- FALSE
-			}
+			
+			# TODO: this might throw a condition
+			verify.zim(zfiles[z])
 		}
 		Progress (zmax + 1, zmax)	 # To dismiss the Progress() indication
 	}
-	if (ok) {
+	
+	# if (ok) {
 		logProcess("\n-- OK, no error found. --")
 		cat("-- Done! --\n")		
-	} else {
-		logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log); 
-		return(invisible(FALSE))
-	}
-	# If everything is OK, update comments in the zip files with the content of the .zim files
+	# } else {
+	# 	logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log); 
+	# 	return(invisible(FALSE))
+	# }
+	# }}}
+	
+	# {{{ If everything is OK, update comments in the zip files with the content of the .zim files
 	imax <- length(zipfiles)
 	cat("Update of .zip comments...\n")
 	logProcess("\nUpdate of .zip comments...")
 	for (i in 1:imax) {
 		Progress(i, imax)
+		
 		# Replace the zip comment with the content of the corresponding .zim file
-		cmd <- paste(Sys.getenv("COMSPEC"), ' /c type "', zimfiles[i], '" | "',ZIpgm("zip", "misc") , '" -z "', zipfiles[i], '"', sep = "")
-		res <- system(cmd, show.output.on.console = FALSE, invisible = TRUE)
-		# Check that the command was correctly processed
-		if (res != 0) ok <- FALSE else logProcess("OK", zipfiles[i])
+		zip_addcomments( zipfiles[i] , zimfiles[i], 
+			on.success = logProcess( "OK", zipfiles[i] ) )
+	
 	}
 	Progress (imax + 1, imax)	 # To dismiss the Progress() indication
+	# }}}
 	
 	# {{{ cleans up
 	finish.loopfunction( ok, bell = bell, show.log = show.log )

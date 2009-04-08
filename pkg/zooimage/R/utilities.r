@@ -184,14 +184,12 @@
 }
 
 # Calculate equivalence circular diameter (similar to equivalent spherical diameter, but for 2D images)
-"ecd" <-
-	function(area) {
+"ecd" <- function(area) {
 	return(2 * sqrt(area / pi))
 }
 
 # Unique identifiers (Ids) are a combination of Label and Item
-"make.Id" <-
-	function(df) {
+"make.Id" <- function(df) {
 	# Make a list of Ids, combining "Label" and "Item"
 	return(paste(df$Label, df$Item, sep = "_"))
 }
@@ -573,6 +571,14 @@ force.dir.create <- function( path, ... ){
 	}
 	out
 }
+
+#' checks the first line of a file against some expected content
+checkFirstLine <- function( file, expected = "ZI1" ){
+	Line1 <- scan(file, character(), nmax = 1, quiet = TRUE)
+	return( Line1 == expected )
+}
+
+
 # }}}
 
 # {{{ binary operators

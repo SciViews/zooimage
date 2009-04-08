@@ -325,6 +325,32 @@ zip <- function( zipfile , directory, delete.source = FALSE, comment.file = NULL
 }
 # }}}
 
+# {{{ zip_addcomments
+zip_addcomments <- function( zip, comment.file, 
+	on.failure = stop( sprintf( on.failure.msg , comment.file, zip ) )
+	on.failure.msg = "problem adding comment from '%s' to file '%s' ", 
+	on.success ){
+
+	checkZipAvailable( )
+	
+	cmd <- if( isWin() ){
+		sprintf( '%s /c type "%s" | "%s" -z "%s" ',  
+			Sys.getenv("COMSPEC"), comment.file, zip )
+	} else{
+		sprintf( 'zip -z "%s" < "%s" ', zip, comment.file ) 
+	}
+	res <- system(cmd, show.output.on.console = FALSE, invisible = TRUE, intern = TRUE)
+	if( res != 0 ){
+		on.failure
+	} else if( !missing( on.success ) ){
+		on.success
+	}
+	invisible( res )
+}
+		
+# }}}
+
+
 # {{{ unzip 
 #' unzip a zip file in a directory
 #' 

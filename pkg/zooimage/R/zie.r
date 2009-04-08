@@ -639,15 +639,16 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 						curdir <- getwd()
 						setwd(file.path(curdir, "_work"))
 						zimfile <- paste(attr(zimData, "Sample"), "zim", sep = ".")
-						file.copy(file.path(curdir, zimfile), zimfile)
+						# file.copy(file.path(curdir, zimfile), zimfile)
 						zipfile <- paste(noext(FileConvName), "zip", sep = ".")
-						cmd <- paste(Sys.getenv("COMSPEC"), ' /c type "', zimfile, '" | "', ZIpgm("zip", "misc"), '" -mqz9 "', zipfile, '" "', FileConvName, '"', sep = "")
-						system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+						zip( zipfile, delete.source = TRUE, comment.file = file.path(curdir, zimfile), FileConvName )
+						setwd(curdir)
 						# Verify that the .zip file is created
 						if (!file.exists(zipfile)) {
-							logProcess("Error creating the file!", zipfile, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-							unlink(zimfile)
-							setwd(curdir)
+							stop( sprintf( "Error creating the file : '%s' !", zipfile ) )
+							#< logProcess("Error creating the file!", zipfile, stop = TRUE, show.log = show.log)
+							#< return(invisible(FALSE)) 
+						}
 						} else {	### TODO: what do we have to do here???? 
 					
 						}
