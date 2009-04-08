@@ -577,9 +577,15 @@ force.dir.create <- function( path, ... ){
 }
 
 #' checks the first line of a file against some expected content
-checkFirstLine <- function( file, expected = "ZI1" ){
+checkFirstLine <- function( file, expected = "ZI1", 
+	message = 'file "%s" is not a valid ZooImage version 1 file', stop = FALSE ){
 	Line1 <- scan(file, character(), nmax = 1, quiet = TRUE)
-	return( Line1 == expected )
+	res <- Line1 == expected
+	if( !res && stop){
+		message <- sprintf( message, file )
+		stop( message )
+	}
+	invisible( res )
 }
 
 

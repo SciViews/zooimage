@@ -206,8 +206,10 @@ attr( verify.zid, "catcher" ) <- function( call ){
 	allmeta <- NULL
 	for (i in 1:length(dat1files)) {
 		dat1path <- file.path(zidir, dat1files[i])
-		if (!is.zim(dat1path)) {
-			logProcess("is not a ZI1 file, or is corrupted", dat1files[i]); ok <- FALSE; next }
+		
+		# TODO; this might generate an error, handle it
+		is.zim( dat1path ), 
+		
 		# Read the header
 		Lines <- scan(dat1path, character(), sep = "\t", skip = 1, blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "#")
 		if (length(Lines) < 1) {

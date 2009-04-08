@@ -182,9 +182,8 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# }}}
 	
 	# {{{ check first line for ZI1
-	if( !checkFirstLine( Filemap ) ){
-		stop( 'File does not appear to be a ZooImage version 1 file, or it is corrupted!' )
-	}
+	checkFirstLine( Filemap, 
+		message = 'File does not appear to be a ZooImage version 1 file, or it is corrupted!' )
 	# }}}
 	
 	# {{{ read the file and check it is not empty
@@ -876,7 +875,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 "isTestFile" <- function(File) {
 	# Determine if a given file is a test file (a file with first line being 'ZI1est' and with size < 1000)
 	if (file.info(File)$size > 1000) return(FALSE)
-	checkFirstLine( File, "ZItest" )
+	checkFirstLine( File, "ZItest", stop = FALSE )
 }
 # }}}
 

@@ -73,31 +73,14 @@
 # Check if a file is a "(_dat1).zim" file (must start with "ZI1" and have a '.zim' extension)
 "is.zim" <- function(zimfile, check.ext = FALSE ) {
 	
-	# {{{ check if the file does not exist or is a directory
-	if (!file.exists(zimfile) ){ 
-		return( structure( FALSE, reason = sprintf( '"%s" does not exist', zimfile ) ) )
-	}
-	if( file.info(zimfile)$isdir){
-		return( structure( FALSE, reason = sprintf( '"%s" is a directory', zimfile ) ) )
-	}
-	# }}}
-
-	# {{{ check the extension, must be zim
-	if (check.ext && !grepl("\\.zim$", zimfile, ignore.case = TRUE ) ){
-		return( structure( FALSE, reason = sprintf( "File extension is incorrect (not '.zim')" ) ) )
-	}
-	# }}} 
+	# check if the file does not exist or is a directory
+	checkFileExists( zimfile, force.file = TRUE, extension = "zim" )
 	
-	# {{{ check the first line
-	if( ! checkFirstLine( zimfile, "ZI1" ) ){
-		return( structure( FALSE, 
-			reason = "File does not appears to be a ZooImage version 1 file, or it is corrupted!" ) )
-	}
-	# }}}
+	# check the first line
+	checkFirstLine( zimfile, message = "File does not appears to be a ZooImage version 1 file, or it is corrupted!" ) )
 	
-	# {{{ verything has passed
-	return( TRUE )
-	# }}}
+	#  verything has passed
+	invisible( TRUE )
 }
 # }}}
 
@@ -156,10 +139,7 @@
 	# }}}
 
 	# {{{ check that it is a zimfile
-	ok <- is.zim( zimfile, check.ext = check.ext )
-	if( !ok ){
-		stop( attr( ok, "reason") )
-	}
+	is.zim( zimfile, check.ext = check.ext )
 	# }}}
 	
 	# {{{ Run first the extra verification code
@@ -546,11 +526,7 @@
 	if (is.null(template)) {
 		template <- template("default.zim") 
 	} else{ 
-		checkFileExists( template, message = "Template file '%s' not found" )
-		# TODO: rework is.zim so that it throws the error
-		if (!is.zim(template)){
-			stop("Template '", template, "' is not a valid '.zim' file!")
-		}
+		is.zim(template)
 	}
 	
 	# Copy the template into the new file
@@ -570,9 +546,7 @@
 		if (zimfile == "")
 			return(invisible())
 	} else {
-		checkFileExists( zimfile, message = "the file '%s' is not found" )                    
-		if (!is.zim(zimfile))
-			stop("This is not a valid '.zim' file!")
+		is.zim(zimfile)
 	}
 	editor( zimfile, editor = editor )
 }
