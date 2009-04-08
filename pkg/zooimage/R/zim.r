@@ -515,6 +515,7 @@
 # }}}
 
 # {{{ create.zim
+# TODO: store the templates in inst/templates
 "create.zim" <- function(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
 	edit = TRUE, wait = FALSE) {
 	
@@ -541,15 +542,6 @@
 	}
 	# }}}
 	
-	# {{{ find the meta data editor
-	Ed <- getOption("ZIEditor")
-	if (edit){
-		if(is.null(Ed) || !file.exists(Ed)){
-			stop("The metadata editor is not defined or not found!")
-		}
-	}
-	# }}}
-		
 	# Look for the template
 	if (is.null(template)) {
 		# Look for the default template
@@ -565,9 +557,8 @@
 	file.copy(template, zimfile)
 	
 	# Edit this new file
-	if (edit) {
-		startPgm("ZIEditor", cmdline = zimfile, wait = wait)
-	}
+	editor( zimfile, editor = editor )
+	
 }
 # }}}
 
@@ -583,13 +574,7 @@
 		if (!is.zim(zimfile))
 			stop("This is not a valid '.zim' file!")
 	}
-	Ed <- getOption("ZIEditor")
-	if (is.null(Ed) || !file.exists(Ed)){
-		stop("The metadata editor is not defined or not found!")
-	}
-	
-	# Everything is fine, open the document for editing...
-	startPgm("ZIEditor", cmdline = zimfile, wait = wait)
+	editor( zimfile, editor = editor )
 }
 # }}}
 

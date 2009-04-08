@@ -149,9 +149,8 @@ netpbm_ppmtopgm <- function( ppm, pgm ){
 
 # {{{ editor
 #' similiar to edit, but tries to use the ZIEditor option instead
-editor <- function( file ){
+editor <- function( file, editor = getOption( "ZIEditor") ){
 	
-	ed <- getOption( "ZIEditor" )
 	if( !file.exists( ed ) ){
 		 ed <- getOption( "editor" )
 	}

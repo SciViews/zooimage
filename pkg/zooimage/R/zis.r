@@ -101,13 +101,12 @@
 	return(Samples)
 }
 
-"createZis" <-
-	function(zisfile = NULL, template = NULL, editor = getOption("ZIEditor"),
+# {{{ createZis
+#' Create a .zis file from a template and edit it
+"createZis" <-	function(zisfile = NULL, template = NULL, editor = getOption("ZIEditor"),
 	wait = FALSE) {
-	# Create a .zis file from a template and edit it
 	
-    (require(svDialogs) || stop("Package 'svDialogs' from 'SciViews' bundle is required. Please, install it first!"))
-
+	# {{{ use a ui to get the file name
 	if (is.null(zisfile) || zisfile == "") {
 		if (isWin()) {
 	        zisfile <- winDialogString("Give a name for the new .zis file:",
@@ -116,13 +115,20 @@
 			zisfile <- guiDlgInput("Give a name for the new .zis file:",
 				"ZIS file creation", default = "Description.zis")
 		}
-		if (is.null(zisfile) || length(zisfile) == 0 || zisfile == "")
+		if (is.null(zisfile) || length(zisfile) == 0 || zisfile == ""){
 			return(invisible())
-		if (regexpr("[.][zZ][iI][sS]$", zisfile) < 0)
+		}
+		if ( !hasExtension( zisfile, "zis" ) ){
 			zisfile <- paste(zisfile, ".zis", sep = "")
+		}
 	}
+	# }}}
+	
     # If the file already exists, edit current version
-	if (file.exists(zisfile)) return(editZis(zisfile, wait = wait))
+	if (file.exists(zisfile)) {
+		return(editZis(zisfile, wait = wait))
+	}
+	
 	Ed <- getOption("ZIEditor")
 	if (is.null(Ed) || !file.exists(Ed))
 		stop("The metadata editor is not defined or not found!")
@@ -142,27 +148,23 @@
 	startPgm("ZIEditor", cmdline = paste("\"", zisfile, "\"", sep = ""), wait = wait)
 	return(zisfile)
 }
+# }}}
 
-"editZis" <-
-	function(zisfile, editor = getOption("ZIEditor"), wait = FALSE) {
+# {{{ editZis
+"editZis" <- function(zisfile, editor = getOption("ZIEditor"), wait = FALSE) {
 	# Edit a .zis file
     if (is.null(zisfile) || zisfile == "") {
 		zisfile <- selectFile("Zis")
 		if (zisfile == "")
 			return(invisible())
 	} else {
-		if (regexpr("[.][zZ][iI][sS]$", zisfile) < 0)
-			stop("This is not a '.zis' file!")
-		if (!file.exists(zisfile))
-			stop("the file '", zisfile, "' is not found!")
+		checkFileExists( zisfile, "the file '%s' is not found!",
+			extension = "zis" )
 	}
-	Ed <- getOption("ZIEditor")
-	if (is.null(Ed) || !file.exists(Ed))
-		stop("The metadata editor is not defined or not found!")
-	# Everything is fine, open the document for editing...
-	startPgm("ZIEditor", cmdline = zisfile, wait = wait)
+	editor( zisfile, editor = editor )
 	return(zisfile)
 }
+# }}}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
 
