@@ -176,6 +176,12 @@
 	}
 	# }}}
 	
+	# {{{ Set the default template directory
+	if( is.null( getOption( "ZITemplates" ) ) ){
+		options( ZITemplates = system.file( "templates", package = "zooimage" ) )
+	}
+	# }}}
+	
 	# {{{ Switch to the default directory, if defined
 	defdir <- getKey("DefaultDirectory", "")
     if (defdir != "" && file.exists(defdir) && file.info(defdir)$isdir){
