@@ -408,19 +408,23 @@ checkFirstLine <- function( file, expected = "ZI1" ){
 # }}}
 
 # {{{ refresh.zims
-"refresh.zims" <-
-	function(zipdir = ".", zipfiles = list.files(zipdir, pattern = "\\.[zZ][iI][pP]$"),
-		zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE, bell = FALSE) {
-	# Given a list of .zip files and a path where .zim files are located,
-	# the function updates comment fields of the .zip files with latest .zim content
-    # This requires the 'zip' program!
-	# Make sure it is available
-	cmd <- paste('"', ZIpgm("zip", "misc"), '" -h', sep = "")
-	if (check.zip && (system(cmd, invisible = TRUE) != 0)) {
-		logProcess("'zip' program from Info-Zip not found!", "zip", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+#' Given a list of .zip files and a path where .zim files are located,
+#' the function updates comment fields of the .zip files with latest .zim content   
+"refresh.zims" <- function(zipdir = ".", 
+	zipfiles = list.files(zipdir, pattern = "\\.[zZ][iI][pP]$"),
+	zimdir = NULL, check.zip = TRUE, check.zim = TRUE, 
+	show.log = TRUE, bell = FALSE) {
+	
+	# {{{ Make sure 'zip' is available
+	checkCapable( "zip" )
+	# }}}
+	
     # Make sure we have full path for zip files
-	if (zipdir == ".") zipdir <- getwd()
+	if (zipdir == ".") {
+		zipdir <- getwd()
+	}
 	zipfiles <- file.path(zipdir, zipfiles)
+
     # Check that zipfiles exist
 	if (!all(file.exists(zipfiles))) {
 		logProcess("One or several .zip files not found!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
