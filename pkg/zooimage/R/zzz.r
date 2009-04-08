@@ -102,19 +102,12 @@
 	# }}}
 
 	# {{{ Determine where to find the metadata editor
-	## TODO... currently, it is in a fixed position
 	if( isWin() ){
 		ZIEditorExe <- system.file( "MetaEditor", "Sc1.exe", package = "zooimage" )
 		if (file.exists(ZIEditorExe)){
 			options(ZIEditor = ZIEditorExe)
-		} else{
-			# fall back on the default editor
-			options( ZIEditor = getOption( "editor") )
-		}
-	} else{ 
-		# fall back on the default editor
-		options( ZIEditor = system( sprintf( "which %s", getOption( "editor" ) ), intern = TRUE) )
-	}
+		} 
+	} 
 	# }}}
 		
 	# {{{ the directory that contains binary executables

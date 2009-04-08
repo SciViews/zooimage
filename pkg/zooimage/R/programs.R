@@ -147,4 +147,17 @@ netpbm_ppmtopgm <- function( ppm, pgm ){
 
 # }}}
 
+# {{{ editor
+#' similiar to edit, but tries to use the ZIEditor option instead
+editor <- function( file ){
+	
+	ed <- getOption( "ZIEditor" )
+	if( !file.exists( ed ) ){
+		 ed <- getOption( "editor" )
+	}
+	edit( file = file, editor = ed )
+	
+}
+# }}}
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

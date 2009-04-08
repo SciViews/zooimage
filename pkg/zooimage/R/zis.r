@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+# {{{ Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
 # 
@@ -14,6 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+# }}}
 
 "read.description" <-
 	function(zisfile = "Description.zis") {
@@ -162,3 +163,6 @@
 	startPgm("ZIEditor", cmdline = zisfile, wait = wait)
 	return(zisfile)
 }
+
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
+

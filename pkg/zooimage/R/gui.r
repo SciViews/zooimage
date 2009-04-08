@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+# {{{ Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
 # 
@@ -14,6 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+# }}}
     
 # {{{ ZIDlg
 ZIDlg <- function() {
