@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+# {{{ Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
 # 
@@ -14,7 +14,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+# }}}
 
+# {{{ prepare.ZITrain
 "prepare.ZITrain" <-
 	function(dir, subdir = "_train", zidfiles, groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL,
 		check.unzip = TRUE, show.log = TRUE, bell = FALSE, start.viewer = FALSE) {
@@ -111,9 +113,10 @@
 	}
 	return(invisible(TRUE))
 }
+# }}}
 
-"get.ZITrain" <-
-	function(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = TRUE) {
+# {{{ get.ZITrain
+"get.ZITrain" <- function(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = TRUE) {
 	# Retrieve information from a manual training set and store it in a 'ZITrain' object
 	# 'dir' must be the base directory of the manual classification
 	if (!file.exists(dir) || !file.info(dir)$isdir)
@@ -196,39 +199,10 @@
 	class(df) <- Classes
 	return(df)
 }
+# }}}
 
-"expand.ZITrain" <-
-	function(ZITrain, ZIDdir, destination) {
-	### TODO: make directories and extract vignettes for a classification
-	stop("Not implemented yet!")
-}
-
-"read.ZITrain" <-
-	function(file) {
-    ### TODO: read data from a text file
-	stop("Not implemented yet!")
-}
-
-"write.ZITrain" <-
-	function(ZITrain, file) {
-    ### TODO: write data to a text file
-	stop("Not implemented yet!")
-}
-
-"zip.ZITrain" <-
-	function(dir, zipfile, overwrite = FALSE) {
-    ### TODO: compress a classification tree
-	stop("Not implemented yet!")
-}
-
-"unzip.ZITrain" <-
-	function(zipfile, dir, overwrite = FALSE) {
-    ### TODO: uncompress a classification tree
-	stop("Not implemented yet!")
-}
-
-"recode.ZITrain" <-
-	function(ZITrain, ZIRecode, warn.only = FALSE) {
+# {{{ recode.ZITrain
+"recode.ZITrain" <- function(ZITrain, ZIRecode, warn.only = FALSE) {
 	if (!inherits(ZITrain, "ZITrain"))
 		stop("ZITrain must be an object of class 'ZITrain'")
 	if (!inherits(ZIRecode, "ZIRecode"))
@@ -258,9 +232,10 @@
 	if(!is.null(path)) attr(res, "path") <- path
 	return(res)
 }
+# }}}
 
-"make.ZIRecode.level" <-
-	function(ZITrain, level = 1) {
+# {{{ make.ZIRecode.level
+"make.ZIRecode.level" <- function(ZITrain, level = 1) {
 	if (!inherits(ZITrain, "ZITrain"))
 		stop("ZITrain must be an object of class 'ZITrain'")
 	# Get the "path" attribute
@@ -276,3 +251,34 @@
 	# We do not need to change the path here: it is still the same one
 	return(res)
 }
+# }}}
+
+# {{{ inimplemented functions
+"expand.ZITrain" <- function(ZITrain, ZIDdir, destination) {
+	### TODO: make directories and extract vignettes for a classification
+	stop("Not implemented yet!")
+}
+
+"read.ZITrain" <- function(file) {
+    ### TODO: read data from a text file
+	stop("Not implemented yet!")
+}
+
+"write.ZITrain" <- 	function(ZITrain, file) {
+    ### TODO: write data to a text file
+	stop("Not implemented yet!")
+}
+
+"zip.ZITrain" <- function(dir, zipfile, overwrite = FALSE) {
+    ### TODO: compress a classification tree
+	stop("Not implemented yet!")
+}
+
+"unzip.ZITrain" <- 	function(zipfile, dir, overwrite = FALSE) {
+    ### TODO: uncompress a classification tree
+	stop("Not implemented yet!")
+}
+# }}}
+
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
+
