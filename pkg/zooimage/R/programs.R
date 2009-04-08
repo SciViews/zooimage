@@ -1,4 +1,22 @@
+# {{{ Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage .
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+# }}}
 
+# {{{ program dispatcher 
 program <- function( prog, args, ..., dir ){
 	
 	prog <- ZIpgm( prog, dir )
@@ -6,6 +24,7 @@ program <- function( prog, args, ..., dir ){
 	system( cmd, intern = TRUE, invisible = TRUE )
 	
 }
+# }}}
 
 # {{{ xite scripts 
 xite <- function( prog, args, ... ){
@@ -106,4 +125,6 @@ netpbm_pgmhist <- function( file, delete = TRUE ){
 	names(BF) <- c("Gray", "Count")
 	BF
 }
+# }}}
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

@@ -474,6 +474,30 @@
 	return(Dec)
 }
 
+
+#' Get the current call stack
+callStack <- function( ){
+	calls <- tail( sys.calls(), -1)
+	out <- lapply( calls, function(.) {
+		out <- try( as.character(.[[1]] ), silent = TRUE )
+		if( inherits( out, "try-error" ) ) NULL else out
+	} )
+	unlist( out ) 
+}
+
+#' masking system so that the warnings related to using windows arguments
+system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE, 
+    input = NULL, show.output.on.console = TRUE, minimized = FALSE, 
+    invisible = TRUE){ 
+		
+		call <- match.call( )
+		call[[1]] <- base::system
+		suppressWarnings( eval( call , envir = parent.frame() ) )
+	
+}
+
+# {{{ File utilities
+
 #' transforms a file extension to a pattern for ignore.case matching of the 
 #' extension
 #' 
@@ -491,29 +515,6 @@ extensionPattern <- function( extension = "tif" ){
   } 
   paste( pattern, "$", sep = "" )
 }
-
-#' Get the current call stack
-callStack <- function( ){
-	calls <- tail( sys.calls(), -1)
-	out <- lapply( calls, function(.) {
-		out <- try( as.character(.[[1]] ), silent = TRUE )
-		if( inherits( out, "try-error" ) ) NULL else out
-	} )
-	unlist( out ) 
-}
-
-#' masking system so that the warnings related to using windows arguments
-
-system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE, 
-    input = NULL, show.output.on.console = TRUE, minimized = FALSE, 
-    invisible = TRUE){ 
-		
-		call <- match.call( )
-		call[[1]] <- base::system
-		suppressWarnings( eval( call , envir = parent.frame() ) )
-	
-}
-
 
 #' check if a file exists
 #' 
@@ -545,6 +546,13 @@ checkDirExists <- function( dir, message = 'Path "%s" does not exist or is not a
 	}
 }
 
+#' force creation of a directory
+#'
+#' First, if the path exists but is not a directory, this stops.
+#' Then, if it did not exist, it calls dir.create to attempt to create it
+#' If the creation was not sucessful, it stops
+#' 
+#' @param path the path of the directory to create
 force.dir.create <- function( path, ... ){
 	
 	if( file.exists( path ) && file.info(path)$isdir ){
@@ -555,13 +563,15 @@ force.dir.create <- function( path, ... ){
 		stop( sprintf("could not create directory '%s'", path) )
 	}
 	out
-	
 }
+# }}}
 
-
+# {{{ binary operators
 #' test if x inherits from class y
 `%of%` <- function( x, y ){
 	inherits( x, y )
 }
+# }}}
 
 
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
