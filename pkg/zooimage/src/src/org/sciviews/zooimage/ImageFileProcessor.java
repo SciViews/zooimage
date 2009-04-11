@@ -220,6 +220,9 @@ public class ImageFileProcessor {
 			// Analyze particles, using a mask (ImgMask), and an O.D. calibrated image (ImgOD)
 			ImagePlus mask_image = msk.open( zim.getSample() ) ;
 			mask_image.setTitle( zim.getSample() ) ;
+			if( Log.getMode() == Log.IMAGEJ){
+				mask_image.show() ;
+			}
 			IJ.freeMemory();
 			
 			// Calibrate the picture in length (and possibly in grey levels)
@@ -242,7 +245,9 @@ public class ImageFileProcessor {
 			pa.setHideOutputImage(true);
 			pa.analyze( mask_image ) ;
 			out.save( pa.getOutputImage() ) ;
-			
+			if( Log.getMode() == Log.IMAGEJ){
+				results.show("results" ) ;
+			}
 			mask_image.close();
 			
 		}
@@ -280,6 +285,10 @@ public class ImageFileProcessor {
 		}
 		
 		ImagePlus vis_imp = vis.open( Images.imgVIS ) ;
+		vis_imp.setTitle(Images.imgVIS) ;
+		if( Log.getMode() == Log.IMAGEJ){
+			vis_imp.show( );
+		}
 		IJ.freeMemory();
 		
 		// Copy the measurements table in this directory

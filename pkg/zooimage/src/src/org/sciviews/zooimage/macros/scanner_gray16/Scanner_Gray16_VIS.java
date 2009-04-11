@@ -27,9 +27,12 @@ public class Scanner_Gray16_VIS extends ZooImageMacro {
 		CalibrationData calibration = image.getCalibration() ;
 		
 		// ------------- (1) we start with the raw image, that we treat until we have the blur 
-		ImagePlus blur = image.open( ) ; 
-		blur.setTitle( "ZI1_Blur" ) ;
-	
+		ImagePlus blur = image.open( ) ;
+		if( Log.getMode() == Log.IMAGEJ){
+			blur.setTitle( "ZI1_Blur" ) ;
+			blur.show() ;
+		}
+		
 		// calibrate the gray levels
 		calibration.calibrateGrays( blur ) ;
 		
@@ -54,7 +57,10 @@ public class Scanner_Gray16_VIS extends ZooImageMacro {
 		
 		FileOpener.setShowConflictMessage(false) ;
 		ImagePlus shadow = IJ.openImage(tempFile.getAbsolutePath()) ;
-		shadow.setTitle("ZI1_Temp") ;
+		if( Log.getMode() == Log.IMAGEJ){
+			shadow.setTitle("ZI1_Temp") ;
+			shadow.show() ;
+		}
 		
 		// here we call ImageCalculator manually, otherwise
 		// it opens a new image which is not silent enough
@@ -67,7 +73,11 @@ public class Scanner_Gray16_VIS extends ZooImageMacro {
 		IJ.freeMemory();
 		
 		ImagePlus vis = IJ.openImage(tempFile.getAbsolutePath()) ;
-		vis.setTitle("ZI1_Temp") ;
+		if( Log.getMode() == Log.IMAGEJ ){
+			vis.setTitle( "ZI1_VIS" ) ;
+			vis.show() ;
+			vis.setTitle("ZI1_Temp") ;
+		}
 		IJ.freeMemory();
 		calc.calculate("operation=Add", vis, shadow ) ;
 		

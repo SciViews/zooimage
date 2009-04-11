@@ -13,6 +13,7 @@ import org.sciviews.zooimage.ZooImageMacro;
 import org.sciviews.zooimage.config.CalibrationData;
 import org.sciviews.zooimage.exceptions.ZooImageException;
 import org.sciviews.zooimage.files.ImageFile;
+import org.sciviews.zooimage.log.Log;
 import org.sciviews.zooimage.tools.Images;
 import org.sciviews.zooimage.tools.ZIJ;
 
@@ -32,7 +33,10 @@ public class Macrophoto_Gray16_VIS extends ZooImageMacro {
 		} catch( IOException e){}
 		
 		ImagePlus blur = image.open() ;
-		
+		if( Log.getMode() == Log.IMAGEJ){
+			blur.setTitle("ZI1_Blur") ;
+			blur.show() ;
+		}
 		// Calibrate the grays
 		calibration.calibrateGrays(blur) ;
 		
@@ -62,6 +66,9 @@ public class Macrophoto_Gray16_VIS extends ZooImageMacro {
 		FileOpener.setShowConflictMessage(false) ;
 		ImagePlus shadow = IJ.openImage(tempFile.getAbsolutePath()) ;
 		shadow.setTitle("ZI1_Temp") ;
+		if( Log.getMode() == Log.IMAGEJ){
+			shadow.show() ;
+		}
 		
 		ImageCalculator calc = new ImageCalculator( ) ;
 		calc.calculate("operation=Subtract", shadow, blur) ;
@@ -69,7 +76,10 @@ public class Macrophoto_Gray16_VIS extends ZooImageMacro {
 		
 		// Reopen temp 
 		ImagePlus vis = IJ.openImage(tempFile.getAbsolutePath()) ;
-		vis.setTitle("ZI1_Temp") ;
+		if( Log.getMode() == Log.IMAGEJ ){
+			vis.setTitle("ZI1_Temp") ;
+			vis.show() ;
+		}
 		calc.calculate("operation=Add", vis, shadow) ;
 		vis.setTitle( Images.imgVIS ) ;
 		ZIJ.run(vis, "Subtract...", "value=15");

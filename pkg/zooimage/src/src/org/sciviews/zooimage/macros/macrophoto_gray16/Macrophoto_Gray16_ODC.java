@@ -8,6 +8,8 @@ import org.sciviews.zooimage.ZooImageMacro;
 import org.sciviews.zooimage.config.CalibrationData;
 import org.sciviews.zooimage.exceptions.ZooImageException;
 import org.sciviews.zooimage.files.ImageFile;
+import org.sciviews.zooimage.log.Log;
+import org.sciviews.zooimage.tools.Images;
 import org.sciviews.zooimage.tools.ZIJ;
 
 public class Macrophoto_Gray16_ODC extends ZooImageMacro {
@@ -21,6 +23,10 @@ public class Macrophoto_Gray16_ODC extends ZooImageMacro {
 			image.getZim().getPlugin().getCalibration() ;
 		
 		ImagePlus imp = image.open() ;
+		if( Log.getMode() == Log.IMAGEJ){
+			imp.setTitle(Images.imgODC) ;
+			imp.show();
+		}
 		
 		ZIJ.run(imp, "Add...", "value=" + calibration.getWhitepoint() );
 		imp.setRoi(0, 0, 1, 1);

@@ -8,6 +8,7 @@ import org.sciviews.zooimage.ZooImageMacro;
 import org.sciviews.zooimage.config.CalibrationData;
 import org.sciviews.zooimage.exceptions.ZooImageException;
 import org.sciviews.zooimage.files.ImageFile;
+import org.sciviews.zooimage.log.Log;
 import org.sciviews.zooimage.tools.ZIJ;
 
 public class Scanner_Gray16_ODC extends ZooImageMacro {
@@ -20,6 +21,10 @@ public class Scanner_Gray16_ODC extends ZooImageMacro {
 		
 		// we need the raw image to start with
 		ImagePlus imp = image.open() ;
+		if( Log.getMode() == Log.IMAGEJ){
+			imp.setTitle( "ZI1_ODC") ;
+			imp.show() ;
+		}
 		
 		ZIJ.run(imp, "Add...", "value=" + calibration.getWhitepoint() ) ; 
 		imp.setRoi(0, 0, 1, 1);

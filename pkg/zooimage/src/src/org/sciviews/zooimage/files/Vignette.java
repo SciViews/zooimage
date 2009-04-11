@@ -59,6 +59,12 @@ public class Vignette {
 		ScaleConfig config = plugin.getScaleConfig(Width, pixsize ) ;
 		IJ.run(vig, "Scale Bar...", "width=" + config.getBarwidth() + " height=" + config.getBarheight() +
 			" font=" + config.getFontsize() + " color=Black location=[Upper Right]");
+		if( Log.getMode() == Log.IMAGEJ){
+			vig.setTitle("Vignette " + (index+1) ) ;
+			try{
+				Thread.sleep(1000) ;
+			} catch( Exception e){}
+		}
 		
 		IJ.save(vig, file.getAbsolutePath() ) ;
 		vig.close();

@@ -8,6 +8,7 @@ import org.sciviews.zooimage.ZooImageMacro;
 import org.sciviews.zooimage.config.ProcessOptions;
 import org.sciviews.zooimage.exceptions.ZooImageException;
 import org.sciviews.zooimage.files.ImageFile;
+import org.sciviews.zooimage.log.Log;
 import org.sciviews.zooimage.plugins.Microscope_Color;
 import org.sciviews.zooimage.tools.RGB;
 import org.sciviews.zooimage.tools.Threshold;
@@ -24,13 +25,19 @@ public class Microscope_Color_MSK extends ZooImageMacro {
 		ImageFile image = processor.getImage() ;
 		ImagePlus base = options.get("maskFromVIS") ? 
 			processor.getVis().open() : image.open() ;
-		base.setTitle("ZI1_Temp") ;
+		if( Log.getMode() == Log.IMAGEJ){
+			base.setTitle("ZI1_Temp") ;
+			base.show() ;
+		}
 		Microscope_Color plugin = (Microscope_Color) image.getZim().getPlugin() ;
 		Threshold thresholds = plugin.getThresholds() ;
 
 		// First, create a mask on edges
 		ImagePlus edge_imp = Duplicater.clone( base ) ; 
-		edge_imp.setTitle( "ZI1_MskEdge" ) ;
+		if( Log.getMode() == Log.IMAGEJ){
+			edge_imp.setTitle( "ZI1_MskEdge" ) ;
+			edge_imp.show();
+		}
 		ZIJ.run(edge_imp, "Enhance Contrast", "saturated=" + thresholds.getContrastsat() );
 		ZIJ.run(edge_imp, "Find Edges");
 		org.sciviews.zooimage.utils.Threshold.applyThreshold(
@@ -39,14 +46,18 @@ public class Microscope_Color_MSK extends ZooImageMacro {
 		// Split particle channels and keep only green one (the cleanest one)
 		RGB.keepGreenChannel(base) ;
 		ImagePlus green_imp = Duplicater.clone(base) ;
-		green_imp.setTitle("ZI1_Msk");
-		
+		if( Log.getMode() == Log.IMAGEJ){
+			green_imp.setTitle("ZI1_Msk");
+			green_imp.show() ;
+		}
 		// Create a second mask, based on this green channel
 		ImagePlus mask2_imp = Duplicater.clone(green_imp) ;
 		org.sciviews.zooimage.utils.Threshold.applyThreshold(
 				mask2_imp, 0, thresholds.getDark(), false); 
-		mask2_imp.setTitle("ZI1_Msk2") ;
-		
+		if( Log.getMode() == Log.IMAGEJ){
+			mask2_imp.setTitle("ZI1_Msk2") ;
+			mask2_imp.show() ;
+		}
 		
 		//Threshold at a lower level for second version, but after substracting back
 		ZIJ.run(green_imp, "Subtract Background...", "rolling=50 white");

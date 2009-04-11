@@ -61,13 +61,6 @@ public class ZooImage implements PlugIn {
 			// Need to start ImageJ
 			Log.setMode(Log.BATCH ) ;
 			
-			// the following is temporary until
-			// we find a solution to just use ImageJ as 
-			// a library without the GUI
-			//						ImageJ.main( null ) ;
-			//						ImageJ ij = IJ.getInstance();    	
-			// 						ij.setVisible(false) ;
-			
 			// Process the arguments
 			FileOpener.setShowConflictMessage(false) ;
 			
