@@ -1,7 +1,5 @@
 package org.sciviews.zooimage;
 
-import ij.io.OpenDialog;
-
 import java.io.File;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -224,16 +222,25 @@ public abstract class ZooImagePlugin {
 		// checks that ImageJ is able to work
 		if (!IJUtilities.verifyState(this)) return;
 		
-		// Do the parameterization of the process
-		if (!showGUI()) return;
+		ZooImagePluginGui gui = getGui() ;
 		
-		// Start processing this
-		// process( options.get("allfiles") ? zimdir : zimdir + zimfile , remotedir);
+		try{
+			gui.run();
+		} catch( Exception e){
+			return ;
+		}
+		
+		// Start processing
+		process( ) ;
 		
 	}
-
-	
 		
+	/**
+	 * The gui object that parameterizes this plugin
+	 * @return
+	 */
+	public abstract ZooImagePluginGui getGui() ;
+	
 	/**
 	 * Returns the calibration information associated with this plugin
 	 * @return the calibration information
@@ -250,69 +257,11 @@ public abstract class ZooImagePlugin {
 		return options ;
 	}
 
-	
-	
-	// --------------- to be changed : create a class that deals with 
-	//                 this
-	
-	@Deprecated
-	public abstract boolean showGUI_processZimFile( ) ;
-
-	/**
-	 * Attemps to open a zim file. Sets the "zimdir" and "zimfile" variables
-	 * as a side effect
-	 * @return true if the zim file was opened
-	 */
-	@Deprecated
-	private boolean showGUI_openZimFile( ){
-		
-		OpenDialog od = new OpenDialog("Open a .zim file...", "");
-		String zimdir = od.getDirectory();
-		if (zimdir == null) return(false);
-		
-		String zimfile = od.getFileName();
-		if (zimfile == "") return(false);
-		
-		try{
-			ZimFile.check ( new File( zimdir + zimfile) ) ; 
-		} catch( Exception e){
-			Log.error("The file '" + zimfile + "'\n is not recognized as a valid ZIM file" +
-				"\nOperation aborted!");
-			Log.showStatus("--- INTERRUPTED! ---");
-			return(false);
-		}
-		return(true) ;
-	} 
-	
-	/**
-	 * GUI to parameterize the process
-	 * @return true if the gui was shown
-	 */
-	@Deprecated
-	public boolean showGUI(){
-
-		boolean ok = showGUI_openZimFile( ) ;
-		ok = showGUI_processZimFile() ;
-		return ok ;
-	}
-
-	// Global variables - deprecated
-	@Deprecated
-	protected String zimfile = "";					// Which .zim file is selected?
-	
-	@Deprecated
-	protected String zimdir = "";					// In which directory is this file?
-	
-	@Deprecated
-	protected String sample = "";					// The name of the sample currently processed
-	
-	@Deprecated
-	protected String ext = "";						// The extension of the currently processed file
-	
-	@Deprecated
-	protected String remotedir = "";				// A remote directory from where data is read
-
 	@Deprecated 
 	protected static String[] methods ;
+	
+	public String[] getMethods(){
+		return methods ;
+	}
 	
 }

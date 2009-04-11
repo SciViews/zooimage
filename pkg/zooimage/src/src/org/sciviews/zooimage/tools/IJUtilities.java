@@ -99,6 +99,7 @@ public class IJUtilities {
 
 	/**
 	 * Check that ImageJ is in a correct state for the process to run
+	 * 
 	 * @return true if ImageJ is in a good state to perform the analysis
 	 */
 	public static boolean verifyState( ZooImagePlugin plugin) {

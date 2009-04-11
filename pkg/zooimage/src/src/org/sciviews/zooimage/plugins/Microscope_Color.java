@@ -1,14 +1,11 @@
 package org.sciviews.zooimage.plugins ;
 
-import ij.Prefs;
-import ij.gui.GenericDialog;
-
 import java.util.Vector;
 
 import org.sciviews.zooimage.ZooImagePlugin;
-import org.sciviews.zooimage.log.Log;
+import org.sciviews.zooimage.ZooImagePluginGui;
+import org.sciviews.zooimage.plugins.gui.Microscope_Color_Gui;
 import org.sciviews.zooimage.tools.FileExtensions;
-import org.sciviews.zooimage.tools.FileUtilities;
 import org.sciviews.zooimage.tools.Threshold;
 
 
@@ -74,48 +71,7 @@ public class Microscope_Color extends ZooImagePlugin {
 		thresholds.fill( parameters ) ;
 		return parameters ;
 	}
-
-	@Deprecated
-	@Override
-	public boolean showGUI_processZimFile(){
 	
-		// Show the dialog box
-		GenericDialog gd = new GenericDialog("PhytoImage1 Image Processor");
-		gd.addMessage("Selected item: " + zimfile);
-		gd.addCheckbox("Process all items in this directory?", options.get("allfiles") );
-		gd.addStringField("Read from directory: ", remotedir);
-
-		gd.addCheckbox("Analyze particles", options.get("analyzepart") );
-		gd.addCheckbox("Make vignettes", options.get("makevigs") );
-		gd.addCheckbox("Sharpen vignettes", options.get("sharpenvigs") );
-		gd.addCheckbox("Show outlined objects", options.get("showoutline") );
-		
-		gd.showDialog();
-		if (gd.wasCanceled()) return(false);
-		options.set("allfiles", gd.getNextBoolean() );
-		remotedir = FileUtilities.fsepDir(gd.getNextString());
-
-		options.set("ziptiff", false );
-		options.set("analyzepart", gd.getNextBoolean() );
-		options.set("makevigs", gd.getNextBoolean() );
-		options.set("sharpenvigs", gd.getNextBoolean() );
-		options.set("showoutline", gd.getNextBoolean() );
-		
-		// Make sure that the directory provided exists
-		if( ! FileUtilities.dirExists(remotedir) ){
-			Log.error("The directory " + remotedir + " in invalid!");
-			return(false);
-		}
-		
-		Prefs.set("ZI1.boolean", options.get("allfiles") );
-		Prefs.set("ZI1.string", calibration.getMethod() );
-		Prefs.set("ZI1.boolean", options.get("analyzepart") );
-		Prefs.set("ZI1.boolean", options.get("makevigs") );
-		Prefs.set("ZI1.boolean", options.get("sharpenvigs") );
-		Prefs.set("ZI1.boolean", options.get("showoutline") );
-		return(true);
- 	}
-
 	/**
 	 * @param thresholds the thresholds to set
 	 */
@@ -130,5 +86,10 @@ public class Microscope_Color extends ZooImagePlugin {
 		return thresholds;
 	}
 
+	@Override
+	public ZooImagePluginGui getGui() {
+		return new Microscope_Color_Gui(this);
+	}
+	
 	
 }
