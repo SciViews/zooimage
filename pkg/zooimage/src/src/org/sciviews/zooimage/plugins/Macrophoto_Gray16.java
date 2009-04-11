@@ -20,8 +20,6 @@ import org.sciviews.zooimage.plugins.gui.Macrophoto_Gray16_Gui;
   */
 public class Macrophoto_Gray16 extends ZooImagePlugin {
 
-	// The following list should be constructed dynamically... only add more than one item if you need several different treatments
-	protected static String[] methods = {"default [0.25 - 10]", "wide spectrum [0.15 - 20]"};
 	
 	/**
 	 * Constructor for the Macrophoto_Gray16 plugin
@@ -48,5 +46,11 @@ public class Macrophoto_Gray16 extends ZooImagePlugin {
 	public ZooImagePluginGui getGui() {
 		return new Macrophoto_Gray16_Gui(this);
 	}
+
+	public String[] getMethods( ){
+		return methods ;
+	}
+	// The following list should be constructed dynamically... only add more than one item if you need several different treatments
+	protected static String[] methods = {"default [0.25 - 10]", "wide spectrum [0.15 - 20]"};
 	
 }

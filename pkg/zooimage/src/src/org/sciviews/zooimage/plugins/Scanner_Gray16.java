@@ -41,5 +41,10 @@ public class Scanner_Gray16 extends ZooImagePlugin {
 	public ZooImagePluginGui getGui() {
 		return new Scanner_Gray16_Gui( this );
 	}
+
+	@Override
+	public String[] getMethods() {
+		return null ;
+	}
 	
 }

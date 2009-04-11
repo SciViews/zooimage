@@ -8,6 +8,7 @@ import org.sciviews.zooimage.config.CalibrationData;
 import org.sciviews.zooimage.config.ProcessOptions;
 import org.sciviews.zooimage.exceptions.ZooImageException;
 import org.sciviews.zooimage.files.ZimFile;
+import org.sciviews.zooimage.log.Log;
 
 /**
  * Class that sets the parameters of the associated zoo image plugin
@@ -34,12 +35,15 @@ public abstract class ZooImagePluginGui {
 	public void run() throws ZooImageException {
 		
 		openZimFileDialog() ;
+		Log.log("before zim dialog options") ;
 		zimOptionsDialog();
-		
+		Log.log("after zim dialog options") ;
 		if( options.get("allfiles")){
 			plugin.processDirectory(zimdir, remotedir ) ;
 		} else{
-			plugin.processSingleZimFile(zimfile, remotedir ) ;
+			plugin.processSingleZimFile( 
+					new File( zimdir + "/" + zimfile ).getAbsolutePath() , 
+					remotedir ) ;
 		}
 		
 	}
@@ -56,7 +60,7 @@ public abstract class ZooImagePluginGui {
 			throw new ZooImageException( "Empty Zim file") ;
 		}
 		
-		ZimFile.check ( new File( zimdir + zimfile) ) ; 
+		ZimFile.check ( new File( zimdir + "/" + zimfile) ) ; 
 		
 		remotedir = new File( zimdir ) ;
 	}

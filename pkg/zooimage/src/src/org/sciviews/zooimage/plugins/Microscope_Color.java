@@ -29,11 +29,7 @@ import org.sciviews.zooimage.tools.Threshold;
  */
 public class Microscope_Color extends ZooImagePlugin {
 
-  // The following list should be constructed dynamically... only add more than one item if you need several different treatments
-	
-	protected static String[] methods = {"default", "alternate"};
-	
-	/**
+  	/**
 	 * Threshold data
 	 * Contains edgethreshold,darkthreshold, lightthreshold, contrastsat 
 	 */
@@ -44,6 +40,7 @@ public class Microscope_Color extends ZooImagePlugin {
 	 */
 	public Microscope_Color( ){
 		super( ) ;
+		calibration.setMethod("default") ;
 		calibration.setPixsize( 0.1 ) ;
 		calibration.setMinsize( 20 ) ;
 		calibration.setMaxsize( 10000 ) ;
@@ -91,5 +88,12 @@ public class Microscope_Color extends ZooImagePlugin {
 		return new Microscope_Color_Gui(this);
 	}
 	
+// The following list should be constructed dynamically... only add more than one item if you need several different treatments
+	
+	protected static String[] methods = {"default", "alternate"};
+	
+	public String[] getMethods(){
+		return methods ;
+	}
 	
 }

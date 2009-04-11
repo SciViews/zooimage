@@ -257,11 +257,7 @@ public abstract class ZooImagePlugin {
 		return options ;
 	}
 
-	@Deprecated 
-	protected static String[] methods ;
 	
-	public String[] getMethods(){
-		return methods ;
-	}
+	public abstract String[] getMethods() ;
 	
 }

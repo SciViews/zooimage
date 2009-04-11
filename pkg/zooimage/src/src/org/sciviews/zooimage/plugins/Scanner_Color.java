@@ -90,5 +90,10 @@ public class Scanner_Color extends ZooImagePlugin {
 	public ZooImagePluginGui getGui() {
 		return new Scanner_Color_Gui( this );
 	}
+
+	@Override
+	public String[] getMethods() {
+		return methods ;
+	}
 	
 }
