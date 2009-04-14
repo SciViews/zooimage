@@ -33,8 +33,8 @@
 #' @param domain see ?stop
 stop <- function( ..., call.= TRUE, domain = NULL ){
    calls <- callStack()
-   
-   if( ! tail(calls,2)[1] %in% names( zooImageErrorDrivers) ){
+   calls <- head( calls, -2) 
+   if( ! tail(calls,1) %in% names( zooImageErrorDrivers) ){
 	   # the calling function does not have a driver, we use 
 	   # the regular stop
 	   # TODO: maybe this should be a default ZooImageError instead
@@ -162,7 +162,7 @@ zooImageWarningContext <- function( fun, context ) {
 getZooImageConditionFunction <- function( calls, drivers, default, context.fun ){
 	fun <- tail(calls,2)[1]
 	driver <- drivers[[ fun ]]
-	browser()
+	
 	if( is.character( driver ) ){
 		driver <- context.fun( fun, driver )
 	} else if( is.null( fun ) ){

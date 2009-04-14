@@ -475,12 +475,13 @@
 
 #' Get the current call stack
 callStack <- function( ){
-	calls <- tail( sys.calls(), -1)
+	calls <- sys.calls()
 	out <- lapply( calls, function(.) {
 		out <- try( as.character(.[[1]] ), silent = TRUE )
 		if( inherits( out, "try-error" ) ) NULL else out
 	} )
-	unlist( out ) 
+	out <- unlist( out[ !sapply( out, is.null ) ] )
+	out
 }
 
 #' masking system so that the warnings related to using windows arguments
