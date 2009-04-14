@@ -44,7 +44,8 @@ stop <- function( ..., call.= TRUE, domain = NULL ){
 	   # using the appropriate driver
 	   message <- do.call( paste, list(...) )
 	   condfun <- getZooImageErrorFunction( calls )
-	   signalCondition( condfun(message, env = parent.frame() ) )
+	   err <- condfun(message, env = parent.frame() )
+	   base:::stop( err )
    }
 }
 # }}}
@@ -94,15 +95,21 @@ warning <- function( ..., call.= TRUE, immediate.= FALSE, domain = NULL ){
 zooImageError <- function( msg = "error", env = parent.frame(), errorClass = NULL, context = NULL ){
  	err <- simpleError( message = msg )
  	err$env <- env             
-	# if( !is.null( context ) ){
-	#   if( context %in% ls( env ) ){
-	# 	  err$context <- env[[ context ]]
-	#   }
-	# }
- 	class( err ) <- c(errorClass, "zooImageError", "error", "condition" )
+	if( !is.null( context ) ){
+	  if( context %in% ls( env ) ){
+		  err$context <- env[[ context ]]
+	  }
+	  err$message <- sprintf( "[%s] %s", err$context, msg )
+	}
+	class( err ) <- c(errorClass, "zooImageError", "error", "condition" )
  	err
 }
 # }}}
+
+print.zooImageError <- function( x, ...){
+	print ( "hoop" )
+}
+
 
 #{{{ zooImageErrorDrivers
 #' if a zoo image function has a driver in this list
@@ -127,7 +134,8 @@ zooImageErrorDrivers <- list(
 	
 	# --------------------------------------- zie.R
 	"make.zie" = "Filemap", 
-	"BuildZim" = "Smp"
+	"BuildZim" = "Smp", 
+	"f" = ""
 	
 )
 # }}}
@@ -142,6 +150,7 @@ zooImageWarningDrivers <- list(
 #{{{ zooImageErrorContext
 #' zoo image errors associated with a context
 zooImageErrorContext <- function( fun, context ) {
+	force(context)
 	function( msg, env = parent.frame() ){
 		zooImageError( msg, env, paste( "zooImageError", fun, sep = "_") , context = context )
 	}
@@ -160,9 +169,8 @@ zooImageWarningContext <- function( fun, context ) {
 #{{{ getZooImageConditionFunction
 #' Get the appropriate condition generating function
 getZooImageConditionFunction <- function( calls, drivers, default, context.fun ){
-	fun <- tail(calls,2)[1]
+	fun <- tail(calls, 1)
 	driver <- drivers[[ fun ]]
-	
 	if( is.character( driver ) ){
 		driver <- context.fun( fun, driver )
 	} else if( is.null( fun ) ){

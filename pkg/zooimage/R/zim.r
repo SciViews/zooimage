@@ -106,7 +106,8 @@
 # STOP: no data
 # STOP: unable to read table of measurements
 # STOP: no measurements found in the file
-"verify.zim" <- function(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE) {
+"verify.zim" <- function(zimfile, check.ext = FALSE, 
+	is.dat1 = hasExtension( zimfile, "_dat1.zim"), check.table = FALSE) {
     
 	# {{{ Required fields
 	# Here are predefined required fields before measurements
