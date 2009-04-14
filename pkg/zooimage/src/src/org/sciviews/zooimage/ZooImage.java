@@ -4,10 +4,12 @@ import ij.IJ;
 import ij.io.FileOpener;
 import ij.plugin.PlugIn;
 
+import java.awt.Dimension;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 
+import org.sciviews.zooimage.gui.ZooImageGui;
 import org.sciviews.zooimage.log.Log;
 
 /**
@@ -53,6 +55,12 @@ public class ZooImage implements PlugIn {
 	 * </ol>
 	 */
 	public static void main(String args[]) {
+		
+		ZooImageGui _gui = new ZooImageGui() ;
+		_gui.setPreferredSize(new Dimension( 800, 600) ) ;
+		_gui.pack();
+		_gui.setVisible(true);
+		
 		
 		if(args.length != 3 && args.length != 2 ) {
 			Log.log("usage: zooimage pluginname myfile.zim|mydir [resultdir]");
