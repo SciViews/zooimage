@@ -33,12 +33,18 @@
 #' @param domain see ?stop
 stop <- function( ..., call.= TRUE, domain = NULL ){
    calls <- callStack()
+   
    if( ! tail(calls,2)[1] %in% names( zooImageErrorDrivers) ){
-     base:::stop( ..., call.=call., domain = domain )
+	   # the calling function does not have a driver, we use 
+	   # the regular stop
+	   # TODO: maybe this should be a default ZooImageError instead
+	   base:::stop( ..., call.=call., domain = domain )
    } else{
-     message <- do.call( paste, list(...) )
-	 condfun <- getZooImageErrorFunction( calls )
-	 signalCondition( condfun(message, env = parent.frame() ) )
+	   # the calling function has a driver, we throw the condition 
+	   # using the appropriate driver
+	   message <- do.call( paste, list(...) )
+	   condfun <- getZooImageErrorFunction( calls )
+	   signalCondition( condfun(message, env = parent.frame() ) )
    }
 }
 # }}}
@@ -121,7 +127,7 @@ zooImageErrorDrivers <- list(
 	
 	# --------------------------------------- zie.R
 	"make.zie" = "Filemap", 
-	"BuildZim" = "Smp", 
+	"BuildZim" = "Smp"
 	
 )
 # }}}
@@ -156,6 +162,7 @@ zooImageWarningContext <- function( fun, context ) {
 getZooImageConditionFunction <- function( calls, drivers, default, context.fun ){
 	fun <- tail(calls,2)[1]
 	driver <- drivers[[ fun ]]
+	browser()
 	if( is.character( driver ) ){
 		driver <- context.fun( fun, driver )
 	} else if( is.null( fun ) ){

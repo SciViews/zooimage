@@ -40,7 +40,6 @@
 #   have a catcher attribute, then the dummyCatcher is used so that 
 #   the call is evaluated verbatim
 
-
 # {{{ an environment where the current catcher is stored
 catch.env <- new.env()
 # }}}

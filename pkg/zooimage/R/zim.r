@@ -27,7 +27,7 @@
 # {{{ make.zim
 # HANDLE: verify.zim might throw an error
 # HANDLE: create.zim
-"make.zim" <- function(dir = ".", pattern = "\\.[tT][iI][fF]$",
+"make.zim" <- function(dir = ".", pattern = extensionPattern( "tif" ),
 	images = list.files(dir, pattern), show.log = TRUE, bell = FALSE) {
 	
 	# {{{ check that there are images to process
@@ -39,7 +39,7 @@
 	# {{{ Name of images is something like SCS.xxxx-xx-xx.SS+Ann.tif
 	# We make the same .zim file for all ...+Ann images, so, reduce the list
 	zims <- sort(unique(get.sampleinfo(images, type = "fraction", ext = pattern)))
-	zims <- file.path(dir, paste(zims, "zim", sep = "."))
+	zims <- file.path(dir, sprintf( "%.zim", zims ) )
 	ok <- TRUE
 	zmax <- length(zims)
 	cat("Making & checking .zim files...\n")
@@ -49,9 +49,11 @@
 	template <- NULL	
 	for (z in 1:zmax) {
 		Progress(z, zmax)
-		if (!file.exists(zims[z])) { 	#.zim file does not exists... create it
+		#.zim file does not exists... create it
+		if (!file.exists(zims[z])) { 	
 			logProcess("Creating the file", zims[z])
 			create.zim(zims[z], template = template, wait = TRUE)
+			
 			# Use the previous file as template
 			template = zims[z]
 		}
@@ -77,7 +79,7 @@
 	checkFileExists( zimfile, force.file = TRUE, extension = "zim" )
 	
 	# check the first line
-	checkFirstLine( zimfile, message = "File does not appears to be a ZooImage version 1 file, or it is corrupted!" ) )
+	checkFirstLine( zimfile, message = "File does not appears to be a ZooImage version 1 file, or it is corrupted!" )
 	
 	#  verything has passed
 	invisible( TRUE )
@@ -415,7 +417,7 @@
 	# Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from SCS.xxxx-xx-xx.SS+Fnn)
 	# If there are duplicates, only extract first one
 	zimfiles <- sprintf( "%s.zim", 
-		get.sampleinfo(zipfiles, "fraction", ext = extensionPattern("zip") )
+		get.sampleinfo(zipfiles, "fraction", ext = extensionPattern("zip") ) )
 	
 	# Eliminate path for zimfiles
 	zimfiles <- basename(zimfiles)

@@ -208,7 +208,7 @@ attr( verify.zid, "catcher" ) <- function( call ){
 		dat1path <- file.path(zidir, dat1files[i])
 		
 		# TODO; this might generate an error, handle it
-		is.zim( dat1path ), 
+		is.zim( dat1path )
 		
 		# Read the header
 		Lines <- scan(dat1path, character(), sep = "\t", skip = 1, blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "#")

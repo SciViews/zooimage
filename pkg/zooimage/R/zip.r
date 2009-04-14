@@ -273,7 +273,7 @@ zip <- function( zipfile , directory, delete.source = FALSE, comment.file = NULL
 
 # {{{ zip_addcomments
 zip_addcomments <- function( zip, comment.file, 
-	on.failure = stop( sprintf( on.failure.msg , comment.file, zip ) )
+	on.failure = stop( sprintf( on.failure.msg , comment.file, zip ) ), 
 	on.failure.msg = "problem adding comment from '%s' to file '%s' ", 
 	on.success ){
 
