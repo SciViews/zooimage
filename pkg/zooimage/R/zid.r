@@ -102,16 +102,6 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	return(invisible(ok))
 	
 }
-# attr( verify.zid, "catcher" ) <- function( call ){
-# 	
-# 	withCallingHandlers( eval( call ), 
-# 		"zooImageError_verify.zim" = function( e ){
-# 			# we get an error from verify.zim, we want to log the error
-# 			# but keep going
-# 			logError( e )			
-# 		} )
-# 	
-# }
 # }}}
 
 # {{{ verify.zid.all
@@ -119,13 +109,14 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
     check.vignettes = TRUE, show.log = TRUE, bell = FALSE) {
 	
 	# {{{ Verify all of these directories
-	if (type != "ZI1") stop("only 'ZI1' is currently supported for 'type'!")
+	if (type != "ZI1") {
+		stop("only 'ZI1' is currently supported for 'type'!")
+	}
 	# }}}
 	
 	# {{{ First, switch to that directory
 	inidir <- getwd()
-	if (!file.exists(path) || !file.info(path)$isdir)
-		stop(path, " does not exist, or it is not a directory!")
+	checkDirExists( path )
 	setwd(path); on.exit(setwd(inidir))
 	path <- "."	# Indicate we are now in the right path
 	# }}}
@@ -143,67 +134,75 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# }}}
 	
 	# {{{ Start the process
-	ok <- TRUE
 	smax <- length(samples)
 	cat("Verification...\n")
-	for (s in 1:smax) {
-		Progress(s, smax)
-		withRestarts( withCallingHandlers( {
-			verify.zid(samples[s], type = type, check.vignettes = check.vignettes, show.log = FALSE)
-		} , zooImageError = function( e ){   # calling handler
-			logError( e )               
-			                                 #       about the sample being analysed
-			invokeRestart( "zooImageError" ) # go to the restart below
-		} ), zooImageError = function(e){    # restart
-			ok <<- FALSE # should this be depreciated ?
-		})  
-	}
-	# }}}
 	
-	# {{{ Dismiss the progress 
-	Progress (smax + 1, smax) # To dismiss the Progress() indication  
+	ok <- sapply( samples, function(s){
+		tryCatch( verify.zid( s, type = type, check.vignettes = check.vignettes, show.log = FALSE), 
+			zooImageError = function(e) -1 )
+	} )
 	# }}}
 	
 	# {{{ cleans up
-	finish.loopfunction( ok , bell = bell, show.log = show.log )
+	finish.loopfunction( all( ok ) , bell = bell, show.log = show.log )
 	# }}}
 }
 # }}}
 
 # {{{ make.RData
-"make.RData" <-
-	function(zidir, type = "ZI1", replace = FALSE, show.log = TRUE) {
-	# Make a .RData file that collates together data from all the "_dat1.zim" files of a given sample
-	if (type != "ZI1") stop("only 'ZI1' is currently supported for 'type'!")
+#' Make a .RData file that collates together data from all the "_dat1.zim" files of a given sample
+"make.RData" <- function(zidir, type = "ZI1", replace = FALSE, show.log = TRUE) {
+	
+	if (type != "ZI1") {
+		stop("only 'ZI1' is currently supported for 'type'!")
+	}
 	RDataFile <- file.path(zidir, paste(basename(zidir), "_dat1.RData", sep = ""))
-	if (file.exists(RDataFile) && !replace) return(invisible(TRUE)) # File already exists
+	# File already exists
+	if (file.exists(RDataFile) && !replace){
+		return(invisible(TRUE))
+	}
+	
 	ok <- TRUE
 	dat1files <- list.dat1.zim(zidir)
 	if(length(dat1files) == 0) {
-		logProcess("has no '_dat1.zim' file!", zidir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
-	if (length(dat1files) == 1 && is.na(dat1files)) {
-	 	logProcess("not found or not a directory!", zidir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		stop("no '_dat1.zim' file!" ) 
+	}
 	dat1files <- sort(dat1files)
 	fractions <- get.sampleinfo(dat1files, "fraction")
+	
 	# Avoid collecting duplicate informations about fractions
 	fracdup <- duplicated(fractions)
+	
 	# For each of these files, read content in a variable
 	allmes <- NULL
 	allmeta <- NULL
 	for (i in 1:length(dat1files)) {
 		dat1path <- file.path(zidir, dat1files[i])
+		env <- environment()
 		
-		# TODO; this might generate an error, handle it
-		is.zim( dat1path )
+		doNext <- function( ) eval( quote( next ), envir = env )
+		
+		tryCatch( is.zim( dat1path ), zooImageError = function(e){
+			logError( e ) 
+			doNext()
+		} )
 		
 		# Read the header
-		Lines <- scan(dat1path, character(), sep = "\t", skip = 1, blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "#")
+		Lines <- scan(dat1path, character(), sep = "\t",
+			skip = 1, blank.lines.skip = FALSE,
+			flush = TRUE, quiet = TRUE, comment.char = "#")
 		if (length(Lines) < 1) {
-			logProcess("is empty, or is corrupted", dat1files[i]); ok <- FALSE; next }
+			logProcess("is empty, or is corrupted", dat1files[i]); 
+			ok <- FALSE; 
+			next 
+		}
+		
 		# Trim leading and trailing spaces in Lines
 		Lines <- trim(Lines)
-        # Convert underscore to space
+        
+		# Convert underscore to space
 		Lines <- underscore2space(Lines)
+		
 		# Determine where the table of measurements starts (it is '[Data]' header)
 		endhead <- (1:length(Lines))[Lines == "[Data]"]
 		if (length(endhead) == 0) endhead <- NULL else endhead <- endhead[length(endhead)]
@@ -212,6 +211,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 				Lines <- Lines[1:(endhead - 1)]
 			} else Lines <- NULL
 		}
+		
 		# Decrypt all lines, that is, split on first occurrence of "=" into 'tag', 'value'
 		# and separate into sections
 		if (!fracdup[i] && !is.null(Lines)) {
@@ -222,6 +222,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 				allmeta <- list.merge(allmeta, meta)
 			}
 		}
+		
 		# Calculate a data frame containing 'dilutions'
 		Sub <- allmeta$Subsample
 		Sub$Dil <- 1 / (Sub$SubPart * Sub$CellPart * Sub$Replicates * Sub$VolIni)

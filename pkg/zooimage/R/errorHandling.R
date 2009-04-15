@@ -138,8 +138,8 @@ zooImageErrorDrivers <- list(
 	"checkDirExists"  = "dir", 
 	"get.ZITrain"     = "dir",
 	"force.dir.create" = "path",
-	"checkEmptyDir" = "dir"
-	
+	"checkEmptyDir" = "dir", 
+	"make.RData" = "zidir"
 )
 # }}}
 

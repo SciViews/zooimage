@@ -512,6 +512,22 @@ list.files.ext <- function( dir, extension = "zip", pattern = extensionPattern(e
 	out
 }
 
+# {{{ list.zim, list.dat1.zim
+"list.zim" <- function(zidir, ...) {
+	list.files.ext( zidir, extension = "zim", ... )
+}
+"list.dat1.zim" <- function(zidir, ...) {
+	list.files.ext( zidir, extension = "_dat1.zim", ... )
+}
+list.zip <- function( zidir, ... ){
+	list.files.ext( zidir, extension = "zip", ... )
+}
+list.zid <- function( zidir, ... ){
+	list.files.ext( zidir, extension = "zid", ... )
+}
+# }}}
+
+
 #' transforms a file extension to a pattern for ignore.case matching of the 
 #' extension
 #' 
