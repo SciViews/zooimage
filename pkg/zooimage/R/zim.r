@@ -49,6 +49,7 @@
 	template <- NULL	
 	for (z in 1:zmax) {
 		Progress(z, zmax)
+		
 		#.zim file does not exists... create it
 		if (!file.exists(zims[z])) { 	
 			logProcess("Creating the file", zims[z])
@@ -59,7 +60,7 @@
 		}
 		# Verify that the zim is correct
 		res <- verify.zim(zims[z])
-		if (!res == 0) ok <- FALSE
+		if (res != 0) ok <- FALSE
 	}
 	# }}}
 	
@@ -108,7 +109,7 @@
 # STOP: no measurements found in the file
 "verify.zim" <- function(zimfile, check.ext = FALSE, 
 	is.dat1 = hasExtension( zimfile, "_dat1.zim"), check.table = FALSE) {
-    
+                                     
 	# {{{ Required fields
 	# Here are predefined required fields before measurements
 	reqfields <- c("[Image]", "Author", "Hardware", "Software",
@@ -125,19 +126,18 @@
 	# {{{ Determine if there are custom verification rules defined and if they are active
     newRules <- getOption("ZI.zim")
     if (!is.null(newRules) && newRules$active == TRUE) {
-        # {{{ Should we delegate the whole process to a custom verification function?
+        # Should we delegate the whole process to a custom verification function?
 		verify.all <- newRules$verify.all
         if (!is.null(verify.all) && inherits(verify.all, "function"))
             return(verify.all(zimfile = zimfile, check.ext = check.ext,
                 is.dat1 = is.dat1, chack.table = check.table))
-		# }}}
-        
-		# {{{ Should we use additional verification code instead?
+		
+		# Should we use additional verification code instead?
 		verify <- newRules$verify
         reqfields <- c(reqfield, newRules$zim.required)
         reqfields2 <- c(reqfields2, newRules$dat1.zim.required)
         reqcols <- c(reqcol, newRules$dat1.data.required)
-		# }}}
+		# 
     } else verify <- NULL
 	# }}}
 
@@ -166,8 +166,9 @@
         flush = TRUE, quiet = TRUE, blank.lines.skip = FALSE, 
 		comment.char = "=") 
         
-    if (length(Lines) < 1)
+	if (length(Lines) < 1){
         stop("File is empty!")
+	}
     
 	# Trim leading and trailing white spaces
 	Lines <- trim(Lines)
@@ -231,15 +232,19 @@
 			 # We don't read the table, use a different method to get the number of entries in it
             # Read the last entry in Lines and convert it to a numeric value: should be the number of items measured
 			nItems <- Lines[length(Lines)]
-            if (sub("^[0-9]+$", "", nItems) != "")
+            if (sub("^[0-9]+$", "", nItems) != ""){
                 stop("Impossible to determine the number of items measured!")
+			}
             return(as.integer(nItems))
 			# }}}
         }
 		# }}}
     } else {
-        if (is.dat1) stop("No measurements found in this file")
-        else return(0)
+		if (is.dat1){
+			stop("No measurements found in this file")
+		} else {
+			return(0)
+		}
     }
 	# }}}
 }
@@ -252,6 +257,9 @@
 "list.dat1.zim" <- function(zidir, ...) {
 	list.files.ext( zidir, extension = "_dat1.zim", ... )
 }
+list.zip <- function( zidir, ... ){
+	list.files.ext( zidir, extension = "zip", ... )
+}
 # }}}
 
 # {{{ extract.zims
@@ -261,8 +269,7 @@
 # STOP: One or several files not found!
 # STOP: sprintf( "%s: is not a valid directory!", path)
 # STOP: Done, no file to process!
-"extract.zims" <-
-	function(zipdir = ".", zipfiles = list.files(zipdir, pattern = "\\.[zZ][iI][pP]$"),
+"extract.zims" <- function(zipdir = ".", zipfiles = list.zip(zipdir),
 		path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE) {
     
 	# {{{ This requires the 'unzip' program!, Make sure it is available

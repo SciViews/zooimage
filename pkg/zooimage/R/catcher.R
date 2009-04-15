@@ -113,10 +113,12 @@ catch <- function( call ){
 	if( is.null( getCatcher() ) ){
 		# see if it has a catcher
 		catcher <- attr( fun, "catcher" )
+		if( is.null(catcher) ){
+			base::stop( sprintf( "'%s' does not have a catcher", as.character(call[[1]]) ) )
+		}
 		setCatcher( catcher ) 
+		recallWithCatcher( call )
 	}
-	
-	recallWithCatcher( call )
 	
 }
 # }}}

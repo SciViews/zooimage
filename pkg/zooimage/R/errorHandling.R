@@ -92,24 +92,19 @@ warning <- function( ..., call.= TRUE, immediate.= FALSE, domain = NULL ){
 #'
 #' @param msg the error message
 #' @param env the environment in which the problem occured
-zooImageError <- function( msg = "error", env = parent.frame(), errorClass = NULL, context = NULL ){
+zooImageError <- function( msg = "error", env = parent.frame(), errorClass = NULL, context = NULL, verbose = getOption("verbose") ){
  	err <- simpleError( message = msg )
  	err$env <- env             
 	if( !is.null( context ) ){
 	  if( context %in% ls( env ) ){
 		  err$context <- env[[ context ]]
 	  }
-	  err$message <- sprintf( "[%s] %s", err$context, msg )
+	  err$message <- if( verbose ) sprintf( "<%s> [%s] %s", errorClass, err$context, msg ) else sprintf( "[%s] %s", err$context, msg )
 	}
 	class( err ) <- c(errorClass, "zooImageError", "error", "condition" )
  	err
 }
 # }}}
-
-print.zooImageError <- function( x, ...){
-	print ( "hoop" )
-}
-
 
 #{{{ zooImageErrorDrivers
 #' if a zoo image function has a driver in this list
@@ -135,7 +130,9 @@ zooImageErrorDrivers <- list(
 	# --------------------------------------- zie.R
 	"make.zie" = "Filemap", 
 	"BuildZim" = "Smp", 
-	"f" = ""
+	"checkFileExists" = "file", 
+	"checkFirstLine"  = "file", 
+	"checkDirExists"  = "dir" 
 	
 )
 # }}}

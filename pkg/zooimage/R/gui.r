@@ -349,8 +349,8 @@ ZIDlg <- function() {
 	# or you can access other processes that automatically build .zim files
 	# and/or import images/data, including custom processes defined in
 	# separate 'ZIEimport' objects (see FlowCAM import routine for an example)
-
 	# Get a list of 'ZIEimport' objects currently loaded in memory
+	
 	### TODO... Rework everything. What follows is old code!
 	ImgFilters <- as.matrix(data.frame(title = c("Tiff image files (*.tif)",
 		"Jpeg image files (*.jpg)", "Zooimage import extensions (Import_*.zie)", "Table and ImportTemplate.zie (*.txt)"), #, "FlowCAM zipped files (*.zfc)"),

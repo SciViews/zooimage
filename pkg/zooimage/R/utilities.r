@@ -544,7 +544,7 @@ checkFileExists <- function( file, extension, message = "file not found : %s", f
 		stop( sprintf( 'file "%s" is a directory', file ) )
 	}
 	if( !missing(extension) && !grepl( extensionPattern(extension), file ) ){
-		message <- sprintf( "%s , or not a '%s' file", message, extension )
+		message <- sprintf( "'%s' is not a '%s' file", file, extension )
 		stop( message )
 	}
 	invisible( NULL )
