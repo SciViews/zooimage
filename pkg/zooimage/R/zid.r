@@ -332,12 +332,10 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# {{{ Make sure the .RData file is created (or refreshed)
 	# TODO: this needs to be simplified, the calling handlers should be invisible 
 	#       here.
-	withRestarts( withCallingHandlers( { 
+	tryCatch( { 
 		make.RData(zidir, type = type, replace = replace, show.log = FALSE)
 	}, zooImageError = function(e){ # "has no .RData (error while creating it)!"
 		logError( e, msg = "has no .RData (error while creating it)!" )
-		invokeRestart( "zooImageError" )
-	} ), zooImageError = function(e){
 		ok <<- FALSE
 	} )
 	if( !ok ) return( invisible( FALSE ) )
