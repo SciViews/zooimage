@@ -224,11 +224,9 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 	nX <- nrow(confmat)
 	nY <- ncol(confmat)
 	nZ <- nX*nY
-	for (i in 1:nZ) {
-		if (confmat[i]>= maxval) {  # max = max number of items by cell
-			confmat[i]= maxval
-		}
-	}
+	
+	confmat <- pmin( confmat, maxval )
+	
 	library(RColorBrewer)
 	mypalette <- brewer.pal(maxval-1, "Spectral")
 	#hc <- c("#FFFFFF", rev(heat.colors(maxval)))
