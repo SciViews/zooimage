@@ -28,17 +28,17 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# {{{ check the format of the file
 	# This should be a directory containing XXX+YY_dat1.zim files + .jpg files
 	if (type != "ZI1") {
-	  stop("only 'ZI1' is currently supported for 'type'!")
+		stop("only 'ZI1' is currently supported for 'type'!")
 	}
 	# }}}
 	
 	# {{{ check the list of _dat1.zim
 	dat1files <- list.dat1.zim(zidir)
 	if(length(dat1files) == 0) {
-		stop( sprintf( "%s - has no '_dat1.zim' file!", zidir) )
+		stop( "no '_dat1.zim' file!" )
 	}
 	if (length(dat1files) == 1 && is.na(dat1files)) {
-	 	stop( sprintf( "%s - not found or not a directory!", zidir ) )
+	 	stop( "not found or not a directory!" )
 	}
 	# }}}
 	
@@ -49,8 +49,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	nitems <- rep( -1, length(dat1files) )	 
 	for (i in 1:length(dat1files)) {
 		
-		# this might generate an error, which is dealt with
-		# in the catcher associated with this function
+		# this might generate, which we need to handle somehow
 		res <- verify.zim(file.path(zidir, dat1files[i]), is.dat1 = TRUE)
 		if( length( res ) ){
 			nitems[i] <- res
@@ -526,9 +525,9 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 
 # {{{ uncompress.zid.all
 # Uncompress all .zid files in the 'path.extract' directory
-"uncompress.zid.all" <-
-	function(path = ".", zidfiles = list.zid(path),
-	path.extract = path, skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE, bell = FALSE) {
+"uncompress.zid.all" <- function(path = ".", zidfiles = list.zid(path),
+	path.extract = path, skip.existing.dirs = TRUE, 
+	delete.source = FALSE, show.log = TRUE, bell = FALSE) {
 	
 	# {{{ initial checks
 	if (is.null(zidfiles) || length(zidfiles) == 0) {

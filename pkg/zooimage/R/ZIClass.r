@@ -361,7 +361,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 # {{{ predict.lvq
 "predict.lvq" <- function(object, newdata, type = "class", ...) {
    	mustbe( object, "lvq" )
-	require(class) || stop("package 'class' is required!"))
+	require(class) || stop("package 'class' is required!")
     if (missing(newdata)) {
 		newdata <- object$data
 	}
