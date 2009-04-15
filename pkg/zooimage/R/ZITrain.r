@@ -128,16 +128,19 @@
 		stop("'", dir, "' does not appear to be a ", getTemp("ZIname"), " training set root dir!") 
     
 	# Get a list of subdirs vith vignettes
-	if (isWin()) {
-		# Make sure the directory is written with "\\", not "/"
-		Dir <- gsub("[/]", "\\\\", dir)
-		if (length(grep("[\\]$", Dir)) == 0) Dir <- paste(Dir, "\\", sep = "")
-		cmd <- paste(Sys.getenv("COMSPEC"), " /c dir \"", Dir, "*.jpg\" /B /S", sep = "")
-		res <- system(cmd, intern = TRUE, invisible = TRUE)
-	} else {
-		### TODO: adapt this to other platforms
-		stop("This function is not implemented yet on this platform!")
-	}
+	# if (isWin()) {
+	# 	# Make sure the directory is written with "\\", not "/"
+	# 	Dir <- gsub("[/]", "\\\\", dir)
+	# 	if (length(grep("[\\]$", Dir)) == 0) Dir <- paste(Dir, "\\", sep = "")
+	# 	cmd <- paste(Sys.getenv("COMSPEC"), " /c dir \"", Dir, "*.jpg\" /B /S", sep = "")
+	# 	res <- system(cmd, intern = TRUE, invisible = TRUE)
+	# } else {
+	# 	### TODO: adapt this to other platforms
+	# 	stop("This function is not implemented yet on this platform!")
+	# }
+	
+	res <- list.files.ext( dir, extension = "jpg", recursive = TRUE, full = TRUE )
+	
 	# Check the result...
 	if (length(res) < 1 || length(grep(Dir, res[1], fixed = TRUE)) == 0)
 		stop("Error while getting data from ", dir)
