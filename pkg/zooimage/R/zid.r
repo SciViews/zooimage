@@ -315,12 +315,10 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# {{{ Make sure everything is fine for this directory
 	ok <- TRUE
 	if (check) {
-		withRestarts( withCallingHandlers( { 
+		tryCatch( { 
 			verify.zid(zidir, type = type, check.vignettes = check.vignettes, show.log = FALSE)
 		} , zooImageError = function( e ){
 			logError( e )
-			invokeRestart( "zooImageError" )
-		} ), zooImageError = function( e ){
 			ok <<- FALSE
 		} )
 	}
@@ -503,10 +501,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 "uncompress.zid" <- function(zidfile, path = dirname(zidfile), delete.source = FALSE, show.log = TRUE) {
 	
 	# {{{ Check if the file provided is a .zid file, and if it exists
-	if (!file.exists(zidfile))
-		stop(zidfile, " not found!")
-	if(length(grep("[.]zid$", zidfile)) == 0)
-		stop(file, " is not a .zid file!")
+	checkFileExists( zidfile, extension = "zid" )
 	# }}}
 		
 	# {{{ Uncompress it
@@ -574,19 +569,9 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	cat("Decompression...\n")
 	logProcess("\nDecompression...")
 	for (s in 1:smax) {
-		# TODO: revises this so that this function watches when uncompress.zid
-		#       starts and finishes and log the appropriate message using conditions
 		Progress(s, smax) 
 		uncompress.zid(zidfiles[s], path = path.extract,
 		  delete.source = delete.source, show.log = FALSE)
-
-		#< if (!uncompress.zid(zidfiles[s], path = path.extract,
-		#< 	delete.source = delete.source, show.log = FALSE)) {
-		#< 	ok <- FALSE
-		#< } else {
-		#< 	logProcess("OK", zidfiles[s])
-		#< }
-		
 	}
 	# }}}
 	
