@@ -224,34 +224,37 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 	nX <- nrow(confmat)
 	nY <- ncol(confmat)
 	nZ <- nX*nY
-	
 	confmat <- pmin( confmat, maxval )
 	
-	library(RColorBrewer)
+	require(RColorBrewer)
 	mypalette <- brewer.pal(maxval-1, "Spectral")
-	#hc <- c("#FFFFFF", rev(heat.colors(maxval)))
 	library(gregmisc)
-	heatmap.2(confmat, col= c(0,mypalette), symm=TRUE, margin=margin, trace="both", Rowv=Rowv,
-			Colv=Colv, cexRow=0.2 + 1/log10(nX), cexCol=0.2 + 1/log10(nY),tracecol="Black", linecol=FALSE)
+	heatmap.2(confmat, col= c(0,mypalette), symm=TRUE, margin=margin, 
+		trace="both", Rowv=Rowv, Colv=Colv, cexRow=0.2 + 1/log10(nX), 
+		cexCol=0.2 + 1/log10(nY),tracecol="Black", linecol=FALSE) 
 }
 # }}}
 
 # New function v 1.2-2 false positive and negative
 confusion.bar <- function(confmat, mar=NULL) {
-	if (is.matrix(confmat) == FALSE)
-	stop("object must be a matrix")
+	if (is.matrix(confmat) == FALSE){
+		stop("object must be a matrix")
+	}
 	Nn <- nrow(confmat)
+	
 	## percent of correctly predicted objects in the test set
-	pred.tok = diag(confmat)/apply(confmat, 2, sum)*100; pred.tok
+	pred.tok <- diag(confmat) / colSums(confmat)*100
+	
 	# If there are no items good recognize 0/0 = NaN so replace NaN by 0 for calculation
-  if (NaN %in% pred.tok){
-  pred.tok[pred.tok == "NaN"] <- 0
-  }
-  # percent of items in the test set predicted in its category
-	pred.tfrac = diag(confmat)/apply(confmat, 1, sum)*100; pred.tfrac
+  	if (NaN %in% pred.tok){
+		pred.tok[pred.tok == "NaN"] <- 0
+  	}
+	
+	# percent of items in the test set predicted in its category
+	pred.tfrac <- diag(confmat) / rowSums(confmat)*100
 	if (NaN %in% pred.tfrac){
-  pred.tfrac[pred.tfrac == "NaN"] <- 0
-  }
+		pred.tfrac[pred.tfrac == "NaN"] <- 0
+  	}
   prediction <- cbind(pred.tok, pred.tfrac)
 	prediction.df <- data.frame(prediction)
 	CR <- prediction[1:Nn,2] # 
