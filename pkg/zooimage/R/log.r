@@ -45,7 +45,7 @@
 
 # TODO: improve these
 logError <- function( e, msg= NULL, ... ){
-	logProcess( if( is.null(msg)) e$msg else msg, e$context, stop = TRUE, ... )
+	logProcess( if( is.null(msg)) e$msg else msg, e$context, stop = FALSE, ... )
 }
 logWarning <- function( w, msg= NULL,... ){
 	logProcess( if( is.null(msg)) e$msg else msg, w$context, stop = FALSE, ... )

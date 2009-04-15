@@ -25,46 +25,37 @@
 #' @param show.log do we show a log at the end
 verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE) {
 	
-	# {{{ check the format of the file
+	# heck the format of the file
 	# This should be a directory containing XXX+YY_dat1.zim files + .jpg files
 	if (type != "ZI1") {
 		stop("only 'ZI1' is currently supported for 'type'!")
 	}
-	# }}}
 	
-	# {{{ check the list of _dat1.zim
+	# check the list of _dat1.zim
 	dat1files <- list.dat1.zim(zidir)
 	if(length(dat1files) == 0) {
 		stop( "no '_dat1.zim' file!" )
 	}
-	if (length(dat1files) == 1 && is.na(dat1files)) {
-	 	stop( "not found or not a directory!" )
-	}
-	# }}}
 	
-    # {{{ Check the content of all these "_dat1.zim" files 
+    # Check the content of all these "_dat1.zim" files 
 	#     and retrieve the number of items measured
 	dat1files <- sort(dat1files)
 	# Default to -1 for corrupted dat1 files
-	nitems <- rep( -1, length(dat1files) )	 
-	for (i in 1:length(dat1files)) {
-		
-		# this might generate, which we need to handle somehow
-		res <- verify.zim(file.path(zidir, dat1files[i]), is.dat1 = TRUE)
-		if( length( res ) ){
-			nitems[i] <- res
-		}
-		
-	}
-	ok <- any( nitems == -1 )
-	# }}}
+	nitems <- sapply( dat1files, function( x ){
+		tryCatch( 
+			verify.zim( file.path( zidir, x), is.dat1 = TRUE ), 
+			zooImageError = function(e ){
+				logError( e )
+				-1
+			} )
+	} )
+	ok <- ! any( nitems == -1)
 	
 	# {{{ check the vignettes
 	if (check.vignettes) {
 		
-        # {{{ Check that we have corresponding vignettes (XXX+YY_ZZZ.jpg files)
+        # Check that we have corresponding vignettes (XXX+YY_ZZZ.jpg files)
     	samples <- sub("_dat1[.]zim$", "", dat1files)
-		# }}}
 		
     	# {{{ Check the content of the directory for .jpg files
     	for (i in 1:length(samples)) {

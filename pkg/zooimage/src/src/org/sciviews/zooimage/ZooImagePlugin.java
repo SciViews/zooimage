@@ -1,6 +1,5 @@
 package org.sciviews.zooimage;
 
-import java.awt.Dimension;
 import java.io.File;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -10,7 +9,6 @@ import org.sciviews.zooimage.config.ProcessOptions;
 import org.sciviews.zooimage.config.ScaleConfig;
 import org.sciviews.zooimage.exceptions.ZooImageException;
 import org.sciviews.zooimage.files.ZimFile;
-import org.sciviews.zooimage.gui.ZooImageGui;
 import org.sciviews.zooimage.log.Log;
 import org.sciviews.zooimage.tools.FileExtensions;
 import org.sciviews.zooimage.tools.IJUtilities;

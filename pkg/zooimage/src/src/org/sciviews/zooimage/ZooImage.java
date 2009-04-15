@@ -56,10 +56,10 @@ public class ZooImage implements PlugIn {
 	 */
 	public static void main(String args[]) {
 		
-		ZooImageGui _gui = new ZooImageGui() ;
-		_gui.setPreferredSize(new Dimension( 800, 600) ) ;
-		_gui.pack();
-		_gui.setVisible(true);
+		// ZooImageGui _gui = new ZooImageGui() ;
+		// _gui.setPreferredSize(new Dimension( 800, 600) ) ;
+		// _gui.pack();
+		// _gui.setVisible(true);
 		
 		
 		if(args.length != 3 && args.length != 2 ) {
