@@ -628,5 +628,12 @@ mustbe <- function( x, class ){
 	stop( "x must be of one of these classes: ", paste( class, collapse = ", ") ) 
 }
 
+# a version that stops
+require <- function( ... ){
+	withCallingHandlers( base:::require(...), 
+		warning = function( e ){
+			base:::stop( e )
+		} )
+}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

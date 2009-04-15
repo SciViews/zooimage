@@ -235,6 +235,7 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 }
 # }}}
 
+# {{{ confusion.bar
 # New function v 1.2-2 false positive and negative
 confusion.bar <- function(confmat, mar=NULL) {
 	if (is.matrix(confmat) == FALSE){
@@ -252,22 +253,23 @@ confusion.bar <- function(confmat, mar=NULL) {
 	
 	# percent of items in the test set predicted in its category
 	pred.tfrac <- diag(confmat) / rowSums(confmat)*100
-	if (NaN %in% pred.tfrac){
-		pred.tfrac[pred.tfrac == "NaN"] <- 0
-  	}
-  prediction <- cbind(pred.tok, pred.tfrac)
+	pred.tfrac[ is.nan( pred.tfrac) ] <- 0
+	prediction <- cbind(pred.tok, pred.tfrac)
 	prediction.df <- data.frame(prediction)
 	CR <- prediction[1:Nn,2] # 
 	FN <- 100 - CR # faux négatif = objects which exist in the test set but not in the training set;
+	
 	# they are wrongly predicted as not to belong to a particular group
 	prediction.df$FN <- FN
+	
 	#put to scale
 	CR2 <- prediction[1:Nn,1]
 	FP <- 100-CR2 # Faux positifs
 	prediction.df$FP <- FP
 	prediction.df <- round(prediction.df,0) # arrondi les valeurs à des dombres entiers
 	Failure <- prediction.df[c("FN", "FP")]
-	#put all to scale
+	
+	# put all to scale
 	allN <- CR+FN # all negative
 	allP <- CR2+FP # all positive
 	cr <- (CR/allN)*100 #% good identify by pc
@@ -280,19 +282,23 @@ confusion.bar <- function(confmat, mar=NULL) {
 	Failure <- Failure[Order,] # grp du moin au plus d'erreur
 	Failure.mat <- as.matrix(Failure)
 	Nmat <- ncol(all2)
-  #### Construction du graphe
+
+	#### Construction du graphe
 	valx <- matrix(c(rep(2, Nmat), rep(198, Nmat)),ncol=2) #matrix for location
 	valx2 <- matrix(c(rep(98, Nmat), rep(102, Nmat)),ncol=2) #matrix for location
 	omar = par("mar") # mar = margin size c(bottom, left, top, right)
 	par(mar=mar)
-	barplot(all2[,!is.na(all2[2,])], horiz=TRUE, col=c("PeachPuff2", "green3", "green3", "lemonChiffon2"),
+	barplot(all2[,!is.na(all2[2,])], horiz=TRUE, 
+		col=c("PeachPuff2", "green3", "green3", "lemonChiffon2"),
 		xaxt="n", las=1, space = 0)
 	for (i in 1:Nmat) {
 		text(valx[i,],i-0.45, Failure.mat[i,] , cex=0.7)
 		text(valx2[i,],i-0.45, 100 - Failure.mat[i,] , cex=0.7)
-		}
-  #### Ajout des légendes
-  legend(100, Nmat+(Nmat/15), legend = c("false negative (FN)", "correct ident (CI)", "false positive (FP)"), xjust = 0.5, fill = c("PeachPuff2", "green3", "lemonChiffon2"), bty="n", horiz = TRUE)
+	}
+	
+	#### Ajout des légendes
+  	legend(100, Nmat+(Nmat/15), legend = c("false negative (FN)", "correct ident (CI)", "false positive (FP)"), 
+		xjust = 0.5, fill = c("PeachPuff2", "green3", "lemonChiffon2"), bty="n", horiz = TRUE)
 	legend(100, Nmat/55, "Percentage", xjust = 0.5, bty = "n")
 	segx0 <- rep(c(25, 50, 75, 125, 150, 175),2)
 	segy0 <- rep(c(0, Nmat),c(6,6))
@@ -301,15 +307,21 @@ confusion.bar <- function(confmat, mar=NULL) {
 	text(valx3[1:6], -(Nmat/35), labels= segx0[c(1:3, 7:9)], cex=0.7)
 	#par(mar=omar)
 }
+# }}}
 
-"nnet2" <-
-	function(formula, data, size = 7, rang = 0.1, decay = 5e-4, maxit = 1000, ...) {
+# {{{ nnet2 
+
+# {{{ nnet2
+"nnet2" <- function(formula, data, size = 7, rang = 0.1, decay = 5e-4, maxit = 1000, ...) {
  	(require(nnet) || stop("package 'nnet' is required!"))
-	res <- nnet(formula = formula, data = data, size = size, rang = rang, decay = decay, maxit = maxit, ...)
-	class(res) <- c("nnet2", "nnet.formula", "nnet")
-	return(res)
+	
+	structure( 
+		nnet(formula = formula, data = data, size = size, rang = rang, decay = decay, maxit = maxit, ...), 
+		class = c("nnet2", "nnet.formula", "nnet") )
 }
+# }}}
 
+# {{{ predict.nnet2
 "predict.nnet2" <-
 	function (object, newdata, type = c("raw", "class"), ...) {
 	 if (!inherits(object, "nnet2")) 
@@ -322,11 +334,14 @@ confusion.bar <- function(confmat, mar=NULL) {
     	res <- factor(res, levels = object$lev)
 	return(res)
 }
+# }}}
+# }}}
 
-"lvq" <- 
-	function(formula, data, k = 5, size = NULL) {
-	# Extract classes and training vars from data, according to formula lhs ~ rhs
-	# This is a very simplified way of doing it... It does not manage complex formula constructions!
+# {{{ lvq
+# {{{ lvq
+#' Extract classes and training vars from data, according to formula lhs ~ rhs
+#' This is a very simplified way of doing it... It does not manage complex formula constructions!
+"lvq" <- function(formula, data, k = 5, size = NULL) {
 	(require(class) || stop("package 'class' is required!"))
     vars <- all.vars(formula)
 	train <- data[, vars[-1]]
@@ -337,15 +352,19 @@ confusion.bar <- function(confmat, mar=NULL) {
 	class(res) <- "lvq"
 	return(res)
 }
+# }}}
 
-"predict.lvq" <-
-	function(object, newdata, type = "class", ...) {
-   	if (!inherits(object, "lvq")) 
-        stop("object not of class \"lvq\"")
-	(require(class) || stop("package 'class' is required!"))
-    if (missing(newdata)) newdata <- object$data
+# {{{ predict.lvq
+"predict.lvq" <- function(object, newdata, type = "class", ...) {
+   	mustbe( object, "lvq" )
+	require(class) || stop("package 'class' is required!"))
+    if (missing(newdata)) {
+		newdata <- object$data
+	}
 	lvqtest(object$codebook, newdata[, object$vars[-1]])
 }
+# }}}
+# }}}
 
 # Formula calculation by variables selection for the classifier creation v1.2-2
 FormVarsSelect <- function(x){
