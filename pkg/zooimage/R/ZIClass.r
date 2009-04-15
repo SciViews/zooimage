@@ -19,6 +19,7 @@
 # Version 1.2.0: check for package loading, and add a 'package' attribute to ZIClass
 ### TODO: allow for defining parameters and use a plugin mechanism
 
+# {{{ ziclass 
 # {{{ ZIClass 
 #' Modifications in calculation of probabilities to accept variables selection v1.2-2
 "ZIClass" <- function(df, algorithm = c("lda", "randomForest"),
@@ -154,7 +155,9 @@
 	return(res)
 }
 # }}}
+# }}}
 
+# {{{ confusion 
 # {{{ confu
 "confu" <- function(classes1, classes2, classes.predicted = FALSE) {
 	
@@ -308,6 +311,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 	#par(mar=omar)
 }
 # }}}
+# }}}
 
 # {{{ nnet2 
 
@@ -366,29 +370,32 @@ confusion.bar <- function(confmat, mar=NULL) {
 # }}}
 # }}}
 
-# Formula calculation by variables selection for the classifier creation v1.2-2
+# {{{ FormVarsSelect
+#' Formula calculation by variables selection for the classifier creation v1.2-2
 FormVarsSelect <- function(x){
-  # x must be a ZItrain object
-  if (class(x) != "ZI1Train")
-    stop("your object must be a ZItrain object")
-  # Parameters measured on particles and new variables calculated
-  mes <- as.vector(colnames(calc.vars(x)))
-  # Selection of features for the creation of the classifier
-  keep <-select.list(list = mes,
-    preselect = c("ECD", "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
-    "FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio", "FIT_Transparency",
-    "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
-    "FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
-    "FIT_Feret_Max_Angle", "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
-    "Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width","Height",
-    "Major", "Minor", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt", "Elongation",
-    "CentBoxD", "GrayCentBoxD", "CentroidsD", "Range", "MeanPos", "SDNorm", "CV", "logArea",
-    "logPerim.", "logMajor", "logMinor", "logFeret"),
-    multiple = TRUE, title = "Select variables to keep")
-  # Creation of one formula for classifier calculation
-  res <- as.formula(paste("Class ~ ", paste(keep, collapse= "+")))
-  return(res)
+  
+	# x must be a ZItrain object
+	mustbe( x, "ZI1Train" )
+	
+	# Parameters measured on particles and new variables calculated
+	mes <- as.vector(colnames(calc.vars(x)))
+	
+	# Selection of features for the creation of the classifier
+	keep <- select.list(list = mes,
+	  preselect = c("ECD", "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
+	  "FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio", "FIT_Transparency",
+	  "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
+	  "FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
+	  "FIT_Feret_Max_Angle", "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
+	  "Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width","Height",
+	  "Major", "Minor", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt", "Elongation",
+	  "CentBoxD", "GrayCentBoxD", "CentroidsD", "Range", "MeanPos", "SDNorm", "CV", "logArea",
+	  "logPerim.", "logMajor", "logMinor", "logFeret"),
+	  multiple = TRUE, title = "Select variables to keep")
+	# Creation of one formula for classifier calculation
+	res <- as.formula(paste("Class ~ ", paste(keep, collapse= "+")))
+	return(res)
 }
-
+# }}}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

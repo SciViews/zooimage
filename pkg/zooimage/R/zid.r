@@ -25,12 +25,6 @@
 #' @param show.log do we show a log at the end
 verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE) {
 	
-	# {{{ using the catcher mechanism
-	if( is.null( getCatcher() ) ){
-		return( catch(match.call()) ) 
-	}
-	# }}}
-
 	# {{{ check the format of the file
 	# This should be a directory containing XXX+YY_dat1.zim files + .jpg files
 	if (type != "ZI1") {
@@ -116,16 +110,16 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	return(invisible(ok))
 	
 }
-attr( verify.zid, "catcher" ) <- function( call ){
-	
-	withCallingHandlers( eval( call ), 
-		"zooImageError_verify.zim" = function( e ){
-			# we get an error from verify.zim, we want to log the error
-			# but keep going
-			logError( e )			
-		} )
-	
-}
+# attr( verify.zid, "catcher" ) <- function( call ){
+# 	
+# 	withCallingHandlers( eval( call ), 
+# 		"zooImageError_verify.zim" = function( e ){
+# 			# we get an error from verify.zim, we want to log the error
+# 			# but keep going
+# 			logError( e )			
+# 		} )
+# 	
+# }
 # }}}
 
 # {{{ verify.zid.all
