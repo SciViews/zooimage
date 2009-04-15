@@ -4,12 +4,10 @@ import ij.IJ;
 import ij.io.FileOpener;
 import ij.plugin.PlugIn;
 
-import java.awt.Dimension;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 
-import org.sciviews.zooimage.gui.ZooImageGui;
 import org.sciviews.zooimage.log.Log;
 
 /**

@@ -295,7 +295,9 @@ public class ImageFileProcessor {
 		String pathZIM2 = zim.getDirectory() + File.separator + 
 			zim.getSampleDir() + File.separator +
 			zim.getSample() + FileExtensions.extDAT ;
-		FileUtilities.copyFile( zim.getFile().getAbsolutePath() , pathZIM2 );
+		zim.makeDATFile( plugin.getParams(), getResults(), 
+				getZimProcessor().getCount(), pathZIM2 ) ;
+		// FileUtilities.copyFile( zim.getFile().getAbsolutePath() , pathZIM2 );
 		
 		// Possibly sharpen the vignettes
 		if (options.get("sharpenvigs") ) {

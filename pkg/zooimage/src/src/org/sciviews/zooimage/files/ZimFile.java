@@ -267,6 +267,13 @@ public class ZimFile implements Comparable<ZimFile> {
 		return map ;
 	}
 	
+	public void makeDATFile(Vector<String> parameters, ResultsTable table, int count ){
+		String output = getDirectory() + File.separator + 
+			Directories.wrkDir + File.separator + 
+			getSample() + "." + count + FileExtensions.extDAT ;
+		makeDATFile( parameters, table, count, output) ;
+	}
+	
 	/**
 	 * Copy this file, append process parameters, then measurements to cazfile
 	 * if the file already exist, measurements will be appended to the file
@@ -276,31 +283,33 @@ public class ZimFile implements Comparable<ZimFile> {
 	 * @param txtfile Text file to append
 	 * @return the file path of the created file
 	 */
-	public void makeDATFile(Vector<String> parameters, ResultsTable table, int count ) {
-		
-		String output = getDirectory() + File.separator + 
-			Directories.wrkDir + File.separator + 
-			getSample() + "." + count + FileExtensions.extDAT ;
+	public void makeDATFile(Vector<String> parameters, ResultsTable table, int count, String output ) {
 		
 		Log.debug( "saving zim file to " + output ) ;
 		
 		try{
 			
 			// The output file
-			BufferedWriter out = new BufferedWriter(new FileWriter(output));
+			BufferedWriter out ; 
+			
+			if( new File( output).exists() ){
+				out = new BufferedWriter(new FileWriter(output, true)) ;
+			} else {
+				out = new BufferedWriter(new FileWriter(output));
+				// Write data from zim file
+				BufferUtilities.copy( new BufferedReader(new FileReader( getFile() )) , out );
+				
+				// Write parameters data
+				out.write("\n");
+				out.write("[Process]\n");
+				BufferUtilities.writeLines( out, parameters) ;
+				out.write("\n");
 
-			// Write data from zim file
-			BufferUtilities.copy( new BufferedReader(new FileReader( getFile() )) , out );
-
-			// Write parameters data
-			out.write("\n");
-			out.write("[Process]\n");
-			BufferUtilities.writeLines( out, parameters) ;
-			out.write("\n");
-
-			out.write("[Data]\n");
-			out.write("!Item\tLabel");
-			out.write( table.getColumnHeadings( ) + "\n" );
+				out.write("[Data]\n");
+				out.write("!Item\tLabel");
+				out.write( table.getColumnHeadings( ) + "\n" );
+	
+			}
 
 			// Write data from the txt file
 			for( int i=0; i<table.getCounter(); i++){ 
