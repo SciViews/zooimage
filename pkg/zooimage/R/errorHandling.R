@@ -127,13 +127,18 @@ zooImageErrorDrivers <- list(
 	"verify.zim" = "zimfile",
 	"extract.zims" = "zipfiles", 
 	
+	# -------------- zic.R
+	"check.zic" = "file", 
+	
 	# --------------------------------------- zie.R
 	"make.zie" = "Filemap", 
 	"BuildZim" = "Smp", 
 	"checkFileExists" = "file", 
 	"checkFirstLine"  = "file", 
 	"checkDirExists"  = "dir", 
-	"get.ZITrain"     = "dir"
+	"get.ZITrain"     = "dir",
+	"force.dir.create" = "path",
+	"checkEmptyDir" = "dir"
 	
 )
 # }}}

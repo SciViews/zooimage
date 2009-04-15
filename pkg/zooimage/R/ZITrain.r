@@ -17,33 +17,30 @@
 # }}}
 
 # {{{ prepare.ZITrain
-"prepare.ZITrain" <-
-	function(dir, subdir = "_train", zidfiles, groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL,
-		check.unzip = TRUE, show.log = TRUE, bell = FALSE, start.viewer = FALSE) {
- 	# Prepare 'dir\subdir' for a manual classification by expanding all vignettes
-	# from a given number of zidfiles to the '_' subdir, and making
-	# a template for subdirs
-	
+#' Prepare 'dir\subdir' for a manual classification by expanding all vignettes
+#' from a given number of zidfiles to the '_' subdir, and making
+#' a template for subdirs
+"prepare.ZITrain" <- function(dir, subdir = "_train", zidfiles, 
+	groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"), 
+	ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE) {
+ 	                       
 	# {{{ Make sure unzip is available
 	checkCapable( "unzip" )
 	# }}}
 	
 	# First, check that dir is valid
-	if (!file.exists(dir) || !file.info(dir)$isdir) {
-		logProcess("is not a valid directory!", dir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	checkDirExists( dir )
+	
 	# New dir is dir + subdir
 	dir <- file.path(dir, subdir)
-	# Verify that subdir does not exist or that it is empty
-	if (file.exists(dir)) {
-		if (!file.info(dir)$isdir || length(list.files(dir)) > 0) {
-			logProcess("must be empty. Clean it first!", dir, stop = TRUE, show.log = show.log); return(invisible(FALSE))
-		} else {
-			dir.create(dir)	# Create the subdir, if it does not exists yet
-		}
-	}
+	
+	checkEmptyDir( dir , message = "must be empty. Clean it first!" )
+	
 	# Then, check that all zidfiles exist
-	if(!all(file.exists(zidfiles)) || !all(regexpr("[.][zZ][iI][dD]$", zidfiles) > 0)) {
-		logProcess("One or more .zid files do not exist or is invalid!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	if(!all(file.exists(zidfiles)) || !all( hasExtension(zidfiles, "zid")) ) {
+		stop( "One or more .zid files do not exist or is invalid!" )
+	}
+
 	# Finally, look for the groups.template
 	groups.template <- groups.template[1]
 	if (regexpr("^[[].+[]]$", groups.template) > 0) {
@@ -51,17 +48,10 @@
 		groups.template <- paste(sub("^[[](.+)[]]$", "\\1", groups.template), ".zic", sep = "")
 		groups.template <- file.path(getTemp("ZIetc"), groups.template) 
 	}
-	# Now this should be a .zic file directly
-	if (!file.exists(groups.template)) {
-		logProcess("not found!", groups.template, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }	
-	# First line of the file must be "ZI1"
-	Line1 <- scan(groups.template, character(), nmax = 1, quiet = TRUE)
-	if (Line1 != "ZI1") {
-		logProcess("not a ZooImage1 file, or corrupted!", groups.template, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }	
-	# Second line must be [path]
-	Line2 <- scan(groups.template, character(), skip = 1, nmax = 1, quiet = TRUE)
-	if (tolower(Line2) != "[path]") {
-		logProcess("not a ZooImage1 .zic file, or corrupted!", groups.template, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }	
+	
+	# check that this is a zic file
+	check.zic( groups.template )
+
 	# Do the job...
 	cat("Extracting data...\n")
 	logProcess("\nExtracting data...")
@@ -69,15 +59,14 @@
 	for (i in 1:zmax) {
 		logProcess("data", zidfiles[i])
 		Progress(i, zmax)
-		# Unzip data (*.RData files) there
-        cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.RData -d "', dir, '"', sep = "")
-		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+		unzip( zipfile = zidfiles[i] , path = dir, delete.source = FALSE )
 	}
 	Progress(i + 1, zmax)	# To dismiss the Progress() indication
+	
+	
 	# Create '_' subdir and unzip all vignettes there
 	dir_ <- file.path(dir, "_")
-	if (!dir.create(dir_)) {
-		logProcess("error creating subdir '_'!", dir, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	force.dir.create( dir_ )
 	# Do the job...
 	cat("Extracting vignettes...\n")
 	logProcess("\nExtracting vignettes...")
@@ -85,15 +74,18 @@
 	for (i in 1:zmax) {
 		logProcess("vignettes", zidfiles[i])
 		Progress(i, zmax)
+		
 		# Unzip vignettes (*.jpg files) there
-		cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.jpg -d "', dir_, '"', sep = "")
-		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+		unzip( zidfiles[i], path = dir_, delete.source = FALSE )
+		
 	}
 	Progress(i + 1, zmax)	# To dismiss the Progress() indication
+	
 	# Create the other directories
     Lines <- scan(groups.template, character(), sep = "\n", skip = 2, quiet = TRUE)
 	if (length(Lines) < 1) {
- 		logProcess("is empty or corrupted!", groups.template, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+ 		stop(sprintf( "'%s' is empty or corrupted!", groups.template) )
+	}
 	Lines <- file.path(dir, Lines)
 	cat("Making directories...\n")
 	logProcess("\nMaking directories...")
@@ -103,13 +95,12 @@
 	}
 	### TODO: relocate vignettes in subdirectories, if ident is not NULL
 	
-	
 	finish.loopfunction( ok = TRUE, bell = bell, show.log = show.log, 
 	  ok.console.msg = " -- Done! --\n" ,
 	  ok.log.msg = "\n-- Done! --" )
 	
 	if (start.viewer) {
-	  startPgm("ImageViewer", cmdline = paste('"', dir_, '"', sep = ""))
+		startPgm("ImageViewer", cmdline = paste('"', dir_, '"', sep = ""))
 	}
 	return(invisible(TRUE))
 }
@@ -118,6 +109,7 @@
 # {{{ get.ZITrain
 #' Retrieve information from a manual training set and store it in a 'ZITrain' object	
 "get.ZITrain" <- function(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = TRUE) {
+	
 	# 'dir' must be the base directory of the manual classification
 	checkDirExists( dir )
 	
@@ -209,10 +201,15 @@
 
 # {{{ recode.ZITrain
 "recode.ZITrain" <- function(ZITrain, ZIRecode, warn.only = FALSE) {
-	if (!inherits(ZITrain, "ZITrain"))
+	
+	# check classes
+	if (!inherits(ZITrain, "ZITrain")){
 		stop("ZITrain must be an object of class 'ZITrain'")
-	if (!inherits(ZIRecode, "ZIRecode"))
+	}
+	if (!inherits(ZIRecode, "ZIRecode")){
 		stop("ZIRecode must be an object of class 'ZIRecode'")
+	}
+	
 	# Check that all levels in ZITrain$Class are represented in ZIRecode
 	if (!all(sort(levels(ZITrain$Class)) == sort(ZIRecode[ , 1]))) {
 		if (warn.only) {
@@ -221,17 +218,21 @@
 			stop("Not all levels of ZIRecode match levels of ZITrain")
 		}
 	}
+	
 	# Class column of ZITrain is transformed into a character vector
 	clas <- as.character(ZITrain$Class)
 	recoded <- clas
+	
 	# It is then recoded
 	for (i in 1:nrow(ZIRecode)) {
 		if (ZIRecode[i, 1] != ZIRecode[i, 2])
 			recoded[clas == ZIRecode[i, 1]] <- ZIRecode[i, 2]
 	}
+	
 	# ...and transformed back into a factor
 	res <- ZITrain
 	res$Class <- as.factor(recoded)
+	
 	# If a new path is given for these new groups, change it
 	path <- attr(ZIRecode, "path")
 	### TODO: check its validity here
@@ -242,12 +243,17 @@
 
 # {{{ make.ZIRecode.level
 "make.ZIRecode.level" <- function(ZITrain, level = 1) {
-	if (!inherits(ZITrain, "ZITrain"))
+	# check class
+	if (!inherits(ZITrain, "ZITrain")){
 		stop("ZITrain must be an object of class 'ZITrain'")
+	}
+	
 	# Get the "path" attribute
 	Path <- attr(ZITrain, "path")
+	
 	# Split strings on "/"
 	Path <- strsplit(Path, "/")
+	
 	# Functions to get last item, or an item at a given level
 	Last <- function(x) x[length(x)]
 	Level <- function(x, level = 1) ifelse(length(x) >= level, x[level], x[length(x)])
