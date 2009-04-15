@@ -126,7 +126,8 @@
     Dats <- list.files(dir, pattern = "_dat1[.]RData$", full.names = TRUE)
 	if (length(Dats) == 0)
 		stop("'", dir, "' does not appear to be a ", getTemp("ZIname"), " training set root dir!") 
-    # Get a list of subdirs vith vignettes
+    
+	# Get a list of subdirs vith vignettes
 	if (isWin()) {
 		# Make sure the directory is written with "\\", not "/"
 		Dir <- gsub("[/]", "\\\\", dir)
