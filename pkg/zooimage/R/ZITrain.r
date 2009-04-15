@@ -116,8 +116,8 @@
 # }}}
 
 # {{{ get.ZITrain
+#' Retrieve information from a manual training set and store it in a 'ZITrain' object	
 "get.ZITrain" <- function(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = TRUE) {
-	# Retrieve information from a manual training set and store it in a 'ZITrain' object
 	# 'dir' must be the base directory of the manual classification
 	if (!file.exists(dir) || !file.info(dir)$isdir)
 		stop("'dir' is not a valid directory!")

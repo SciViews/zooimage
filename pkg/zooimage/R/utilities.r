@@ -506,9 +506,15 @@ hasExtension <- function( file, extension = "zip", pattern = extensionPattern(ex
 #' @param dir directory to list files
 #' @param extension file extension to accept. This will be 
 #' modified by extensionPattern so that the test is case independent
-list.files.ext <- function( dir, extension = "zip", ... ){
+list.files.ext <- function( dir, extension = "zip", keep.dir = FALSE, ... ){
 	checkDirExists( dir )
-	list.files( dir, pattern = extensionPattern( extension ) , ... )
+	out <- list.files( dir, pattern = extensionPattern( extension ) , ... )
+	if( !keep.dir ){
+		dots <- list(...)
+		recursive <- "recursive" %in% names(dots) && dots$recursive
+		out <- out[ !file.info( file.path( dir, if( recursive ) out else basename(out) ) )$isdir ]
+	}
+	out
 }
 
 #' transforms a file extension to a pattern for ignore.case matching of the 
@@ -591,6 +597,11 @@ checkFirstLine <- function( file, expected = "ZI1",
 		stop( message )
 	}
 	invisible( res )
+}
+
+list.dir <- function( dir, ... ){
+	out <- list.files( dir )
+	out[ file.info( file.path( dir, basename(out) ) )$isdir ]
 }
 
 
