@@ -93,6 +93,8 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# {{{ Report results
 	if (ok){
 		logProcess("OK", zidir, show.log = show.log)
+	} else{
+		logProcess("Errors found", zidir, show.log = show.log)
 	}
 	# }}}
 	
