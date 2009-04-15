@@ -259,9 +259,7 @@
 	# }}}
 	
 	# {{{ Check that the dir exists!
-	if (!file.exists(zipdir) || !file.info(zipdir)$isdir) {
-		stop( sprintf( "%s: this is not a valid directory!", zipdir ) ) 
-	}
+	checkDirExists( zipdir )
 	# }}}
 	
 	# {{{ Move to zipdir
@@ -291,9 +289,7 @@
 		}
 	} else {    # Look if this is a valid directory
 		path <- path[1]
-		if (!file.exists(path) || !file.info(path)$isdir) {
-			stop( sprintf( "%s: is not a valid directory!", path) ) 
-		}
+		checkDirExists( path )
 	}
 	# }}}
 	
@@ -327,16 +323,25 @@
 	
 	# {{{ Extract .zim files, one at a time, and check them
 	zmax <- length(zimfiles)
+	
 	ok <- rep(TRUE, zmax)
 	for (i in 1:zmax) {
 		
-		# Extract the .zim file from zip comment
-		zipnote( zipfiles[i], zimfiles[i] )
+		ok[i] <- tryCatch( {
+			# Extract the .zim file from zip comment
+			zipnote( zipfiles[i], zimfiles[i] )
 		
-		# Check that the .zim file is created
-		if (!file.exists(zimfiles[i]) || verify.zim(zimfiles[i]) != 0){
-			ok[i] <- FALSE
-		}
+			# Check that the .zim file is created
+			if( verify.zim(zimfiles[i]) == 0 ){
+				stop( "problem" ) 
+			}
+			
+			TRUE
+		}, zooImageError = function(e){
+			logError( e )
+			FALSE
+		})
+		
 	}
 	# }}}
 	
@@ -429,18 +434,22 @@
         	Progress(z, zmax)
 			
 			# TODO: this might throw a condition
-			verify.zim(zfiles[z])
+			tryCatch( verify.zim(zfiles[z]), 
+				zooImageError = function(e){
+					logError( e )
+					ok <<- FALSE
+				} )
 		}
 		Progress (zmax + 1, zmax)	 # To dismiss the Progress() indication
 	}
 	
-	# if (ok) {
+	if (ok) {
 		logProcess("\n-- OK, no error found. --")
 		cat("-- Done! --\n")		
-	# } else {
-	# 	logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log); 
-	# 	return(invisible(FALSE))
-	# }
+	} else {
+		logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log); 
+		return(invisible(FALSE))
+	}
 	# }}}
 	
 	# {{{ If everything is OK, update comments in the zip files with the content of the .zim files
