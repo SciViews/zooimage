@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+# {{{ Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
 # 
@@ -14,23 +14,28 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+# }}}
 
 # Version 1.2.0: check for package loading, and add a 'package' attribute to ZIClass
-
 ### TODO: allow for defining parameters and use a plugin mechanism
 
-# Modifications in calculation of probabilities to accept variables selection v1.2-2
-"ZIClass" <-
-	function(df, algorithm = c("lda", "randomForest"),
+# {{{ ZIClass 
+#' Modifications in calculation of probabilities to accept variables selection v1.2-2
+"ZIClass" <- function(df, algorithm = c("lda", "randomForest"),
 		package = c("MASS", "randomForest"),
 		Formula = Class ~ logArea + Mean + StdDev + Mode + Min + Max + logPerim. +
 		logMajor + logMinor + Circ. + logFeret + IntDen + Elongation + CentBoxD +
 		GrayCentBoxD + CentroidsD + Range + MeanPos + SDNorm + CV, calc.vars = "calc.vars", k.xval = 10, ...) {
+	
+	# check package availability
 	### TODO: add error checking in all evals!
 	(require(ipred) || stop("Package 'ipred' is required!"))
 	package <- package[1]
-	if (!is.null(package))
-		eval(parse(text = paste("require(", package, ")", sep = "")))
+	if (!is.null(package)){
+		require( package, character.only = TRUE )
+	}
+	
+	# check calc.vars
 	calc.vars <- calc.vars[1]
 	if (!is.null(calc.vars)) {
 		#eval(parse(text = paste("df <- ", calc.vars, "(df)", sep = "")))
@@ -39,10 +44,12 @@
 		CV <- get(calc.vars, mode = "function")
 		df <- CV(df)
 	}
+	
+	# algorithm
 	algorithm <- algorithm[1]
 	eval(parse(text = paste("ZI.class <- ", algorithm, "(Formula, data = df, ...)", sep = "")))
-#	if (!exists(ZI.class))
-#		stop("Error while training the '", algorithm, "' algorithm!")
+	#	if (!exists(ZI.class))
+	#		stop("Error while training the '", algorithm, "' algorithm!")
 	# Return a ZIClass object
 	class(ZI.class) <- c("ZIClass", class(ZI.class))
 	attr(ZI.class, "algorithm") <- algorithm
@@ -53,13 +60,12 @@
 	# Calculate predictions with full training set
     attr(ZI.class, "predict") <- predict(ZI.class, df, calc.vars = FALSE, class.only = TRUE)
 
-### Calculation of probabilities
-  if (algorithm == "randomForest") {
-  # Use Formula for the probabilities v1.2-2
-  rf <- randomForest(formula = Formula,
-    data = df)
-  attr(ZI.class, "proba") <- predict(object = rf, newdata = df, type = "prob")
-  }
+	### Calculation of probabilities
+  	if (algorithm == "randomForest") {
+  		# Use Formula for the probabilities v1.2-2
+  		rf <- randomForest(formula = Formula, data = df)
+  		attr(ZI.class, "proba") <- predict(object = rf, newdata = df, type = "prob")
+	}
   
 	# Possibly make a k-fold cross-validation and check results
 	if (!is.null(k.xval)) {
@@ -77,9 +83,10 @@
 	}
 	return(ZI.class)
 }
+#}}}
 
-"print.ZIClass" <-
-	function(x, ...) {
+# {{{ print.ZIClass
+"print.ZIClass" <- function(x, ...) {
 	algorithm <- attr(x, "algorithm")
 	classes <- attr(x, "classes")
 	lclasses <- levels(classes)
@@ -90,8 +97,7 @@
 	Confu <- confu(classes, predict)
 	mism <- (1 - (sum(diag(Confu)) / sum(Confu))) * 100 
 	# Change the number of digits to display
-	oldDigits <- getOption("digits")
-	options(digits = 4)
+	oldDigits <- options(digits = 4)
 	on.exit(options(digits = oldDigits))
 	cat("\nAlgorithm used:", algorithm, "\n")
 	cat("Mismatch in classification: ", mism, "%\n", sep = "")   
@@ -108,14 +114,15 @@
 	}
 	return(invisible(x))	
 }
+# }}}
 
-"predict.ZIClass" <-
-	function(object, ZIDat, calc.vars = TRUE, class.only = FALSE, ...) {
+# {{{ predict.ZIClass
+"predict.ZIClass" <- function(object, ZIDat, calc.vars = TRUE, class.only = FALSE, ...) {
+	
 	# Make sure we have correct objects
-	if (!inherits(object, "ZIClass"))
-		stop("'object' must be a ZIClass object!")
-	if (!inherits(ZIDat, "ZIDat") && !inherits(ZIDat, "data.frame"))
-		stop("'ZIDat' must be a ZIDat object, or a data.frame!")
+	mustbe( object, "ZIClass" )
+	mustbe( object, c("ZIDat", "data.frame") )
+	
 	# Possibly load a specific package for prediction
 	package <- attr(object, "package")
 	if (is.null(package)) {
@@ -130,13 +137,13 @@
         (require(ipred) || stop("package 'ipred' is required!"))
     } else { 
         # Make sure that the specific required package is loaded
-        eval(parse(text = paste("require(", package, ")", sep = "")))
+        require( package, character.only = TRUE )
     }
-	
     class(object) <- class(object)[-1]
 	data <- as.data.frame(ZIDat)
 	if (calc.vars) data <- attr(object, "calc.vars")(data)
 	Ident <- predict(object, newdata = data, type = "class")
+
 	# Special case for prediction from an LDA (list with $class item)
 	if (inherits(Ident, "list") && "class" %in% names(Ident))
 		Ident <- Ident$class
@@ -146,50 +153,62 @@
 	} else res <- Ident
 	return(res)
 }
+# }}}
 
-"confu" <-
-	function(classes1, classes2, classes.predicted = FALSE) {
+# {{{ confu
+"confu" <- function(classes1, classes2, classes.predicted = FALSE) {
+	
 	if (is.factor(classes1) || is.factor(classes2)) {
 		if (NROW(classes1) != NROW(classes2))
 			stop("Not same number of items in classes1 and classes2")
+		
 		# Check that levels match
 		if (!all(levels(classes1) == levels(classes2)))
 			stop("'Class' levels in the two objects do not match")
 		clCompa <- data.frame(Class.x = classes1, Class.y = classes2)
 	} else { # Merge two data frame according to common objects in "Id" column
+		
 		# Check levels match
 		if (!all(levels(classes1$Class) == levels(classes22$Class)))
 			stop("Levels for 'Class' in the two objects do not match")
-		clCompa <- merge(classes1, classes2, by = "Id")
+		
 		# Are there common objects left?
+		clCompa <- merge(classes1, classes2, by = "Id")
 		if (nrow(clCompa) == 0)
 			stop("No common objects between the two 'classes' objects")
 	}
+	
 	# How many common objects by level?
 	NbPerClass <- table(clCompa$Class.x)
+	
 	# Confusion matrix
 	if (classes.predicted) {
         Conf <- table(classes = clCompa$Class.x, predicted = clCompa$Class.y)
 	} else {
 		Conf <- table(Class1 = clCompa$Class.x, Class2 = clCompa$Class.y)
 	}
+	
 	# Pourcent of common objects
-	Acc <- sum(diag(Conf))/sum(Conf)*100
+	Acc <- sum(diag(Conf)) / sum(Conf)*100
+	
 	# Change labels to get a more compact presentation
 	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
 	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
+	
 	# Results
 	res <- Conf
 	attr(res, "accuracy") <- Acc
 	attr(res, "nbr.per.class") <- NbPerClass
 	return(res)
 }
+# }}}
 
-"confu.map" <- 
-	function(set1, set2, level = 1){
-    opar <- par(no.readonly = TRUE)
-    on.exit(par = opar)
+# {{{ confu.map
+"confu.map" <- function(set1, set2, level = 1){
+    
+	opar <- par(no.readonly = TRUE) ; on.exit(par = opar)
     par(mar = c(5, 12, 4, 2) + 0.1)
+	
 	n <- length(levels(set1))    
 	image(1:n, 1:n, 1/ (t(confu(set1, set2)[n:1, 1:n])), col = heat.colors(10), xlab = "", ylab = "", xaxt = "n", yaxt = "n")
     axis(1, at = 1:n, las = 2)
@@ -197,7 +216,9 @@
     abline(h = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
     abline(v = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
 }
+# }}}
 
+# {{{ confusion.tree 
 # New function v1.2-2 using library gregmisc
 confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TRUE) {
 	nX <- nrow(confmat)
@@ -207,7 +228,6 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 		if (confmat[i]>= maxval) {  # max = max number of items by cell
 			confmat[i]= maxval
 		}
-	confmat
 	}
 	library(RColorBrewer)
 	mypalette <- brewer.pal(maxval-1, "Spectral")
@@ -216,6 +236,7 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 	heatmap.2(confmat, col= c(0,mypalette), symm=TRUE, margin=margin, trace="both", Rowv=Rowv,
 			Colv=Colv, cexRow=0.2 + 1/log10(nX), cexCol=0.2 + 1/log10(nY),tracecol="Black", linecol=FALSE)
 }
+# }}}
 
 # New function v 1.2-2 false positive and negative
 confusion.bar <- function(confmat, mar=NULL) {
@@ -348,3 +369,6 @@ FormVarsSelect <- function(x){
   res <- as.formula(paste("Class ~ ", paste(keep, collapse= "+")))
   return(res)
 }
+
+
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

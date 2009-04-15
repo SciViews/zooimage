@@ -623,4 +623,10 @@ list.dir <- function( dir, ... ){
 # }}}
 
 
+mustbe <- function( x, class ){
+	if( !any( sapply( class, function( cl ) inherits( x, cl) ) ) )
+	stop( "x must be of one of these classes: ", paste( class, collapse = ", ") ) 
+}
+
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
