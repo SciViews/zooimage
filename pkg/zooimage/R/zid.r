@@ -478,7 +478,7 @@ attr( verify.zid, "catcher" ) <- function( call ){
 	# }}}
     
 	# {{{ identify paths
-	zimfiles <- list.files(path = ".", pattern = "[.][zZ][iI][mM]$")
+	zimfiles <- list.zim(path = "." )
     zimsamples <- sub("^(.*)[+].+", "\\1", zimfiles)
 	# }}}
 	
@@ -533,7 +533,7 @@ attr( verify.zid, "catcher" ) <- function( call ){
 # {{{ uncompress.zid.all
 # Uncompress all .zid files in the 'path.extract' directory
 "uncompress.zid.all" <-
-	function(path = ".", zidfiles = list.files(path = path, pattern = "^.*[.][zZ][iI][dD]"),
+	function(path = ".", zidfiles = list.zid(path),
 	path.extract = path, skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE, bell = FALSE) {
 	
 	# {{{ initial checks

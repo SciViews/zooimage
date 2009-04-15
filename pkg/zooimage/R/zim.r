@@ -260,6 +260,9 @@
 list.zip <- function( zidir, ... ){
 	list.files.ext( zidir, extension = "zip", ... )
 }
+list.zid <- function( zidir, ... ){
+	list.files.ext( zidir, extension = "zid", ... )
+}
 # }}}
 
 # {{{ extract.zims
