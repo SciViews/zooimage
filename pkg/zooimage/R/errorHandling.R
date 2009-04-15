@@ -132,7 +132,8 @@ zooImageErrorDrivers <- list(
 	"BuildZim" = "Smp", 
 	"checkFileExists" = "file", 
 	"checkFirstLine"  = "file", 
-	"checkDirExists"  = "dir" 
+	"checkDirExists"  = "dir", 
+	"get.ZITrain"     = "dir"
 	
 )
 # }}}
