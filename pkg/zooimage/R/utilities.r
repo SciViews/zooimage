@@ -16,22 +16,33 @@
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 # Various utility functions used by ZooImage
+     
+warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
+	if( is.null(warn.only ) ) warn.only <- TRUE
+	msg <- paste( ..., sep = "" )
+	if( warn.only ) warning( msg ) else stop( msg )
+	invisible( NULL )
+}
 
-# Get the name of one or several variables of a given class
-"getVar" <-
-	function(class = "data.frame", default = "", multi = FALSE,
+# {{{ getVar
+#' Get the name of one or several variables of a given class
+"getVar" <- function(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE) {
+	
 	# Get one or several variables of a given object class
 	(require(utils) || stop("Package 'utils' is required!"))
 	varlist <- objects(pos = 1)		# Get objects in .GlobalEnv
+	
 	# Filter this list to keep only object inheriting a giving class...
 	Filter <- NULL
-	for (i in 1:length(varlist)) Filter[i] <- inherits(get(varlist[i]), class)
-	varlist <- varlist[Filter]	# Keep only those objects
+	for (i in 1:length(varlist)) {
+		Filter[i] <- inherits(get(varlist[i]), class)
+	}
+	
+	# Keep only those objects
+	varlist <- varlist[Filter]	
 	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		if (warn.only) {
-			warning("There is no object of class ", paste(class, collapse = " "), " in the user workspace!")
-		} else stop("There is no object of class ", paste(class, collapse = ""), " in the user workspace!")
+		warnOrStop( "There is no object of class ", paste(class, collapse = " "), " in the user workspace!" )
 		varsel <- "" 
 	} else {
 		if (default == "") default <- varlist[1]
@@ -39,23 +50,24 @@
 	}
     return(varsel)		
 }
+# }}}
 
-# Get the name of one or several lists with all of their components of a given class
-# Note: this is used as a collection in other languages (no such collection in R!)
-"getList" <-
-	function(class = "data.frame", default = "", multi = FALSE,
+# {{{ getList
+#' Get the name of one or several lists with all of their components of a given class
+#' Note: this is used as a collection in other languages (no such collection in R!)
+"getList" <- function(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep=""), warn.only = TRUE) {
+	
 	# Get lists of items of specified class
 	(require(utils) || stop("Package 'utils' is required!"))
+	
 	varlist <- objects(pos = 1)		# Get objects in .GlobalEnv
 	# Filter this list to keep only list objects...
 	Filter <- NULL
 	for (i in 1:length(varlist)) Filter[i] <- inherits(get(varlist[i]), "list")
 	varlist <- varlist[Filter]	# Keep only those objects
 	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		if (warn.only) {
-			warning("There is no list objects in the user workspace")
-		} else stop("There is no list objects in the user workspace")
+		warnOrStop( "There is no list objects in the user workspace" )
 		return("") 
 	} else {
 		# Filter the list objects to keep only those having 'class' objects as items
@@ -68,16 +80,14 @@
 		}
 		varlist <- varlist[Filter]	# Keep only those objects
 		if (length(varlist) == 0) { 	# No such objects in .GlobalEnv
-			if (warn.only) {
-				warning("There is no list of ", class, " objects in the user workspace")
-			} else stop("There is no list of ", class, " objects in the user workspace")
-			return("")
+			warnOrStop( "There is no list of ", class, " objects in the user workspace" )
 		}	
 		if (default == "") default <- varlist[1]
 		varsel <- select.list(varlist, preselect = default, multiple = multi, title = title)
 	}
     return(varsel)		
 }
+# }}}
 
 # Select one or several files of a given type
 "selectFile" <-

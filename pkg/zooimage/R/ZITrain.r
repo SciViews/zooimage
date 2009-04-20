@@ -212,11 +212,7 @@
 	
 	# Check that all levels in ZITrain$Class are represented in ZIRecode
 	if (!all(sort(levels(ZITrain$Class)) == sort(ZIRecode[ , 1]))) {
-		if (warn.only) {
-			warning("Not all levels of ZIRecode match levels of ZITrain")
-		} else {
-			stop("Not all levels of ZIRecode match levels of ZITrain")
-		}
+		warnOrStop( "Not all levels of ZIRecode match levels of ZITrain" )
 	}
 	
 	# Class column of ZITrain is transformed into a character vector
