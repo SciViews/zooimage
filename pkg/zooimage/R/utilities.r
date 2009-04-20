@@ -788,4 +788,25 @@ require <- function( ... ){
 		} )
 }
 
+if( !isWin() ){
+	# choose.files is only available on windows, so we fall 
+	# back on tcl-tk equivalent function
+	choose.files <- function( default = "", caption = "Select files",
+	     multi = TRUE, filters = Filters,
+		 index = nrow(Filters) ){
+		
+		call <- match.call( )
+		call[[1]] <- as.name( "tk_choose.files")
+		eval( call, envir = parent.frame() )	
+	}
+}
+
+
+#' get a template file from the "ZITemplate" option
+template <- function( file = "default.zim", dir = getOption("ZITemplates") ){
+	f <- file.path( dir, file )
+	checkFileExists( f, "template file '%s' does not exist" )
+	f
+}
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
