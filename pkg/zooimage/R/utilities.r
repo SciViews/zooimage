@@ -251,9 +251,9 @@ ziKey <- function( key ){
 		Minor               <- hack( Minor )
 		Major               <- hack( Major ) 
 		Elongation          <- Major / Minor
-		CentBoxD            <- distfun( BX + Width/2 - X , BY + Height/2 - Y )
-		GrayCentBoxD        <- distfun( BX + Width/2 - XM, BY + Height/2 - YM)
-		CentroidsD          <- distfun( X - XM           , Y - YM )
+		CentBoxD            <- distfun( BX + Width/2 - X  , BY + Height/2 - Y  )
+		GrayCentBoxD        <- distfun( BX + Width/2 - XM , BY + Height/2 - YM )
+		CentroidsD          <- distfun( X            - XM , Y             - YM )
 		Range               <- Max - Min
 		MeanPos             <- (Max - Mean) / Range
 		SDNorm              <- StdDev / Range
@@ -268,11 +268,13 @@ ziKey <- function( key ){
 		logFeret            <- log(Feret)
 	} )
 }
+# }}}
 
-# All sample with at least one entry in a given object
-"list.samples" <-
-	function(obj) {
- 	# List all samples represented in a given object
+# {{{ list.samples
+#' All sample with at least one entry in a given object
+"list.samples" <- function(obj) {
+ 	
+	# List all samples represented in a given object
 	if (inherits(obj, "ZIDat")) {
     	res <- sort(unique(get.sampleinfo(as.character(obj$Label), type = "sample", ext = "")))
 		return(res)
@@ -285,108 +287,144 @@ ziKey <- function( key ){
 		res <- sort(unique(get.sampleinfo(res, type = "sample", ext = "")))
 		return(res)
 	}
+	
 	# Not a recognized object
 	stop("'obj' must be a 'ZIDat', 'ZIDesc' or or 'ZITrain' object!")
 }
+# }}}
 
-# Parse an ini file (.zim, .zie, etc.) are ini files!
+# {{{ parse.ini
+#' Parse an ini file (.zim, .zie, etc.) are ini files!
 ### TODO: manage the case there is no '=' in the data!
-"parse.ini" <-
-	function(data, label = "1") {
+"parse.ini" <- function(data, label = "1") {
 	# Parse an ini file (tag=value => 'tag', 'value') and make a list with different sections
-	is.section <- function(str)
+	
+	# is str a section
+	is.section <- function(str){
 		as.logical( length(grep("^\\[.+\\]$", trim(str)) > 0))
+	}
 
 	# Get the name of a section
-	get.section.name <- function(str)
+	get.section.name <- function(str){
 		sub("^\\[", "", sub("\\]$", "", trim(str)))
+	}
 
 	# Transform a vector of characters into a data frame, possibly with type conversion
 	vector.convert <- function(vec) {
 		as.data.frame(lapply(as.list(vec), type.convert))
 	}
 
-	if (is.null(data) || !inherits(data, "character") || length(data) < 1)
+	if (is.null(data) || !inherits(data, "character") || length(data) < 1){
 		return(character(0))
+	}
+	
 	# Trim leading and trailing white spaces
 	data <- trim(data)
+	
 	# Convert underscore to space
 	data <- underscore2space(data)
+	
 	# Eliminate empty lines
 	data <- data[data != ""]
 	data <- paste(data, " ", sep = "")
-	if (length(data) < 1)
+	if (length(data) < 1){
 		return(character(0))
+	}
 	# Substitute the first '=' sign by another separator unlikely to appear in the argument
 	data <- sub("=", "&&&&&", data)
+	
 	# Split the strings according to this separator
 	data <- strsplit(data, "&&&&&")
+	
 	# Get a matrix
 	data <- t(as.data.frame(data))
 	rownames(data) <- NULL
+	
 	# Make sure we have a section for the first entries (otherwise, use [.])
-	if (!is.section(data[1, 1])) data <- rbind(c("[.]", "[.]"), data)
+	if (!is.section(data[1, 1])) {
+		data <- rbind(c("[.]", "[.]"), data)
+	}
 	Names <- as.vector(trim(data[, 1]))
 	Dat <- as.vector(trim(data[, 2]))
+	
 	# Determine which is a section header
 	Sec <- grep("\\[.+\\]$", Names)
 	SecNames <- get.section.name(Names[Sec])
+	
 	# Make a vector of sections
 	if (length(Sec) == 1) {
 		SecNames <- rep(SecNames, length(Names))
 	} else {
 		SecNames <- rep(SecNames, c(Sec[2:length(Sec)], length(Names) + 1) - Sec)
 	}
+	
 	# Replace section headers from all vectors
 	Names[Sec] <- "Label"
 	Dat[Sec] <- label
 	names(Dat) <- Names
+	
 	# Transform SecNames in a factor
 	SecNames <- as.factor(SecNames)
+	
 	# Split Dat on sections
 	DatSec <- split(Dat, SecNames)
+	
 	# for each section, transform the vector in a data frame and possibly convert its content
 	DatSec <- lapply(DatSec, vector.convert)
+	
 	# Eliminate "Label" if it is ""
-	if (label == "") DatSec <- lapply(DatSec, function(x) x[-1])
+	if (label == "") {
+		DatSec <- lapply(DatSec, function(x) x[-1])
+	}
 	return(DatSec)
 }
+# }}}
 
-# Merge two lists of data frames
-"list.merge" <-
-	function(x, y) {
+# {{{ list.merge
+#' Merge two lists of data frames
+"list.merge" <- function(x, y) {
+	
 	if (!inherits(x, "list"))
 		stop("'x' must be a 'list'!")
 	if (!inherits(y, "list"))
 		stop("'y' must be a 'list'!")
+	
 	xitems <- names(x)
 	yitems <- names(y)
 	xandy <- xitems[xitems %in% yitems]
 	xonly <- xitems[!(xitems %in% xandy)]
 	yonly <- yitems[!(yitems %in% xandy)]
+	
 	# construct the merged list
 	res <- list()
+	
 	# First merge common items
 	if (length(xandy) > 0) {
-		for (i in 1:length(xandy))
-			res[[xandy[i]]] <- merge(x[[xandy[i]]], y[[xandy[i]]], all = TRUE)
+		for (i in 1:length(xandy)){
+			item <- xandy[i] 
+			res[[ item ]] <- merge(x[[ item ]], y[[ item ]], all = TRUE)
+		}
 	}
 	# Add xonly items
 	if (length(xonly) > 0) {
-	 	for (i in 1:length(xonly))
-	 		res[[xonly[i]]] <- x[[xonly[i]]]
+	 	for (i in 1:length(xonly)){
+			item <- xonly[i]
+			res[[ item ]] <- x[[ item ]]
+		}
 	}
 	# Add yonly items
 	if (length(yonly) > 0) {
-	 	for (i in 1:length(yonly))
-	 		res[[yonly[i]]] <- y[[yonly[i]]]
+	 	for (i in 1:length(yonly)){
+	 		item <- yonly[i]
+			res[[ item ]] <- y[[ item ]]
+		}
 	}
 	return(res)
 }
+# }}}
 
-# Add items across two lists (names must be the same)
-"list.add" <-
-	function(x, y) {
+# {{{ Add items across two lists (names must be the same)
+"list.add" <- function(x, y) {
 	if (!inherits(x, "list"))
 		stop("'x' must be a 'list'!")
 	if (!inherits(y, "list"))
@@ -394,33 +432,37 @@ ziKey <- function( key ){
 	if (!all(names(x) == names(y)))
 		stop("names of two lists must match!")
 	res <- x
-	for (i in 1:length(x))
+	for (i in 1:length(x)){
 		res[[i]] <- x[[i]] + y[[i]]
+	}
 	attributes(res) <- attributes(x)
 	return(res)	
 }
+# }}}
 
-# Internationalization of ZooImage: get messages in other languages
-"gettextZI" <-
-	function(...) {
+# {{{ Internationalization of ZooImage: get messages in other languages
+"gettextZI" <- function(...) {
 	### TODO: internationalization of the package
 	#gettext(..., domain = "R-zooimage")
 	return(list(...)[[1]])
 }
+# }}}
 
-# Display progression of long-running tasks, both on the R console
-# and in the ZooImage assistant status bar
-"Progress" <-
-	function(value, max.value = NULL) {
+# {{{ Progress
+#' Display progression of long-running tasks, both on the R console
+#' and in the ZooImage assistant status bar
+"Progress" <- function(value, max.value = NULL) {
 	# This is my own version of progress() that uses also the Tk window statusbar
-    if (!is.numeric(value)) 
+    if (!is.numeric(value)){
         stop("`value' must be numeric!")
+	}
     if (is.null(max.value)) {
         max.value <- 100
         percent <- TRUE
     } else percent <- FALSE
-    if (!is.numeric(max.value)) 
+    if (!is.numeric(max.value)){
         stop("`max.value' must be numeric or NULL!")
+	}
     erase.only <- (value > max.value)
     Max.Value <- as.character(round(max.value))
     l <- nchar(Max.Value)
@@ -462,8 +504,13 @@ ziKey <- function( key ){
 	}
     invisible(NULL)
 }
+EraseProgress <- function( ){
+	Progress( 2, 1 )
+}
+# }}}
 
-# Change the working directory and update the ZooImage assistant status bar
+# {{{ Setwd
+#' Change the working directory and update the ZooImage assistant status bar
 "Setwd" <- function(dir) {
 	### TODO: this does not work if dir is changed from Rgui menu or from setwd()!
 	# My own setwd() function that also updates the Tk window statusbar
@@ -476,8 +523,14 @@ ziKey <- function( key ){
 	# Save the current default directory for future use
 	setKey("DefaultDirectory", getwd())
 }
+# }}}
 
+# {{{ ZIpgm
 #' Get the path of an executable, giving its name and subdirectory
+#' @examples 
+#' ZIpgm("zip")
+#' ZIpgm("pgmhist", "netpbm")
+#' ZIpgm("pnm2biff", "xite")
 "ZIpgm" <- function(pgm, subdir = "misc", ext = "exe") {
 	
 	if (isWin()) {
@@ -491,13 +544,15 @@ ziKey <- function( key ){
 		return(pgm)
 	}	
 }
+# }}}
 
-# ZIpgm("zip")
-# ZIpgm("pgmhist", "netpbm")
-# ZIpgm("pnm2biff", "xite")
-
+# {{{ ZIpgmhelp
+#' Show textual help for executables
+#' @examples
+#' ZIpgmhelp("zip")
+#' ZIpgmhelp("pgmhist", "netpbm")
+#' ZIpgmhelp("pnm2biff", "xite")
 "ZIpgmhelp" <- function(pgm, subdir = "misc") {
-	# Show textual help for executables
 	if (isWin()) {
 		helpfile <- file.path(system.file(subdir, "doc", package = "zooimage"), paste(pgm, "txt", sep = "."))
 		if (!file.exists(helpfile))
@@ -507,11 +562,9 @@ ziKey <- function( key ){
 		system(paste("man", pgm), wait = FALSE)
 	}	
 }
+# }}}
 
-# ZIpgmhelp("zip")
-# ZIpgmhelp("pgmhist", "netpbm")
-# ZIpgmhelp("pnm2biff", "xite")
-
+# {{{ getDec
 "getDec" <- function() {
 	Dec <- getKey("OptionInOutDecimalSep", ".")
 	DecList <- c(".", ",")
@@ -519,6 +572,7 @@ ziKey <- function( key ){
 	if (!Dec %in% DecList) Dec <- "."
 	return(Dec)
 }
+# }}}
 
 
 #' Get the current call stack

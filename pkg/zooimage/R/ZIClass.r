@@ -72,8 +72,6 @@
 	if (!is.null(k.xval)) {
 		if (algorithm == "lda") {
 			mypredict <- function(object, newdata) predict(object, newdata = newdata)$class
-#		} else if (algorithm %in% c("rpart", "ipredknn", "nnet2")) {
-#            mypredict <- function(object, newdata) predict(object, newdata = newdata, type = "class")
 		} else {
 			mypredict <- function(object, newdata) predict(object, newdata = newdata, type = "class")
 		}
