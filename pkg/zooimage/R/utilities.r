@@ -77,9 +77,11 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 		Filter <- rep(TRUE, length(varlist))
 		for (i in 1:length(varlist)){
 			Var <- get(varlist[i])
-			for (j in 1:length(Var))
-				if (!inherits(Var[[j]], class))
+			for (j in 1:length(Var)){
+				if (!inherits(Var[[j]], class)){
 					Filter[i] <- FALSE
+				}
+			}
 		}
 		varlist <- varlist[Filter]	# Keep only those objects
 		if (length(varlist) == 0) { 	# No such objects in .GlobalEnv
@@ -741,10 +743,24 @@ list.dir <- function( dir, ... ){
 # }}}
 
 
-mustbe <- function( x, class ){
+mustbe <- function( x, class, msg ){
 	if( !any( sapply( class, function( cl ) inherits( x, cl) ) ) )
-	stop( "x must be of one of these classes: ", paste( class, collapse = ", ") ) 
+	if( length(class) == 1){
+		if( missing(msg) ) msg <- sprintf( "x must be a '%s' object" , as.character(class) )
+		stop( msg )
+	} else{
+		if( missing(msg) ) msg <- paste( "x must be of one of these classes: ", paste( class, collapse = ", "), sep = "" )
+		stop( msg )
+	}
 }
+
+mustmatch <- function( x, y, msg ){
+	if( !all( x  == y ) ){
+		if( missing(msg) ) msg <- sprintf( "'%s' and '%s' must match", deparse(substitute(x)), deparse(substitute(y)) )
+		stop( msg )
+	}
+}
+
 
 # a version that stops
 require <- function( ... ){

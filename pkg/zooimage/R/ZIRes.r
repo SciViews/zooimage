@@ -26,8 +26,7 @@
 	if (!file.exists(ZidFile)) {
 		logProcess("file not found!", ZidFile, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
 	# Check if ZIClass is of the right class
-	if (!inherits(ZIClass, "ZIClass")) {
-		logProcess("ZIClass is not a 'ZIClass' object!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+	mustbe(ZIClass, "ZIClass")
 	# Get ZIDat from the ZidFile
 	ZIDat <- read.zid(ZidFile)
 	Sample <- get.sampleinfo(ZidFile, type = "sample", ext = "[.][zZ][iI][dD]$")
@@ -133,15 +132,16 @@
 	return(restot)
 }
 
-"Spectrum.sample" <-
-	function(ZIDat, sample, taxa = NULL, groups = NULL,
+# {{{ Spectrum.sample
+#' Cut a sample into ECD classes (for size spectra)
+"Spectrum.sample" <- function(ZIDat, sample, taxa = NULL, groups = NULL,
 	breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE) {
-	# Cut a sample into ECD classes (for size spectra)
+	
 	# Check arguments
-	if (!inherits(ZIDat, "ZIDat"))
-		stop("ZIDat must be a 'ZIDat' object")
+	mustbe(ZIDat, "ZIDat")
 	if (!is.character(sample) && length(sample) != 1)
 		stop("sample must be a character string of length one")
+	
 	# Extract only data for a given sample
 	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
 	if (!sample %in% unique(Smps))
@@ -156,13 +156,14 @@
 	}
 	return(res)
 }
+# }}}
 
 "Spectrum" <-
 	function(ZIDat, image,  taxa = NULL, groups = NULL, 
 	breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE) {
+	
 	# Check arguments
-	if (!inherits(ZIDat, "ZIDat"))
-		stop("ZIDat must be a 'ZIDat' object")
+	mustbe(ZIDat, "ZIDat")
 	if (!is.character(image) && length(image) != 1)
 		stop("image must be a character string of length one")
 	dat <- ZIDat[ZIDat$Label == image, ] # Select the image
@@ -205,8 +206,8 @@
 	conv = c(1, 0, 1), header = "Bio", exportdir = NULL) {
 	# Convert ECD (biomass calculation, etc.)
 	# Check arguments
-	if (!inherits(ZIDat, "ZIDat"))
-		stop("ZIDat must be a 'ZIDat' object")
+	mustbe(ZIDat, "ZIDat" )
+		
 	if (!is.character(sample) && length(sample) != 1)
 		stop("sample must be a character string of length one")
 	# Extract only data for a given sample
@@ -295,31 +296,34 @@
  	return(res)
 }
 
-"Abd.sample" <-
-	function(ZIDat, sample, taxa = NULL, groups = NULL,
+#{{{ Abd.sample
+#' Calculate abundances for various taxa in a sample
+"Abd.sample" <- function(ZIDat, sample, taxa = NULL, groups = NULL,
 	type = c("absolute", "log", "relative"), header = "Abd") {
-	# Calculate abundances for various taxa in a sample
+
 	# Check arguments
-	if (!inherits(ZIDat, "ZIDat"))
-		stop("ZIDat must be a 'ZIDat' object")
+	mustbe( ZIDat, "ZIDat")
 	if (!is.character(sample) && length(sample) != 1)
 		stop("sample must be a character string of length one")
-	type <- type[1]
-	if (!(type %in% c("absolute", "log", "relative")))
-		stop("type must be 'absolute', 'log' or 'relative'")
+	type <- match.arg( type, several.ok = FALSE )
+	
 	# Extract only data for a given sample
 	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
-	if (!sample %in% unique(Smps))
+	if (!sample %in% unique(Smps)){
 		stop("sample '", sample, "' is not in ZIDat")
+	}
 	Smp <- ZIDat[Smps == sample, ]
+	
 	# Subsample, depending on taxa we keep
 	if (!is.null(taxa)) {
 		if (!all(taxa %in% levels(Smp$Ident)))
 			stop("taxa not in the sample")
 		Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
 	}
-	if (nrow(Smp) == 0)
+	if (nrow(Smp) == 0){
 		stop("no data for this sample/taxa in ZIDat")
+	}
+	
 	# If relative abundance, calculation of fraction for each individual
 	if (type == "relative") {
 		Table <- table(Smp$Dil)
@@ -352,41 +356,39 @@
 		res <- log10(res + 1)
 	return(res)
 }
+# }}}
 
 "plot.ZITable" <-
 	function(x, y, ...) {
 	barplot(x, names.arg = attr(x, "breaks")[-1], ...)
 }
 
-"merge.ZITable" <-
-	function(x, y, ...) {
-	if (!inherits(x, "ZITable"))
-		stop("x must be a 'ZITable' object")
-	if (!inherits(y, "ZITable"))
-		stop("y must be a 'ZITable' object")
+"merge.ZITable" <- function(x, y, ...) {
+	
+	mustbe(x, "ZITable")
+	mustbe(y, "ZITable")
+	
 	breaks.x <- attr(x, "breaks")
 	breaks.y <- attr(y, "breaks")
-	if (!all(breaks.x == breaks.y))
-		stop("breaks of all objects must match")
+	mustmatch( breaks.x, breaks.y, 
+		"breaks of all objects must match")
+	
 	unit.x <- attr(x, "unit")
 	unit.y <- attr(y, "unit")
-	if (!unit.x == unit.y)
-		stop("units of all objects must match")
+	mustmatch( unit.x, unit.y, "units of all objects must match")
 	res <- x + y
+
 	# If the user provides more tables, merge them all
 	moreargs <- list(...)
 	if (length(moreargs) > 0) {
 		# Merge all provided tables
 		for (i in 1:length(moreargs)) {
-		tt <- moreargs[[i]]
-			if (!inherits(tt, "ZITable"))
-				stop("all arguments must be 'ZITable' objects")
+			tt <- moreargs[[i]]
+			mustbe( tt, "ZITable", msg = "all arguments must be 'ZITable' objects")
 			breaks.tt <- attr(tt, "breaks")
-			if (!all(breaks.x == breaks.tt))
-				stop("breaks of all objects must match")
+			mustmatch( breaks.x, breaks.tt, "breaks of all objects must match")
 			unit.tt <- attr(tt, "unit")
-			if (!unit.x == unit.tt)
-				stop("units of all objects must match")
+			mustmatch( unit.x, unit.tt, "units of all objects must match")
 			res <- res + tt
 		}
 	}
@@ -444,3 +446,5 @@
 	if (!is.null(xleg)) legend(xleg, yleg, legend, col = cols,
 		lwd = 1, pch = pchs, bg = "white")
 }
+# :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
+

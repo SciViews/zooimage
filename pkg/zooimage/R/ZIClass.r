@@ -86,6 +86,7 @@
 
 # {{{ print.ZIClass
 "print.ZIClass" <- function(x, ...) {
+
 	algorithm <- attr(x, "algorithm")
 	classes <- attr(x, "classes")
 	lclasses <- levels(classes)
@@ -239,7 +240,7 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 # {{{ confusion.bar
 # New function v 1.2-2 false positive and negative
 confusion.bar <- function(confmat, mar=NULL) {
-	if (is.matrix(confmat) == FALSE){
+	if ( !is.matrix(confmat) ){
 		stop("object must be a matrix")
 	}
 	Nn <- nrow(confmat)
@@ -292,14 +293,14 @@ confusion.bar <- function(confmat, mar=NULL) {
 	barplot(all2[,!is.na(all2[2,])], horiz=TRUE, 
 		col=c("PeachPuff2", "green3", "green3", "lemonChiffon2"),
 		xaxt="n", las=1, space = 0)
-	for (i in 1:Nmat) {
-		text(valx[i,],i-0.45, Failure.mat[i,] , cex=0.7)
-		text(valx2[i,],i-0.45, 100 - Failure.mat[i,] , cex=0.7)
-	}
+	text(valx[i,]  , row(valx) - 0.45 , Failure.mat , cex=0.7)
+	text(valx2[i,] , row(valx2)- 0.45 , 100 - Failure.mat , cex=0.7)
 	
 	#### Ajout des légendes
-  	legend(100, Nmat+(Nmat/15), legend = c("false negative (FN)", "correct ident (CI)", "false positive (FP)"), 
-		xjust = 0.5, fill = c("PeachPuff2", "green3", "lemonChiffon2"), bty="n", horiz = TRUE)
+  	legend(100, Nmat+(Nmat/15), 
+		legend = c("false negative (FN)", "correct ident (CI)", "false positive (FP)"), 
+		xjust = 0.5, fill = c("PeachPuff2", "green3", "lemonChiffon2"), 
+		bty="n", horiz = TRUE)
 	legend(100, Nmat/55, "Percentage", xjust = 0.5, bty = "n")
 	segx0 <- rep(c(25, 50, 75, 125, 150, 175),2)
 	segy0 <- rep(c(0, Nmat),c(6,6))
@@ -324,16 +325,17 @@ confusion.bar <- function(confmat, mar=NULL) {
 # }}}
 
 # {{{ predict.nnet2
-"predict.nnet2" <-
-	function (object, newdata, type = c("raw", "class"), ...) {
-	 if (!inherits(object, "nnet2")) 
-        stop("object not of class \"nnet2\"")
+"predict.nnet2" <- function (object, newdata, type = c("raw", "class"), ...) {
+	
+	mustbe( object, "nnet2" )
+	
 	(require(nnet) || stop("package 'nnet' is required!"))
-    class(object) <-class(object)[-1]
+    class(object) <- class(object)[-1]
 	res <- predict(object, newdata = newdata, type = type, ...)
 	# If type is class, we got a character vector... but should get a factor
-	if (type == "class")
+	if (type == "class"){
     	res <- factor(res, levels = object$lev)
+	}
 	return(res)
 }
 # }}}
