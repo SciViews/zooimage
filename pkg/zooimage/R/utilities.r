@@ -16,13 +16,16 @@
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 # Various utility functions used by ZooImage
-     
+    
+# {{{ warnOrStop
+#' warns or stops
 warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 	if( is.null(warn.only ) ) warn.only <- TRUE
 	msg <- paste( ..., sep = "" )
 	if( warn.only ) warning( msg ) else stop( msg )
 	invisible( NULL )
 }
+# }}}
 
 # {{{ getVar
 #' Get the name of one or several variables of a given class
@@ -89,10 +92,12 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 }
 # }}}
 
-# Select one or several files of a given type
-"selectFile" <-
-	function(type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
-		multi = FALSE, quote = TRUE) {
+# {{{ selectFile
+#' Select one or several files of a given type
+"selectFile" <- function(
+	type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
+	multi = FALSE, quote = TRUE) {
+	
 	# Adapt title according to 'multi'
 	Type <- type[1]
 	if (Type == "ZipZid") Type <- "Zip/Zid"
@@ -121,56 +126,74 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 	if (res != "" && quote) res <- paste('"', res, '"', sep = "")
 	return(res)
 }
+# }}}
+
+# {{{ getKey / setKey
 
 # Get a key in the registry (retrieve ZooImage configuration data)
 ### TODO: this must be adapted for other platforms!
-"getKey" <-
-	function(key, default.value = NULL) {
- 	# Retrieve a ZooImage key in the registry
-	if (!isWin()) return(default.value)
+
+ziKey <- function( key ){
+	sprintf( "zooimage-%s", key )
+}
+
+"getKey" <- function(key, default.value = NULL) {
+ 	
+	# Retrieve a ZooImage key in the registry
+	# should we use this also for windows ?
+	if (!isWin()) {
+		return( getTemp( ziKey(key) , default.value) )
+	}
+	
 	# Look if the key is defined
 	ZIkey <- getTemp("ZIkey")
 	if (key %in% tk2reg.values(ZIkey)) {
     	# Get the content of that key
 		return(tk2reg.get(ZIkey, key))
 	} else return(default.value)
+	
 }
 
 # Set a key in the registry (store configuration data for next ZooImage session)
-### TODO: this must be adapted for other platforms!
-"setKey" <-
-	function(key, value, type = "sz") {
-	if(!isWin()) return(invisible(FALSE))	# Still must be programmed!
-	tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
+"setKey" <- function(key, value, type = "sz") {
+	if(!isWin()) {
+		# should we also use this for windows ?
+		assignTemp( ziKey( key), value, TRUE )
+	} else{
+		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
+	}
 	return(invisible(TRUE))
 }
+# }}}
 
-# Convert underscores into spaces
-"underscore2space" <-
-	function(char) {
+# {{{ Text manipulation
+#' Convert underscores into spaces
+"underscore2space" <- function(char) {
 	# Convert underscores to spaces in strings (underscore is used in calltips
 	# in the ZooImage Metadata Editor, because of a bug in this program)
-	return(gsub("_", " ", char))
+	gsub("_", " ", char)
 }
 
-# Trim leading and trailing spaces in strings
-"trim" <-
-	function(char) {
+#' Trim leading and trailing spaces in strings
+"trim" <- function(char) {
 	# Trim leading and trailing white spaces and tabs
-	return(sub("\\s+$", "", sub("^\\s+", "", char)))
+	sub("\\s+$", "", sub("^\\s+", "", char))
 }
 
-# Get the name of a file, without its extension
-"noext" <-
-	function(file) {
+#' Get the name of a file, without its extension
+"noext" <- function(file) {
 	# Get basename without extension
-	return(sub("\\.[^.]+$", "", basename(file)))
+	sub("\\.[^.]+$", "", basename(file))
 }
 
+# }}}
+
+# {{{ get.sampleinfo
 # Get information about a sample, given its name
-"get.sampleinfo" <-
-	function(filename, type = c("sample", "fraction", "image", "scs", "date", "id", "frac", "imgnbr"),
+"get.sampleinfo" <- function(filename, 
+	type = c("sample", "fraction", "image", "scs", "date", "id", "frac", "imgnbr"),
 	ext = "_dat1[.]zim$") {
+	
 	type <- type[1]
 	base <- basename(filename)
 	if (ext != "") base <- sub(ext, "", base)
@@ -192,43 +215,58 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 	### TODO: check results
 	return(res)
 }
+# }}}
 
-# Calculate equivalence circular diameter (similar to equivalent spherical diameter, but for 2D images)
+# {{{ ecd
+#' Calculate equivalence circular diameter (similar to equivalent spherical diameter, but for 2D images)
 "ecd" <- function(area) {
 	return(2 * sqrt(area / pi))
 }
+# }}}
 
-# Unique identifiers (Ids) are a combination of Label and Item
+# {{{ make.Id
+#' Unique identifiers (Ids) are a combination of Label and Item
 "make.Id" <- function(df) {
 	# Make a list of Ids, combining "Label" and "Item"
-	return(paste(df$Label, df$Item, sep = "_"))
+	paste(df$Label, df$Item, sep = "_")
 }
+# }}}
 
-# Calculate derived variables... default function
-"calc.vars" <-
-	function(x) {
+# {{{ calc.vars
+#' Calculate derived variables... default function
+"calc.vars" <- function(x) {
+	
 	# This is the calculation of derived variables
 	# Note that you can make your own version of this function for more calculated variables!
+	
 	# A small hack to correct some 0 for Minor and Major
-	x$Minor[x$Minor == 0] <- 0.000000001
-	x$Major[x$Major == 0] <- 0.000000001
-	x$Elongation <- x$Major / x$Minor
-	x$CentBoxD <- sqrt((x$BX + x$Width/2 - x$X)^2 + (x$BY + x$Height/2 - x$Y)^2)
-	x$GrayCentBoxD <- sqrt((x$BX + x$Width/2 - x$XM)^2 + (x$BY + x$Height/2 - x$YM)^2)
-	x$CentroidsD <- sqrt((x$X - x$XM)^2 + (x$Y - x$YM)^2)
-	x$Range <- x$Max - x$Min
-	x$MeanPos <- (x$Max - x$Mean) / x$Range
-	x$SDNorm <- x$StdDev / x$Range
-	x$CV <- x$StdDev / x$Mean * 100
-	x$Area[x$Area == 0] <- 0.000000001
-	x$logArea <- log(x$Area)
-	x$Perim.[x$Perim. == 0] <- 0.000000001
-	x$logPerim. <- log(x$Perim.)
-	x$logMajor <- log(x$Major)
-	x$logMinor <- log(x$Minor)
-	x$Feret[x$Feret == 0] <- 0.000000001
-	x$logFeret <- log(x$Feret)
-	return(x)
+	hack <- function( x ){
+		x[ x == 0 ] <- 0.000000001
+	}
+	distfun <- function( x, y ){
+		sqrt( x^2 + y^2 )
+	}
+	
+	within( x, {
+		Minor               <- hack( Minor )
+		Major               <- hack( Major ) 
+		Elongation          <- Major / Minor
+		CentBoxD            <- distfun( BX + Width/2 - X , BY + Height/2 - Y )
+		GrayCentBoxD        <- distfun( BX + Width/2 - XM, BY + Height/2 - YM)
+		CentroidsD          <- distfun( X - XM           , Y - YM )
+		Range               <- Max - Min
+		MeanPos             <- (Max - Mean) / Range
+		SDNorm              <- StdDev / Range
+		CV                  <- StdDev / Mean * 100
+		Area                <- hack( Area )
+		logArea             <- log(Area)
+		Perim.              <- hack( Perim. )
+		logPerim.           <- log(Perim.)
+		logMajor            <- log(Major)
+		logMinor            <- log(Minor)
+		Feret               <- hack( Feret )
+		logFeret            <- log(Feret)
+	} )
 }
 
 # All sample with at least one entry in a given object
