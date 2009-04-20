@@ -139,42 +139,44 @@
 	
 	# Check arguments
 	mustbe(ZIDat, "ZIDat")
-	if (!is.character(sample) && length(sample) != 1)
-		stop("sample must be a character string of length one")
+	mustbeString( sample, 1 )
 	
 	# Extract only data for a given sample
 	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
-	if (!sample %in% unique(Smps))
+	if (!sample %in% unique(Smps)){
 		stop("sample '", sample, "' is not in ZIDat")
+	}
 	Smp <- ZIDat[Smps == sample, ]
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
 	res <- Spectrum(Smp, imgs[1], taxa = taxa, groups = groups, breaks = breaks, use.Dil = use.Dil)
 	if (length(imgs) > 1) {
-		for (i in 2:length(imgs))
-			res <- list.add(res, Spectrum(Smp, imgs[i], taxa = taxa, groups = groups, breaks = breaks, use.Dil = use.Dil))			
+		for (i in 2:length(imgs)){
+			res <- list.add(res, Spectrum(Smp, imgs[i], taxa = taxa, groups = groups, breaks = breaks, use.Dil = use.Dil))
+		}			
 	}
 	return(res)
 }
 # }}}
 
-"Spectrum" <-
-	function(ZIDat, image,  taxa = NULL, groups = NULL, 
+# {{{ Spectrum
+"Spectrum" <- function(ZIDat, image,  taxa = NULL, groups = NULL, 
 	breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE) {
 	
 	# Check arguments
 	mustbe(ZIDat, "ZIDat")
-	if (!is.character(image) && length(image) != 1)
-		stop("image must be a character string of length one")
+	mustbeString( image, 1)
 	dat <- ZIDat[ZIDat$Label == image, ] # Select the image
-	if (nrow(dat) == 0)
+	if (nrow(dat) == 0){
 		warning("ZIDat contains no '", image, "' data!")
+	}
 	# Remember dilution (in case there are no data)
 	if (nrow(dat) > 0) Dil <- dat$Dil[1] else Dil <- 1
 	# taxa must correspond to levels in ZIDat$Ident
 	if (!is.null(taxa)) {
-		if (!all(taxa %in% levels(dat$Ident)))
+		if (!all(taxa %in% levels(dat$Ident))){
 			stop("taxa not in ZIDat")
+		}
 		dat <- dat[dat$Ident %in% taxa, ] # Select taxa
 	}
 	if (is.null(groups)) {
@@ -182,8 +184,7 @@
 		groups <- list("")
 		names(groups) <- "total"
 	}
-	if (!is.list(groups))
-		stop("groups must be a list")
+	mustbe( groups, "list" )
 	res <- list()
 	gnames <- names(groups)
 	for (i in 1: length(groups)) {
@@ -200,29 +201,30 @@
 	attr(res, "unit") <- if(use.Dil) "ind/m^3" else "count"
 	return(res)
 }
+# }}}
 
-"Bio.sample" <-
-	function(ZIDat, sample, taxa = NULL, groups = NULL,
+# {{{ Bio.sample
+#' Convert ECD (biomass calculation, etc.)
+"Bio.sample" <- function(ZIDat, sample, taxa = NULL, groups = NULL,
 	conv = c(1, 0, 1), header = "Bio", exportdir = NULL) {
-	# Convert ECD (biomass calculation, etc.)
+	
 	# Check arguments
 	mustbe(ZIDat, "ZIDat" )
-		
-	if (!is.character(sample) && length(sample) != 1)
-		stop("sample must be a character string of length one")
+	mustbeString( sample, 1 )
+	
 	# Extract only data for a given sample
 	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
-	if (!sample %in% unique(Smps))
-		stop("sample '", sample, "' is not in ZIDat")
+	mustcontain( unique(Smps), sample, 
+		msg = paste("sample '", sample, "' is not in ZIDat") )
 	Smp <- ZIDat[Smps == sample, ]
 	# Subsample, depending on taxa we keep
 	if (!is.null(taxa)) {
-		if (!all(taxa %in% levels(Smp$Ident)))
-			stop("taxa not in the sample")
+		mustcontain( levels(Smp$Ident), taxa, "taxa not in the sample")
 		Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
 	}
-	if (nrow(Smp) == 0)
+	if (nrow(Smp) == 0){
 		stop("no data for this sample/taxa in ZIDat")
+	}
 	# Add P1/P2/P3 conversion params to the table
 	if (inherits(conv, "data.frame")) {
 		if (  ! all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ) || !all(names(conv)[1:4] == c("Group", "a", "b", "c") ) ){
@@ -231,6 +233,7 @@
 		IdSmp <- as.character(Smp$Ident)
 		IdSmpU <- unique(IdSmp)
 		IdConv <- as.character(conv$Group)
+	
 		# Eliminate [other] from the table and the list and keep its values for further use
 		IsOther <- (IdConv == "[other]")
 		Other <- conv[IsOther, ]
@@ -281,8 +284,7 @@
 		res <- sum(Smp$Biomass)
 		names(res) <- header
 	} else {
-		if (!is.list(groups))
-		    stop("groups must be a list")
+		mustbe( groups, "list" )
 		res <- NULL
 		for (i in 1: length(groups)) {
 			if (length(groups[[i]]) == 1 && groups[[i]] == "") { # Total biomass
@@ -295,6 +297,7 @@
 	}
  	return(res)
 }
+# }}}
 
 #{{{ Abd.sample
 #' Calculate abundances for various taxa in a sample
@@ -303,8 +306,7 @@
 
 	# Check arguments
 	mustbe( ZIDat, "ZIDat")
-	if (!is.character(sample) && length(sample) != 1)
-		stop("sample must be a character string of length one")
+	mustbeString( sample, 1 )
 	type <- match.arg( type, several.ok = FALSE )
 	
 	# Extract only data for a given sample
@@ -340,8 +342,7 @@
 		res <- sum(Smp$Coef)
 		names(res) <- header
 	} else {
-		if (!is.list(groups))
-			stop("groups must be a list")
+		mustbe( groups, "list" )
 		res <- NULL
 		for (i in 1: length(groups)) {
 			if (length(groups[[i]]) == 1 && groups[[i]] == "") { # Total abundance
@@ -358,11 +359,13 @@
 }
 # }}}
 
-"plot.ZITable" <-
-	function(x, y, ...) {
+# {{{ plot.ZITable
+"plot.ZITable" <- function(x, y, ...) {
 	barplot(x, names.arg = attr(x, "breaks")[-1], ...)
 }
+# }}}
 
+# {{{ merge.ZITable
 "merge.ZITable" <- function(x, y, ...) {
 	
 	mustbe(x, "ZITable")
@@ -396,12 +399,14 @@
 	# coef divides and calculates the mean value
 	return(res)
 }
+# }}}
 
-"histSpectrum" <-
-	function(spect, class = 1:18 * 0.3 / 3 + 0.2, lag = 0.25, log.scale = TRUE,
+# {{{ histSpectrum
+"histSpectrum" <- function(spect, class = 1:18 * 0.3 / 3 + 0.2, lag = 0.25, log.scale = TRUE,
 	width = 0.1, xlab = "classes (mm)",
 	ylab = if (log.scale) "log(abundance + 1)/m^3" else "Abundance (ind./m^3",
 	main = "", ylim = c(0, 2), plot.exp = FALSE) {
+	
 	# Plot of histograms and optionally line for exponential decrease for size spectra
 	if (plot.exp) {
 		spect.lm <- lm(spect ~ class)
@@ -425,26 +430,31 @@
 		return(invisible(spect.lm2))
 	}
 }
+# }}}
 
-"plotAbdBio" <-
-	function (t, y1, y2, y3, ylim = c(0,3),
+# {{{ plotAbdBio
+"plotAbdBio" <- function (t, y1, y2, y3, ylim = c(0,3),
 	xlab = "Date", ylab = "log(abundance + 1)", main = "",
 	cols = c("green", "blue", "red"), pchs = 1:3,
 	hgrid = 1:3, vgrid = t, vline = NULL, xleg = min(vgrid), yleg = ylim[2],
 	legend = c("series 1", "series 2", "series 3"), type = "o") {
+	
 	# Custom plot for abundance and biomass
 	plot(t, y1, type = type, ylim = ylim, xlim = range(vgrid), ylab = ylab,
 		xlab = xlab, main = main, col = cols[1], xaxt = "n", pch = pchs[1])
 	axis(1, at = vgrid, label = format(vgrid, "%b"))
 	lines(t, y2, type = type, col = cols[2], pch = pchs[2])
 	lines(t, y3, type = type, col = cols[3], pch = pchs[3])
+	
 	# Grid
 	abline(h = hgrid, col = "gray", lty = 2)
 	abline(v = vgrid, col = "gray", lty = 2)
+	
 	# Vertical line(s) to spot particular time events
 	if (!is.null(vline)) abline(v = as.Date(vline), lty = 2, lwd = 2, col = 2)
 	if (!is.null(xleg)) legend(xleg, yleg, legend, col = cols,
 		lwd = 1, pch = pchs, bg = "white")
 }
+# }}}
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
 

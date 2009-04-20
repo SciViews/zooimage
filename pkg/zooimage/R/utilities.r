@@ -276,6 +276,8 @@ ziKey <- function( key ){
 #' All sample with at least one entry in a given object
 "list.samples" <- function(obj) {
  	
+	mustbe( obj, c("ZIDat", "ZIDesc","ZITrain") )
+	
 	# List all samples represented in a given object
 	if (inherits(obj, "ZIDat")) {
     	res <- sort(unique(get.sampleinfo(as.character(obj$Label), type = "sample", ext = "")))
@@ -290,8 +292,6 @@ ziKey <- function( key ){
 		return(res)
 	}
 	
-	# Not a recognized object
-	stop("'obj' must be a 'ZIDat', 'ZIDesc' or or 'ZITrain' object!")
 }
 # }}}
 
@@ -386,10 +386,8 @@ ziKey <- function( key ){
 #' Merge two lists of data frames
 "list.merge" <- function(x, y) {
 	
-	if (!inherits(x, "list"))
-		stop("'x' must be a 'list'!")
-	if (!inherits(y, "list"))
-		stop("'y' must be a 'list'!")
+	mustbe( x, "list" )
+	mustbe( y, "list" )
 	
 	xitems <- names(x)
 	yitems <- names(y)
@@ -427,12 +425,10 @@ ziKey <- function( key ){
 
 # {{{ Add items across two lists (names must be the same)
 "list.add" <- function(x, y) {
-	if (!inherits(x, "list"))
-		stop("'x' must be a 'list'!")
-	if (!inherits(y, "list"))
-		stop("'y' must be a 'list'!")
-	if (!all(names(x) == names(y)))
-		stop("names of two lists must match!")
+	
+	mustbe(x, "list")
+	mustbe(y, "list")
+	mustmatch( names(x), names(y), "names of two lists must match!")
 	res <- x
 	for (i in 1:length(x)){
 		res[[i]] <- x[[i]] + y[[i]]
@@ -746,10 +742,14 @@ list.dir <- function( dir, ... ){
 mustbe <- function( x, class, msg ){
 	if( !any( sapply( class, function( cl ) inherits( x, cl) ) ) )
 	if( length(class) == 1){
-		if( missing(msg) ) msg <- sprintf( "x must be a '%s' object" , as.character(class) )
+		if( missing(msg) ) {
+			msg <- sprintf( "'%s' must be a '%s' object" , deparse( substitute(x)) , as.character(class) )
+		}
 		stop( msg )
 	} else{
-		if( missing(msg) ) msg <- paste( "x must be of one of these classes: ", paste( class, collapse = ", "), sep = "" )
+		if( missing(msg) ){
+			msg <- paste( "'%s' must be of one of these classes: ", deparse( substitute(x)), paste( class, collapse = ", "), sep = "" )
+		}
 		stop( msg )
 	}
 }
@@ -758,6 +758,24 @@ mustmatch <- function( x, y, msg ){
 	if( !all( x  == y ) ){
 		if( missing(msg) ) msg <- sprintf( "'%s' and '%s' must match", deparse(substitute(x)), deparse(substitute(y)) )
 		stop( msg )
+	}
+}
+
+mustcontain <- function( container, element, msg ){
+	if( ! all(element %in% container) ){
+		if( missing(msg) ){
+			msg <- sprintf( "'%s' must contain '%s'", deparse( substitute( container)), deparse(substitute(element)) )
+			stop( msg )
+		}
+	}
+}
+
+mustbeString <- function( x, length){
+	if( !is.character( x ) ){
+		stop( sprintf( "%s must be a character string", deparse( substitute(x)) ) )
+	}
+	if( !missing(length) && !length(x) == length ){
+		stop( sprintf( "%s must be a character string of length %d", deparse( substitute(x)), length ) )
 	}
 }
 

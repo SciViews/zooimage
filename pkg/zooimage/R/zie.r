@@ -38,24 +38,25 @@
 "ZIE" <- function(title, filter, description, pattern, command, author, version, date,
 license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
 type = c("import", "export")) {
+	
 	if (!is.character(title) || !is.character(filter) || !is.character(description) ||
 		!is.character(pattern) || !is.character(command) || !is.character(author) ||
 		!is.character(version) || !is.character(date) || !is.character(license) ||
-		!is.character(url) || !is.character(depends))
+		!is.character(url) || !is.character(depends)){
 		stop("All arguments must be character strings!")
+	}
 	obj <- list(title = title[1], filter = filter[1], 
 		description = paste(description, collapse = "\n"), pattern = pattern[1],
 		command = paste(command, collapse = "\n"), author = author[1],
 		version = version[1], license = license[1], depends = depends[1])
-	class(obj) <- switch(type[1],
+	type <- match.arg( type, several.ok = FALSE )
+	class(obj) <- switch(type,
 		import = c("ZIEimport", "ZIE"),
-		export = c("ZIEexport", "ZIE"),
-		stop("'type' must be either 'import' or 'export'!"))
+		export = c("ZIEexport", "ZIE") )
 	return(obj)
 }
 
-"print.ZIE" <-
-function(x, ...) {
+"print.ZIE" <- function(x, ...) {
 	Subclass <- class(x)[1]
 	cat("A", getTemp("ZIname"), "Import/Export definition object of subclass:", SubClass, "\n")
 	cat("\n", x$description, "\n\n")
@@ -809,9 +810,6 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 "readExifRaw" <- function(rawfile, full = FALSE, check = TRUE) {
 	
 	# Make sure dc_raw is available and rawfile exists
-	if (check) {
-		checkCapable( "dc_raw" )
-	}
 	checkFileExists( rawfile )
 	
 	# {{{ Temporary change directory to the one where the file is located
@@ -859,7 +857,8 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 "compareExif" <- function(Exif1, Exif2) {
 	dif <- character(0)
 	# Need same 'Camera', 'ISO_speed', 'Shutter', 'Aperture', 'Focal_Length'
-	### TODO: make it work for larger Exif dataset. Currently requires that the fields are restricted to strict equal data
+	### TODO: make it work for larger Exif dataset. Currently requires that the 
+	###       fields are restricted to strict equal data
 	if (length(Exif1) != length(Exif2)) {
 	    dif <- "Not same size for both Exif data!"
 	} else {
@@ -874,7 +873,9 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 # {{{ isTestFile
 "isTestFile" <- function(File) {
 	# Determine if a given file is a test file (a file with first line being 'ZI1est' and with size < 1000)
-	if (file.info(File)$size > 1000) return(FALSE)
+	if (file.info(File)$size > 1000) {
+		return(FALSE)
+	}
 	checkFirstLine( File, "ZItest", stop = FALSE )
 }
 # }}}
@@ -888,8 +889,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' checkBF("test.tif")
 "checkBF" <- function(BFfile) {
 	
-	if (!file.exists(BFfile))
-		return(paste("Blank-field file '", BFfile, "' not found!", sep = ""))
+	checkFileExists( BFfile, "Blank-field file '%s' not found!")
 
 	# Is it a test file?
 	if (isTestFile(BFfile)) return(character(0))    # We behave like if the file was correct!
@@ -945,7 +945,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 }
 # }}}
 
-#{{{ calibrate
+# {{{ calibrate
 #' calibrates
 #' @examples
 #' Setwd("g:/zooplankton/madagascar2macro")
@@ -1180,27 +1180,20 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", 
 	fake = FALSE, replace = FALSE, check = TRUE) {
 	
-	# {{{ checks 
-	# {{{ Check if the output file already exists
+	# Check if the output file already exists
 	if (file.exists(OutputFile)) {
 		# If we want to replace existing file, delete it, otherwise, we are done
 		if (replace) unlink(OutputFile) else return(TRUE)
 	}
-	# }}}
 	
-	# {{{ Check if RawFile exists
-	if (!file.exists(RawFile)) {
-		return( paste("'", RawFile, "' not found", sep = "") )
-	}
-	# }}}
-	# }}}
+	#  Check if RawFile exists
+	checkFileExists( RawFile )
 	
-	# {{{ Do a fake convert
+	# Do a fake convert
 	if (fake) { # Create a test file with just ZItest in it
 		cat("ZItest\n", file = OutputFile)
 		return(TRUE)
 	}
-	# }}}
 	
 	# {{{ Do the conversion using dc_raw
 	# {{{ check that the system is capable of doing the conversion

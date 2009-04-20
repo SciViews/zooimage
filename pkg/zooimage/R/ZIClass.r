@@ -240,9 +240,7 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 # {{{ confusion.bar
 # New function v 1.2-2 false positive and negative
 confusion.bar <- function(confmat, mar=NULL) {
-	if ( !is.matrix(confmat) ){
-		stop("object must be a matrix")
-	}
+	mustbe(confmat, "matrix" )
 	Nn <- nrow(confmat)
 	
 	## percent of correctly predicted objects in the test set

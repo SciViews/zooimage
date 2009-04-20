@@ -87,6 +87,7 @@ misc <- function( prog, args, ... ){
 }
 
 misc_dcraw <- function( file, arguments, output){
+	checkCapable( "dc_raw" )
 	out <- try( misc( "dc_raw", '"%s" %s > "%s" ', file, args, output ), silent = T )
 	if( out %of% "try-error" ){
 		stop( sprintf("error converting '%s' with dc_raw", file ) )
