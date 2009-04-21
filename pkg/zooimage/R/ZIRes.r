@@ -15,25 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-"process.sample" <-
-	function(ZidFile, ZIClass, ZIDesc,
+# {{{ process.sample
+"process.sample" <- function(ZidFile, ZIClass, ZIDesc,
 		abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
 		bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1), headers = c("Abd", "Bio"),
 		spec.taxa = NULL, spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE,
 		exportdir = NULL, show.log = TRUE) {
-    # Check if the ZidFile exists
-	if (!file.exists(ZidFile)) {
-		logProcess("file not found!", ZidFile, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+    
+	# Check if the ZidFile exists
+	checkFileExists( ZidFile )
+	
 	# Check if ZIClass is of the right class
 	mustbe(ZIClass, "ZIClass")
 	# Get ZIDat from the ZidFile
 	ZIDat <- read.zid(ZidFile)
-	Sample <- get.sampleinfo(ZidFile, type = "sample", ext = "[.][zZ][iI][dD]$")
+	Sample <- get.sampleinfo(ZidFile, type = "sample", ext = extensionPattern(".zid") )
+	
 	# Check if one can get sample metadata from ZIDesc
 	RES <- ZIDesc[ZIDesc$Label == Sample, ] 
 	if (nrow(RES) != 1) {
-		logProcess("ZIDesc has no data for that sample!", Sample, stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		stop( "ZIDesc has no data for that sample!" )
+	}
 	# Predict classes (add a new column Ident to the table)
 	ZIDat <- predict(ZIClass, ZIDat)
 	
@@ -43,10 +45,12 @@
 		abd.groups <- as.list(c("", Grp))
 		names(abd.groups) <- c("total", Grp)
 	}
+	
 	# Process abundances
 	ABD <- Abd.sample(ZIDat, Sample, taxa = abd.taxa, groups = abd.groups, type = abd.type,
 		header = headers[1])
 	RES <- cbind(RES, t(ABD))
+	
 	# Process biomasses
 	if (!is.null(bio.conv)) {
 		if (is.null(bio.groups)) {
@@ -58,6 +62,7 @@
 			groups = bio.groups, header = headers[2], exportdir = exportdir)
 		RES <- cbind(RES, t(BIO))
 	}
+	
 	# Process size spectra
 	if (!is.null(spec.breaks)) {
 		if (is.null(spec.groups)) {
@@ -75,9 +80,11 @@
 	class(RES) <- c("ZI1Res", "ZIRes", "data.frame")
 	return(RES)
 }
+# }}}
 
-"process.samples" <-
-	function(path = ".", ZidFiles = NULL, ZIClass, ZIDesc = read.description("Description.zis"),
+# {{{ process.samples
+"process.samples" <- function(path = ".", ZidFiles = NULL, ZIClass, 
+	ZIDesc = read.description("Description.zis"),
 	abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
 	bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1), headers = c("Abd", "Bio"),
 	spec.taxa = NULL, spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE,
@@ -87,13 +94,15 @@
 	if (is.null(ZidFiles)) {
     	# Get the list of files from ZIDesc
 		ZidFiles <- paste(ZIDesc$Label, ".zid", sep = "")
-		if (path == ".") path = getwd()
+		if (path == "."){
+			path <- getwd()
+		}
 		ZidFiles <- file.path(path, ZidFiles)
 	} else { # Check that all zid files have entries in ZIDesc
-		Samples <- get.sampleinfo(ZidFiles, type = "sample", ext = "[.][zZ][iI][dD]$$")
-		if (!all(Samples %in% ZIDesc$Label)) {
-			logProcess("One or more samples not in ZIDesc!", stop = TRUE, show.log = show.log); return(invisible(FALSE)) }
+		Samples <- get.sampleinfo(ZidFiles, type = "sample", ext = extensionPattern(".zid") )
+		mustcontain( ZIDesc$Label, Samples, "One or more samples not in ZIDesc!" )
 	}
+	
 	# Start the process
 	logClear()
 	ok <- TRUE
@@ -103,25 +112,23 @@
 	logProcess(paste("Processing",  imax, "samples..."))
 	for (i in 1:imax) {
        	Progress(i, imax)
-		res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
-			abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
-			bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
-			spec.taxa = spec.taxa, spec.groups = spec.groups, spec.breaks = spec.breaks, spec.use.Dil = spec.use.Dil,
-            exportdir = exportdir, show.log = FALSE)
-		if (is.logical(res) && !res) { # Error
-           	logProcess("Error!", ZidFiles[i])
-			ok <- FALSE
-		} else if (is.null(restot)) {
+		tryCatch( {
+			res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
+				abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
+				bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
+				spec.taxa = spec.taxa, spec.groups = spec.groups, spec.breaks = spec.breaks, 
+				spec.use.Dil = spec.use.Dil,
+        	    exportdir = exportdir, show.log = FALSE)
 			logProcess("OK", ZidFiles[i])
-			restot <- res
-		} else {
-        	logProcess("OK", ZidFiles[i])
-			# Append res to restot
-			restot <- rbind(restot, res)
-			attr(restot, "spectrum") <- c(attr(restot, "spectrum"), attr(res, "spectrum"))
-			attr(restot, "metadata") <- attr(res, "metadata")
-			class(restot) <- c("ZI1Res", "ZIRes", "data.frame") 
-		}
+			if( is.null(restot) ){
+				restot <- rbind( restot, res )
+				attr( restot, "spectrum" ) <- c(attr(restot, "spectrum"), attr(res, "spectrum"))
+				attr(restot, "metadata") <- attr(res, "metadata")
+				class(restot) <- c("ZI1Res", "ZIRes", "data.frame")
+			}
+		}, zooImageError = function(e){
+			logError( e )
+		} )
 	}
 	ClearProgress()
 	
@@ -131,6 +138,7 @@
 
 	return(restot)
 }
+# }}}
 
 # {{{ Spectrum.sample
 #' Cut a sample into ECD classes (for size spectra)

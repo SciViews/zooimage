@@ -139,7 +139,9 @@ zooImageErrorDrivers <- list(
 	"get.ZITrain"     = "dir",
 	"force.dir.create" = "path",
 	"checkEmptyDir" = "dir", 
-	"make.RData" = "zidir"
+	"make.RData" = "zidir", 
+	"process.sample" = "Sample", 
+	"process.samples" = "Samples" 
 )
 # }}}
 

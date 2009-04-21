@@ -39,10 +39,11 @@
 	checkAllFileExist( zidfiles, "zid" )
 
 	# Finally, look for the groups.template
-	groups.template <- match.arg( groups.template )
-	if (regexpr("^[[].+[]]$", groups.template) > 0) {
+	groups.template <- groups.template[1]
+	rx <- "^[[](.+)[]]$"
+	if ( grepl(rx, groups.template) ) {
 		# This should be a template file in the default directory
-		groups.template <- paste(sub("^[[](.+)[]]$", "\\1", groups.template), ".zic", sep = "")
+		groups.template <- paste(sub(rx, "\\1", groups.template), ".zic", sep = "")
 		groups.template <- file.path(getTemp("ZIetc"), groups.template) 
 	}
 	

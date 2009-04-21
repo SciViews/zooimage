@@ -768,8 +768,7 @@ ZIDlg <- function() {
 # }}}
 
 # {{{ processSamples
-"processSamples" <-
-	function() {
+"processSamples" <- function() {
 	# Ask for a description.zis file, look at all samples described there
 	# Calculate abundances, total and partial size spectra and possibly biomasses
 	# Get the last edited description.zis file
