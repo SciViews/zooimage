@@ -424,12 +424,16 @@ ziKey <- function( key ){
 # }}}
 
 # {{{ Add items across two lists (names must be the same)
-list.add <- function( ..., .list = list(...) ){
+list.add <- function( ..., .list = list(...), FUN = "+"){
+	list.reduce( .list= .list, FUN = FUN)
+}
+
+list.reduce <- function( ..., .list = list(...), FUN = "+" ){
 	.list <- .list[ !sapply( .list, is.null) ]
 	if( length(.list) == 1 ) return( .list[[1]] )
 	n <- length( .list[[1]] )
 	out <- lapply( 1:n, function(i){
-		Reduce( "+", lapply( .list , "[[", i  ) )
+		Reduce( FUN, lapply( .list , "[[", i  ) )
 	} )
 	attributes( out ) <- attributes( .list[[1]] )
 	out
