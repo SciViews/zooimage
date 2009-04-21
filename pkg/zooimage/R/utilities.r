@@ -464,15 +464,15 @@ list.add <- function( ..., .list = list(...) ){
     l <- nchar(Max.Value)
     Value <- formatC(round(value), width = l)
     if (percent) {
-        backspaces <- paste(rep("\b", l + 14), collapse = "")
-        if (erase.only) { 
+        backspaces <- backspaces( l + 14 )
+		if (erase.only) { 
             message <- ""
         } else {
 			message <- paste("Progress: ", Value, "%  ", sep = "")
 		}
         cat(backspaces, message, sep = "")
     } else {
-        backspaces <- paste(rep("\b", 2 * l + 16), collapse = "")
+        backspaces <- backspaces( 2 * l + 16)
         if (erase.only) { 
             message <- ""
         } else {
@@ -501,7 +501,15 @@ list.add <- function( ..., .list = list(...) ){
     invisible(NULL)
 }
 ClearProgress <- function( ){
-	Progress( 2, 1 )
+	cat(backspaces(), "", sep = "")
+	if ("ZIDlgWin" %in% WinNames()) {
+		rmTemp("statusBusy")
+		tkconfigure( getTemp("statusProg") , value = 0)
+		tkconfigure( getTemp("statusText") , text = paste("Ready -", getwd()))
+	}
+}
+backspaces <- function( n = getOption("width") ){
+	paste( rep("\b",  ), collapse = "" )
 }
 # }}}
 
