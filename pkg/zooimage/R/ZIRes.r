@@ -159,9 +159,10 @@
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
 	res <- list.add( lapply( imgs, function(im){
-		tryCatch( Spectrum(Smp, im, taxa = taxa, groups = groups, 
-			breaks = breaks, use.Dil = use.Dil), 
-			zooImageError = NULL )
+		tryCatch( {
+			Spectrum(Smp, im, taxa = taxa, groups = groups, 
+				breaks = breaks, use.Dil = use.Dil)
+		}, zooImageError = NULL )
 	} ) )
 	return(res)
 }
@@ -174,17 +175,23 @@
 	# Check arguments
 	mustbe(ZIDat, "ZIDat")
 	mustbeString( image, 1)
-	dat <- ZIDat[ZIDat$Label == image, ] # Select the image
+	
+	# Select the image
+	dat <- ZIDat[ZIDat$Label == image, ] 
 	if (nrow(dat) == 0){
 		warning("ZIDat contains no '", image, "' data!")
 	}
+	
 	# Remember dilution (in case there are no data)
-	if (nrow(dat) > 0) Dil <- dat$Dil[1] else Dil <- 1
+	if (nrow(dat) > 0) {
+		Dil <- dat$Dil[1] 
+	} else {
+		Dil <- 1
+	}
+	
 	# taxa must correspond to levels in ZIDat$Ident
 	if (!is.null(taxa)) {
-		if (!all(taxa %in% levels(dat$Ident))){
-			stop("taxa not in ZIDat")
-		}
+		mustcontain( levels(dat$Ident), taxa, "taxa not in ZIDat")
 		dat <- dat[dat$Ident %in% taxa, ] # Select taxa
 	}
 	if (is.null(groups)) {
@@ -193,18 +200,18 @@
 		names(groups) <- "total"
 	}
 	mustbe( groups, "list" )
-	res <- list()
-	gnames <- names(groups)
-	for (i in 1: length(groups)) {
-		if (length(groups[[i]]) == 1 && groups[[i]] == "") { # Total abundance
+	
+	res <- lapply( groups, function( g ){
+		if (length(g) == 1 && g == "") { # Total abundance
 			Dat <- dat$ECD
 		} else { # Abundance for given groups
-			Dat <- dat$ECD[dat$Ident %in% groups[[i]]]
+			Dat <- dat$ECD[dat$Ident %in% g ]
 		}
 		spc <- table(cut(Dat, breaks = breaks))
 		if (use.Dil) spc <- spc * Dil
-		res[[gnames[i]]] <- spc 
-	}
+		spc
+	} )
+	names( res ) <- names( groups )
 	attr(res, "breaks") <- breaks
 	attr(res, "unit") <- if(use.Dil) "ind/m^3" else "count"
 	return(res)
