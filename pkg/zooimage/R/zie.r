@@ -760,8 +760,9 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
         num <- eval(parse(text = num))
         # Check if the number is correct
 		### TODO: add this in the template file!
-		if (length(num) < Nmin || length(num) > Nmax)
+		if (length(num) < Nmin || length(num) > Nmax){
            stop("Wrong number of images in 'Image' field for ", Data$Sample[i], "!")
+		}
 		
 		# Update several fileds according to what is deefined in the samples table
 		###TODO: add the other fields + define this option

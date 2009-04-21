@@ -39,25 +39,23 @@
 	# check calc.vars
 	calc.vars <- calc.vars[1]
 	if (!is.null(calc.vars)) {
-		#eval(parse(text = paste("df <- ", calc.vars, "(df)", sep = "")))
-		if (!exists(calc.vars, mode = "function"))
-		   stop("Function ", calc.vars, "() not found!")
-		CV <- get(calc.vars, mode = "function")
+		CV <- match.fun( calc.vars )
 		df <- CV(df)
 	}
 	
 	# algorithm
 	algorithm <- algorithm[1]
-	eval(parse(text = paste("ZI.class <- ", algorithm, "(Formula, data = df, ...)", sep = "")))
-	#	if (!exists(ZI.class))
-	#		stop("Error while training the '", algorithm, "' algorithm!")
+	algo.fun  <- match.fun( algorithm )
+	ZI.class <- algo.fun(Formula, data = df, ...)
+	
 	# Return a ZIClass object
 	class(ZI.class) <- c("ZIClass", class(ZI.class))
 	attr(ZI.class, "algorithm") <- algorithm
 	attr(ZI.class, "package") <- package
-	attr(ZI.class, "calc.vars") <- get(calc.vars, envir = parent.frame())
+	attr(ZI.class, "calc.vars") <- CV
 	Classes <- df[[as.character(Formula)[2]]]
 	attr(ZI.class, "classes") <- Classes
+	
 	# Calculate predictions with full training set
     attr(ZI.class, "predict") <- predict(ZI.class, df, calc.vars = FALSE, class.only = TRUE)
 
@@ -70,10 +68,10 @@
   
 	# Possibly make a k-fold cross-validation and check results
 	if (!is.null(k.xval)) {
-		if (algorithm == "lda") {
-			mypredict <- function(object, newdata) predict(object, newdata = newdata)$class
+		mypredict <- if (algorithm == "lda") {
+			function(object, newdata) predict(object, newdata = newdata)$class
 		} else {
-			mypredict <- function(object, newdata) predict(object, newdata = newdata, type = "class")
+			function(object, newdata) predict(object, newdata = newdata, type = "class")
 		}
     	res <- cv(Classes, Formula, data = df, model = get(algorithm),
 			predict = mypredict, k = k.xval, predictions = TRUE, ...)$predictions
