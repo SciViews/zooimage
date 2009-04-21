@@ -156,13 +156,12 @@
 	
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
-	res <- list.add( lapply( imgs, function(im){
+	list.add( lapply( imgs, function(im){
 		tryCatch( {
 			Spectrum(Smp, im, taxa = taxa, groups = groups, 
 				breaks = breaks, use.Dil = use.Dil)
 		}, zooImageError = NULL )
 	} ) )
-	return(res)
 }
 # }}}
 
@@ -237,6 +236,7 @@
 	if (nrow(Smp) == 0){
 		stop("no data for this sample/taxa in ZIDat")
 	}
+	
 	# Add P1/P2/P3 conversion params to the table
 	if (inherits(conv, "data.frame")) {
 		if (  ! all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ) || !all(names(conv)[1:4] == c("Group", "a", "b", "c") ) ){
@@ -277,8 +277,9 @@
 		Smp$P2 <- conv[Pos, "P2"]
 		Smp$P3 <- conv[Pos, "P3"]
 	} else { # Use the same three parameters for all
-		if (length(conv) != 3)
+		if (length(conv) != 3){
 			stop("You must provide a vector with three numbers")
+		}
 		Smp$P1 <- conv[1]
 		Smp$P2 <- conv[2]
 		Smp$P3 <- conv[3]
@@ -288,9 +289,10 @@
     # AZTI special treatment
     # introducimos la formula de montagnes y la correccion para ESD(2.61951)
 	#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$ECD)/2)^3)^0.991) * Smp$Dil
-    if (!is.null(exportdir))
+    if (!is.null(exportdir)){
         write.table(Smp, file = paste(file.path(exportdir, sample), "_Bio.txt", sep = ""), sep = "\t", row.names = FALSE)
-
+	}
+	
 	if (is.null(groups)) {
 		# Total biomass only
 		res <- sum(Smp$Biomass)
@@ -352,18 +354,18 @@
 		names(res) <- header
 	} else {
 		mustbe( groups, "list" )
-		res <- NULL
-		for (i in 1: length(groups)) {
-			if (length(groups[[i]]) == 1 && groups[[i]] == "") { # Total abundance
-				res[i] <- sum(Smp$Coef)
+		res <- sapply( groups, function(g) {
+			if (length(groups) == 1 && g == "") { # Total abundance
+				sum(Smp$Coef)
 			} else { # Abundance for given groups
-				res[i] <- sum(Smp$Coef[Smp$Ident %in% groups[[i]]])
+				sum(Smp$Coef[ Smp$Ident %in% g ])
 			}
-		}
+		} )
 		names(res) <- paste(header, names(groups))
 	}
-	if (type == "log")
+	if (type == "log"){
 		res <- log10(res + 1)
+	}
 	return(res)
 }
 # }}}
