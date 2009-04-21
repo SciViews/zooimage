@@ -150,19 +150,26 @@
 	mustbeString( sample, 1 )
 	
 	# Extract only data for a given sample
-	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
-	if (!sample %in% unique(Smps)){
-		stop("sample '", sample, "' is not in ZIDat")
-	}
+	# Sample is everything before a '+' sign
+	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) 
+	mustcontain( unique(Smps), sample, msg = paste( "sample '", sample, "' is not in ZIDat", sep = "" ) )
 	Smp <- ZIDat[Smps == sample, ]
+	
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
-	res <- Spectrum(Smp, imgs[1], taxa = taxa, groups = groups, breaks = breaks, use.Dil = use.Dil)
-	if (length(imgs) > 1) {
-		for (i in 2:length(imgs)){
-			res <- list.add(res, Spectrum(Smp, imgs[i], taxa = taxa, groups = groups, breaks = breaks, use.Dil = use.Dil))
-		}			
+	
+	add <- function( x ){
+		if( length(x) == 1 ) return( x[[1]] )
+		out <- x[[1]]
+		n <- length( x[[1]] )
+		lapply( 1:n, function(i){
+			Reduce( "+", lapply( x , "[[", i  ) )
+		} )
 	}
+	res <- add( lapply( imgs, function(im){
+		Spectrum(Smp, imgs[1], taxa = taxa, groups = groups, 
+			breaks = breaks, use.Dil = use.Dil)
+	} ) )
 	return(res)
 }
 # }}}
