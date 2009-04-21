@@ -64,9 +64,8 @@
 	}
 	# }}}
 	
-	Progress (zmax + 1, zmax)	 # To dismiss the Progress() indication
-	
 	# {{{ cleans up
+	ClearProgress()
 	finish.loopfunction( ok, bell = bell, show.log = show.log )
 	# }}}
 }
@@ -440,7 +439,7 @@
 					ok <<- FALSE
 				} )
 		}
-		Progress (zmax + 1, zmax)	 # To dismiss the Progress() indication
+		ClearProgress()
 	}
 	
 	if (ok) {
@@ -464,7 +463,7 @@
 			on.success = logProcess( "OK", zipfiles[i] ) )
 	
 	}
-	Progress (imax + 1, imax)	 # To dismiss the Progress() indication
+	ClearProgress()
 	# }}}
 	
 	# {{{ cleans up

@@ -426,7 +426,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 			}) 
 		
 	}
-	Progress (smax + 1, smax)	 # To dismiss the Progress() indication
+	ClearProgress()
 	# }}}
 	
 	# {{{ Possibly clean the whole directory (move .zim files to \_raw
@@ -578,8 +578,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# TODO: set the calling handlers in a way that ok is created
 	ok <- TRUE
 	
-	Progress (smax + 1, smax)	 # To dismiss the Progress() indication
-	
+	ClearProgress()
 	finish.loopfunction( ok, bell = bell, show.log = show.log )
 }
 # }}}

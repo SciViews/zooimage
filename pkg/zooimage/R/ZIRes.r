@@ -123,7 +123,7 @@
 			class(restot) <- c("ZI1Res", "ZIRes", "data.frame") 
 		}
 	}
-	Progress (imax + 1, imax)	 # To dismiss the Progress() indication
+	ClearProgress()
 	
 	# {{{ Final report
 	finish.loopfunction( ok = ok, show.log = show.log, bell = bell )

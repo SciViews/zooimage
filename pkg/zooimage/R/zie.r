@@ -301,7 +301,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 			allImages <- c(allImages, File)		
 		}
 	}
-	Progress (nLines + 1, nLines)	 # To dismiss the Progress() indication
+	ClearProgress()
 	logProcess("Checking all lines in the .zie file for raw images... OK!")
 	cat("...OK!\n")
 	# }}}
@@ -661,7 +661,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	# }}}
 	
 	# {{{ cleans up
-	Progress (nLines + 1, nLines)	 # To dismiss the Progress() indication
+	ClearProgress()
 	# Possibly remove latest blank-field from root directory (not needed any more!)
 	if (!is.null(BlankField)) {
 		# Delete blank-field images (.pgm and .img) in the root directory

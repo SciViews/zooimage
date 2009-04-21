@@ -502,7 +502,7 @@ ziKey <- function( key ){
 	}
     invisible(NULL)
 }
-EraseProgress <- function( ){
+ClearProgress <- function( ){
 	Progress( 2, 1 )
 }
 # }}}
@@ -667,6 +667,16 @@ checkFileExists <- function( file, extension, message = "file not found : %s", f
 	invisible( NULL )
 }
 
+
+checkAllFileExist <- function( files, extension){
+	if( !all( file.exists( files ) ) ){
+		stop( "one or more file does not exist" )
+	}
+	if( !missing(extension) && ! all( hasExtension( files, extension ) ) ){
+		stop( "one or more files have wrong extension" )
+	}
+}
+
 #' checks if a directory exists
 #'
 #' @param dir the directory to check
@@ -755,7 +765,7 @@ mustbe <- function( x, class, msg ){
 }
 
 mustmatch <- function( x, y, msg ){
-	if( !all( x  == y ) ){
+	if( !all( sort( x )  == sort( y ) ) ){
 		if( missing(msg) ) msg <- sprintf( "'%s' and '%s' must match", deparse(substitute(x)), deparse(substitute(y)) )
 		stop( msg )
 	}

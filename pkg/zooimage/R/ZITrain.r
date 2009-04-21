@@ -24,9 +24,8 @@
 	groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"), 
 	ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE) {
  	                       
-	# {{{ Make sure unzip is available
+	# Make sure unzip is available
 	checkCapable( "unzip" )
-	# }}}
 	
 	# First, check that dir is valid
 	checkDirExists( dir )
@@ -37,12 +36,10 @@
 	checkEmptyDir( dir , message = "must be empty. Clean it first!" )
 	
 	# Then, check that all zidfiles exist
-	if(!all(file.exists(zidfiles)) || !all( hasExtension(zidfiles, "zid")) ) {
-		stop( "One or more .zid files do not exist or is invalid!" )
-	}
+	checkAllFileExist( zidfiles, "zid" )
 
 	# Finally, look for the groups.template
-	groups.template <- groups.template[1]
+	groups.template <- match.arg( groups.template )
 	if (regexpr("^[[].+[]]$", groups.template) > 0) {
 		# This should be a template file in the default directory
 		groups.template <- paste(sub("^[[](.+)[]]$", "\\1", groups.template), ".zic", sep = "")
@@ -61,8 +58,7 @@
 		Progress(i, zmax)
 		unzip( zipfile = zidfiles[i] , path = dir, delete.source = FALSE )
 	}
-	Progress(i + 1, zmax)	# To dismiss the Progress() indication
-	
+	ClearProgress()
 	
 	# Create '_' subdir and unzip all vignettes there
 	dir_ <- file.path(dir, "_")
@@ -79,7 +75,7 @@
 		unzip( zidfiles[i], path = dir_, delete.source = FALSE )
 		
 	}
-	Progress(i + 1, zmax)	# To dismiss the Progress() indication
+	ClearProgress()
 	
 	# Create the other directories
     Lines <- scan(groups.template, character(), sep = "\n", skip = 2, quiet = TRUE)
@@ -207,9 +203,8 @@
 	mustbe(ZIRecode, "ZIRecode")
 	
 	# Check that all levels in ZITrain$Class are represented in ZIRecode
-	if (!all(sort(levels(ZITrain$Class)) == sort(ZIRecode[ , 1]))) {
-		warnOrStop( "Not all levels of ZIRecode match levels of ZITrain" )
-	}
+	mustmatch( levels(ZITrain$Class), ZIRecode[ , 1], 
+		msg = "Not all levels of ZIRecode match levels of ZITrain" )
 	
 	# Class column of ZITrain is transformed into a character vector
 	clas <- as.character(ZITrain$Class)
@@ -217,8 +212,9 @@
 	
 	# It is then recoded
 	for (i in 1:nrow(ZIRecode)) {
-		if (ZIRecode[i, 1] != ZIRecode[i, 2])
+		if (ZIRecode[i, 1] != ZIRecode[i, 2]){
 			recoded[clas == ZIRecode[i, 1]] <- ZIRecode[i, 2]
+		}
 	}
 	
 	# ...and transformed back into a factor
@@ -228,7 +224,9 @@
 	# If a new path is given for these new groups, change it
 	path <- attr(ZIRecode, "path")
 	### TODO: check its validity here
-	if(!is.null(path)) attr(res, "path") <- path
+	if(!is.null(path)){
+		attr(res, "path") <- path
+	}
 	return(res)
 }
 # }}}

@@ -147,7 +147,7 @@
 				ok <- FALSE
 			}
 		}
-		Progress (zmax + 1, zmax)	 # To dismiss the progress() indication
+		ClearProgress()
 	}
 	if (ok) {
 		logProcess("\n-- OK, no error found. --")
@@ -180,7 +180,7 @@
 	}
 	#}}} 
 	
-	Progress (imax + 1, imax)	 # To dismiss the Progress() indication
+	ClearProgress()
 	
 	#{{{ Final report
 	finish.loopfunction( ok, bell = bell, show.log = show.log )
