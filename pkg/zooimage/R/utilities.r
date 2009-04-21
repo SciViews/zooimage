@@ -424,17 +424,15 @@ ziKey <- function( key ){
 # }}}
 
 # {{{ Add items across two lists (names must be the same)
-"list.add" <- function(x, y) {
-	
-	mustbe(x, "list")
-	mustbe(y, "list")
-	mustmatch( names(x), names(y), "names of two lists must match!")
-	res <- x
-	for (i in 1:length(x)){
-		res[[i]] <- x[[i]] + y[[i]]
-	}
-	attributes(res) <- attributes(x)
-	return(res)	
+# not used
+list.add <- function( ..., .list = list(...) ){
+	if( length(.list) == 1 ) return( .list[[1]] )
+	n <- length( .list[[1]] )
+	out <- lapply( 1:n, function(i){
+		Reduce( "+", lapply( .list , "[[", i  ) )
+	} )
+	attributes( out ) <- attributes( .list[[1]] )
+	out
 }
 # }}}
 

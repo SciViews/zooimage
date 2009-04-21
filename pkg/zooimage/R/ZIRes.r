@@ -158,15 +158,7 @@
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
 	
-	add <- function( x ){
-		if( length(x) == 1 ) return( x[[1]] )
-		out <- x[[1]]
-		n <- length( x[[1]] )
-		lapply( 1:n, function(i){
-			Reduce( "+", lapply( x , "[[", i  ) )
-		} )
-	}
-	res <- add( lapply( imgs, function(im){
+	res <- list.add( lapply( imgs, function(im){
 		Spectrum(Smp, imgs[1], taxa = taxa, groups = groups, 
 			breaks = breaks, use.Dil = use.Dil)
 	} ) )
