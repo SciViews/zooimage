@@ -300,10 +300,10 @@
 		names(res) <- header
 	} else {
 		mustbe( groups, "list" )
-		if( length(groups) == 1 && groups==""){
-			res <- sum( Smp$Biomass )
+		res <- if( length(groups) == 1 && groups==""){
+			sum( Smp$Biomass )
 		} else{
-			res <- sapply( groups, function(g) sum( Smp$Biomass[ Smp$Ident %in% g ] ) )
+			sapply( groups, function(g) sum( Smp$Biomass[ Smp$Ident %in% g ] ) )
 		}
 		names( res ) <- paste(header, names(groups))
 	}
