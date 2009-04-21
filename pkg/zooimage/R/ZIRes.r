@@ -290,7 +290,8 @@
     # introducimos la formula de montagnes y la correccion para ESD(2.61951)
 	#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$ECD)/2)^3)^0.991) * Smp$Dil
     if (!is.null(exportdir)){
-        write.table(Smp, file = paste(file.path(exportdir, sample), "_Bio.txt", sep = ""), sep = "\t", row.names = FALSE)
+        write.table(Smp, file = paste(file.path(exportdir, sample), "_Bio.txt", sep = ""), 
+			sep = "\t", row.names = FALSE)
 	}
 	
 	if (is.null(groups)) {
@@ -299,15 +300,12 @@
 		names(res) <- header
 	} else {
 		mustbe( groups, "list" )
-		res <- NULL
-		for (i in 1: length(groups)) {
-			if (length(groups[[i]]) == 1 && groups[[i]] == "") { # Total biomass
-				res[i] <- sum(Smp$Biomass)
-			} else { # Biomass for given groups
-				res[i] <- sum(Smp$Biomass[Smp$Ident %in% groups[[i]]])
-			}
+		if( length(groups) == 1 && groups==""){
+			res <- sum( Smp$Biomass )
+		} else{
+			res <- sapply( groups, function(g) sum( Smp$Biomass[ Smp$Ident %in% g ] ) )
 		}
-		names(res) <- paste(header, names(groups))
+		names( res ) <- paste(header, names(groups))
 	}
  	return(res)
 }
@@ -354,13 +352,11 @@
 		names(res) <- header
 	} else {
 		mustbe( groups, "list" )
-		res <- sapply( groups, function(g) {
-			if (length(groups) == 1 && g == "") { # Total abundance
-				sum(Smp$Coef)
-			} else { # Abundance for given groups
-				sum(Smp$Coef[ Smp$Ident %in% g ])
-			}
-		} )
+		res <- if( length( groups ) == 1 && groups == "" ){
+			sum(Smp$Coef)
+		} else {
+			sapply( groups, function( g ) sum(Smp$Coef[ Smp$Ident %in% g ] ) )
+		}
 		names(res) <- paste(header, names(groups))
 	}
 	if (type == "log"){
@@ -380,7 +376,8 @@
 "merge.ZITable" <- function(x, y, ...) {
 	
 	data <- list( x, y, ... )
-	sapply( data, mustbe, "ZITable" )
+	mustallbe( .list = data, class = "ZITable", 
+		msg = "objects must all be ZITable objects" )
 	
 	mustallmatch( .list = lapply( data, attr, "breaks" ), 
 		msg = "breaks of all objects must match")
@@ -443,9 +440,13 @@
 	abline(v = vgrid, col = "gray", lty = 2)
 	
 	# Vertical line(s) to spot particular time events
-	if (!is.null(vline)) abline(v = as.Date(vline), lty = 2, lwd = 2, col = 2)
-	if (!is.null(xleg)) legend(xleg, yleg, legend, col = cols,
-		lwd = 1, pch = pchs, bg = "white")
+	if (!is.null(vline)){
+		abline(v = as.Date(vline), lty = 2, lwd = 2, col = 2)
+	}
+	if (!is.null(xleg)){
+		legend(xleg, yleg, legend, col = cols,
+			lwd = 1, pch = pchs, bg = "white")
+	}
 }
 # }}}
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

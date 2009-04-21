@@ -792,6 +792,10 @@ mustbe <- function( x, class, msg ){
 	}
 }
 
+mustallbe <- function( ..., .list = list(...), class, msg ){
+	invisible( lapply( .list, mustbe, class = class, msg = msg) )
+}
+
 mustmatch <- function( x, y, msg ){
 	if( !all( sort( x )  == sort( y ) ) ){
 		if( missing(msg) ) msg <- sprintf( "'%s' and '%s' must match", deparse(substitute(x)), deparse(substitute(y)) )
