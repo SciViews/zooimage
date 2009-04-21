@@ -797,6 +797,19 @@ mustmatch <- function( x, y, msg ){
 		if( missing(msg) ) msg <- sprintf( "'%s' and '%s' must match", deparse(substitute(x)), deparse(substitute(y)) )
 		stop( msg )
 	}
+	invisible( NULL )
+}
+
+mustallmatch <- function( ..., .list = list(...), msg = "all must match" ){
+	n <- length(.list)
+	if( n==0 || n == 1 ) {
+		stop("need at list 2 elements")
+	}
+	first <- .list[[1]]
+	for( i in 2:n){
+		mustmatch( first, .list[[i]], msg = msg )
+	}
+	invisible( NULL )
 }
 
 mustcontain <- function( container, element, msg ){

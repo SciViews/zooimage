@@ -379,36 +379,17 @@
 # {{{ merge.ZITable
 "merge.ZITable" <- function(x, y, ...) {
 	
-	mustbe(x, "ZITable")
-	mustbe(y, "ZITable")
+	data <- list( x, y, ... )
+	sapply( data, mustbe, "ZITable" )
 	
-	breaks.x <- attr(x, "breaks")
-	breaks.y <- attr(y, "breaks")
-	mustmatch( breaks.x, breaks.y, 
-		"breaks of all objects must match")
+	mustallmatch( .list = lapply( data, attr, "breaks" ), 
+		msg = "breaks of all objects must match")
 	
-	unit.x <- attr(x, "unit")
-	unit.y <- attr(y, "unit")
-	mustmatch( unit.x, unit.y, "units of all objects must match")
-	res <- x + y
-
-	# If the user provides more tables, merge them all
-	moreargs <- list(...)
-	if (length(moreargs) > 0) {
-		# Merge all provided tables
-		for (i in 1:length(moreargs)) {
-			tt <- moreargs[[i]]
-			mustbe( tt, "ZITable", msg = "all arguments must be 'ZITable' objects")
-			breaks.tt <- attr(tt, "breaks")
-			mustmatch( breaks.x, breaks.tt, "breaks of all objects must match")
-			unit.tt <- attr(tt, "unit")
-			mustmatch( unit.x, unit.tt, "units of all objects must match")
-			res <- res + tt
-		}
-	}
-	# In case we make the average of several images,
-	# coef divides and calculates the mean value
-	return(res)
+	mustallmatch( .list = lapply( data, attr, "unit" ), 
+		msg = "units of all objects must match")
+	
+	Reduce( "+", data ) 
+	
 }
 # }}}
 
