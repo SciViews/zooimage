@@ -424,8 +424,8 @@ ziKey <- function( key ){
 # }}}
 
 # {{{ Add items across two lists (names must be the same)
-# not used
 list.add <- function( ..., .list = list(...) ){
+	.list <- .list[ !sapply( .list, is.null) ]
 	if( length(.list) == 1 ) return( .list[[1]] )
 	n <- length( .list[[1]] )
 	out <- lapply( 1:n, function(i){
@@ -507,6 +507,7 @@ ClearProgress <- function( ){
 		tkconfigure( getTemp("statusProg") , value = 0)
 		tkconfigure( getTemp("statusText") , text = paste("Ready -", getwd()))
 	}
+	invisible( NULL )
 }
 backspaces <- function( n = getOption("width") ){
 	paste( rep("\b",  ), collapse = "" )

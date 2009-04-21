@@ -152,15 +152,16 @@
 	# Extract only data for a given sample
 	# Sample is everything before a '+' sign
 	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) 
-	mustcontain( unique(Smps), sample, msg = paste( "sample '", sample, "' is not in ZIDat", sep = "" ) )
+	mustcontain( unique(Smps), sample, 
+		msg = paste( "sample '", sample, "' is not in ZIDat", sep = "" ) )
 	Smp <- ZIDat[Smps == sample, ]
 	
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
-	
 	res <- list.add( lapply( imgs, function(im){
-		Spectrum(Smp, imgs[1], taxa = taxa, groups = groups, 
-			breaks = breaks, use.Dil = use.Dil)
+		tryCatch( Spectrum(Smp, im, taxa = taxa, groups = groups, 
+			breaks = breaks, use.Dil = use.Dil), 
+			zooImageError = NULL )
 	} ) )
 	return(res)
 }
