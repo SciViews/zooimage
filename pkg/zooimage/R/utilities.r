@@ -440,6 +440,23 @@ list.reduce <- function( ..., .list = list(...), FUN = "+" ){
 }
 # }}}
 
+getSample <- function( x, unique = FALSE, must.have, msg){
+	res <- sub("[+].*", "", as.character(x))
+	if( unique ){
+		res <- unique( res )
+	}
+	if( !missing(must.have) ){
+		if( ! all( must.have %in% res ) ){
+			if( missing(msg) ){
+				msg <- sprintf( "sample '%s' not in ZIDat", paste(must.have, sep = ",") )
+			}
+			stop( msg )
+		}
+	}
+	res
+}
+
+
 # {{{ Internationalization of ZooImage: get messages in other languages
 "gettextZI" <- function(...) {
 	### TODO: internationalization of the package

@@ -151,9 +151,7 @@
 	
 	# Extract only data for a given sample
 	# Sample is everything before a '+' sign
-	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) 
-	mustcontain( unique(Smps), sample, 
-		msg = paste( "sample '", sample, "' is not in ZIDat", sep = "" ) )
+	Smps <- getSample( ZIDat$Label, unique = TRUE, must.have = sample )
 	Smp <- ZIDat[Smps == sample, ]
 	
 	# Determine the number of images in this sample
@@ -228,10 +226,9 @@
 	mustbeString( sample, 1 )
 	
 	# Extract only data for a given sample
-	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
-	mustcontain( unique(Smps), sample, 
-		msg = paste("sample '", sample, "' is not in ZIDat") )
+	Smps <- getSample( ZIDat$Label, unique = T, must.have = sample )
 	Smp <- ZIDat[Smps == sample, ]
+	
 	# Subsample, depending on taxa we keep
 	if (!is.null(taxa)) {
 		mustcontain( levels(Smp$Ident), taxa, "taxa not in the sample")
@@ -325,10 +322,7 @@
 	type <- match.arg( type, several.ok = FALSE )
 	
 	# Extract only data for a given sample
-	Smps <- sub("[+].*", "", as.character(ZIDat$Label)) # Sample is everything before a '+' sign
-	if (!sample %in% unique(Smps)){
-		stop("sample '", sample, "' is not in ZIDat")
-	}
+	Smps <- getSample( ZIDat$Label, unique = T, must.have = sample )
 	Smp <- ZIDat[Smps == sample, ]
 	
 	# Subsample, depending on taxa we keep
