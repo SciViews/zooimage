@@ -418,6 +418,7 @@ list.reduce <- function( ..., .list = list(...), FUN = "+" ){
 }
 # }}}
 
+# {{{ getSample 
 getSample <- function( x, unique = FALSE, must.have, msg){
 	res <- sub("[+].*", "", as.character(x))
 	if( unique ){
@@ -433,7 +434,7 @@ getSample <- function( x, unique = FALSE, must.have, msg){
 	}
 	res
 }
-
+# }}}
 
 # {{{ Internationalization of ZooImage: get messages in other languages
 "gettextZI" <- function(...) {
@@ -447,6 +448,7 @@ getSample <- function( x, unique = FALSE, must.have, msg){
 #' Display progression of long-running tasks, both on the R console
 #' and in the ZooImage assistant status bar
 "Progress" <- function(value, max.value = NULL) {
+
 	# This is my own version of progress() that uses also the Tk window statusbar
     if (!is.numeric(value)){
         stop("`value' must be numeric!")
@@ -455,50 +457,46 @@ getSample <- function( x, unique = FALSE, must.have, msg){
         max.value <- 100
         percent <- TRUE
     } else percent <- FALSE
+
     if (!is.numeric(max.value)){
         stop("`max.value' must be numeric or NULL!")
 	}
-    erase.only <- (value > max.value)
+	if( value > max.value){
+		stop( "use ClearProgress instead" )
+	}
     Max.Value <- as.character(round(max.value))
     l <- nchar(Max.Value)
     Value <- formatC(round(value), width = l)
     if (percent) {
         backspaces <- backspaces( l + 14 )
-		if (erase.only) { 
-            message <- ""
-        } else {
-			message <- paste("Progress: ", Value, "%  ", sep = "")
-		}
-        cat(backspaces, message, sep = "")
+		message <- paste("Progress: ", Value, "%  ", sep = "")
+		cat(backspaces, message, sep = "")
     } else {
         backspaces <- backspaces( 2 * l + 16)
-        if (erase.only) { 
-            message <- ""
-        } else {
-			message <- paste("Progress: ", Value, " on ", Max.Value,
+        message <- paste("Progress: ", Value, " on ", Max.Value,
 				"  ", sep = "")
-		}
-        cat(backspaces, message, sep = "")
+		cat(backspaces, message, sep = "")
     }
-    if (.Platform$OS.type == "windows") flush.console()
+
+    if (.Platform$OS.type == "windows"){
+		flush.console()
+	}
+	
 	# Do we need to update the Tk window statusbar also?
     if ("ZIDlgWin" %in% WinNames()) {
-    	if (erase.only) { # Not busy any more
-			rmTemp("statusBusy")
-			tkconfigure(getTemp("statusProg"), value = 0)
-			tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
-		} else { 	# We are busy - display it
-			assignTemp("statusBusy", TRUE)
-			# Calculate fraction and show it in the progress bar
-			if (!percent) value <- value / max.value * 100
-			tkconfigure(getTemp("statusProg"), value = value)
-			# Display the progress text also in the statusbar
-			tkconfigure(getTemp("statusText"), text = message)
+    	assignTemp("statusBusy", TRUE)
+		# Calculate fraction and show it in the progress bar
+		if (!percent){
+			value <- value / max.value * 100
 		}
+		tkconfigure(getTemp("statusProg"), value = value)
+		# Display the progress text also in the statusbar
+		tkconfigure(getTemp("statusText"), text = message)
 		.Tcl("update idletasks")
 	}
     invisible(NULL)
 }
+
 ClearProgress <- function( ){
 	cat(backspaces(), "", sep = "")
 	if ("ZIDlgWin" %in% WinNames()) {
