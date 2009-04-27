@@ -421,7 +421,7 @@ list.add <- function( ..., .list = list(...), FUN = "+"){
 }
 
 list.reduce <- function( ..., .list = list(...), FUN = "+" ){
-	.list <- .list[ !sapply( .list, is.null) ]
+	.list <- Filter( Negate( is.null), .list )
 	if( length(.list) == 1 ) return( .list[[1]] )
 	n <- length( .list[[1]] )
 	out <- lapply( 1:n, function(i){

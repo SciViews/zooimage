@@ -28,6 +28,7 @@
 	
 	# Check if ZIClass is of the right class
 	mustbe(ZIClass, "ZIClass")
+	
 	# Get ZIDat from the ZidFile
 	ZIDat <- read.zid(ZidFile)
 	Sample <- get.sampleinfo(ZidFile, type = "sample", ext = extensionPattern(".zid") )
@@ -37,9 +38,9 @@
 	if (nrow(RES) != 1) {
 		stop( "ZIDesc has no data for that sample!" )
 	}
+	
 	# Predict classes (add a new column Ident to the table)
 	ZIDat <- predict(ZIClass, ZIDat)
-	
 	Grp <- levels(ZIDat$Ident)	
 	if (is.null(abd.groups)) {
 		# Calculate groups (list with levels to consider)
@@ -111,9 +112,10 @@
 	imax <- length(ZidFiles)
 	cat("Processing",  imax, "samples...\n")
 	logProcess(paste("Processing",  imax, "samples..."))
-	for (i in 1:imax) {
-       	Progress(i, imax)
-		tryCatch( {
+	
+	results <- lapply( 1:imax, function(i){
+		Progress(i, imax)
+		tryCatch({
 			res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
 				abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
 				bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
@@ -121,17 +123,20 @@
 				spec.use.Dil = spec.use.Dil,
         	    exportdir = exportdir, show.log = FALSE)
 			logProcess("OK", ZidFiles[i])
-			if( is.null(restot) ){
-				restot <- rbind( restot, res )
-				attr( restot, "spectrum" ) <- c(attr(restot, "spectrum"), attr(res, "spectrum"))
-				attr(restot, "metadata") <- attr(res, "metadata")
-				class(restot) <- c("ZI1Res", "ZIRes", "data.frame")
-			}
+			res
 		}, zooImageError = function(e){
 			logError( e )
+			NULL
 		} )
-	}
+	} )
+	
 	ClearProgress()
+	
+	results <- Filter( Negate(is.null), results )
+	restot <- do.call( rbind, results )
+	attr( restot, "spectrum" ) <- unlist( lapply( results, attr, "spectrum") )
+	attr( restot, "metadata" ) <- attr( results[[length(results)]], "metadata" )
+	class(restot) <- c("ZI1Res", "ZIRes", "data.frame")
 	
 	# {{{ Final report
 	finish.loopfunction( ok = ok, show.log = show.log, bell = bell )
@@ -157,12 +162,13 @@
 	
 	# Determine the number of images in this sample
 	imgs <- unique(ZIDat$Label)
-	list.add( lapply( imgs, function(im){
+	lists <- lapply( imgs, function(im){
 		tryCatch( {
 			Spectrum(Smp, im, taxa = taxa, groups = groups, 
 				breaks = breaks, use.Dil = use.Dil)
-		}, zooImageError = NULL )
-	} ) )
+		}, zooImageError = function(e) NULL )
+	} )
+	list.add(lists)
 }
 # }}}
 
@@ -181,11 +187,7 @@
 	}
 	
 	# Remember dilution (in case there are no data)
-	if (nrow(dat) > 0) {
-		Dil <- dat$Dil[1] 
-	} else {
-		Dil <- 1
-	}
+	Dil <- if (nrow(dat) > 0) dat$Dil[1] else 1
 	
 	# taxa must correspond to levels in ZIDat$Ident
 	if (!is.null(taxa)) {
@@ -211,7 +213,7 @@
 	} )
 	names( res ) <- names( groups )
 	attr(res, "breaks") <- breaks
-	attr(res, "unit") <- if(use.Dil) "ind/m^3" else "count"
+	attr(res, "unit")   <- if(use.Dil) "ind/m^3" else "count"
 	return(res)
 }
 # }}}
@@ -312,7 +314,7 @@
 }
 # }}}
 
-#{{{ Abd.sample
+# {{{ Abd.sample
 #' Calculate abundances for various taxa in a sample
 "Abd.sample" <- function(ZIDat, sample, taxa = NULL, groups = NULL,
 	type = c("absolute", "log", "relative"), header = "Abd") {

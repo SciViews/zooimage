@@ -21,8 +21,7 @@
 	expected.sections = c( "Description","Series","Cruises","Stations","Samples")
 	) {
 
-    ### TODO: a print function for ZIDesc object.
-	checkFileExists( zisfile, extension = "zis", force.file = TRUE )
+    checkFileExists( zisfile, extension = "zis", force.file = TRUE )
 	checkFirstLine( zisfile )
 	rl <- readLines( zisfile )
 	if (!length(rl) > 1){
@@ -70,7 +69,8 @@
 	
 	# Combine all this in a data frame + metadata
 	structure(Samples, 
-		metadata =  list(Desc = Description, Series = Series, 
+		metadata =  list(
+			Desc = Description, Series = Series, 
 			Cruises = Cruises, Stations = Stations),
 		class = c("ZIDesc", "data.frame") )
 }

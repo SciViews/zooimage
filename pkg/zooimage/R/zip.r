@@ -189,13 +189,9 @@
 # use zipnote to extract the comment
 "unzip.img" <- 	function(zipfile) {
 
-	# {{{ check that unzip is available	
-	checkZipnoteAvailable( )	
-	# }}}
-		
- 	# {{{ Extract .zim file, .tif file or both from a .zip archive
+	# Extract .zim file, .tif file or both from a .zip archive
 	zipnote( zipfile )
-	# }}}
+
 }
 #}}}
 
@@ -229,6 +225,7 @@ zip <- function( zipfile , directory, delete.source = FALSE, comment.file = NULL
 	
 	# Test if we need and can add the comment file
 	comment <- !is.null(comment.file) && file.exists(comment.file)
+	
 	# Build the list of parameters for zip
 	zippar <- sprintf( "-rq9%s%s", if(delete.source) "m" else "", if(comment) "z" else "")
 	
@@ -310,6 +307,7 @@ unzip <- if( as.numeric( version$major ) >= 2 && as.numeric( version$minor >= 9)
 			unlink(zipfile)
 		}
 	} else # }}}
+	
 	# {{{ version for R < 2.9.0
 	function( zipfile, path, delete.source = FALSE ){
 		
