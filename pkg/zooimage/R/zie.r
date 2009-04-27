@@ -290,9 +290,10 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	cat("Checking all lines in the .zie file for raw images...\n")
 	allImages <- character(0)
 	for (i in 1:nLines) {
-		### TODO: allow restarting from a given point and eliminate previous lines for which there are no images (considered as already processed!)
+		### TODO: allow restarting from a given point and eliminate previous 
+		###       lines for which there are no images (considered as already processed!)
 		Progress(i, nLines)
-		if (length(grep("^[-][>]", Lines[i])) == 0) {	# This is not a state change command
+		if ( !grepl("^[-][>]", Lines[i]) ) {	# This is not a state change command
 			File <- MakeImageName(trim(sub("[=].*$", "", Lines[i])))
 			checkFileExists( File )
 			if (File %in% allImages) {

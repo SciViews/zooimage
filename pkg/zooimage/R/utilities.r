@@ -45,7 +45,7 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 	# Keep only those objects
 	varlist <- varlist[Filter]	
 	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		warnOrStop( "There is no object of class ", paste(class, collapse = " "), " in the user workspace!" )
+		warnOrStop( "There is no object of class '", paste(class, collapse = " "), "' in the user workspace!" )
 		varsel <- "" 
 	} else {
 		if (default == "") default <- varlist[1]
@@ -64,33 +64,21 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 	# Get lists of items of specified class
 	(require(utils) || stop("Package 'utils' is required!"))
 	
-	varlist <- objects(pos = 1)		# Get objects in .GlobalEnv
-	# Filter this list to keep only list objects...
-	Filter <- NULL
-	for (i in 1:length(varlist)) Filter[i] <- inherits(get(varlist[i]), "list")
-	varlist <- varlist[Filter]	# Keep only those objects
-	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		warnOrStop( "There is no list objects in the user workspace" )
-		return("") 
-	} else {
-		# Filter the list objects to keep only those having 'class' objects as items
-		Filter <- rep(TRUE, length(varlist))
-		for (i in 1:length(varlist)){
-			Var <- get(varlist[i])
-			for (j in 1:length(Var)){
-				if (!inherits(Var[[j]], class)){
-					Filter[i] <- FALSE
-				}
-			}
-		}
-		varlist <- varlist[Filter]	# Keep only those objects
-		if (length(varlist) == 0) { 	# No such objects in .GlobalEnv
-			warnOrStop( "There is no list of ", class, " objects in the user workspace" )
-		}	
-		if (default == "") default <- varlist[1]
-		varsel <- select.list(varlist, preselect = default, multiple = multi, title = title)
+	# Get objects in .GlobalEnv
+	filter <- function(x) {
+		item <- get(x)
+		is.list(item) && all( sapply( item, function(y) inherits( y, class ) ) )
 	}
-    return(varsel)		
+	varlist <- Filter( filter , objects(pos = 1) )	
+	if( length(varlist) == 0 ){
+		warnOrStop( "There is no list of ", class, " objects in the user workspace" )
+		return("")
+	}
+	if (default == ""){
+		default <- varlist[1]
+	}
+	varsel <- select.list(varlist, preselect = default, multiple = multi, title = title)
+	return(varsel)		
 }
 # }}}
 
