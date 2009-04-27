@@ -373,8 +373,7 @@ ziKey <- function( key ){
 #' Merge two lists of data frames
 "list.merge" <- function(x, y) {
 	
-	mustbe( x, "list" )
-	mustbe( y, "list" )
+	mustallbe( x, y, class = "list" )
 	
 	xitems <- names(x)
 	yitems <- names(y)
@@ -382,31 +381,23 @@ ziKey <- function( key ){
 	xonly <- xitems[!(xitems %in% xandy)]
 	yonly <- yitems[!(yitems %in% xandy)]
 	
-	# construct the merged list
-	res <- list()
-	
 	# First merge common items
 	if (length(xandy) > 0) {
-		for (i in 1:length(xandy)){
-			item <- xandy[i] 
-			res[[ item ]] <- merge(x[[ item ]], y[[ item ]], all = TRUE)
-		}
+		res <- lapply( xandy, function(item){
+			merge( x[[item]], y[[item]], all = TRUE )
+		})
+		names( res ) <- xandy
+	} else{
+		res <- list()
 	}
-	# Add xonly items
-	if (length(xonly) > 0) {
-	 	for (i in 1:length(xonly)){
-			item <- xonly[i]
-			res[[ item ]] <- x[[ item ]]
-		}
+	
+	if( length(xonly)>0 ){
+		res[ xonly ] <- x[ xonly ]
 	}
-	# Add yonly items
-	if (length(yonly) > 0) {
-	 	for (i in 1:length(yonly)){
-	 		item <- yonly[i]
-			res[[ item ]] <- y[[ item ]]
-		}
+	if( length(yonly)>0 ){
+		res[ yonly ] <- y[ yonly ]
 	}
-	return(res)
+	res
 }
 # }}}
 
