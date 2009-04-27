@@ -76,7 +76,8 @@ type = c("import", "export")) {
 
 # {{{ Various importers
 # Import plain .tif files, with manual creation of associated .zim files
-ZIEimportTif <- ZIE(title = "Tiff image files (*.tif)",
+ZIEimportTif <- ZIE(
+	title       = "Tiff image files (*.tif)",
 	filter      = "*.tif",
 	description = c("Manual creation of ZooImage Metadata files (.zim)",
 				    "given a list of directly usable .tif images",
@@ -93,7 +94,8 @@ ZIEimportTif <- ZIE(title = "Tiff image files (*.tif)",
 	type        = "import")
  
 # Import plain .jpg files, with manual creation of associated .zim files
-ZIEimportJpg <- ZIE(title = "Jpeg image files (*.jpg)",
+ZIEimportJpg <- ZIE(
+	title       = "Jpeg image files (*.jpg)",
 	filter      = "*.jpg",
 	description = c("Manual creation of ZooImage Metadata files (.zim)",
 				    "given a list of directly usable .jpg images",
@@ -111,7 +113,8 @@ ZIEimportJpg <- ZIE(title = "Jpeg image files (*.jpg)",
 
 # Complex import of images (conversion, renaming, etc.) with automatic creation
 # of associated .zim files using a .zie file
-ZIEimportZie <- ZIE(title = "ZooImage Import Extension (Import_*.zie)",
+ZIEimportZie <- ZIE(
+	title       = "ZooImage Import Extension (Import_*.zie)",
 	filter      = "Import_*.zie",
 	description = c("Run a .zie import specification file to convert",
 				    "and/or rename images and automatically create",
@@ -127,7 +130,8 @@ ZIEimportZie <- ZIE(title = "ZooImage Import Extension (Import_*.zie)",
 	type        = "import")
 
 # Compile a .zie file from TemplateImport.zie and a table.txt and then compute it
-ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
+ZIEimportTable <- ZIE(
+	title       = "Table and ImportTemplate.zie (*.txt)",
 	filter      = "*.txt",
 	description = c("Create a .zie file by interpretting a table,",
 				    "using a template file in the same directory",
@@ -572,12 +576,11 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
 					
-					tryCatch( 
-						BFcorrection(FileConv, BlankField, deleteBF = FALSE), 
-						error=function(e){
+					tryCatch( {
+						BFcorrection(FileConv, BlankField, deleteBF = FALSE)
+						}, error=function(e){
 							logProcess( extractMessage( e ) , File)
-						}
-					)
+						} )
 					
 					# Delete the uncorrected file
 					unlink(FileConv)
@@ -671,8 +674,9 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	}
 	
 	if( ok ){
-		if (move.to.raw)
+		if (move.to.raw){
 			file.rename(Filemap, file.path(getwd(), "_raw", Filemap))
+		}
 		# There is a bug: a 'fileconv.tif' file is created, delete it for the moment
 		unlink("fileconv.tif")
 	}
