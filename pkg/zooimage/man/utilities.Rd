@@ -16,7 +16,7 @@
 \alias{Progress}
 \alias{selectFile}
 \alias{setKey}
-\alias{Setwd}
+\alias{setwd}
 \alias{trim}
 \alias{underscore2space}
 \alias{ZIpgm}
@@ -52,7 +52,7 @@ underscore2space(char)
 parse.ini(data, label = "1")
 
 Progress(value, max.value = NULL)
-Setwd(dir)
+setwd(dir)
 
 getKey(key, default.value = NULL)
 setKey(key, value, type = "sz")
@@ -122,7 +122,7 @@ ZIpgmhelp((pgm, subdir = "misc")
   various different ini files are merged together (typically using \code{list.add()} or
   \code{list.merge()}.
   
-  Nothing for \code{Progress()} and \code{Setwd()}.
+  Nothing for \code{Progress()} and \code{setwd()}.
   
   For \code{getKey()}, either the content of the key, or the default.value is returned.
   \code{setKey()} returns \code{TRUE} or \code{FALSE}, depending if the key=value was

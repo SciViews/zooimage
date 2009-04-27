@@ -147,7 +147,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 	
 # {{{ make.zie
 #' @examples
-#' Setwd("g:/zooplankton/Madagascar2Macro")	# My example directory
+#' setwd("g:/zooplankton/Madagascar2Macro")	# My example directory
 #' make.zie(path = ".", Filemap = "Import_Madagascar2Macro.zie")
 "make.zie" <- function(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
 	move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$", show.log = TRUE, bell = FALSE) {
@@ -685,7 +685,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 
 # {{{ compile.zie
 #' @examples
-#' Setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
+#' setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
 #' compile.zie(Tablefile = "Madagascar2Macro.txt", Nrange = c(2,2))
 "compile.zie" <- function(path = ".", Tablefile = "Table.txt",
 	Template = "ImportTemplate.zie", Filemap = paste("Import_", noext(Tablefile), ".zie", sep = ""),
@@ -807,7 +807,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' Read most important EXIF data from a Digicam RAW file
 #' 
 #' @examples
-#' Setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
+#' setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
 #' (Res <- readExifRaw("Image_0742.CR2"))
 "readExifRaw" <- function(rawfile, full = FALSE, check = TRUE) {
 	
@@ -886,7 +886,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' Check a blank-field image, either in .pgm or in .tif format	
 #' 
 #' @examples
-#' Setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
+#' setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
 #' checkBF("test.pgm")
 #' checkBF("test.tif")
 "checkBF" <- function(BFfile) {
@@ -950,7 +950,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 # {{{ calibrate
 #' calibrates
 #' @examples
-#' Setwd("g:/zooplankton/madagascar2macro")
+#' setwd("g:/zooplankton/madagascar2macro")
 #' calibrate("test.tif")
 "calibrate" <- function(ODfile) {
 	### TODO: include also a spatial calibration procedure
@@ -1089,7 +1089,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' The function returns TRUE in case of success... or an explicit error message
 #'
 #' @examples 
-#' Setwd("g:/zooplankton/madagascar2macro")
+#' setwd("g:/zooplankton/madagascar2macro")
 #' BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
 #' @throws this calls many xite scripts and might generate errors
 "BFcorrection" <- function(File, BFfile, deleteBF = TRUE, check = TRUE) {
@@ -1174,7 +1174,7 @@ ZIEimportTable <- ZIE(title = "Table and ImportTemplate.zie (*.txt)",
 #' Convert a RAW file (digital camera) into a pgm file  
 #' 
 #' @examples
-#' Setwd("d:/ZI examples/MacroG16-example")
+#' setwd("d:/ZI examples/MacroG16-example")
 #' RawConvert("Image_3822.CR2", fake = TRUE)
 #' RawConvert("Image_3822.CR2")
 #' @todo can we not do this in the the ImageJ plugin directly

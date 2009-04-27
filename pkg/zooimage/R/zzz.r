@@ -185,7 +185,7 @@
 	# {{{ Switch to the default directory, if defined
 	defdir <- getKey("DefaultDirectory", "")
     if (defdir != "" && file.exists(defdir) && file.info(defdir)$isdir){
-        Setwd(defdir)
+        setwd(defdir)
 	}
 	# }}}
 

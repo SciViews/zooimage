@@ -511,12 +511,12 @@ backspaces <- function( n = getOption("width") ){
 }
 # }}}
 
-# {{{ Setwd
+# {{{ setwd
 #' Change the working directory and update the ZooImage assistant status bar
-"Setwd" <- function(dir) {
-	### TODO: this does not work if dir is changed from Rgui menu or from setwd()!
+setwd <- function(dir) {
 	# My own setwd() function that also updates the Tk window statusbar
-	.Internal(setwd(dir))
+	base::setwd(dir)
+	
 	# Possibly update the statusbar
 	if ("ZIDlgWin" %in% WinNames() && is.null(getTemp("statusBusy"))) {
 		tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
