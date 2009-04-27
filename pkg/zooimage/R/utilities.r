@@ -507,7 +507,7 @@ ClearProgress <- function( ){
 	invisible( NULL )
 }
 backspaces <- function( n = getOption("width") ){
-	paste( rep("\b",  ), collapse = "" )
+	paste( rep("\b", n  ), collapse = "" )
 }
 # }}}
 
