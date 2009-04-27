@@ -401,6 +401,20 @@ ziKey <- function( key ){
 }
 # }}}
 
+# {{{ 
+combine <- function( ..., .list = list(...) ){
+	force(.list)
+	mergefun <- function(x,y){
+		if(all( sort(names(x)) == sort(names(y)) ){
+			rbind( x,y )
+		} else{
+			merge( x, y, all = TRUE )
+		}
+	}
+	Reduce( mergefun, .list )
+}
+# }}}
+
 # {{{ Add items across two lists (names must be the same)
 list.add <- function( ..., .list = list(...), FUN = "+"){
 	list.reduce( .list= .list, FUN = FUN)
