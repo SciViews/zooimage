@@ -119,8 +119,6 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 # {{{ getKey / setKey
 
 # Get a key in the registry (retrieve ZooImage configuration data)
-### TODO: this must be adapted for other platforms!
-
 ziKey <- function( key ){
 	sprintf( "zooimage-%s", key )
 }
@@ -128,7 +126,7 @@ ziKey <- function( key ){
 "getKey" <- function(key, default.value = NULL) {
  	
 	# Retrieve a ZooImage key in the registry
-	# should we use this also for windows ?
+	# TODO: should we use this also for windows ?
 	if (!isWin()) {
 		return( getTemp( ziKey(key) , default.value) )
 	}
@@ -145,7 +143,7 @@ ziKey <- function( key ){
 # Set a key in the registry (store configuration data for next ZooImage session)
 "setKey" <- function(key, value, type = "sz") {
 	if(!isWin()) {
-		# should we also use this for windows ?
+		# TODO: should we also use this for windows ?
 		assignTemp( ziKey( key), value, TRUE )
 	} else{
 		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
@@ -162,9 +160,8 @@ ziKey <- function( key ){
 	gsub("_", " ", char)
 }
 
-#' Trim leading and trailing spaces in strings
+#' Trim leading and trailing white spaces and tabs
 "trim" <- function(char) {
-	# Trim leading and trailing white spaces and tabs
 	sub("\\s+$", "", sub("^\\s+", "", char))
 }
 
@@ -182,25 +179,29 @@ ziKey <- function( key ){
 	type = c("sample", "fraction", "image", "scs", "date", "id", "frac", "imgnbr"),
 	ext = "_dat1[.]zim$") {
 	
-	type <- type[1]
+	type <- tryCatch( match.arg(type), error = function(e){
+		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'")
+	} )
 	base <- basename(filename)
-	if (ext != "") base <- sub(ext, "", base)
+	if (ext != ""){
+		base <- sub(ext, "", base)
+	}
+	
 	# filename without extension is supposed to follow the convention: scs.date.id+f[img]
 	# with scs.date.id forming an unique sample identifier
 	# Note: not all verifications are conducted. So, it sometimes returns a result even if the name does
 	# not conform to this specification!
 	### TODO: check that the name follows the convention and determine what is facultative, like date, for instance)
-	res <- switch(type[1],
-		sample = sub("\\+[a-zA-Z][0-9.]+$", "", base),
-		fraction = sub("[0-9.]+$", "", base),
-		image = base,
-		scs = sub("^[^+.]*[+.].+$", "", base),
-		date = as.Date(sub("^.*([0-9]{4}-[0-1][0-9]-[0-3][0-9]).*$", "\\1", base)),
-		id = sub("^.*\\..*\\.(.*)\\+.*$", "\\1", base),
-		frac = sub("^.*\\+([a-zA-Z]).*$", "\\1",base),
-		imgnbr = as.numeric(sub("^.*\\+[a-zA-Z]([0-9.]*)$", "\\1", base)),
-		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'") )
-	### TODO: check results
+	res <- switch(type,
+		sample     = sub("\\+[a-zA-Z][0-9.]+$", "", base),
+		fraction   = sub("[0-9.]+$", "", base),
+		image      = base,
+		scs        = sub("^[^+.]*[+.].+$", "", base),
+		date       = as.Date(sub("^.*([0-9]{4}-[0-1][0-9]-[0-3][0-9]).*$", "\\1", base)),
+		id         = sub("^.*\\..*\\.(.*)\\+.*$", "\\1", base),
+		frac       = sub("^.*\\+([a-zA-Z]).*$", "\\1",base),
+		imgnbr     = as.numeric(sub("^.*\\+[a-zA-Z]([0-9.]*)$", "\\1", base)),
+		)
 	return(res)
 }
 # }}}
