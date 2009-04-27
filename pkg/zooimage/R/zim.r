@@ -409,19 +409,20 @@
 	if (check.zim) {
 		cat("Verification of .zim files...\n")
 		logProcess("Verification of .zim files...")
-		ok <- TRUE
 		zfiles <- unique(zimfiles)
 		zmax <- length(zfiles)
-		for (z in 1:zmax) {
-        	Progress(z, zmax)
-			
-			# TODO: this might throw a condition
-			tryCatch( verify.zim(zfiles[z]), 
-				zooImageError = function(e){
-					logError( e )
-					ok <<- FALSE
-				} )
-		}
+		
+		oks <- sapply( 1:zmax, function(z){
+			Progress(z, zmax)
+			tryCatch( {
+				verify.zim(zfiles[z])
+				TRUE
+			}, zooImageError = function(e){
+				logError( e )
+				FALSE
+			} )
+		})
+		ok <- all( oks )
 		ClearProgress()
 	}
 	
@@ -460,7 +461,7 @@
 "create.zim" <- function(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
 	edit = TRUE, wait = FALSE) {
 	
-	# {{{ Create a .zim file from a template and edit it
+	# Create a .zim file from a template and edit it
 	if (is.null(zimfile) || zimfile == "") {
 		if (isWin()) {
 	        zimfile <- winDialogString("Give a name for the new .zim file:",
@@ -475,13 +476,11 @@
 			zimfile <- sprintf( "%s.zim", zimfile )
 		}
 	}
-	# }}}
 	
-	# {{{ If the file exists, edit existing version instead
+	# If the file exists, edit existing version instead
     if (file.exists(zimfile)){
 		if (edit) return(edit.zim(zimfile, wait = wait)) else return()
 	}
-	# }}}
 	
 	# Look for the template
 	if (is.null(template)) {
@@ -504,8 +503,9 @@
 "edit.zim" <- function(zimfile, editor = getOption("ZIEditor"), wait = FALSE) {
 	if (is.null(zimfile) || zimfile == "") {
 		zimfile <- selectFile("Zim")
-		if (zimfile == "")
+		if (zimfile == ""){
 			return(invisible())
+		}
 	} else {
 		is.zim(zimfile)
 	}
