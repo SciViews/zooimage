@@ -22,15 +22,16 @@
 # {{{ ziclass 
 # {{{ ZIClass 
 #' Modifications in calculation of probabilities to accept variables selection v1.2-2
-"ZIClass" <- function(df, algorithm = c("lda", "randomForest"),
-		package = c("MASS", "randomForest"),
-		Formula = Class ~ logArea + Mean + StdDev + Mode + Min + Max + logPerim. +
+"ZIClass" <- function(df, 
+	algorithm = c("lda", "randomForest"), package = c("MASS", "randomForest"),
+	Formula = Class ~ logArea + Mean + StdDev + Mode + Min + Max + logPerim. +
 		logMajor + logMinor + Circ. + logFeret + IntDen + Elongation + CentBoxD +
-		GrayCentBoxD + CentroidsD + Range + MeanPos + SDNorm + CV, calc.vars = "calc.vars", k.xval = 10, ...) {
+		GrayCentBoxD + CentroidsD + Range + MeanPos + SDNorm + CV, 
+	calc.vars = "calc.vars", k.xval = 10, ...) {
 	
 	# check package availability
 	### TODO: add error checking in all evals!
-	(require(ipred) || stop("Package 'ipred' is required!"))
+	require(ipred)
 	package <- package[1]
 	if (!is.null(package)){
 		require( package, character.only = TRUE )
@@ -46,15 +47,13 @@
 	# algorithm
 	algorithm <- algorithm[1]
 	algo.fun  <- match.fun( algorithm )
-	ZI.class <- algo.fun(Formula, data = df, ...)
-	
-	# Return a ZIClass object
-	class(ZI.class) <- c("ZIClass", class(ZI.class))
-	attr(ZI.class, "algorithm") <- algorithm
-	attr(ZI.class, "package") <- package
-	attr(ZI.class, "calc.vars") <- CV
-	Classes <- df[[as.character(Formula)[2]]]
-	attr(ZI.class, "classes") <- Classes
+	ZI.class <- algo.fun(Formula, data = df, ...),
+	ZI.class <- structure( ZI.class, 
+		class     = c("ZIClass", class(ZI.class))
+		algorithm = algorithm,
+		package   = package, 
+		calc.vars = CV, 
+		classes   = df[[ as.character(Formula)[2] ]] )
 	
 	# Calculate predictions with full training set
     attr(ZI.class, "predict") <- predict(ZI.class, df, calc.vars = FALSE, class.only = TRUE)
@@ -86,25 +85,25 @@
 "print.ZIClass" <- function(x, ...) {
 
 	algorithm <- attr(x, "algorithm")
-	classes <- attr(x, "classes")
-	lclasses <- levels(classes)
-    predict <- attr(x, "predict")
-	k <- attr(x, "k")
+	classes   <- attr(x, "classes")
+	lclasses  <- levels(classes)
+    predict   <- attr(x, "predict")
+	k         <- attr(x, "k")
 	cat("A ZIClass object predicting for", length(lclasses), "classes:\n")
 	print(lclasses)
 	Confu <- confu(classes, predict)
-	mism <- (1 - (sum(diag(Confu)) / sum(Confu))) * 100 
+	mism <- 100 * (1 - ( sum(diag(Confu)) / sum(Confu) ) ) 
+	
 	# Change the number of digits to display
-	oldDigits <- options(digits = 4)
-	on.exit(options(digits = oldDigits))
+	oldDigits <- options(digits = 4); on.exit(options(digits = oldDigits))
 	cat("\nAlgorithm used:", algorithm, "\n")
 	cat("Mismatch in classification: ", mism, "%\n", sep = "")   
 	if (!is.null(k)) {
     	cat("k-fold cross validation error estimation (k = ", k, "):\n", sep = "")
 		kfold.predict <- attr(x, "kfold.predict")
-		prior <- table(classes)
-		ok <- diag(table(classes, kfold.predict)) 
-		err <- (1 - (sum(ok) / sum(prior))) * 100
+		prior         <- table(classes)
+		ok            <- diag(table(classes, kfold.predict)) 
+		err           <- 100 * (1 - (sum(ok) / sum(prior)) )
 		cat(err, "%\n", sep = "")
 		cat("\nError per class:\n")
 		`Error (%)` <- sort(1 - (ok / prior)) * 100
@@ -119,7 +118,7 @@
 	
 	# Make sure we have correct objects
 	mustbe( object, "ZIClass" )
-	mustbe( object, c("ZIDat", "data.frame") )
+	mustbe( ZIDat , c("ZIDat", "data.frame") )
 	
 	# Possibly load a specific package for prediction
 	package <- attr(object, "package")
@@ -127,28 +126,33 @@
         # This is for old version, we make sure to load
         # MASS, RandomForest, class, rpart, e1071, ipred
         # Rem: nnet has a special treatment in nnet2
-        (require(MASS) || stop("package 'MASS' is required!"))
-        (require(RandomForest) || stop("package 'RandomForest' is required!"))
-        (require(class) || stop("package 'class' is required!"))
-        (require(rpart) || stop("package 'rpart' is required!"))
-        (require(e1071) || stop("package 'e1071' is required!"))
-        (require(ipred) || stop("package 'ipred' is required!"))
+        require(MASS)        
+        require(RandomForest)
+        require(class)
+        require(rpart)
+        require(e1071)
+        require(ipred)
     } else { 
         # Make sure that the specific required package is loaded
         require( package, character.only = TRUE )
     }
     class(object) <- class(object)[-1]
 	data <- as.data.frame(ZIDat)
-	if (calc.vars) data <- attr(object, "calc.vars")(data)
+	if (calc.vars){
+		data <- attr(object, "calc.vars")(data)
+	}
 	Ident <- predict(object, newdata = data, type = "class")
 
 	# Special case for prediction from an LDA (list with $class item)
-	if (inherits(Ident, "list") && "class" %in% names(Ident))
+	if (inherits(Ident, "list") && "class" %in% names(Ident)){
 		Ident <- Ident$class
+	}
 	if (!class.only) {
 		res <- cbind(ZIDat, Ident)
 		class(res) <- class(ZIDat)
-	} else res <- Ident
+	} else {
+		res <- Ident
+	}
 	return(res)
 }
 # }}}
@@ -159,23 +163,25 @@
 "confu" <- function(classes1, classes2, classes.predicted = FALSE) {
 	
 	if (is.factor(classes1) || is.factor(classes2)) {
-		if (NROW(classes1) != NROW(classes2))
+		if (NROW(classes1) != NROW(classes2)){
 			stop("Not same number of items in classes1 and classes2")
+		}
 		
 		# Check that levels match
-		if (!all(levels(classes1) == levels(classes2)))
-			stop("'Class' levels in the two objects do not match")
+		mustmatch( levels(classes1), levels(classes2), 
+			msg = "'Class' levels in the two objects do not match" )
 		clCompa <- data.frame(Class.x = classes1, Class.y = classes2)
 	} else { # Merge two data frame according to common objects in "Id" column
 		
 		# Check levels match
-		if (!all(levels(classes1$Class) == levels(classes22$Class)))
-			stop("Levels for 'Class' in the two objects do not match")
+		mustmatch( levels(classes1$Class), levels(classes22$Class), 
+			msg = "Levels for 'Class' in the two objects do not match")
 		
 		# Are there common objects left?
 		clCompa <- merge(classes1, classes2, by = "Id")
-		if (nrow(clCompa) == 0)
+		if (nrow(clCompa) == 0){
 			stop("No common objects between the two 'classes' objects")
+		}
 	}
 	
 	# How many common objects by level?
@@ -183,7 +189,7 @@
 	
 	# Confusion matrix
 	if (classes.predicted) {
-        Conf <- table(classes = clCompa$Class.x, predicted = clCompa$Class.y)
+		Conf <- table(classes = clCompa$Class.x, predicted = clCompa$Class.y)
 	} else {
 		Conf <- table(Class1 = clCompa$Class.x, Class2 = clCompa$Class.y)
 	}
@@ -210,7 +216,9 @@
     par(mar = c(5, 12, 4, 2) + 0.1)
 	
 	n <- length(levels(set1))    
-	image(1:n, 1:n, 1/ (t(confu(set1, set2)[n:1, 1:n])), col = heat.colors(10), xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+	image(1:n, 1:n, 1/ (t(confu(set1, set2)[n:1, 1:n])), 
+		col = heat.colors(10), 
+		xlab = "", ylab = "", xaxt = "n", yaxt = "n")
     axis(1, at = 1:n, las = 2)
     axis(2, at = n:1, labels = paste(levels(set1), 1:n), las = 1)
     abline(h = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
@@ -261,31 +269,31 @@ confusion.bar <- function(confmat, mar=NULL) {
 	prediction.df$FN <- FN
 	
 	#put to scale
-	CR2 <- prediction[1:Nn,1]
-	FP <- 100-CR2 # Faux positifs
+	CR2              <- prediction[1:Nn,1]
+	FP               <- 100-CR2 # Faux positifs
 	prediction.df$FP <- FP
-	prediction.df <- round(prediction.df,0) # arrondi les valeurs à des dombres entiers
-	Failure <- prediction.df[c("FN", "FP")]
+	prediction.df    <- round(prediction.df,0) # arrondi les valeurs à des dombres entiers
+	Failure          <- prediction.df[c("FN", "FP")]
 	
 	# put all to scale
-	allN <- CR+FN # all negative
-	allP <- CR2+FP # all positive
-	cr <- (CR/allN)*100 #% good identify by pc
-	cr2 <- (CR2/allP)*100 #% good identify by pc
-	fn <- (FN/allN)*100 # percentage of FN
-	fp <- (FP/allP)*100 # percentage of FP
-	all <- as.matrix(data.frame(fn=fn, cr=cr, cr2=cr2, fp=fp))
-	Order <- order((all[, 2] + all[, 3]), decreasing = TRUE) # trie du mieux reconnu au moin bon
-	all2 <- t(all[Order, ]) # transposer la matrice triée
-	Failure <- Failure[Order,] # grp du moin au plus d'erreur
+	allN        <- CR+FN # all negative
+	allP        <- CR2+FP # all positive
+	cr          <- (CR/allN)*100 #% good identify by pc
+	cr2         <- (CR2/allP)*100 #% good identify by pc
+	fn          <- (FN/allN)*100 # percentage of FN
+	fp          <- (FP/allP)*100 # percentage of FP
+	all         <- matrix( c( fn, cr, cr2, fp), ncol = 4); colnames(all) <- c( "fn", "cr", "cr2", "fp") 
+	Order       <- order( all[, 2] + all[, 3] , decreasing = TRUE) # trie du mieux reconnu au moin bon
+	all2        <- t(all[Order, ]) # transposer la matrice triée
+	Failure     <- Failure[Order,] # grp du moin au plus d'erreur
 	Failure.mat <- as.matrix(Failure)
-	Nmat <- ncol(all2)
+	Nmat        <- ncol(all2)
 
 	#### Construction du graphe
-	valx <- matrix(c(rep(2, Nmat), rep(198, Nmat)),ncol=2) #matrix for location
-	valx2 <- matrix(c(rep(98, Nmat), rep(102, Nmat)),ncol=2) #matrix for location
-	omar = par("mar") # mar = margin size c(bottom, left, top, right)
-	par(mar=mar)
+	valx  <- matrix( c(rep(2 , Nmat), rep(198, Nmat)),ncol=2) #matrix for location
+	valx2 <- matrix( c(rep(98, Nmat), rep(102, Nmat)),ncol=2) #matrix for location
+	omar  <- par("mar") ; on.exit( par(omar) ) # mar = margin size c(bottom, left, top, right)
+	par(mar=mar); 
 	barplot(all2[,!is.na(all2[2,])], horiz=TRUE, 
 		col=c("PeachPuff2", "green3", "green3", "lemonChiffon2"),
 		xaxt="n", las=1, space = 0)
@@ -303,7 +311,6 @@ confusion.bar <- function(confmat, mar=NULL) {
 	segments(segx0[c(1:6)], segy0[c(1:6)], segx0[c(7:12)], segy0[c(7:12)], col="red", lty=2)
 	valx3 <- c(25, 50, 75, 125, 150, 175)
 	text(valx3[1:6], -(Nmat/35), labels= segx0[c(1:3, 7:9)], cex=0.7)
-	#par(mar=omar)
 }
 # }}}
 # }}}
@@ -312,7 +319,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 
 # {{{ nnet2
 "nnet2" <- function(formula, data, size = 7, rang = 0.1, decay = 5e-4, maxit = 1000, ...) {
- 	(require(nnet) || stop("package 'nnet' is required!"))
+ 	require(nnet)
 	
 	structure( 
 		nnet(formula = formula, data = data, size = size, rang = rang, decay = decay, maxit = maxit, ...), 
@@ -324,8 +331,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 "predict.nnet2" <- function (object, newdata, type = c("raw", "class"), ...) {
 	
 	mustbe( object, "nnet2" )
-	
-	(require(nnet) || stop("package 'nnet' is required!"))
+	require(nnet)
     class(object) <- class(object)[-1]
 	res <- predict(object, newdata = newdata, type = type, ...)
 	# If type is class, we got a character vector... but should get a factor
@@ -342,7 +348,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 #' Extract classes and training vars from data, according to formula lhs ~ rhs
 #' This is a very simplified way of doing it... It does not manage complex formula constructions!
 "lvq" <- function(formula, data, k = 5, size = NULL) {
-	(require(class) || stop("package 'class' is required!"))
+	require(class)
     vars <- all.vars(formula)
 	train <- data[, vars[-1]]
 	cl <- data[, vars[1]]
@@ -357,7 +363,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 # {{{ predict.lvq
 "predict.lvq" <- function(object, newdata, type = "class", ...) {
    	mustbe( object, "lvq" )
-	require(class) || stop("package 'class' is required!")
+	require(class)
     if (missing(newdata)) {
 		newdata <- object$data
 	}
