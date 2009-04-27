@@ -88,32 +88,30 @@ warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
 	type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
 	multi = FALSE, quote = TRUE) {
 	
+	type <- tryCatch( match.arg( type ), error = function(e){
+		stop( "unrecognized type" )
+	})
+	Type <- switch( type,  "ZipZid" = "Zip/Zid",  "ZimZis" = "Zim/Zis", type )
+	
 	# Adapt title according to 'multi'
-	Type <- type[1]
-	if (Type == "ZipZid") Type <- "Zip/Zid"
-	if (Type == "ZimZis") Type <- "Zim/Zis"
 	if (multi) {
     	title <- paste("Select one or several", Type, "files...")
 	} else {
 		title <- paste("Select one", Type, "file...")
 	}
-	res <- switch(type[1],
-		ZipZid = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage files (*.zip;*.zid)", "*.zip;*.zid")),
-		ZimZis = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage metadata files (*.zim;*.zis)", "*.zim;*.zis")),
-        Zip = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage picture files (*.zip)", "*.zip")),
-        Zid = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage data files (*.zid)", "*.zid")),
-        Zim = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage metadata files (*.zim)", "*.zim")),
-        Zis = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage sample files (*.zis)", "*.zis")),
-		Zie = choose.files(caption = title, multi = multi,
-			filters = c("ZooImage extension files (*.zie)", "*.zie")),
-		stop("'Unrecognized 'type'!"))
-	if (res != "" && quote) res <- paste('"', res, '"', sep = "")
+	filters <- switch(type,
+		ZipZid 	= c("ZooImage files (*.zip;*.zid)"          , "*.zip;*.zid"),
+		ZimZis 	= c("ZooImage metadata files (*.zim;*.zis)" , "*.zim;*.zis"),
+		Zip		= c("ZooImage picture files (*.zip)"        , "*.zip"      ),
+		Zid		= c("ZooImage data files (*.zid)"           , "*.zid"      ),
+		Zim		= c("ZooImage metadata files (*.zim)"       , "*.zim"      ),
+		Zis		= c("ZooImage sample files (*.zis)"         , "*.zis"      ),
+		Zie		= c("ZooImage extension files (*.zie)"      , "*.zie"      ))
+	
+	res <- choose.files(caption = title, multi = multi, filters = filters )
+	if (res != "" && quote)  {
+		res <- paste('"', res, '"', sep = "")
+	}
 	return(res)
 }
 # }}}
