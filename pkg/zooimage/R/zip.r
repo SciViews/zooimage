@@ -25,16 +25,16 @@
 	
 	#{{{ We need to switch to the root of sample dir first for correct path in the zip file
 	imagefile <- imagefile[1]
-	inidir <- getwd()
-	setwd(dirname(imagefile))
-	on.exit(setwd(inidir))
-	rootdir <- getwd() 
+	inidir    <- getwd()
+	setwd(dirname(imagefile)) ; on.exit(setwd(inidir))
+	rootdir   <- getwd() 
 	imagefile <- basename(imagefile)
 	#}}}
 	
 	# Check if imagefile exists
 	checkFileExists( imagefile, message = "%s doesn't exist, or is a directory!", 
 		force.file = TRUE)
+	
 	# Is there an associated .zim file?
 	if (is.null(zimfile)){
 		sample.info <- get.sampleinfo(imagefile, "fraction", ext = extensionPattern( "tif" ) )
@@ -87,15 +87,13 @@
 		
 	#{{{ This requires the 'zip' program!
 	# Make sure it is available
-	checkZipAvailable()
+	checkCapable("zip")
 	#}}}
 	
 	#{{{ First, switch to that directory
 	inidir <- getwd()
-	if (!file.exists(path) || !file.info(path)$isdir)
-		stop(path, " does not exist, or it is not a directory!")
-	setwd(path)
-	on.exit(setwd(inidir))
+	checkDirExists( path )
+	setwd(path); on.exit(setwd(inidir))
 	path = getwd()	# Indicate we are now in the right path
 	#}}} 
 	
@@ -136,25 +134,27 @@
 	if (check) {
 		cat("Verification of .zim files...\n")
 		logProcess("Verification of .zim files...")
-		ok <- TRUE
+		ok     <- TRUE
 		zfiles <- unique(zimfiles)
-		zmax <- length(zfiles)
-		for (z in 1:zmax) {
-        	Progress(z, zmax)
-			res <- verify.zim(zfiles[z])
-			if (res != 0) { # Error
-            	logProcess(res, zfiles[z])
-				ok <- FALSE
-			}
-		}
+		zmax   <- length(zfiles)
+		oks <- sapply( 1:zmax, function(z){
+			Progress(z, zmax)
+			tryCatch( {
+				verify.zim(zfiles[z])
+				TRUE
+			} , zooImageError = function(e){
+				logError( e )
+				FALSE
+			} )
+		} )
+		ok <- all( oks )
 		ClearProgress()
 	}
 	if (ok) {
 		logProcess("\n-- OK, no error found. --")
 		cat("-- Done! --\n")		
 	} else {
-		logProcess("contains corrupted .zim files, compression not started!", path, stop = TRUE, show.log = show.log)
-		return(invisible(FALSE)) 
+		stop("contains corrupted .zim files, compression not started!")
 	}
 	#}}} 
 	
@@ -162,22 +162,19 @@
 	imax <- length(images)
 	cat("Compression of images...\n")
 	logProcess("\nCompression of images...")
-	for (i in 1:imax) {
+	
+	oks <- sapply( 1:imax, function(i){
 		Progress(i, imax)
-		
-		zip.result <- withCallinHandlers( 
+		tryCatch( {
 			zip.img(images[i], verify.zimfile = FALSE, replace = replace,
-				delete.source = delete.source, check.zip = FALSE, show.log = FALSE),
-			error = function( e ){
-				logProcess( e )
-		} )   
-		
-		if (!zip.result) {
-			ok <- FALSE
-		} else {
+				delete.source = delete.source, check.zip = FALSE, show.log = FALSE)
 			logProcess("OK", images[i])
-		}
-	}
+			TRUE
+		}, zooImageError = function(e){
+			logError(e)
+			FALSE
+		} ) 
+	} )
 	#}}} 
 	
 	ClearProgress()
