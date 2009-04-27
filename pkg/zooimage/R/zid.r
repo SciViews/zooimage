@@ -175,10 +175,6 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# Avoid collecting duplicate informations about fractions
 	fracdup <- duplicated(fractions)
 	
-	# For each of these files, read content in a variable
-	allmes <- NULL
-	allmeta <- NULL
-	
 	results <- lapply( seq.int( 1, length(dat1files) ), function(i){
 		
 		dat1path <- file.path(zidir, dat1files[i])
@@ -300,7 +296,9 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	check.zip = TRUE, show.log = TRUE) {
 		
 	# {{{ check the format
-	if (type != "ZI1") stop("only 'ZI1' is currently supported for 'type'!")
+	if (type != "ZI1") {
+		stop("only 'ZI1' is currently supported for 'type'!")
+	}
 	# }}}
 	
 	# {{{ We need to switch to the root of sample dir first for correct path in the zip file
@@ -315,7 +313,9 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 		# It is not advised to delete source without rebuilding the .zid file
 		# but it was expressly asked!
 		### TODO: verify we have the same files in the .zid and initial dir before deleting files!
-		if (delete.source && file.exists(zidir)) unlink(zidir, recursive = TRUE)
+		if (delete.source && file.exists(zidir)){
+			unlink(zidir, recursive = TRUE)
+		}
 		return(invisible(TRUE))	# Nothing else to do
 	}
 	# }}}
@@ -323,7 +323,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# {{{ This requires the 'zip' program!
 	# Make sure it is available
 	if (check.zip ) {
-		checkZipAvailable( ) # this will stop if zip is not available
+		checkCapable( "zip" )
 	}
 	# }}}
 	
