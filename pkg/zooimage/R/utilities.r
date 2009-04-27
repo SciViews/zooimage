@@ -522,6 +522,7 @@ setwd <- function(dir) {
 		tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
 		.Tcl("update idletasks")
 	}
+	
 	# Save the current default directory for future use
 	setKey("DefaultDirectory", getwd())
 }
@@ -555,10 +556,13 @@ setwd <- function(dir) {
 #' ZIpgmhelp("pgmhist", "netpbm")
 #' ZIpgmhelp("pnm2biff", "xite")
 "ZIpgmhelp" <- function(pgm, subdir = "misc") {
+	# TODO: would it not be better to use the same thing on all platforms
+	#       (the doc directory)
 	if (isWin()) {
 		helpfile <- file.path(system.file(subdir, "doc", package = "zooimage"), paste(pgm, "txt", sep = "."))
-		if (!file.exists(helpfile))
+		if (!file.exists(helpfile)){
 			stop("No help found for ", pgm)
+		}
 		file.show(helpfile, title = paste("Help for ", pgm, " [", subdir, "]", sep = ""))		
 	} else {
 		system(paste("man", pgm), wait = FALSE)
@@ -576,7 +580,7 @@ setwd <- function(dir) {
 }
 # }}}
 
-
+# {{{ callStack
 #' Get the current call stack
 callStack <- function( ){
 	calls <- sys.calls()
@@ -587,6 +591,10 @@ callStack <- function( ){
 	out <- unlist( out[ !sapply( out, is.null ) ] )
 	out
 }
+# }}}
+
+# {{{ masking a few R functions to change their behaviour slightly when 
+#     used by zooimage functions
 
 #' masking system so that the warnings related to using windows arguments
 system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE, 
@@ -598,6 +606,39 @@ system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE,
 		suppressWarnings( eval( call , envir = parent.frame() ) )
 	
 }
+
+# a version that stops
+require <- function( ... ){
+	withCallingHandlers( base:::require(...), 
+		warning = function( e ){
+			base:::stop( e )
+		} )
+}
+
+if( !isWin() ){
+	# choose.files is only available on windows, so we fall 
+	# back on tcl-tk equivalent function
+	choose.files <- function( default = "", caption = "Select files",
+	     multi = TRUE, filters = Filters,
+		 index = nrow(Filters) ){
+		
+		call <- match.call( )
+		call[[1]] <- as.name( "tk_choose.files")
+		eval( call, envir = parent.frame() )	
+	}
+}
+
+#' import grepl from the future 2.9.0 version
+grepl <- if( as.numeric( version$major ) >= 2 && as.numeric( version$minor >= 9) )
+	base:::grepl else function (pattern, x, ignore.case = FALSE, extended = TRUE, perl = FALSE,
+	    fixed = FALSE, useBytes = FALSE) {
+	    index <- grep( pattern, x, ignore.case = ignore.case, 
+			extended = extended, perl = perl, fixed = fixed, useBytes = useBytes )
+		if( length( index ) == 0 ) return( rep( FALSE, length( x ) ) )
+		replace( rep( FALSE, length(x) ), index, TRUE )
+	} 
+
+# }}}
 
 # {{{ File utilities
 #' checks if the file has the extension
@@ -617,10 +658,10 @@ list.files.ext <- function( dir, extension = "zip", pattern = extensionPattern(e
 }
 
 # {{{ list.zim, list.dat1.zim
-"list.zim" <- function(zidir, ...) {
+list.zim <- function(zidir, ...) {
 	list.files.ext( zidir, extension = "zim", ... )
 }
-"list.dat1.zim" <- function(zidir, ...) {
+list.dat1.zim <- function(zidir, ...) {
 	list.files.ext( zidir, extension = "_dat1.zim", ... )
 }
 list.zip <- function( zidir, ... ){
@@ -741,8 +782,6 @@ list.dir <- function( dir, ... ){
 	out <- list.files( dir )
 	out[ file.info( file.path( dir, basename(out) ) )$isdir ]
 }
-
-
 # }}}
 
 # {{{ binary operators
@@ -752,7 +791,7 @@ list.dir <- function( dir, ... ){
 }
 # }}}
 
-
+# {{{ must utilities
 mustbe <- function( x, class, msg ){
 	if( !any( sapply( class, function( cl ) inherits( x, cl) ) ) )
 	if( length(class) == 1){
@@ -809,29 +848,7 @@ mustbeString <- function( x, length){
 		stop( sprintf( "%s must be a character string of length %d", deparse( substitute(x)), length ) )
 	}
 }
-
-
-# a version that stops
-require <- function( ... ){
-	withCallingHandlers( base:::require(...), 
-		warning = function( e ){
-			base:::stop( e )
-		} )
-}
-
-if( !isWin() ){
-	# choose.files is only available on windows, so we fall 
-	# back on tcl-tk equivalent function
-	choose.files <- function( default = "", caption = "Select files",
-	     multi = TRUE, filters = Filters,
-		 index = nrow(Filters) ){
-		
-		call <- match.call( )
-		call[[1]] <- as.name( "tk_choose.files")
-		eval( call, envir = parent.frame() )	
-	}
-}
-
+# }}}
 
 #' get a template file from the "ZITemplate" option
 template <- function( file = "default.zim", dir = getOption("ZITemplates") ){
@@ -839,9 +856,6 @@ template <- function( file = "default.zim", dir = getOption("ZITemplates") ){
 	checkFileExists( f, "template file '%s' does not exist" )
 	f
 }
-
-
-
 
 # {{{ finish.loopfunction
 #' Called at the looping function (*.all)
@@ -885,15 +899,5 @@ finish.loopfunction <- function(
 	invisible( ok )
 }
 # }}}
-
-#' import grepl from the future 2.9.0 version
-grepl <- if( as.numeric( version$major ) >= 2 && as.numeric( version$minor >= 9) )
-	base:::grepl else function (pattern, x, ignore.case = FALSE, extended = TRUE, perl = FALSE,
-	    fixed = FALSE, useBytes = FALSE) {
-	    index <- grep( pattern, x, ignore.case = ignore.case, 
-			extended = extended, perl = perl, fixed = fixed, useBytes = useBytes )
-		if( length( index ) == 0 ) return( rep( FALSE, length( x ) ) )
-		replace( rep( FALSE, length(x) ), index, TRUE )
-	} 
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
