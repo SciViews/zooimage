@@ -49,7 +49,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 				-1
 			} )
 	} )
-	ok <- ! any( nitems == -1)
+	ok <- all( nitems != -1)
 	
 	# {{{ check the vignettes
 	if (check.vignettes) {
@@ -77,10 +77,10 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 			# Construct a vector with names of vignettes as they should be
     		chkjpgs <- paste(samples[i], "_", 1:n, ".jpg", sep = "")
     		if (length(jpgs) == 0 && length(chkjpgs) > 0) {
-    		  warning( paste(" no vignettes for", samples[i]) )
-              ok <- FALSE
+				warning( paste(" no vignettes for", samples[i]) )
+				ok <- FALSE
             } else if (length(chkjpgs) != length(jpgs) || !all(sort(chkjpgs) == sort(jpgs))) {
-  			   warning( paste(" mismatch vignettes for", samples[i]) )
+				warning( paste(" mismatch vignettes for", samples[i]) )
 				ok <- FALSE 
 			}
             
@@ -129,8 +129,9 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# }}}
 	
 	# {{{ If there is no dir, exit now
-	if (is.null(samples) || length(samples) == 0)
+	if (is.null(samples) || length(samples) == 0){
 		stop("There is no directories to verify in ", getwd())
+	}
 	# }}}
 	
 	# {{{ Start the process
@@ -157,6 +158,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 		stop("only 'ZI1' is currently supported for 'type'!")
 	}
 	RDataFile <- file.path(zidir, paste(basename(zidir), "_dat1.RData", sep = ""))
+	
 	# File already exists
 	if (file.exists(RDataFile) && !replace){
 		return(invisible(TRUE))
@@ -180,12 +182,13 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 		dat1path <- file.path(zidir, dat1files[i])
 		env <- environment()
 		
-		doNext <- function( ) eval( quote( next ), envir = env )
-		
-		tryCatch( is.zim( dat1path ), zooImageError = function(e){
+		iszim <- tryCatch( is.zim( dat1path ), zooImageError = function(e){
 			logError( e ) 
-			doNext()
+			FALSE
 		} )
+		if( !iszim ){
+			next 
+		}
 		
 		# Read the header
 		Lines <- scan(dat1path, character(), sep = "\t",
