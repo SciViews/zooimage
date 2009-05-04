@@ -293,6 +293,7 @@ ZIEimportTable <- ZIE(
 	### TODO: allow restarting from a given point!
 	cat("Checking all lines in the .zie file for raw images...\n")
 	allImages <- character(0)
+	nLines <- length(Lines)
 	for (i in 1:nLines) {
 		### TODO: allow restarting from a given point and eliminate previous 
 		###       lines for which there are no images (considered as already processed!)

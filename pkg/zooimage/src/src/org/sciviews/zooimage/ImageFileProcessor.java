@@ -21,7 +21,6 @@ import org.sciviews.zooimage.files.VisImage;
 import org.sciviews.zooimage.files.ZimFile;
 import org.sciviews.zooimage.log.Log;
 import org.sciviews.zooimage.tools.FileExtensions;
-import org.sciviews.zooimage.tools.FileUtilities;
 import org.sciviews.zooimage.tools.IJUtilities;
 import org.sciviews.zooimage.tools.Images;
 import org.sciviews.zooimage.tools.ZIJ;

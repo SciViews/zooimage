@@ -1080,13 +1080,13 @@ ZIDlg <- function() {
 ijplugin <- function( zimfile, 
 	ij.plugin = c("Scanner_Gray16", "MacroPhoto_Gray16", "Scanner_Color", "Microscope_Color" ) ){
 	
+	ij.plugin <- match.arg( ij.plugin )
 	cmd <- sprintf( 'java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"', 
 		system.file( "imagej", "ij.jar", package = "zooimage" ), 
 		system.file( "imagej", "plugins", "_zooimage.jar", package = "zooimage" ), 
-		ij.plugin, 
-		zimfile )
-	# system( cmd, intern = TRUE )
-	cmd
+		ij.plugin,
+		tools:::file_path_as_absolute(zimfile) )
+	system( cmd )
 }
 # }}}
 
