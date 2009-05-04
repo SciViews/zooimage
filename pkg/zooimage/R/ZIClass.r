@@ -47,9 +47,9 @@
 	# algorithm
 	algorithm <- algorithm[1]
 	algo.fun  <- match.fun( algorithm )
-	ZI.class <- algo.fun(Formula, data = df, ...),
+	ZI.class <- algo.fun(Formula, data = df, ...)
 	ZI.class <- structure( ZI.class, 
-		class     = c("ZIClass", class(ZI.class))
+		class     = c("ZIClass", class(ZI.class)), 
 		algorithm = algorithm,
 		package   = package, 
 		calc.vars = CV, 

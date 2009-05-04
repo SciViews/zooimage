@@ -282,7 +282,7 @@
 	# Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from SCS.xxxx-xx-xx.SS+Fnn)
 	# If there are duplicates, only extract first one
 	zimfiles <- sprintf( "%s.zim", 
-		get.sampleinfo(zipfiles, "fraction", ext = extensionPattern(".zip") )
+		get.sampleinfo(zipfiles, "fraction", ext = extensionPattern(".zip") ) )
 	keep <- !duplicated(zimfiles)
 	zimfiles <- zimfiles[keep]
 	zipfiles <- zipfiles[keep]

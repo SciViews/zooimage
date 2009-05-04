@@ -405,7 +405,7 @@ ziKey <- function( key ){
 combine <- function( ..., .list = list(...) ){
 	force(.list)
 	mergefun <- function(x,y){
-		if(all( sort(names(x)) == sort(names(y)) ){
+		if( all( sort(names(x)) == sort(names(y) ) ) ) {
 			rbind( x,y )
 		} else{
 			merge( x, y, all = TRUE )

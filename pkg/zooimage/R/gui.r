@@ -290,11 +290,10 @@ ZIDlg <- function() {
 # }}}
 
 # {{{ Img
-"acquireImg" <-
-	function() {
-	# Show an assitant dialog box allowing to choose between VueScan and a different
-	# acquisition program... remember that setting in the registry under Windows
-
+#' Show an assitant dialog box allowing to choose between VueScan and a different
+#' acquisition program... remember that setting in the registry under Windows
+"acquireImg" <- function() {
+	
 	# First read the registry to determine which software in recorded there...
  	Asoft <- getKey("AcquisitionSoftware", "VueScan")
 	if (Asoft == "VueScan") {
@@ -352,33 +351,46 @@ ZIDlg <- function() {
 	# Get a list of 'ZIEimport' objects currently loaded in memory
 	
 	### TODO... Rework everything. What follows is old code!
-	ImgFilters <- as.matrix(data.frame(title = c("Tiff image files (*.tif)",
-		"Jpeg image files (*.jpg)", "Zooimage import extensions (Import_*.zie)", "Table and ImportTemplate.zie (*.txt)"), #, "FlowCAM zipped files (*.zfc)"),
+	ImgFilters <- as.matrix(data.frame(
+		title   = c(
+			"Tiff image files (*.tif)", 
+			"Jpeg image files (*.jpg)", 
+			"Zooimage import extensions (Import_*.zie)", 
+			"Table and ImportTemplate.zie (*.txt)"), #, "FlowCAM zipped files (*.zfc)"),
 		pattern = c("*.tif", "*.jpg", "Import_*.zie", "*.txt"))) #, "*.zfc")))
+	
 	# Get last image type that was selected
 	Index <- as.numeric(getKey("ImageIndex", "1"))
+	
 	# Get a list of images
     Images <- choose.files(caption = "Select data to import...",
 		multi = TRUE, filters = ImgFilters, index = Index)
+	
 	# Look if there is at least one image selected
-	if (length(Images) == 0) return(invisible())
+	if (length(Images) == 0) {
+		return(invisible())
+	}
     dir <- dirname(Images[1])
 	Images <- basename(Images)
+	
+	has <- function( extension, pattern = extensionPattern(extension) ){
+		grepl( pattern, Images[1])
+	}
+	
 	# Determine which kind of data it is
-    if (regexpr("[.][zZ][fF][cC]$", Images[1]) > 0) {
-        setKey("ImageIndex", "5")
+    if ( has( ".zfc" ) ){
+	    setKey("ImageIndex", "5")
 		return(importFlowCamFiles(path = dir, ZFCfiles = Images, check = FALSE, show.log = TRUE))
-	} else if (regexpr("^Import_.*[.]zie$", Images[1]) > 0) {
-		pattern <- "[.][zZ][iI][eE]$"
-        setKey("ImageIndex", "3")
-        return(make.zie(path = dir, Filemap = Images[1], check = TRUE, show.log = TRUE))
-    } else if (regexpr("[.][tT][xX][tT]$", Images[1]) > 0) {
-		pattern <- "[.][tT][xX][tT]$"
-        setKey("ImageIndex", "4")
-        logProcess("Creating .zie file...")
-        cat("Creating .zie file...\n")
-        ziefile <- compile.zie(path = dir, Tablefile = Images[1])
-        cat("...OK!\n")
+	} else if ( has( pattern = "^Import_.*[.]zie$") ) {
+		setKey("ImageIndex", "3")
+		return(make.zie(path = dir, Filemap = Images[1], check = TRUE, show.log = TRUE))
+    } else if ( has( "txt" ) ) {
+		pattern <- extensionPattern( ".txt" )
+		setKey("ImageIndex", "4")
+		logProcess("Creating .zie file...")
+		cat("Creating .zie file...\n")
+		ziefile <- compile.zie(path = dir, Tablefile = Images[1])
+		cat("...OK!\n")
 		res <- make.zie(path = dirname(ziefile), Filemap = basename(ziefile), check = TRUE, show.log = TRUE)
 		if (res) { # Everything is fine...
 			# Move the table and copy the template to the '_raw' subdirectory too
@@ -386,27 +398,30 @@ ZIDlg <- function() {
 			tplfile <- file.path(path, Images[1])
 			file.rename(tplfile, file.path(path, "_raw", basename(tplfile)))
 			# Move also possibly the .xls equivalent
-			xlsfile <- sub("\\.[tT][xX][tT]$", ".xls", tplfile)
-			if (xlsfile != tplfile && file.exists(xlsfile))
+			xlsfile <- sub( pattern, ".xls", tplfile)
+			if (xlsfile != tplfile && file.exists(xlsfile)){
 			    file.rename(xlsfile, file.path(path, "_raw", basename(xlsfile)))
+			}
 			file.rename(file.path(path, "ImportTemplate.zie"), file.path(path, "_raw", "ImportTemplate.zie"))
 		}
 		return(res)
-	} else if (regexpr("[.][tT][iI][fF]$", Images[1]) > 0) {
-		pattern <- "[.][tT][iI][fF]$"
+	} else if ( has( ".tif" ) ){
+		pattern <- extensionPattern (".tif" )
         setKey("ImageIndex", "1")
-	} else if (regexpr("[.][jJ][pP][gG]$", Images[1]) > 0) {
-        pattern <- "[.][jJ][pP][gG]$"
+	} else if ( has( "jpg") ) {
+        pattern <- extensionPatter( "jpg" )
         setKey("ImageIndex", "2")
 	} else stop("Unrecognized data type!")
+	
 	# If there is no special treatment, just make all required .zim files for currently selected images
 	make.zim(dir = dir, pattern = pattern, images = Images, show.log = TRUE)
 }
 
+# TODO: call the batch version of imagej zooimage plugins
 "processImg" <- function() {
 	# Display a dialog box telling how to process images using ImageJ
 	# When the user clicks on 'OK', ImageJ is started... + the checkbox 'close R'
-     res <- modalAssistant(paste(getTemp("ZIname"), "picture processing"),
+	res <- modalAssistant(paste(getTemp("ZIname"), "picture processing"),
 		c(paste("Once images are acquired and imported into", getTemp("ZIname")),
 		"(they have correct associated metadata), they must be",
 		"processed.",
@@ -421,8 +436,9 @@ ZIDlg <- function() {
 	# Analyze result
 	if (res == "ID_CANCEL") return(invisible())
  	# Start ImageJ
-	if (!is.null(getOption("ImageEditor")))
+	if (!is.null(getOption("ImageEditor"))){
 		startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)
+	}
 	# Do we have to close R?
 	if (res == "1") q()
 }
@@ -1057,6 +1073,20 @@ ZIDlg <- function() {
     # Indicate change
     cat("In/Out decimal separator changed to '", DecSel, "'\n", sep = "")
  	return(invisible(DecSel))
+}
+# }}}
+
+# {{{ ijplugin
+ijplugin <- function( zimfile, 
+	ij.plugin = c("Scanner_Gray16", "MacroPhoto_Gray16", "Scanner_Color", "Microscope_Color" ) ){
+	
+	cmd <- sprintf( 'java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"', 
+		system.file( "imagej", "ij.jar", package = "zooimage" ), 
+		system.file( "imagej", "plugins", "_zooimage.jar", package = "zooimage" ), 
+		ij.plugin, 
+		zimfile )
+	# system( cmd, intern = TRUE )
+	cmd
 }
 # }}}
 

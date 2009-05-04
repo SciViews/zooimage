@@ -174,7 +174,6 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	
 	# Avoid collecting duplicate informations about fractions
 	fracdup <- duplicated(fractions)
-	
 	results <- lapply( seq.int( 1, length(dat1files) ), function(i){
 		
 		dat1path <- file.path(zidir, dat1files[i])
