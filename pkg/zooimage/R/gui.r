@@ -446,6 +446,7 @@ ZIDlg <- function() {
 
 # {{{ makeZid
 "makeZid" <- function() {
+	
 	# Finalize .zid files (and possibly also .zip files by updating their comment)
     res <- modalAssistant(paste(getTemp("ZIname"), "data processing"),
 		c("You should have processed all your images now.",

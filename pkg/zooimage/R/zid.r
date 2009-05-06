@@ -242,7 +242,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 			Names <- Names[c(2, 1, 3:length(Names))]
 			names(mes) <- make.names(Names, unique = TRUE)
 			
-			Sub     <- allmeta$Subsample
+			Sub     <- meta$Subsample
 			Sub$Dil <- 1 / (Sub$SubPart * Sub$CellPart * Sub$Replicates * Sub$VolIni)
 			mes$Dil <- rep( Sub$Dil[ Sub$Label == fractions[i] ] , nrow(mes) )
 			
@@ -257,8 +257,8 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	results        <- Filter( notnull.filter , results )
 	list.allmeta 	<- Filter( notnull.filter, lapply( results, "[[", "meta" ) )
 	list.allmes  	<- Filter( notnull.filter, lapply( results, "[[", "mes" ) )
-	allmeta 		<- combine( list.allmeta )
-	allmes  		<- combine( list.allmes  )
+	allmeta 		<- combine( .list = list.allmeta )
+	allmes  		<- combine( .list = list.allmes  )
 	rownames(allmes) <- 1:nrow(allmes)
 	
 	# Calculate an ECD from Area if there is not one yet
@@ -302,7 +302,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	
 	# We need to switch to the root of sample dir first for correct path in the zip file
 	rootdir <- dirname(zidir)
-	inidir <- setwd(rootdir); on.exit(setwd(inidir))
+	inidir <- getwd(); setwd(rootdir); on.exit(setwd(inidir))
 	zidir <- basename(zidir) # Use only the latest dir (the "sample dir")
 	
 	# The .zid file is located in the "root" dir, same name as the "sample dir", with .zid extension
@@ -433,7 +433,8 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
     # {{{ First, switch to that directory
 	inidir <- getwd()
     checkDirExists( path )
-	setwd(path); on.exit(setwd(inidir))
+	setwd(path)
+	on.exit(setwd(inidir))
 	# }}}
 	
 	# {{{ Logging
@@ -442,7 +443,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	# }}}
     
 	# {{{ identify paths
-	zimfiles   <- list.zim(path = "." )
+	zimfiles   <- list.zim( "." )
 	zimsamples <- sub("^(.*)[+].+", "\\1", zimfiles)
 	# }}}
 	

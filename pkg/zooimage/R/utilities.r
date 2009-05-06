@@ -529,6 +529,7 @@ backspaces <- function( n = getOption("width") ){
 #' Change the working directory and update the ZooImage assistant status bar
 setwd <- function(dir) {
 	# My own setwd() function that also updates the Tk window statusbar
+	if( !is.character(dir) ) return(invisible(NULL))
 	base::setwd(dir)
 	
 	# Possibly update the statusbar

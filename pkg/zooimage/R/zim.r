@@ -328,7 +328,7 @@
 	# }}}
 	
 	# {{{ cleans up
-	finish.loopfunction( ok = all(ok), 
+	finish.loopfunction( ok = all(as.logical(ok)), 
 		ok.console.msg = "", nok.console.msg = "", 
 		bell = bell, show.log = show.log, 
 		ok.log.msg = paste(zmax, ".zim files correctly extracted"), 
