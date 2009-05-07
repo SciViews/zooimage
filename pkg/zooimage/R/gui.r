@@ -552,13 +552,8 @@ ZIDlg <- function() {
 	if (is.null(dir) || dir == "" || !file.exists(dir) || !file.info(dir)$isdir)
 		return(invisible())
 	# Ask for a name for this ZITrain object
-	if (isWin()) {
-	    name <- dialogString("Name for the ZITrain object:",
-			default = "ZItrain")
-	} else {
-		name <- guiDlgInput("Name for the ZITrain object:",
+	name <- dialogString("Name for the ZITrain object:",
 			"Reading a manual training set", default = "ZItrain")
-	}
 	if (is.null(name) || length(name) == 0 || name == "") return(invisible())
 	name <- make.names(name)	# Make sure it is a valid name!
 	# get ZITrain and save it in .GlobalEnv under the given name
@@ -632,14 +627,9 @@ ZIDlg <- function() {
 		title = "Choose one ZITrain objects:", warn.only = FALSE)
 	if (length(ZIT) == 0 || (length(ZIT) == 1 && ZIT == "")) return(invisible())
 	# Ask for a name for this ZIClass object
-	if (isWin()) {
-	    name <- dialogString("Name for the ZIClass object to create:",
-			default = "ZIclass")
-	} else {
-		name <- guiDlgInput("Name for the ZIClass object:",
-			"Creating a classifier", default = "ZIclass")
-	}
-	 if (is.null(name) || length(name) == 0 || name == "") return(invisible())
+	name <- dialogString("Name for the ZIClass object to create:",
+		"Creating a classifier", default = "ZIclass")
+	if (is.null(name) || length(name) == 0 || name == "") return(invisible())
 	name <- make.names(name)	# Make sure it is a valid name!
 	# Calculate results
 	res <- ZIClass(get(ZIT, envir = .GlobalEnv), algorithm = algorithm, package = package)
@@ -691,14 +681,9 @@ ZIDlg <- function() {
 		title = "Choose one ZITrain objects:", warn.only = FALSE)
 	if (length(ZIT) == 0 || (length(ZIT) == 1 && ZIT == "")) return(invisible())
 	# Ask for a name for this ZIClass object
-	if (isWin()) {
-	    name <- dialogString("Name for the ZIClass object to create:",
-			default = "ZIclass")
-	} else {
-		name <- guiDlgInput("Name for the ZIClass object:",
+	name <- dialogString("Name for the ZIClass object to create:",
 			"Creating a classifier", default = "ZIclass")
-	}
-	 if (is.null(name) || length(name) == 0 || name == "") return(invisible())
+	if (is.null(name) || length(name) == 0 || name == "") return(invisible())
 	name <- make.names(name)	# Make sure it is a valid name!
 	# Calculate formula using variables of the training set
     form <- FormVarsSelect(get(ZIT, envir = .GlobalEnv))
@@ -855,25 +840,15 @@ ZIDlg <- function() {
 	setKey("ConversionFile", ConvFile2)
 
 	# Get class breaks for size spectra
-	if (isWin()) {
-	    brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
-			default = "seq(0.25, 2, by = 0.1)")
-	} else {
-		brks <- guiDlgInput("Breaks for size spectrum classes (empty for no spectrum):",
+	brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
 			"Size spectrum classes", default = "seq(0.25, 2, by = 0.1)")
-	}
-	 if (is.null(brks) || length(brks) == 0 || brks == "") return(invisible())
+	if (is.null(brks) || length(brks) == 0 || brks == "") return(invisible())
 	brks <- eval(parse(text = brks))
 
 	# Get a name for the variable containing results
-	if (isWin()) {
-	    name <- dialogString("Name for the ZIRes object to create:",
-			default = "ZIres")
-	} else {
-		name <- guiDlgInput("Name for the ZIRes object:",
-			"Process samples", default = "ZIres")
-	}
-	 if (is.null(name) || length(name) == 0 || name == "") return(invisible())
+	name <- dialogString("Name for the ZIRes object to create:",
+		"Process samples",  default = "ZIres")
+	if (is.null(name) || length(name) == 0 || name == "") return(invisible())
 	name <- make.names(name)	# Make sure it is a valid name!
 	# Process sample by sample and collect results together in a ZIRes object
 	res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj, ZIDesc = read.description(zisfile),
@@ -1078,7 +1053,7 @@ ZIDlg <- function() {
 # }}}
 
 #{{{ dialogString
-dialogString <- function( message, title, default ){
+dialogString <- function( message, title= "", default ){
 	if (isWin()) {
 	    winDialogString(message, default = default )
 	} else {	
