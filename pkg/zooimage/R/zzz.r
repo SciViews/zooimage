@@ -134,6 +134,11 @@
 		if (file.exists(XnViewExe)){
 			options(ImageViewer = XnViewExe)
 		}
+	} else{
+		# TODO: deal with mac
+		# TODO: can we rely on nautilus ? it might not be installed on 
+		#       kde based distributions
+		
 	}
 	# }}}
 

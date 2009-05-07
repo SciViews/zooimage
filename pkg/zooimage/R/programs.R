@@ -158,4 +158,17 @@ editor <- function( file, editor = getOption("ZIEditor" ) ){
 }
 # }}}
 
+# {{{ imageViewer 
+imageViewer <- function( dir = getwd() ){
+	if( isWin() ){
+		startPgm( "ImageViewer", sprintf( '"%s"', tools:::file_path_as_absolute(dir) )  )
+	} else{
+		# TODO: deal with mac
+		# TODO: maybe we should not rely on nautilus
+		cmd <- sprintf( 'nautilus --geometry 600x600 "%s"', dir ) 
+		system( cmd )
+	}
+}
+# }}}
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:

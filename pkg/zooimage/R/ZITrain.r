@@ -51,30 +51,32 @@
 	check.zic( groups.template )
 
 	# Do the job...
-	cat("Extracting data...\n")
-	logProcess("\nExtracting data...")
+	cat("Extracting data and vignettes ...\n")
+	logProcess("\nExtracting data and vignettes ...")
 	zmax <- length(zidfiles)
+	
+	# C-reate '_' subdir and unzip all vignettes there
+	dir_ <- file.path(dir, "_")
+	force.dir.create( dir_ )
+	
 	for (i in 1:zmax) {
 		logProcess("data", zidfiles[i])
 		Progress(i, zmax)
-		unzip( zipfile = zidfiles[i] , path = dir, delete.source = FALSE )
-	}
-	ClearProgress()
-	
-	# Create '_' subdir and unzip all vignettes there
-	dir_ <- file.path(dir, "_")
-	force.dir.create( dir_ )
-	# Do the job...
-	cat("Extracting vignettes...\n")
-	logProcess("\nExtracting vignettes...")
-	zmax <- length(zidfiles)
-	for (i in 1:zmax) {
-		logProcess("vignettes", zidfiles[i])
-		Progress(i, zmax)
-		
-		# Unzip vignettes (*.jpg files) there
-		unzip( zidfiles[i], path = dir_, delete.source = FALSE )
-		
+		# using a temporary directory to unzip all files and then copy
+		# the RData files to the train directory
+		td <- tempfile()
+		unzip( zipfile = zidfiles[i] , path = td, delete.source = FALSE )
+		datafiles <- file.path( td, list.files( td, pattern = extensionPattern(".RData"), 
+			recursive = TRUE ) )
+		if( length(datafiles) ){
+			file.copy( datafiles, dir )
+		}
+		vignettes <- file.path( td, list.files( td, pattern = extensionPattern(".jpg"), 
+			recursive = TRUE ) )
+		if(length( vignettes) ){
+			file.copy( vignettes, dir_ )
+		}
+		unlink(td, recursive = TRUE )
 	}
 	ClearProgress()
 	
@@ -97,7 +99,7 @@
 	  ok.log.msg = "\n-- Done! --" )
 	
 	if (start.viewer) {
-		startPgm("ImageViewer", cmdline = paste('"', dir_, '"', sep = ""))
+		imageViewer( dir_ )  
 	}
 	return(invisible(TRUE))
 }

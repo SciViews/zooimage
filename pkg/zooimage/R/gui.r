@@ -192,10 +192,13 @@ ZIDlg <- function() {
 		}
 		# Start it
 		system(paste(pgmPath, cmdline), wait = wait)
-	} else stop("Program not found!")
+	} else {
+		stop(paste( "Program '",program,"' not found!") )
+	}
 	# Do we need to iconize the assistant?
-	if (iconize && !is.null(WinGet("ZIDlgWin")))
+	if (iconize && !is.null(WinGet("ZIDlgWin"))){
 		tkwm.iconify(WinGet("ZIDlgWin"))
+	}
 }
 # }}}
 
@@ -506,8 +509,10 @@ ZIDlg <- function() {
 		"(3) a series of .zid files as source of vignettes.", "",
 		"Use the following grouping scheme:", ""), init = defval,
 		options = opts, help.topic = "makeTrain")
+	
 	# Analyze result
 	if (res == "ID_CANCEL") return(invisible())
+	
 	# Did we selected "Another config..."?
 	if (res == "Another config...") {
 		# Ask for selecting a .zic file containing the config
@@ -519,11 +524,14 @@ ZIDlg <- function() {
 		# Did we selected a standard scheme?
 		res <- paste("[", res, "]", sep = "")
 	} else res <- Grp  # We should have selected the previously recorded scheme...
+	
 	# Save this config for later use
     setKey("DefaultGrouping", res)
+	
 	# Ask for the base directory
     dir <- paste(tkchooseDirectory(), collapse = " ")
 	if (length(dir) == 0) return(invisible())
+	
 	# Ask for a subdir for this training set
 	subdir <- dialogString("Subdirectory where to create the training set:",
 		default = "_train")
@@ -531,16 +539,20 @@ ZIDlg <- function() {
 		cat("Operation cancelled!\n")
 		return(invisible())
 	}
+	
 	# Ask for the .zid files
     zidfiles <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
+	
 	# Prepare the training set
 	prepare.ZITrain(dir, subdir, zidfiles, groups.template = res, start.viewer = TRUE)
+	
 	# Remember the directory...
 	assignTemp("ZI.TrainDir", file.path(dir, subdir))
 }
 
+#' Read a training set and create a ZITrain object
 "readTrain" <- function() {
- 	# Read a training set and create a ZITrain object
+ 	
 	(require(svDialogs) || stop("Package 'svDialogs' from 'SciViews' bundle is required. Please, install it first!"))
 
 	# Get a possibly saved directory as default one
