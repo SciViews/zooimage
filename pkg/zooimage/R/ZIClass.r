@@ -95,7 +95,7 @@
 	mism <- 100 * (1 - ( sum(diag(Confu)) / sum(Confu) ) ) 
 	
 	# Change the number of digits to display
-	oldDigits <- options(digits = 4); on.exit(options(digits = oldDigits))
+	oldDigits <- options(digits = 4); on.exit(options(oldDigits))
 	cat("\nAlgorithm used:", algorithm, "\n")
 	cat("Mismatch in classification: ", mism, "%\n", sep = "")   
 	if (!is.null(k)) {
@@ -236,7 +236,7 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 	
 	require(RColorBrewer)
 	mypalette <- brewer.pal(maxval-1, "Spectral")
-	library(gregmisc)
+	library(gplots)
 	heatmap.2(confmat, col= c(0,mypalette), symm=TRUE, margin=margin, 
 		trace="both", Rowv=Rowv, Colv=Colv, cexRow=0.2 + 1/log10(nX), 
 		cexCol=0.2 + 1/log10(nY),tracecol="Black", linecol=FALSE) 
