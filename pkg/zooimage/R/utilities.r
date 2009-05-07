@@ -637,9 +637,12 @@ if( !isWin() ){
 	     multi = TRUE, filters = Filters,
 		 index = nrow(Filters) ){
 		
-		call <- match.call( )
-		call[[1]] <- as.name( "tk_choose.files")
-		eval( call, envir = parent.frame() )	
+		if( is.null(dim(filters) ) ){
+			filters <- matrix(filters, nc = 2 )
+		}
+		tk_choose.files( default = default, caption = caption, 
+			multi = multi, filters = filters, index = index) 
+		
 	}
 }
 
