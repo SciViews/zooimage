@@ -463,13 +463,8 @@
 	
 	# Create a .zim file from a template and edit it
 	if (is.null(zimfile) || zimfile == "") {
-		if (isWin()) {
-	        zimfile <- winDialogString("Give a name for the new .zim file:",
-				default = "myfile.zim")
-		} else {	
-			zimfile <- guiDlgInput("Give a name for the new .zim file:",
+		zimfile <- dialogString("Give a name for the new .zim file:",
 				"ZIM file creation", default = "myfile.zim")
-		}
 		if (is.null(zimfile) || length(zimfile) == 0 || zimfile == "")
 			return(invisible())
 		if ( !hasExtension( zimfile, "zim")){

@@ -83,13 +83,8 @@
 	
 	# {{{ use a ui to get the file name
 	if (is.null(zisfile) || zisfile == "") {
-		if (isWin()) {
-	        zisfile <- winDialogString("Give a name for the new .zis file:",
-				default = "Description.zis")
-		} else {	
-			zisfile <- guiDlgInput("Give a name for the new .zis file:",
+		zisfile <- dialogString("Give a name for the new .zis file:",
 				"ZIS file creation", default = "Description.zis")
-		}
 		if (is.null(zisfile) || length(zisfile) == 0 || zisfile == ""){
 			return(invisible())
 		}

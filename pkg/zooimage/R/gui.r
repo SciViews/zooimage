@@ -525,7 +525,7 @@ ZIDlg <- function() {
     dir <- paste(tkchooseDirectory(), collapse = " ")
 	if (length(dir) == 0) return(invisible())
 	# Ask for a subdir for this training set
-	subdir <- winDialogString("Subdirectory where to create the training set:",
+	subdir <- dialogString("Subdirectory where to create the training set:",
 		default = "_train")
 	if (is.null(subdir) || length(subdir) == 0 || subdir == "") {
 		cat("Operation cancelled!\n")
@@ -553,7 +553,7 @@ ZIDlg <- function() {
 		return(invisible())
 	# Ask for a name for this ZITrain object
 	if (isWin()) {
-	    name <- winDialogString("Name for the ZITrain object:",
+	    name <- dialogString("Name for the ZITrain object:",
 			default = "ZItrain")
 	} else {
 		name <- guiDlgInput("Name for the ZITrain object:",
@@ -633,7 +633,7 @@ ZIDlg <- function() {
 	if (length(ZIT) == 0 || (length(ZIT) == 1 && ZIT == "")) return(invisible())
 	# Ask for a name for this ZIClass object
 	if (isWin()) {
-	    name <- winDialogString("Name for the ZIClass object to create:",
+	    name <- dialogString("Name for the ZIClass object to create:",
 			default = "ZIclass")
 	} else {
 		name <- guiDlgInput("Name for the ZIClass object:",
@@ -692,7 +692,7 @@ ZIDlg <- function() {
 	if (length(ZIT) == 0 || (length(ZIT) == 1 && ZIT == "")) return(invisible())
 	# Ask for a name for this ZIClass object
 	if (isWin()) {
-	    name <- winDialogString("Name for the ZIClass object to create:",
+	    name <- dialogString("Name for the ZIClass object to create:",
 			default = "ZIclass")
 	} else {
 		name <- guiDlgInput("Name for the ZIClass object:",
@@ -856,7 +856,7 @@ ZIDlg <- function() {
 
 	# Get class breaks for size spectra
 	if (isWin()) {
-	    brks <- winDialogString("Breaks for size spectrum classes (empty for no spectrum):",
+	    brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
 			default = "seq(0.25, 2, by = 0.1)")
 	} else {
 		brks <- guiDlgInput("Breaks for size spectrum classes (empty for no spectrum):",
@@ -867,7 +867,7 @@ ZIDlg <- function() {
 
 	# Get a name for the variable containing results
 	if (isWin()) {
-	    name <- winDialogString("Name for the ZIRes object to create:",
+	    name <- dialogString("Name for the ZIRes object to create:",
 			default = "ZIres")
 	} else {
 		name <- guiDlgInput("Name for the ZIRes object:",
@@ -1076,6 +1076,17 @@ ZIDlg <- function() {
  	return(invisible(DecSel))
 }
 # }}}
+
+#{{{ dialogString
+dialogString <- function( message, title, default ){
+	if (isWin()) {
+	    winDialogString(message, default = default )
+	} else {	
+		guiDlgInput(message, title, default )
+	}
+}
+# }}}
+
 
 # {{{ ijplugin
 ijplugin <- function( zimfile, 
