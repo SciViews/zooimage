@@ -72,7 +72,7 @@
 		} else {
 			function(object, newdata) predict(object, newdata = newdata, type = "class")
 		}
-    	res <- cv(Classes, Formula, data = df, model = get(algorithm),
+    	res <- cv( attr(ZI.class, "classes" ), Formula, data = df, model = get(algorithm),
 			predict = mypredict, k = k.xval, predictions = TRUE, ...)$predictions
 		attr(ZI.class, "kfold.predict") <- res
 		attr(ZI.class, "k") <- k.xval	
