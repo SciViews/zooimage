@@ -246,7 +246,7 @@ confusion.tree <- function (confmat, maxval, margin=NULL, Rowv = TRUE, Colv = TR
 # {{{ confusion.bar
 # New function v 1.2-2 false positive and negative
 confusion.bar <- function(confmat, mar=NULL) {
-	mustbe(confmat, "matrix" )
+	mustbe(confmat, c("table", "matrix" ) )
 	Nn <- nrow(confmat)
 
 	## percent of correctly predicted objects in the test set
@@ -297,8 +297,8 @@ confusion.bar <- function(confmat, mar=NULL) {
 	barplot(all2[,!is.na(all2[2,])], horiz=TRUE,
 		col=c("PeachPuff2", "green3", "green3", "lemonChiffon2"),
 		xaxt="n", las=1, space = 0)
-	text(valx[i,]  , row(valx) - 0.45 , Failure.mat , cex=0.7)
-	text(valx2[i,] , row(valx2)- 0.45 , 100 - Failure.mat , cex=0.7)
+	text(valx  , row(valx) - 0.45 , Failure.mat , cex=0.7)
+	text(valx2 , row(valx2)- 0.45 , 100 - Failure.mat , cex=0.7)
 
 	#### Ajout des légendes
   	legend(100, Nmat+(Nmat/15),
