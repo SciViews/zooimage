@@ -1,46 +1,46 @@
 # Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
-# 
+#
 # ZooImage is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # ZooImage is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 #{{{ stop
-#' Masking stop in the NAMESPACE of ZooImage 
-#' 
+#' Masking stop in the NAMESPACE of ZooImage
+#'
 #' The base function "stop" is masked in the namespace
 #' of zooimage so that instead of throwing an error, the stop
-#' function throws a condition of class ZooImageError that wraps 
+#' function throws a condition of class ZooImageError that wraps
 #' information about the environment in which the error is created
-#' 
-#' @details When a function in zooimage calls stop, this function 
+#'
+#' @details When a function in zooimage calls stop, this function
 #' is used to dispatch the error either to the standard stop function
 #' or to the generation of a zooImageError condition when a batch function
 #' is in the call stack
-#' 
+#'
 #' @param dots see ?Stop
 #' @param call. see ?stop
 #' @param domain see ?stop
 stop <- function( ..., call.= TRUE, domain = NULL ){
    calls <- callStack()
-   calls <- head( calls, -2) 
+   calls <- head( calls, -2)
    if( ! tail(calls,1) %in% names( zooImageErrorDrivers) ){
-	   # the calling function does not have a driver, we use 
+	   # the calling function does not have a driver, we use
 	   # the regular stop
 	   # TODO: maybe this should be a default ZooImageError instead
 	   base:::stop( ..., call.=call., domain = domain )
    } else{
-	   # the calling function has a driver, we throw the condition 
+	   # the calling function has a driver, we throw the condition
 	   # using the appropriate driver
 	   message <- do.call( paste, list(...) )
 	   condfun <- getZooImageErrorFunction( calls )
@@ -50,19 +50,19 @@ stop <- function( ..., call.= TRUE, domain = NULL ){
 }
 # }}}
 
-#{{{ warning 
-#' Masking warning in the NAMESPACE of ZooImage 
-#' 
+#{{{ warning
+#' Masking warning in the NAMESPACE of ZooImage
+#'
 #' The base function "warning" is masked in the namespace
 #' of zooimage so that instead of throwing a warning, the warning
-#' function throws a condition of class ZooImageWarning that wraps 
+#' function throws a condition of class ZooImageWarning that wraps
 #' information about the environment in which the warning is created
-#' 
-#' @details When a function in zooimage calls warning, this function 
+#'
+#' @details When a function in zooimage calls warning, this function
 #' is used to dispatch the error either to the standard warning function
 #' or to the generation of a zooImageWarning condition when a batch function
 #' is in the call stack
-#' 
+#'
 #' @param dots see ?Stop
 #' @param call. see ?stop
 #' @param immediate. See ?stop
@@ -80,12 +80,12 @@ warning <- function( ..., call.= TRUE, immediate.= FALSE, domain = NULL ){
 
 #{{{ zooImageError
 #' Error condition used in ZooImage batch treatments
-#' 
-#' This function creates a condition of class "zooImageError". 
+#'
+#' This function creates a condition of class "zooImageError".
 #' These conditions are used in conjunction with the calling handler
 #' mechanism in zooImage batch calls to grab additional information
 #' about the context in which the stop function was called
-#' 
+#'
 #' @details this function is called when a function that is
 #' directly or indirectly called by a batch treatment function
 #' calls the stop function
@@ -94,7 +94,7 @@ warning <- function( ..., call.= TRUE, immediate.= FALSE, domain = NULL ){
 #' @param env the environment in which the problem occured
 zooImageError <- function( msg = "error", env = parent.frame(), errorClass = NULL, context = NULL, verbose = getOption("verbose") ){
  	err <- simpleError( message = msg )
- 	err$env <- env             
+ 	err$env <- env
 	if( !is.null( context ) ){
 	  if( context %in% ls( env ) ){
 		  err$context <- env[[ context ]]
@@ -107,41 +107,41 @@ zooImageError <- function( msg = "error", env = parent.frame(), errorClass = NUL
 # }}}
 
 #{{{ zooImageErrorDrivers
-#' if a zoo image function has a driver in this list
+#' if a ZooImage function has a driver in this list
 #' the stop function will signal a condition built with the driver
 #' instead of doing the normal thing
 #' TODO: check that all function requiring a driver has one
-zooImageErrorDrivers <- list(  
+zooImageErrorDrivers <- list(
 	# --------------------------------------- zid.R
-	"verify.zid" = "zidir", 
-	"verify.zid.all" = "path", 
-	"clean.after.zid" = "path", 
-	"uncompress.zid.all" = "zidfiles", 
-	"read.zid" = "zidfile", 
-	
+	"verify.zid" = "zidir",
+	"verify.zid.all" = "path",
+	"clean.after.zid" = "path",
+	"uncompress.zid.all" = "zidfiles",
+	"read.zid" = "zidfile",
+
 	# --------------------------------------- utilities.R
-	"get.sampleinfo" =  "filename", 
-	
+	"get.sampleinfo" =  "filename",
+
 	# --------------------------------------- zim.R
-	"make.zim" = "images", 
+	"make.zim" = "images",
 	"verify.zim" = "zimfile",
-	"extract.zims" = "zipfiles", 
-	
+	"extract.zims" = "zipfiles",
+
 	# -------------- zic.R
-	"check.zic" = "file", 
-	
+	"check.zic" = "file",
+
 	# --------------------------------------- zie.R
-	"make.zie" = "Filemap", 
-	"BuildZim" = "Smp", 
-	"checkFileExists" = "file", 
-	"checkFirstLine"  = "file", 
-	"checkDirExists"  = "dir", 
+	"make.zie" = "Filemap",
+	"BuildZim" = "Smp",
+	"checkFileExists" = "file",
+	"checkFirstLine"  = "file",
+	"checkDirExists"  = "dir",
 	"get.ZITrain"     = "dir",
 	"force.dir.create" = "path",
-	"checkEmptyDir" = "dir", 
-	"make.RData" = "zidir", 
-	"process.sample" = "Sample", 
-	"process.samples" = "Samples" 
+	"checkEmptyDir" = "dir",
+	"make.RData" = "zidir",
+	"process.sample" = "Sample",
+	"process.samples" = "Samples"
 )
 # }}}
 
@@ -180,11 +180,11 @@ getZooImageConditionFunction <- function( calls, drivers, default, context.fun )
 		driver <- context.fun( fun, driver )
 	} else if( is.null( fun ) ){
 		driver <- default
-	} 
+	}
 	# TODO: maybe further checking on the arguments of the driver
 	if( !inherits( driver, "function" ) ){
 		stop( "wrong driver" )
-	}      
+	}
 	driver
 }
 #}}}
@@ -202,30 +202,30 @@ getZooImageWarningFunction <- function( calls ){
 	getZooImageConditionFunction( calls, zooImageWarningDrivers, zooImageWarning, zooImageWarningContext )
 }
 # }}}
-  
+
 #{{{ [[.zooImageError
 #' Extracts a object from the environment in which the error was generated
-#' 
-#' When a ZooImageError is created, it contains the environment in which the 
+#'
+#' When a ZooImageError is created, it contains the environment in which the
 #' error was created (the frame above the environment of the stop function)
 #' This utility function can be used to extract an object from
 #' this environment
-#' 
+#'
 #' @param x the zooImageError
 #' @param dots what to extract from the environment
 `[[.zooImageError` <- function( x, ...){
-  x$env[[ ... ]]
+   x$env[[ ... ]]
 }
 # }}}
 
 #{{{ zooImageWarning
 #' Warning condition used in ZooImage batch treatments
-#' 
-#' This function creates a condition of class "zooImageWarning". 
+#'
+#' This function creates a condition of class "zooImageWarning".
 #' These conditions are used in conjunction with the calling handler
 #' mechanism in zooImage batch calls to grab additional information
 #' about the context in which the warning function was called
-#' 
+#'
 #' @details this function is called when a function that is
 #' directly or indirectly called by a batch treatment function
 #' calls the warning function
@@ -233,36 +233,36 @@ getZooImageWarningFunction <- function( calls ){
 #' @param msg the error message
 #' @param env the environment in which the problem occured
 zooImageWarning <- function( msg = "warning", env = parent.frame() ){
- w <- simpleWarning( message = msg )
- w$env <- env
- class( w ) <- c("zooImageWarning", "warning", "condition" )
- w
+   w <- simpleWarning( message = msg )
+   w$env <- env
+   class( w ) <- c("zooImageWarning", "warning", "condition" )
+   w
 }
 # }}}
 
 #{{{ [[.zooImageWarning
 #' Extracts a object from the environment in which the warning was generated
-#' 
-#' When a ZooImageWarning is created, it contains the environment in which the 
+#'
+#' When a ZooImageWarning is created, it contains the environment in which the
 #' warning was created (the frame above the environment of the warning function)
 #' This utility function can be used to extract an object from
 #' this environment
-#' 
+#'
 #' @param x the zooImageWarning
 #' @param dots what to extract from the environment
 `[[.zooImageWarning` <- function( x, ...){
-  x$env[[ ... ]]
+   x$env[[ ... ]]
 }
 # }}}
 
 #{{{ extractMessage
 #' extracts only the message of the error
-#' 
+#'
 #' @param err error (generated by stop)
 #' @return the message without the "Error in ... :" part
 extractMessage <- function( err ){
-	err[1] <- sub( "^.*?:", "", err[1] )
-	err
+   err[1] <- sub( "^.*?:", "", err[1] )
+   err
 }
 # }}}
 

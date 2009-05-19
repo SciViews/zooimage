@@ -23,7 +23,7 @@ ZIE(title, filter, description, pattern, command, author, version, date,
     license, url, depends = "R (>= 2.2.0), zooimage (>= 0.4-0)",
     type = c("import", "export"))
 print.ZIE(x, ...)
-RawConvert(RawFile, OutputFile = "fileconv.pgm", 
+RawConvert(RawFile, OutputFile = "fileconv.pgm",
 	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
 	check = TRUE)
 }
@@ -71,7 +71,7 @@ RawConvert(RawFile, OutputFile = "fileconv.pgm",
   \code{ZIE()} creates a 'ZIE' object that describes a ZooImage Extension and allows
   to plug it in transparently inside the ZooImage GUI. \code{prtint.ZIE()} nicely
   formats the content of this objects when using the generic function \code{print()}.
-    
+
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
@@ -86,8 +86,8 @@ RawConvert(RawFile, OutputFile = "fileconv.pgm",
 # and making it available to users by means of a ZIEimport object.
 # See the example ./etc/FlowCam.r
 # Simply sourcing this file makes it available in the ZooImage environment:
-source(file.path(getTemp("ZIetc"), "FlowCam.r"))
+###TODO: add this file!
+###source(file.path(getTemp("ZIetc"), "FlowCam.r"))
 # Now look at the supported types in the 'Import' dialog box
 }
 \keyword{ utilities }
-

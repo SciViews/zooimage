@@ -1,9 +1,9 @@
-import( utils )
-import( tcltk )
-import( tcltk2 )
-import( svMisc )
-import( svWidgets )
-import( svDialogs )
+import(utils)
+import(tcltk)
+import(tcltk2)
+import(svMisc)
+import(svWidgets)
+import(svDialogs)
 
 export(Abd.sample)
 export(AboutZI)
@@ -134,22 +134,22 @@ export(zip.img)
 export(zip.img.all)
 export(zip.ZITrain)
 
-# catch                                                              
-# catch.env                                                          
-# checkCapabilityAvailable                                           
-# checkUnzipAvailable                                                
-# checkZipAvailable                                                  
-# checkZipnoteAvailable                                              
-# dummyCatcher                                                       
-# extensionPattern                                                   
-# extractMessage   
-# finish.loopfunction                                                
-# getCatcher                                                         
-# getZooImageCapability                                              
-# getZooImageConditionFunction                                       
-# getZooImageErrorFunction                                           
-# getZooImageWarningFunction                                         
-# grepl                                                              
+# catch
+# catch.env
+# checkCapabilityAvailable
+# checkUnzipAvailable
+# checkZipAvailable
+# checkZipnoteAvailable
+# dummyCatcher
+# extensionPattern
+# extractMessage
+# finish.loopfunction
+# getCatcher
+# getZooImageCapability
+# getZooImageConditionFunction
+# getZooImageErrorFunction
+# getZooImageWarningFunction
+# grepl
 # unzip
 #warning
 # zip
@@ -168,4 +168,3 @@ export(zip.ZITrain)
 # resetCatcher
 # setCatcher
 # stop
-

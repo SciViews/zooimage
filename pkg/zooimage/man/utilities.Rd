@@ -20,7 +20,7 @@
 \alias{trim}
 \alias{underscore2space}
 \alias{ZIpgm}
-\Alias{ZIpgmhelp}
+\alias{ZIpgmhelp}
 
 \title{ Various utility functions used by ZooImage }
 \description{
@@ -104,16 +104,16 @@ ZIpgmhelp((pgm, subdir = "misc")
 
 \value{
   The combined object is returned for \code{list.add()} and \code{list.merge}.
-  
+
   The data.frame with additional columns for calculated variables with \code{calc.vars}
-  
+
   A vector of numerical values for \code{ecd}.
 
   A string or vector of strings for \code{make.Id()}, \code{get.sampleinfo()}, \code{list.samples()},
   \code{getVar()}, \code{getList()} and \code{selectFile()}.
-  
+
   Transformed strings for \code{noext()}, \code{trim()} and \code{underscore2space()}
-  
+
   \code{parse.ini()} reads the data and creates a list of data frames. Each entry in
   the list maps one section in the ini file (with the same name). For 'key=value' pairs,
   a one line data frame containing values and with keys as column names. The first column
@@ -121,20 +121,20 @@ ZIpgmhelp((pgm, subdir = "misc")
   argument. That way, one can easily keep track of entries when data frames originated from
   various different ini files are merged together (typically using \code{list.add()} or
   \code{list.merge()}.
-  
+
   Nothing for \code{Progress()} and \code{setwd()}.
-  
+
   For \code{getKey()}, either the content of the key, or the default.value is returned.
   \code{setKey()} returns \code{TRUE} or \code{FALSE}, depending if the key=value was
   successfully entered in the registry or not.
-  
+
   The translated string is returned for \code{gettextZI()}.
-  
+
   \code{ZIpgm()} returns a string usable to start the given program at the command line
   (or using \code{system()}). Under Windows, it returns the full path, but in short (DOS)
   form. So, you don't have to worry about putting this string between quotes, in case the
   path would content blank characters. If the program is not found, the function returns "".
-  \code{ZIpgmhelp()} displays the help file (man page) of the corresponding executable. 
+  \code{ZIpgmhelp()} displays the help file (man page) of the corresponding executable.
 }
 
 \details{
@@ -155,10 +155,9 @@ ZIpgm("zip")
 ZIpgm("pgmhist", "netpbm")
 ZIpgm("pnm2biff", "xite")
 
-# ...and their help pages 
+# ...and their help pages
 ZIpgmhelp("zip")
 ZIpgmhelp("pgmhist", "netpbm")
 ZIpgmhelp("pnm2biff", "xite")
 }
 \keyword{ utilities }
-

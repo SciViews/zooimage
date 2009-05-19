@@ -1,21 +1,21 @@
 # {{{ Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage .
-# 
+#
 # ZooImage is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # ZooImage is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 # }}}
-    
+
 # {{{ ZIDlg
 ZIDlg <- function() {
 	# {{{ If the window is already created, just activate it...
@@ -34,18 +34,18 @@ ZIDlg <- function() {
 	# }}}
 
 	# {{{ Construct the window
-	tkWinAdd("ZIDlgWin", title = paste(getTemp("ZIname"), "assistant"), pos = "-10+10")
+	tkWinAdd("ZIDlgWin", title = paste(getTemp("ZIname"), "assistant"), pos = "-100+10")
 	ZIDlgWin <- WinGet("ZIDlgWin")
-    
+
 	# Do not show it until it is completelly constructed!
-	tkwm.withdraw(ZIDlgWin)	
+	tkwm.withdraw(ZIDlgWin)
 	on.exit(tkwm.deiconify(ZIDlgWin))
-	
+
 	# Change the icon of that window (if under Windows)
 	if (isWin()) {
 		tk2ico.set(ZIDlgWin, getTemp("ZIico"))
 	}
-	
+
 	# Add a menu (load it from a spec file)
 	Pkg <- getTemp("ZIguiPackage", default = "zooimage" )
 	MenuReadPackage(Pkg, file = "MenusZIDlgWin.txt")
@@ -64,7 +64,7 @@ ZIDlg <- function() {
 	tkpack(statusText, side = "left", fill= "x")
 	tkpack(status, side = "bottom", fill = "x")
 	tkpack(tk2separator(ZIDlgWin), side = "bottom", fill = "x")
-	
+
 	# Keep track of statusText / statusProg
 	assignTemp("statusText", statusText)
 	assignTemp("statusProg", statusProg)
@@ -81,7 +81,7 @@ ZIDlg <- function() {
 		MenuStateItem("$Tk.ZIDlgWin/Apps", "Active R &Graph", FALSE)
 	}
 	# }}}
-	
+
 	# {{{ For each of the six external programs, look if they are accessible, otherwise, inactivate
 	if (is.null(getOption("ZIEditor")))
          MenuStateItem("$Tk.ZIDlgWin/Apps", "&Metadata editor (Sc1)", FALSE)
@@ -145,9 +145,9 @@ ZIDlg <- function() {
 	manual <- file.path(getTemp("ZIetc"), "ZooImageManual.pdf")
 	pdfviewer <- getOption( "pdfviewer" )
 	if( !is.null( pdfviewer ) ){
-		if (.Platform$OS.type == "windows") 
+		if (.Platform$OS.type == "windows")
             shell.exec(manual)
-        else system(paste(shQuote(getOption("pdfviewer")), shQuote(manual)), 
+        else system(paste(shQuote(getOption("pdfviewer")), shQuote(manual)),
             wait = FALSE)
 	} else{
 		browseURL(manual)
@@ -296,7 +296,7 @@ ZIDlg <- function() {
 #' Show an assitant dialog box allowing to choose between VueScan and a different
 #' acquisition program... remember that setting in the registry under Windows
 "acquireImg" <- function() {
-	
+
 	# First read the registry to determine which software in recorded there...
  	Asoft <- getKey("AcquisitionSoftware", "VueScan")
 	if (Asoft == "VueScan") {
@@ -352,34 +352,34 @@ ZIDlg <- function() {
 	# and/or import images/data, including custom processes defined in
 	# separate 'ZIEimport' objects (see FlowCAM import routine for an example)
 	# Get a list of 'ZIEimport' objects currently loaded in memory
-	
+
 	### TODO... Rework everything. What follows is old code!
 	ImgFilters <- as.matrix(data.frame(
 		title   = c(
-			"Tiff image files (*.tif)", 
-			"Jpeg image files (*.jpg)", 
-			"Zooimage import extensions (Import_*.zie)", 
+			"Tiff image files (*.tif)",
+			"Jpeg image files (*.jpg)",
+			"Zooimage import extensions (Import_*.zie)",
 			"Table and ImportTemplate.zie (*.txt)"), #, "FlowCAM zipped files (*.zfc)"),
 		pattern = c("*.tif", "*.jpg", "Import_*.zie", "*.txt"))) #, "*.zfc")))
-	
+
 	# Get last image type that was selected
 	Index <- as.numeric(getKey("ImageIndex", "1"))
-	
+
 	# Get a list of images
     Images <- choose.files(caption = "Select data to import...",
 		multi = TRUE, filters = ImgFilters, index = Index)
-	
+
 	# Look if there is at least one image selected
 	if (length(Images) == 0) {
 		return(invisible())
 	}
     dir <- dirname(Images[1])
 	Images <- basename(Images)
-	
+
 	has <- function( extension, pattern = extensionPattern(extension) ){
 		grepl( pattern, Images[1])
 	}
-	
+
 	# Determine which kind of data it is
     if ( has( ".zfc" ) ){
 	    setKey("ImageIndex", "5")
@@ -415,12 +415,12 @@ ZIDlg <- function() {
         pattern <- extensionPatter( "jpg" )
         setKey("ImageIndex", "2")
 	} else stop("Unrecognized data type!")
-	
+
 	# If there is no special treatment, just make all required .zim files for currently selected images
 	make.zim(dir = dir, pattern = pattern, images = Images, show.log = TRUE)
 }
 
-# TODO: call the batch version of imagej zooimage plugins
+# TODO: the text appears only on one line on the Mac???
 "processImg" <- function() {
 	# Display a dialog box telling how to process images using ImageJ
 	# When the user clicks on 'OK', ImageJ is started... + the checkbox 'close R'
@@ -449,38 +449,74 @@ ZIDlg <- function() {
 
 # {{{ makeZid
 "makeZid" <- function() {
-	
-	# Finalize .zid files (and possibly also .zip files by updating their comment)
-    res <- modalAssistant(paste(getTemp("ZIname"), "data processing"),
-		c("You should have processed all your images now.",
-		"The next step is to finalize the .zid files (ZooImage",
-		"Data files). There will be one data file per sample and",
-		"it is all you need for the next part of your work...",
-		"",
-		"Once this step succeed, you can free disk space by",
-		"transferring all files from the _raw subdirectory to",
-		"archives, for instance, DVDs (Apps -> CD-DVD burner).",
-		"",
-        "Warning: the whole _work subdirectory with intermediary",
-		"images will be deleted, and all .zim files will be",
-		"moved to the _raw subdirectory.",
-		"At the end, you should have only .zid files remaining",
-		"in your working directory.", "",
-		"Click 'OK' to proceed (select working directory)...", ""),
-		init = "1", check = "Check vignettes", help.topic = "makeZid")
+	# Create ZID files, possibly processing imqges first
+	# TODO: get the list of all available processes and select it automatically from the ZIM file
+	defval <- "Scanner_Gray16"
+	opts <- c("Scanner_Gray16",
+			  "Scanner_Color",
+			  "Macrophoto_Gray16",
+			  "Microscope_Color",
+			  "-- None --")
+	# Then, show the dialog box
+ 	plugin <- modalAssistant(paste(getTemp("ZIname"), "process images"),
+		c("Process images with associated metadata (ZIM files)",
+		"in batch mode from one directory and make ZID files.",
+		"", "Select an image processor:", ""), init = defval,
+		options = opts, help.topic = "processIJ")
 	# Analyze result
-	if (res == "ID_CANCEL") return(invisible())
-	# Confirm the directory to process...
+	if (plugin == "ID_CANCEL") return(invisible())
+	# Select zim file or directory
 	dir <- paste(tkchooseDirectory(), collapse = " ")
 	if (length(dir) == 0) return(invisible())
- 	# Do we check the vignettes?
- 	check.vignettes <- (res == "1")
+	# Do we need to process the images with ImageJ?
+	if (plugin != "-- None --") {
+		# Apparently, we have to be in the imagej directory for the command line
+		# tools to work
+		odir <- getwd()
+		setwd(file.path(.path.package(package = "zooimage")[1], "imagej")); on.exit(setwd(odir))
+		# This is the file that starts an ImageJ process from the command line
+		#logClear()
+		# TODO: use this to capture result, but we need to send feedback too
+		#res <- system(paste('./zooimage ', plugin, ' "', dir, '"', sep = ""), intern = TRUE)
+		res <- system(paste('./zooimage ', plugin, ' "', dir, '"', sep = ""))
+		# report result returned by ImageJ
+		# TODO: get a feedback of the analysis and display it in a progressbox
+		#logProcess(res, show.log = TRUE)
+	}
+
+	# Finalize .zid files (and possibly also .zip files by updating their comment)
+#    res <- modalAssistant(paste(getTemp("ZIname"), "data processing"),
+#		c("You should have processed all your images now.",
+#		"The next step is to finalize the .zid files (ZooImage",
+#		"Data files). There will be one data file per sample and",
+#		"it is all you need for the next part of your work...",
+#		"",
+#		"Once this step succeed, you can free disk space by",
+#		"transferring all files from the _raw subdirectory to",
+#		"archives, for instance, DVDs (Apps -> CD-DVD burner).",
+#		"",
+#        "Warning: the whole _work subdirectory with intermediary",
+#		"images will be deleted, and all .zim files will be",
+#		"moved to the _raw subdirectory.",
+#		"At the end, you should have only .zid files remaining",
+#		"in your working directory.", "",
+#		"Click 'OK' to proceed (select working directory)...", ""),
+#		init = "1", check = "Check vignettes", help.topic = "makeZid")
+#	# Analyze result
+#	if (res == "ID_CANCEL") return(invisible())
+#	# Confirm the directory to process...
+#	dir <- paste(tkchooseDirectory(), collapse = " ")
+#	if (length(dir) == 0) return(invisible())
+ 	# Do we check the vignettes (only if images were not processed)?
+ 	check.vignettes <- (plugin == "-- None --")
 	# Make .zid files
-    compress.zid.all(path = dir, check.vignettes = check.vignettes, replace = TRUE, delete.source = TRUE)
+    cat("\n")
+	# TODO: combine the log from ImageJ with this one!
+	compress.zid.all(path = dir, check.vignettes = check.vignettes, replace = TRUE, delete.source = TRUE)
 }
 # }}}
 
-# {{{ Train 
+# {{{ Train
 "makeTrain" <- function() {
 	# Select samples, and a grouping template... and prepare for making a training set
     # First read the registry to determine which grouping in recorded there...
@@ -509,10 +545,10 @@ ZIDlg <- function() {
 		"(3) a series of .zid files as source of vignettes.", "",
 		"Use the following grouping scheme:", ""), init = defval,
 		options = opts, help.topic = "makeTrain")
-	
+
 	# Analyze result
 	if (res == "ID_CANCEL") return(invisible())
-	
+
 	# Did we selected "Another config..."?
 	if (res == "Another config...") {
 		# Ask for selecting a .zic file containing the config
@@ -524,14 +560,14 @@ ZIDlg <- function() {
 		# Did we selected a standard scheme?
 		res <- paste("[", res, "]", sep = "")
 	} else res <- Grp  # We should have selected the previously recorded scheme...
-	
+
 	# Save this config for later use
     setKey("DefaultGrouping", res)
-	
+
 	# Ask for the base directory
     dir <- paste(tkchooseDirectory(), collapse = " ")
 	if (length(dir) == 0) return(invisible())
-	
+
 	# Ask for a subdir for this training set
 	subdir <- dialogString("Subdirectory where to create the training set:",
 		default = "_train")
@@ -539,20 +575,20 @@ ZIDlg <- function() {
 		cat("Operation cancelled!\n")
 		return(invisible())
 	}
-	
+
 	# Ask for the .zid files
     zidfiles <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
-	
+
 	# Prepare the training set
 	prepare.ZITrain(dir, subdir, zidfiles, groups.template = res, start.viewer = TRUE)
-	
+
 	# Remember the directory...
 	assignTemp("ZI.TrainDir", file.path(dir, subdir))
 }
 
 #' Read a training set and create a ZITrain object
 "readTrain" <- function() {
- 	
+
 	(require(svDialogs) || stop("Package 'svDialogs' from 'SciViews' bundle is required. Please, install it first!"))
 
 	# Get a possibly saved directory as default one
@@ -588,7 +624,7 @@ ZIDlg <- function() {
  	# Create a classifier, using a ZI1Class object (new version)
 	# Ask for an algorithm + additional parameters
 	# Return a ZIClass object
-  defval <- "linear discriminant analysis"
+	defval <- "linear discriminant analysis"
 	opts <- c("linear discriminant analysis",
 			  "recursive partitioning (tree)",
 			  "k-nearest neighbour",
@@ -746,7 +782,7 @@ ZIDlg <- function() {
 # }}}
 
 # {{{ editDescription
-#' Edit a samples description file... or create a new one!	
+#' Edit a samples description file... or create a new one!
 "editDescription" <- function() {
 	res <- modalAssistant(paste(getTemp("ZIname"), "edit samples description"),
 		c("Samples are about to be analyzed and collected together",
@@ -1068,7 +1104,7 @@ ZIDlg <- function() {
 dialogString <- function( message, title= "", default ){
 	if (isWin()) {
 	    winDialogString(message, default = default )
-	} else {	
+	} else {
 		guiDlgInput(message, title, default )
 	}
 }
@@ -1076,13 +1112,13 @@ dialogString <- function( message, title= "", default ){
 
 
 # {{{ ijplugin
-ijplugin <- function( zimfile, 
+ijplugin <- function( zimfile,
 	ij.plugin = c("Scanner_Gray16", "MacroPhoto_Gray16", "Scanner_Color", "Microscope_Color" ) ){
-	
+
 	ij.plugin <- match.arg( ij.plugin )
-	cmd <- sprintf( 'java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"', 
-		system.file( "imagej", "ij.jar", package = "zooimage" ), 
-		system.file( "imagej", "plugins", "_zooimage.jar", package = "zooimage" ), 
+	cmd <- sprintf( 'java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"',
+		system.file( "imagej", "ij.jar", package = "zooimage" ),
+		system.file( "imagej", "plugins", "_zooimage.jar", package = "zooimage" ),
 		ij.plugin,
 		tools:::file_path_as_absolute(zimfile) )
 	system( cmd )
@@ -1090,4 +1126,3 @@ ijplugin <- function( zimfile,
 # }}}
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
-

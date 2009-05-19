@@ -17,7 +17,7 @@
 \usage{
 create.zim(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
     edit = TRUE, wait = FALSE)
-edit.zim(zimfile, editor = getOption("ZIEditor"), wait = FALSE)
+edit.zim(name, editor = getOption("ZIEditor"), wait = FALSE)
 make.zim(dir = ".", pattern = "\\.[tT][iI][fF]$", images =
     list.files(dir, pattern), show.log = TRUE, bell = FALSE)
 extract.zims(zipdir = ".", zipfiles = list.files(zipdir, pattern =
@@ -34,6 +34,7 @@ verify.zim(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE)
 
 \arguments{
   \item{zimfile}{ A .zim file }
+  \item{name}{ idem }
   \item{template}{ A .zim template to start with, if the .zim file does not exist yet }
   \item{editor}{ A program to use for editing the .zim file }
   \item{edit}{ Do we edit the .zim file that we just created? }
@@ -68,10 +69,10 @@ verify.zim(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE)
   (returning \code{TRUE} or \code{FALSE} invisibly, with detailled description of the problem
   in the log file) is used by \code{extract.zims()} and \code{refresh.zims()} also called for
   their side-effects of manipulating .zim/.zip files.
-  
+
   \code{list.zim()} and \code{list.dat1.zim()} return either a vector of character strings with
   the name of .zim files, or \code{NA} if there is no .zim files in 'zidir'.
-  
+
   \code{is.zim()} simply returns \code{TRUE} or \code{FALSE}.
 
   \code{verify.zim()} returns an integer in case of successful verification of the .zim file. This
@@ -93,7 +94,7 @@ verify.zim(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE)
   risk to accidentally try processing these newer versions with an old, incompatible
   version of ZooImage in the future. Here are the first few lines of an example .zim file:
   for instance).
-  
+
     \preformatted{
 ZI1
 [Image]
@@ -106,8 +107,8 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   'Hardware' with value 'EPSON 4870' and 'Software' with value 'VueScan 8.0.10', followed
   by a comment (everything after the '#' sign). Take care: since '#' defines a comment, do
   not use it, neither in keys, nor in values!
-  
-  Take care to define \bold(unique keys accross all sections)! The section are just there
+
+  Take care to define \bold{unique keys accross all sections}! The section are just there
   to organize your metadata into logical subunits... but they are not considered in the
   process. If you define a key named 'mykey' both in '[Section1]' and in '[Section2]',
   only the first occurence of 'mykey' will be used by ZooImage!
@@ -124,7 +125,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   ImageJ plugin that you use to process your image that defines them (it means that adding
   new measurements is very easy to do and they are automatically considered by ZooImage).
   Note that these measurements are converted using calibration information, if available.
-  That is, lengths are in µm, surfaces are in µm^2 and gray levels are in OD (Optical
+  That is, lengths are in microns, surfaces are in squre microns and gray levels are in OD (Optical
   Densities), so that, measurements are comparable from picture to picture, even if
   spatial resolution or distribution of gray levels (contrast, luminosity, ...) are not
   exactly the same in all images of the series! The table must also contains four
@@ -132,7 +133,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   are the coordinates of the top-left corner of the bounding box around the object (BX, BY)
   and the Width and Height of this box. These fields are required to locate the object in
   the original image. Here is a short abstract of a [Data] section:
-  
+
     \preformatted{
 ... (metadata definitions as above)
 
@@ -143,7 +144,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
 3	   Smp1+A2 	0.0498  0.0566	...              75.43	0.69  75.44	 0.70
 ...
     }
-  
+
   The reasons to choose such a simple text format for representing metadata is simplicity
   and flexibility. Plain text files are readable by any computer program and no sophisticated
   database engine, or database structure, is required to represent those data. Also, besides
@@ -177,21 +178,21 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   .zim file by \code{extract.zims()} for one or several zip archives. On the opposite,
   these comments are updated in the zip archive with latest information present in
   .zim files using \code{refresh.zims()}.
-  
+
   The four last function are auxiliary utilities to deal with .zim files. \code{list.zim()}
   and \code{list.dat1.zim()} are convenient functions to list all '*.zim', or '*_dat1.zim'
   files respectively, in a given 'zidir' directory. \code{is.zim()} simply checks if the file
   is a correct .zim file, checking first line of the file that must be 'ZI1' for ZooImage
   version 1 (current one). This routine returns \code{TRUE} or \code{FALSE} according to the
   result (the file extension is also checked if \code{check.ext = TRUE}).
-  
+
   Finally, \code{verify.zim()} is a very important function. It checks the validity and
   syntax of any .zim file. All required fields are checked. In case of an error, the function
   returns an explicit error message as a character string. On the other hand, if the
   verification process succeeds, the function returns a number corresponding to the number
   of objects whose measurements are recorded in the data table (for a '_dat1.zim'
   file), or '0' (zero, no measurements) for a '.zim' file containing only metadata.
-  
+
   \code{verify.zim()} checks for the presence of required fields. For .zim files:
   Section '[Image]' with 'Author', 'Hardware', 'Software' and 'ImageType' (for instance,
   "trans_16bits_gray" for a 16bit graylevels picture obtained by transparency, that is, using
@@ -200,7 +201,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   sieves are not used) and section '[Subsample]' with fields 'Subpart' (a number indicating
   how much of the fraction is actually digitized, for instance, 0.15 for 15\% of the fraction),
   'SubMethod' (volumetry, Motoda, etc.), 'CellPart' (the fraction of the digitizing cell actually
-  covered by all images made), 'Replicates', 'VolIni' (the volume of seawater, in m^3 or any
+  covered by all images made), 'Replicates', 'VolIni' (the volume of seawater, in cubic meters or any
   of your favored unit, that was collected in the sea for this sample) and 'VolPrec', the precision
   at which 'VolIni' is measured, expressed in the same unit.
 
@@ -209,7 +210,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   (method used to process the images), 'MinSize', 'MaxSize' (the minimum and maximum ecd
   -equivalent circular diameter- of the particule to be considered and measured), 'Calibration'
   (data for gray levels calibration) and 'ProcessPixSize' (data for spatial calibration: size of
-  one pixel in µm, or any of your favorite length unit). Column headers 'Item', 'Label', 'BX',
+  one pixel in microns, or any of your favorite length unit). Column headers 'Item', 'Label', 'BX',
   'BY', 'Height', 'Width', plus at least one additional measrurement are checked too.
   If \code{check.table = TRUE}, the function also tries to read the table of measurements
   and checks for its integrity (it takes longer for checking many large '_dat1.zim' files!).
@@ -220,12 +221,12 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   to be checked by \code{verify.zim()}, in order to match specific uses of ZooImage. Since the
   verification of metadata is a crucial step in the analysis, they are strongly encouraged to
   add such custom rules: the default checking procedure is very basic!
-  
+
   There are two possible ways to extend verification: adding fields in the list of required ones,
   or using a custom function. The second solution is more complex, but you have the possibility
   to check also the values associated with keys, where the first solution just check the presence
   of those keys, no mather the values associated with them. You can combine both approaches.
-  
+
   To add required keys to be checked, just create an option(ZI.zim = list(....)) with
   a list of four components: "zim.required", "dat1.zim.required", "dat1.data.required" and
   "active". Put the list of sections (between square brackets) and keys that must be present
@@ -234,9 +235,9 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   the [Data] table in the "dat1.data.required" component of the list. The "active" component
   must be \code{TRUE} to activate the verification of these extra fields and column headers
   (otherwise, they are ignored). See the example hereunder.
-  
+
   To add your own verification rules, add a R function in the "verify" component of the list.
-  That function should be defined as: \code{function(zimfile, ...) { # Your code herer } and it
+  That function should be defined as: \code{function(zimfile, ...) # Your code here} and it
   should return either "" (if no error found), or an explicit message in case of error(s).
 
   Alternatively, you can completelly redefine \code{verify.zim()} in the "verify.all" component
@@ -264,8 +265,8 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
     # Is this a correct .zim file?
     is.zim(zimfile)
     verify.zim(zimfile) # Returns 0 => verification OK, with 0 records in [Data]
-    
-    
+
+
     ##### The rest of this example is for programmers #####
     # Add more required sections and keys for metadata verifications
     # Add more required columns in the table of measurements
@@ -281,7 +282,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
     option(ZI.zim = oZI.zim)
     rm(oZI.zim) # not needed any more
     verify.zim(zimfile) # This time, extra verifications are not used any more => OK!
-    
+
     # Add some verification code to the existing verification procedure
     option(ZI.zim = list(active = TRUE,
         verify = function(zimfile, ...) {
@@ -301,12 +302,11 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
             }
         })
     verify.zim(zimfile) # Since Code=A, verification fails!
-    
+
     # Reset original verification rules
     option(ZI.zim = NULL)
-    
+
     # Erase the example .zim file
     unlink(zimfile)
 }
 \keyword{ utilities }
-
