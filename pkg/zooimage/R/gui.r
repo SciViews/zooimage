@@ -468,7 +468,7 @@ ZIDlg <- function() {
 	# Do we need to process the images with ImageJ?
 	if (plugin != "-- None --") {
 		# TODO: update a progress bar from imagej (using sockets ?)
-		ijplugin( dir, plugin = plugin ) 
+		ijplugin( dir, ij.plugin = plugin ) 
 	}
 
 	# Finalize .zid files (and possibly also .zip files by updating their comment)
