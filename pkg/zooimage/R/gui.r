@@ -1107,7 +1107,7 @@ ijplugin <- function( zimfile,
 		system.file( "imagej", "plugins", "_zooimage.jar", package = "zooimage" ),
 		ij.plugin,
 		tools:::file_path_as_absolute(zimfile) )
-	system( cmd )
+	invisible( system( cmd, intern = TRUE ) )
 }
 # }}}
 
