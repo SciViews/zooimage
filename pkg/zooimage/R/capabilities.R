@@ -108,6 +108,13 @@ checkAvailable_biff2tiff <- function( ){
 }
 # }}}
 
+# {{{ java
+checkAvailable_java <- function( ){
+	checkCapabilityAvailable( "java", 
+		'java -version ', 
+		"java : program not found!" )
+}
+# }}}
 # }}}
 
 # {{{ capabilities
@@ -122,7 +129,8 @@ capabilities <- list(
 		"pnm2biff"   = checkAvailable_pnm2biff, 
 		"divide"     = checkAvailable_divide, 
 		"statistics" = checkAvailable_statistics, 
-		"biff2tiff"  = checkAvailable_biff2tiff
+		"biff2tiff"  = checkAvailable_biff2tiff, 
+		"java"       = checkAvailable_java
 		) 
 # }}}
 
