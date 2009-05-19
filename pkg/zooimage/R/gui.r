@@ -452,11 +452,8 @@ ZIDlg <- function() {
 	# Create ZID files, possibly processing imqges first
 	# TODO: get the list of all available processes and select it automatically from the ZIM file
 	defval <- "Scanner_Gray16"
-	opts <- c("Scanner_Gray16",
-			  "Scanner_Color",
-			  "Macrophoto_Gray16",
-			  "Microscope_Color",
-			  "-- None --")
+	processes <- getProcessList()
+	opts <- c( processes, "-- None --")
 	# Then, show the dialog box
  	plugin <- modalAssistant(paste(getTemp("ZIname"), "process images"),
 		c("Process images with associated metadata (ZIM files)",
@@ -470,18 +467,7 @@ ZIDlg <- function() {
 	if (length(dir) == 0) return(invisible())
 	# Do we need to process the images with ImageJ?
 	if (plugin != "-- None --") {
-		# Apparently, we have to be in the imagej directory for the command line
-		# tools to work
-		odir <- getwd()
-		setwd(file.path(.path.package(package = "zooimage")[1], "imagej")); on.exit(setwd(odir))
-		# This is the file that starts an ImageJ process from the command line
-		#logClear()
-		# TODO: use this to capture result, but we need to send feedback too
-		#res <- system(paste('./zooimage ', plugin, ' "', dir, '"', sep = ""), intern = TRUE)
-		res <- system(paste('./zooimage ', plugin, ' "', dir, '"', sep = ""))
-		# report result returned by ImageJ
-		# TODO: get a feedback of the analysis and display it in a progressbox
-		#logProcess(res, show.log = TRUE)
+		ijplugin( dir, plugin = plugin ) 
 	}
 
 	# Finalize .zid files (and possibly also .zip files by updating their comment)
