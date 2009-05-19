@@ -1125,4 +1125,16 @@ ijplugin <- function( zimfile,
 }
 # }}}
 
+#' calls the class org.sciviews.zooimage.ZooImageProcessList to get 
+#' the list of available processes
+getProcessList <- function( ){
+	cmd <- sprintf( 'java -cp .:"%s":"%s" org.sciviews.zooimage.ZooImageProcessList', 
+		system.file( "imagej", "ij.jar", package = "zooimage" ),
+		system.file( "imagej", "plugins", "_zooimage.jar", package = "zooimage" )
+	)
+	res <- system( cmd , intern = TRUE )
+	res
+}
+
+
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
