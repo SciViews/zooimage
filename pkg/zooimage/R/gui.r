@@ -467,6 +467,7 @@ ZIDlg <- function() {
 	if (length(dir) == 0) return(invisible())
 	# Do we need to process the images with ImageJ?
 	if (plugin != "-- None --") {
+		# TODO: update a progress bar from imagej (using sockets ?)
 		ijplugin( dir, plugin = plugin ) 
 	}
 
