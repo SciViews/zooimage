@@ -1125,3 +1125,336 @@ getProcessList <- function( ){
 
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
+
+# Functions and dialog box created for the real time recogntion
+"RealT" <- function() {
+ 	# Process real time recognition during a FlowCAM experiment
+	# First remove existing file from the global environment before read a new sample
+  RemoveRealT()
+  # Ask for an algorithm and one or several sample to compare
+  defval <- "Only One Sample"
+	opts <- c("Only One Sample",
+			  "Comparison with One Other Sample",
+			  "Comparison with Several Other Samples")
+	# Then, show the dialog box
+ 	res <- modalAssistant(paste(getTemp("ZIname"), "Real-Time recognition for FlowCAM"),
+		c("This is a beta version of the real time recognition",
+		"of FlowCAM samples developed for the AMORE III project.",
+		"Warning! This method is only developed for FlowCAM data,",
+		"and with a classifier made with FlowCAM parameters only.",
+		"", "Select an option:", ""), init = defval,
+		options = opts, help.topic = "makeClass")
+	if (res == "ID_CANCEL") return(invisible())
+  # Only one sample
+  if (res == "Only One Sample"){
+  	# Use default values for the classifier creation
+  	print("You will only recognize in real-time one sample")
+
+    # Look if we have a classifier object defined
+    ZIC <- getTemp("ZI.ClassName")
+    if (is.null(ZIC)) ZIC <- ""
+    ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
+		  title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+    if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
+    ZICobj <- get(ZIC, envir = .GlobalEnv)
+
+    # Select the current sample
+    Current <- paste(as.character(tkgetOpenFile(filetypes = "{{FlowCAM list file} {.lst}}",
+		  title = "Select a lst file")), collapse = " ")
+
+    # Select a conversion table
+   	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"), "Conversion.txt"))
+  	# Does this file exists?
+  	if (!file.exists(ConvFile) || ConvFile == "") ConvFile <- file.path(getTemp("ZIetc"), "Conversion.txt")
+    # Ask for selecting a Conversion file
+    ### TODO: use something that also works on other platforms than Windows!
+    ConvFile <- choose.files(default = ConvFile, caption = "Select a conversion file...",
+      multi = FALSE, filters = c("Biomass Conversion table (*Conversion.txt)", "*Conversion.txt"))
+    if (length(ConvFile) == 0 || ConvFile == "") return(invisible()) # Cancelled dialog box
+
+    # Select the size spectra option
+    # On windows() --> To change for zooimage 1.2-2
+    brks <- winDialogString("Breaks for size spectrum classes in mm (empty for no spectrum):",
+		  default = "seq(0.25, 2, by = 0.1)")
+    #brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
+		#  "Size spectrum classes", default = "seq(0.25, 2, by = 0.1)")
+    if (is.null(brks) || length(brks) == 0 || brks == "") return(invisible())
+    brks <- eval(parse(text = brks))
+    # Choose options
+    # Default options
+    Abd.all <- TRUE
+    Abd.gp <- NULL
+    Spec.all <- NULL
+    Spec.gp <- NULL
+    Bio.all <- NULL
+    Bio.gp <- NULL
+    defval_Graphs <- "Total Abundance"
+    opts_Graphs <- c("Total Abundance", "Abundance of groups",
+      "Total Size Spectra", "Size Spectra of groups",
+      "Total Biomass", "Biomass of groups")
+    res <- modalAssistant(paste(getTemp("ZIname"), "Real-Time recognition for FlowCAM"),
+      c("Select one type of plot you want to do",
+      "", "Select an option:", ""), init = defval_Graphs,
+      options = opts_Graphs, help.topic = "makeClass")
+    if(res == "Total Abundance"){
+      Abd.all <- TRUE
+    }
+    if(res == "Abundance of groups") {
+      Abd.all <- NULL
+      Abd.gp <- SelectGroups(ZICobj)
+    }
+    if(res == "Total Size Spectra") {
+      Abd.all <- NULL
+      Spec.all <- TRUE
+    }
+    if(res == "Size Spectra of groups") {
+      Abd.all <- NULL
+      Spec.gp <- SelectGroups(ZICobj)
+    }
+    if(res == "Total Biomass") {
+      Abd.all <- NULL
+      Bio.all <- TRUE
+    }
+    if(res == "Biomass of groups") {
+      Abd.all <- NULL
+      Bio.gp <- SelectGroups(ZICobj)
+    }
+    # Loop parameters
+    loop.opts(lst = Current, # path of the list file of the current FlowCAM experiment
+    classif = ZICobj, # Classifer
+    ZIprevSmp = NULL, # Comparison with one previous sample
+    ZIlist = NULL, # Comparison several previous samples
+    ################## One Sample
+    Abd.all = Abd.all, # NULL or TRUE
+    Abd.gp = Abd.gp, # NULL or groups to plot
+    Spec.all = Spec.all, # NULL or TRUE
+    Spec.gp = Spec.gp, # NULL or groups
+    Bio.all = Bio.all, # NULL or TRUE
+    Bio.gp = Bio.gp, # NULL or groups
+    breaks = brks, # in mm
+    conv = ConvFile, # or conversion table
+    ################## More than one sample
+    ZICompAbd = NULL,
+    ZICompSpectra = NULL,
+    ZICompBiomass = NULL,
+    ZICompSlope = NULL,
+    ZICompAbd.gp = NULL,
+    ZICompBio.gp = NULL
+    )
+    # Run automatic recognition and plot
+    tclFun_(loopAsynch)
+    loopAsynch()
+  }
+  if (res == "Comparison with One Other Sample"){
+  	print("You will compare the current sample with sample already digitized")
+    # Look if we have a classifier object defined
+    ZIC <- getTemp("ZI.ClassName")
+    if (is.null(ZIC)) ZIC <- ""
+    ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
+		  title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+    if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
+    ZICobj <- get(ZIC, envir = .GlobalEnv)
+
+    # Select the current sample
+    Current <- paste(as.character(tkgetOpenFile(filetypes = "{{FlowCAM list file} {.lst}}",
+		  title = "Select the lst file of the current sample")), collapse = " ")
+    # Select the Previous sample
+    Prev <- paste(as.character(tkgetOpenFile(filetypes = "{{FlowCAM list file} {.lst}}",
+		  title = "Select the lst file of the previous sample")), collapse = " ")
+    Prev <- SmpToComp(Prev = Prev)
+    # Select a conversion table
+   	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"), "Conversion.txt"))
+  	# Does this file exists?
+  	if (!file.exists(ConvFile) || ConvFile == "") ConvFile <- file.path(getTemp("ZIetc"), "Conversion.txt")
+    # Ask for selecting a Conversion file
+    ### TODO: use something that also works on other platforms than Windows!
+    ConvFile <- choose.files(default = ConvFile, caption = "Select a conversion file...",
+      multi = FALSE, filters = c("Biomass Conversion table (*Conversion.txt)", "*Conversion.txt"))
+    if (length(ConvFile) == 0 || ConvFile == "") return(invisible()) # Cancelled dialog box
+
+    # Select the size spectra option
+    # On windows() --> To change for zooimage 1.2-2
+    brks <- winDialogString("Breaks for size spectrum classes in mm (empty for no spectrum):",
+		  default = "seq(0.25, 2, by = 0.1)")
+    #brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
+		#  "Size spectrum classes", default = "seq(0.25, 2, by = 0.1)")
+    if (is.null(brks) || length(brks) == 0 || brks == "") return(invisible())
+    brks <- eval(parse(text = brks))
+    # Choose options
+    # Default options
+    ZICompAbd <- TRUE
+    ZICompSpectra <- NULL
+    ZICompBiomass <- NULL
+    ZICompSlope <- NULL
+    ZICompAbd.gp <- NULL
+    ZICompBio.gp <- NULL
+    defval_Graphs <- "Total Abundance"
+    opts_Graphs <- c("Total Abundance", "Abundance of groups",
+      "Total Size Spectra", "Total Biomass", "Biomass of groups", "Slope of size spectra")
+    res <- modalAssistant(paste(getTemp("ZIname"), "Real-Time recognition for FlowCAM"),
+      c("Select one type of plot you want to do",
+      "", "Select an option you want to compare:", ""), init = defval_Graphs,
+      options = opts_Graphs, help.topic = "makeClass")
+    if(res == "Total Abundance"){
+      ZICompAbd <- TRUE
+    }
+    if(res == "Abundance of groups") {
+      ZICompAbd <- NULL
+      ZICompAbd.gp <- SelectGroups(ZICobj)
+    }
+    if(res == "Total Size Spectra") {
+      ZICompAbd <- NULL
+      ZICompSpectra <- TRUE
+    }
+    if(res == "Total Biomass") {
+      ZICompAbd <- NULL
+      ZICompBiomass <- TRUE
+    }
+    if(res == "Biomass of groups") {
+      ZICompAbd <- NULL
+      ZICompBio.gp <- SelectGroups(ZICobj)
+    }
+    if(res == "Slope of size spectra") {
+      ZICompAbd <- NULL
+      ZICompSlope <- TRUE
+    }
+    # Loop parameters
+    loop.opts(lst = Current, # path of the list file of the current FlowCAM experiment
+    classif = ZICobj, # Classifer
+    ZIprevSmp = Prev, # Comparison with one previous sample
+    ZIlist = NULL, # Comparison several previous samples
+    ################## One Sample
+    Abd.all = NULL, # NULL or TRUE
+    Abd.gp = NULL, # NULL or groups to plot
+    Spec.all = NULL, # NULL or TRUE
+    Spec.gp = NULL, # NULL or groups
+    Bio.all = NULL, # NULL or TRUE
+    Bio.gp = NULL, # NULL or groups
+    breaks = brks, # in mm
+    conv = ConvFile, # or conversion table
+    ################## More than one sample
+    ZICompAbd = ZICompAbd,
+    ZICompSpectra = ZICompSpectra,
+    ZICompBiomass = ZICompBiomass,
+    ZICompSlope = ZICompSlope,
+    ZICompAbd.gp = ZICompAbd.gp,
+    ZICompBio.gp = ZICompBio.gp
+    )
+    # Run automatic recognition and plot
+    tclFun_(loopAsynch)
+    loopAsynch()
+  }
+  if (res == "Comparison with Several Other Samples"){
+    print("You will compare the current sample with a list of samples already digitized")
+    # Look if we have a classifier object defined
+    ZIC <- getTemp("ZI.ClassName")
+    if (is.null(ZIC)) ZIC <- ""
+    ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
+		  title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+    if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
+    ZICobj <- get(ZIC, envir = .GlobalEnv)
+
+    # Select the current sample
+    Current <- paste(as.character(tkgetOpenFile(filetypes = "{{FlowCAM list file} {.lst}}",
+		  title = "Select the lst file of the current sample")), collapse = " ")
+    # Select the Previous sample
+    List <- list.files(choose.dir(,caption = "Select general directory"), recursive = TRUE, pattern = ".lst$", full.names = TRUE)
+    ListSamples <- SmpToComp(Samples = List)
+
+    # Select a conversion table
+   	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"), "Conversion.txt"))
+  	# Does this file exists?
+  	if (!file.exists(ConvFile) || ConvFile == "") ConvFile <- file.path(getTemp("ZIetc"), "Conversion.txt")
+    # Ask for selecting a Conversion file
+    ### TODO: use something that also works on other platforms than Windows!
+    ConvFile <- choose.files(default = ConvFile, caption = "Select a conversion file...",
+      multi = FALSE, filters = c("Biomass Conversion table (*Conversion.txt)", "*Conversion.txt"))
+    if (length(ConvFile) == 0 || ConvFile == "") return(invisible()) # Cancelled dialog box
+
+    # Select the size spectra option
+    # On windows() --> To change for zooimage 1.2-2
+    brks <- winDialogString("Breaks for size spectrum classes in mm (empty for no spectrum):",
+		  default = "seq(0.25, 2, by = 0.1)")
+    #brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
+		#  "Size spectrum classes", default = "seq(0.25, 2, by = 0.1)")
+    if (is.null(brks) || length(brks) == 0 || brks == "") return(invisible())
+    brks <- eval(parse(text = brks))
+    # Choose options
+    # Default options
+    ZICompAbd <- TRUE
+    ZICompSpectra <- NULL
+    ZICompBiomass <- NULL
+    ZICompSlope <- NULL
+    ZICompAbd.gp <- NULL
+    ZICompBio.gp <- NULL
+    defval_Graphs <- "Total Abundance"
+    opts_Graphs <- c("Total Abundance", "Abundance of groups",
+      "Total Size Spectra", "Total Biomass", "Biomass of groups", "Slope of size spectra")
+    res <- modalAssistant(paste(getTemp("ZIname"), "Real-Time recognition for FlowCAM"),
+      c("Select one type of plot you want to do",
+      "", "Select an option you want to compare:", ""), init = defval_Graphs,
+      options = opts_Graphs, help.topic = "makeClass")
+    if(res == "Total Abundance"){
+      ZICompAbd <- TRUE
+    }
+    if(res == "Abundance of groups") {
+      ZICompAbd <- NULL
+      ZICompAbd.gp <- SelectGroups(ZICobj)
+    }
+    if(res == "Total Size Spectra") {
+      ZICompAbd <- NULL
+      ZICompSpectra <- TRUE
+    }
+    if(res == "Total Biomass") {
+      ZICompAbd <- NULL
+      ZICompBiomass <- TRUE
+    }
+    if(res == "Biomass of groups") {
+      ZICompAbd <- NULL
+      ZICompBio.gp <- SelectGroups(ZICobj)
+    }
+    if(res == "Slope of size spectra") {
+      ZICompAbd <- NULL
+      ZICompSlope <- TRUE
+    }
+    # Loop parameters
+    loop.opts(lst = Current, # path of the list file of the current FlowCAM experiment
+    classif = ZICobj, # Classifer
+    ZIprevSmp = NULL, # Comparison with one previous sample
+    ZIlist = ListSamples, # Comparison several previous samples
+    ################## One Sample
+    Abd.all = NULL, # NULL or TRUE
+    Abd.gp = NULL, # NULL or groups to plot
+    Spec.all = NULL, # NULL or TRUE
+    Spec.gp = NULL, # NULL or groups
+    Bio.all = NULL, # NULL or TRUE
+    Bio.gp = NULL, # NULL or groups
+    breaks = brks, # in mm
+    conv = ConvFile, # or conversion table
+    ################## More than one sample
+    ZICompAbd = ZICompAbd,
+    ZICompSpectra = ZICompSpectra,
+    ZICompBiomass = ZICompBiomass,
+    ZICompSlope = ZICompSlope,
+    ZICompAbd.gp = ZICompAbd.gp,
+    ZICompBio.gp = ZICompBio.gp
+    )
+    # Run automatic recognition and plot
+    tclFun_(loopAsynch)
+    loopAsynch()
+  }
+}
+
+StopRealT <- function(){
+  ...stop <<- 1
+}
+
+SaveResults <- function(){
+  save.loop.res(lst = getOption("Path"), Classif = getOption("Classifier"), breaks = getOption("breaks"), conv = getOption("conv"), save.dir = dirname(getOption("Path")))
+}
+
+RemoveRealT <- function(){
+  if(exists("tab", env = .GlobalEnv)) rm(tab, envir = .GlobalEnv)
+  if(exists("rec", env = .GlobalEnv)) rm(rec, envir = .GlobalEnv)
+  if(exists("Bio.tab", env = .GlobalEnv)) rm(Bio.tab, envir = .GlobalEnv)
+}
