@@ -221,96 +221,182 @@
 # {{{ Bio.sample
 #' Convert ECD (biomass calculation, etc.)
 "Bio.sample" <- function(ZIDat, sample, taxa = NULL, groups = NULL,
-	conv = c(1, 0, 1), header = "Bio", exportdir = NULL) {
-	
-	# Check arguments
-	mustbe(ZIDat, "ZIDat" )
-	mustbeString( sample, 1 )
-	
-	# Extract only data for a given sample
-	Smps <- getSample( ZIDat$Label, unique = T, must.have = sample )
-	Smp <- ZIDat[Smps == sample, ]
-	
-	# Subsample, depending on taxa we keep
-	if (!is.null(taxa)) {
-		mustcontain( levels(Smp$Ident), taxa, "taxa not in the sample")
-		Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
-	}
-	if (nrow(Smp) == 0){
-		stop("no data for this sample/taxa in ZIDat")
-	}
-	
-	# Add P1/P2/P3 conversion params to the table
-	if (inherits(conv, "data.frame")) {
-		if (  ! all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ) || !all(names(conv)[1:4] == c("Group", "a", "b", "c") ) ){
-			stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
-		}
-		IdSmp <- as.character(Smp$Ident)
-		IdSmpU <- unique(IdSmp)
-		IdConv <- as.character(conv$Group)
-	
-		# Eliminate [other] from the table and the list and keep its values for further use
-		IsOther <- (IdConv == "[other]")
-		Other <- conv[IsOther, ]
-		if (sum(IsOther) > 0) {
-		  IdConv <- IdConv[!IsOther]
-		  conv <- conv[!IsOther, ]
-		  conv$Group <- as.factor(as.character(conv$Group))
-		}
-        if (!all(IdSmpU %in% IdConv)) {
-            if (nrow(Other) > 0) {
-                # Fill all the other groups with the formula for other and issue a warning
-                NotThere <- IdSmpU[!(IdSmpU %in% IdConv)]
-                warning(paste("Applying default [other] biomass conversion for ", paste(NotThere, collapse = ", "), sep = ""))
-                N <- length(NotThere)
-                conv2 <- data.frame(Group = NotThere, P1 = rep(Other[1, 2], N),
-                    P2 = rep(Other[1, 3], N), P3 = rep(Other[1, 4], N))
-                conv <- rbind(conv, conv2)
-                conv$Group <- as.factor(as.character(conv$Group)) 
-            } else {
-                # All groups must be there: stop!
-                stop("Not all 'Ident' in sample match 'Group' in the conv table")
-            }
-        }
-		# Line number of the corresponding parameter
-		# is calculated as the level of a factor whose levels
-		# are the same as in the conversion table
-		Pos <- as.numeric(factor(IdSmp, levels = as.character(conv$Group)))
-		Smp$P1 <- conv[Pos, "P1"]
-		Smp$P2 <- conv[Pos, "P2"]
-		Smp$P3 <- conv[Pos, "P3"]
-	} else { # Use the same three parameters for all
-		if (length(conv) != 3){
-			stop("You must provide a vector with three numbers")
-		}
-		Smp$P1 <- conv[1]
-		Smp$P2 <- conv[2]
-		Smp$P3 <- conv[3]
-	}
-	# Individual contributions to biomass by m^3
-    Smp$Biomass <- (Smp$P1 * Smp$ECD + Smp$P2)^Smp$P3 * Smp$Dil
-    # AZTI special treatment
-    # introducimos la formula de montagnes y la correccion para ESD(2.61951)
-	#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$ECD)/2)^3)^0.991) * Smp$Dil
+	conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE) {
+	if (!RealT) {
+  	# Check arguments
+  	mustbe(ZIDat, "ZIDat" )
+  	mustbeString( sample, 1 )
+
+  	# Extract only data for a given sample
+  	Smps <- getSample( ZIDat$Label, unique = T, must.have = sample )
+  	Smp <- ZIDat[Smps == sample, ]
+
+  	# Subsample, depending on taxa we keep
+  	if (!is.null(taxa)) {
+  		mustcontain( levels(Smp$Ident), taxa, "taxa not in the sample")
+  		Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
+  	}
+  	if (nrow(Smp) == 0){
+  		stop("no data for this sample/taxa in ZIDat")
+  	}
+
+  	# Add P1/P2/P3 conversion params to the table
+  	if (inherits(conv, "data.frame")) {
+  		if (  ! all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ) || !all(names(conv)[1:4] == c("Group", "a", "b", "c") ) ){
+  			stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
+  		}
+  		IdSmp <- as.character(Smp$Ident)
+  		IdSmpU <- unique(IdSmp)
+  		IdConv <- as.character(conv$Group)
+  		# Eliminate [other] from the table and the list and keep its values for further use
+  		IsOther <- (IdConv == "[other]")
+  		Other <- conv[IsOther, ]
+  		if (sum(IsOther) > 0) {
+  		  IdConv <- IdConv[!IsOther]
+  		  conv <- conv[!IsOther, ]
+  		  conv$Group <- as.factor(as.character(conv$Group))
+  		}
+          if (!all(IdSmpU %in% IdConv)) {
+              if (nrow(Other) > 0) {
+                  # Fill all the other groups with the formula for other and issue a warning
+                  NotThere <- IdSmpU[!(IdSmpU %in% IdConv)]
+                  warning(paste("Applying default [other] biomass conversion for ", paste(NotThere, collapse = ", "), sep = ""))
+                  N <- length(NotThere)
+                  conv2 <- data.frame(Group = NotThere, P1 = rep(Other[1, 2], N),
+                      P2 = rep(Other[1, 3], N), P3 = rep(Other[1, 4], N))
+                  conv <- rbind(conv, conv2)
+                  conv$Group <- as.factor(as.character(conv$Group))
+              } else {
+                  # All groups must be there: stop!
+                  stop("Not all 'Ident' in sample match 'Group' in the conv table")
+              }
+          }
+  		# Line number of the corresponding parameter
+  		# is calculated as the level of a factor whose levels
+  		# are the same as in the conversion table
+  		Pos <- as.numeric(factor(IdSmp, levels = as.character(conv$Group)))
+  		Smp$P1 <- conv[Pos, "P1"]
+  		Smp$P2 <- conv[Pos, "P2"]
+  		Smp$P3 <- conv[Pos, "P3"]
+  	} else { # Use the same three parameters for all
+  		if (length(conv) != 3){
+  			stop("You must provide a vector with three numbers")
+  		}
+  		Smp$P1 <- conv[1]
+  		Smp$P2 <- conv[2]
+  		Smp$P3 <- conv[3]
+  	}
+  	# Individual contributions to biomass by m^3
+      Smp$Biomass <- (Smp$P1 * Smp$ECD + Smp$P2)^Smp$P3 * Smp$Dil
+      # AZTI special treatment
+      # introducimos la formula de montagnes y la correccion para ESD(2.61951)
+  	#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$ECD)/2)^3)^0.991) * Smp$Dil
+      if (!is.null(exportdir)){
+          write.table(Smp, file = paste(file.path(exportdir, sample), "_Bio.txt", sep = ""),
+  			sep = "\t", row.names = FALSE)
+  	}
+
+  	if (is.null(groups)) {
+  		# Total biomass only
+  		res <- sum(Smp$Biomass)
+  		names(res) <- header
+  	} else {
+  		mustbe( groups, "list" )
+  		res <- if( length(groups) == 1 && groups==""){
+  			sum( Smp$Biomass )
+  		} else{
+  			sapply( groups, function(g) sum( Smp$Biomass[ Smp$Ident %in% g ] ) )
+  		}
+  		names( res ) <- paste(header, names(groups))
+  	}
+   	return(res)
+  } else {
+    # real time recognition -> use FlowCAM measurements
+    # Subsample, depending on taxa we keep
+  	Smp <- ZIDat
+  	if (!is.null(taxa)) {
+  		mustcontain( levels(Smp$Ident), taxa, "taxa not in the sample")
+  		Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
+  	}
+  	if (nrow(Smp) == 0){
+  		stop("no data for this sample/taxa in ZIDat")
+  	}
+  	# Add P1/P2/P3 conversion params to the table
+  	if (inherits(conv, "data.frame")) {
+  		if (  ! all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ) || !all(names(conv)[1:4] == c("Group", "a", "b", "c") ) ){
+  			stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
+  		}
+  		IdSmp <- as.character(Smp$Ident)
+  		IdSmpU <- unique(IdSmp)
+  		IdConv <- as.character(conv$Group)
+  		# Eliminate [other] from the table and the list and keep its values for further use
+  		IsOther <- (IdConv == "[other]")
+  		Other <- conv[IsOther, ]
+  		if (sum(IsOther) > 0) {
+  		  IdConv <- IdConv[!IsOther]
+  		  conv <- conv[!IsOther, ]
+  		  conv$Group <- as.factor(as.character(conv$Group))
+  		}
+          if (!all(IdSmpU %in% IdConv)) { # If groups from table not in Ident
+              if (nrow(Other) > 0) {
+                  # Fill all the other groups with the formula for other and issue a warning
+                  NotThere <- IdSmpU[!(IdSmpU %in% IdConv)]
+                  warning(paste("Applying default [other] biomass conversion for ", paste(NotThere, collapse = ", "), sep = ""))
+                  N <- length(NotThere)
+                  conv2 <- data.frame(Group = NotThere, P1 = rep(Other[1, 2], N),
+                      P2 = rep(Other[1, 3], N), P3 = rep(Other[1, 4], N))
+                  conv <- rbind(conv, conv2)
+                  conv$Group <- as.factor(as.character(conv$Group))
+              } else {
+                  # All groups must be there: stop!
+                  stop("Not all 'Ident' in sample match 'Group' in the conv table")
+              }
+          }
+  		# Line number of the corresponding parameter
+  		# is calculated as the level of a factor whose levels
+  		# are the same as in the conversion table
+  		Pos <- as.numeric(factor(IdSmp, levels = as.character(conv$Group)))
+  		Smp$P1 <- conv[Pos, "P1"]
+  		Smp$P2 <- conv[Pos, "P2"]
+  		Smp$P3 <- conv[Pos, "P3"]
+  	} else { # Use the same three parameters for all
+  		if (length(conv) != 3){
+  			stop("You must provide a vector with three numbers")
+      }
+      Smp$P1 <- conv[1]
+  		Smp$P2 <- conv[2]
+  		Smp$P3 <- conv[3]
+  	}
+  	# Individual contributions to biomass by m^3
+      Smp$Biomass <- (Smp$P1 * Smp$FIT_Diameter_ABD + Smp$P2)^Smp$P3 # no dilution because real time process
+      # AZTI special treatment
+      # introducimos la formula de montagnes y la correccion para ESD(2.61951)
+  	#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$FIT_Diameter_ABD)/2)^3)^0.991) * Smp$Dil
     if (!is.null(exportdir)){
-        write.table(Smp, file = paste(file.path(exportdir, sample), "_Bio.txt", sep = ""), 
-			sep = "\t", row.names = FALSE)
-	}
-	
-	if (is.null(groups)) {
-		# Total biomass only
-		res <- sum(Smp$Biomass)
-		names(res) <- header
-	} else {
-		mustbe( groups, "list" )
-		res <- if( length(groups) == 1 && groups==""){
-			sum( Smp$Biomass )
-		} else{
-			sapply( groups, function(g) sum( Smp$Biomass[ Smp$Ident %in% g ] ) )
-		}
-		names( res ) <- paste(header, names(groups))
-	}
- 	return(res)
+      write.table(Smp, file = paste(file.path(exportdir, sample), "_Bio.txt", sep = ""),
+  		  sep = "\t", row.names = FALSE)
+    }
+    # Export table in global R
+    Bio.tab <<- Smp
+  	if (is.null(groups)) {
+  		# Biomass of all groups
+  		res <- NULL
+      grps <- levels(Smp$Ident)
+      for(i in 1:length(grps)){
+        res[i] <- sum(Smp$Biomass[Smp$Ident %in% grps[i]])
+  		}
+  		names(res) <- grps
+  	} else {
+  		mustbe( groups, "list" )
+  		res <- if( length(groups) == 1 && groups==""){
+  			sum( Smp$Biomass )
+  		} else{
+  			sapply( groups, function(g) sum( Smp$Biomass[ Smp$Ident %in% g ] ) )
+  		}
+  		names( res ) <- names(groups)
+  	}
+   	return(res)
+  }
 }
 # }}}
 
