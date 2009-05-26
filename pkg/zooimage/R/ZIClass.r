@@ -76,6 +76,8 @@
 			predict = mypredict, k = k.xval, predictions = TRUE, ...)$predictions
 		attr(ZI.class, "kfold.predict") <- res
 		attr(ZI.class, "k") <- k.xval
+    attr(ZI.class, "formula") <- Formula
+    attr(ZI.class, "path") <- attr(df, "path")
 	}
 	return(ZI.class)
 }
