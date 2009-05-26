@@ -302,7 +302,7 @@ confusion.bar <- function(confmat, mar=NULL) {
 
 	#### Ajout des légendes
   	legend(100, Nmat+(Nmat/15),
-		legend = c("false negative (FN)", "correct ident (CI)", "false positive (FP)"),
+		legend = c("false negative (FN)", "true positive (TP)", "false positive (FP)"),
 		xjust = 0.5, fill = c("PeachPuff2", "green3", "lemonChiffon2"),
 		bty="n", horiz = TRUE)
 	legend(100, Nmat/55, "Percentage", xjust = 0.5, bty = "n")
