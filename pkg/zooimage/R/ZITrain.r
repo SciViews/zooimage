@@ -107,48 +107,48 @@
 
 # {{{ get.ZITrain
 #' Retrieve information from a manual training set and store it in a 'ZITrain' object	
-"get.ZITrain" <- function(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = TRUE) {
-	
+"get.ZITrain" <- function(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE) {
+
 	# 'dir' must be the base directory of the manual classification
 	checkDirExists( dir )
-	
+
 	# Make sure we have .RData files in this dir (otherwise it is perhaps not a
     # training set root dir!
     Dats <- list.files(dir, pattern = "_dat1[.]RData$", full.names = TRUE)
 	if (length(Dats) == 0){
 		stop( "does not appear to be a ", getTemp("ZIname"), " training set root dir!")
 	}
-	
+
 	# list the jpg files (recursively) in the dir
     res <- list.files.ext( dir, extension = "jpg", recursive = TRUE )
-	
+
 	# Check the result...
 	if (length(res) < 1 ){
 		stop("Error while getting data")
 	}
-	
+
 	# Replace "\\" by "/"
 	res <- gsub("[\\]", "/", res)
-	
+
 	# Do we eliminate the '_' directory?
 	if (!keep_) {
 		res <- grep( "^[^_]", res, value = TRUE )
 	}
-	
+
 	# 'Id' is the name of the vignettes, minus the extension
 	Id <- noext( basename(res ) )
-	
+
 	# 'Path' is the directory path
 	Path <- dirname(res)
-	
+
 	# 'Class' is the last directory where the files are located
 	Class <- basename(Path)
-	
+
 	# Create a directory (a data frame with: Id, Class)
 	df <- data.frame(Id = Id, Class = Class)
 	df$Id <- as.character(df$Id)
     nitems <- nrow(df)
-	
+
 	# Read in all the .RData files from the root directory and merge them
     ### TODO: also collect metadata and merge them => make a merge function for ZIDat!!!
 	# Get measurement infos
@@ -162,29 +162,29 @@
 		}
 	}
 	rownames(Dat) <- 1:nrow(Dat)
-	
+
 	# Create the Id column
 	Dat <- cbind(Id = make.Id(Dat), Dat)
-	
+
 	# Merge Dat & df by "Id"
 	df <- merge(Dat, df, by = "Id")
-	
+
 	# Issue an error if there is no remaing row in the data frame
 	if (nrow(df) == 0){
 		stop("No valid item found (both with a vignette and with valid measurement data!")
 	}
-	
+
 	# Check that all items have associated measurements
 	if (nrow(df) < nitems) {
     	nmiss <- nrow(df) - nitems
 		warning(nmiss, " vignettes do not have associated measurement data. They are eliminated (", nrow(df), " items remain in the object)")
 	}
-	
+
 	# delete lines which contain NA values v1.2-2
 	if (any(is.na(df))){
-		warning ("NA in table of measurements")
+		print ("NA in table of measurements")
 		if (na.rm){
-  	  		warning("NA are deleted from table of measurements") 
+  	  		print("NA are deleted from table of measurements")
   	  		df <- na.omit(df)
 		}
   	}
