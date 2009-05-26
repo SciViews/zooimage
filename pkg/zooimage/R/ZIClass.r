@@ -385,15 +385,15 @@ FormVarsSelect <- function(x){
 	# Selection of features for the creation of the classifier
 	keep <- select.list(list = mes,
 	  preselect = c("ECD", "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
-	  "FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio", "FIT_Transparency",
-	  "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
-	  "FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
-	  "FIT_Feret_Max_Angle", "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
-	  "Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width","Height",
-	  "Major", "Minor", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt", "Elongation",
-	  "CentBoxD", "GrayCentBoxD", "CentroidsD", "Range", "MeanPos", "SDNorm", "CV", "logArea",
-	  "logPerim.", "logMajor", "logMinor", "logFeret"),
-	  multiple = TRUE, title = "Select variables to keep")
+    "FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio", "FIT_Transparency",
+    "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
+    "FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
+    "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
+    "Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width","Height",
+    "Major", "Minor", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt", "Elongation",
+    "CentBoxD", "GrayCentBoxD", "CentroidsD", "Range", "MeanPos", "SDNorm", "CV", "logArea",
+    "logPerim.", "logMajor", "logMinor", "logFeret"),
+    multiple = TRUE, title = "Select variables to keep")
 	# Creation of one formula for classifier calculation
 	res <- as.formula(paste("Class ~ ", paste(keep, collapse= "+")))
 	return(res)
