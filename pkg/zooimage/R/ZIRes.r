@@ -173,48 +173,92 @@
 # }}}
 
 # {{{ Spectrum
-"Spectrum" <- function(ZIDat, image,  taxa = NULL, groups = NULL, 
-	breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE) {
-	
-	# Check arguments
-	mustbe(ZIDat, "ZIDat")
-	mustbeString( image, 1)
-	
-	# Select the image
-	dat <- ZIDat[ZIDat$Label == image, ] 
-	if (nrow(dat) == 0){
-		warning("ZIDat contains no '", image, "' data!")
-	}
-	
-	# Remember dilution (in case there are no data)
-	Dil <- if (nrow(dat) > 0) dat$Dil[1] else 1
-	
-	# taxa must correspond to levels in ZIDat$Ident
-	if (!is.null(taxa)) {
-		mustcontain( levels(dat$Ident), taxa, "taxa not in ZIDat")
-		dat <- dat[dat$Ident %in% taxa, ] # Select taxa
-	}
-	if (is.null(groups)) {
-		# Total spectrum only
-		groups <- list("")
-		names(groups) <- "total"
-	}
-	mustbe( groups, "list" )
-	
-	res <- lapply( groups, function( g ){
-		if (length(g) == 1 && g == "") { # Total abundance
-			Dat <- dat$ECD
-		} else { # Abundance for given groups
-			Dat <- dat$ECD[dat$Ident %in% g ]
-		}
-		spc <- table(cut(Dat, breaks = breaks))
-		if (use.Dil) spc <- spc * Dil
-		spc
-	} )
-	names( res ) <- names( groups )
-	attr(res, "breaks") <- breaks
-	attr(res, "unit")   <- if(use.Dil) "ind/m^3" else "count"
-	return(res)
+"Spectrum" <- function(ZIDat, image,  taxa = NULL, groups = NULL,
+	breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE, RealT = FALSE) {
+	if (!RealT) {
+  	# Check arguments
+  	mustbe(ZIDat, "ZIDat")
+  	mustbeString( image, 1)
+
+  	# Select the image
+  	dat <- ZIDat[ZIDat$Label == image, ]
+  	if (nrow(dat) == 0){
+  		warning("ZIDat contains no '", image, "' data!")
+  	}
+
+  	# Remember dilution (in case there are no data)
+  	Dil <- if (nrow(dat) > 0) dat$Dil[1] else 1
+
+  	# taxa must correspond to levels in ZIDat$Ident
+  	if (!is.null(taxa)) {
+  		mustcontain( levels(dat$Ident), taxa, "taxa not in ZIDat")
+  		dat <- dat[dat$Ident %in% taxa, ] # Select taxa
+  	}
+  	if (is.null(groups)) {
+  		# Total spectrum only
+  		groups <- list("")
+  		names(groups) <- "total"
+  	}
+  	mustbe( groups, "list" )
+
+  	res <- lapply( groups, function( g ){
+  		if (length(g) == 1 && g == "") { # Total abundance
+  			Dat <- dat$ECD
+  		} else { # Abundance for given groups
+  			Dat <- dat$ECD[dat$Ident %in% g ]
+  		}
+  		spc <- table(cut(Dat, breaks = breaks))
+  		if (use.Dil) spc <- spc * Dil
+  		spc
+  	} )
+  	names( res ) <- names( groups )
+  	attr(res, "breaks") <- breaks
+  	attr(res, "unit")   <- if(use.Dil) "ind/m^3" else "count"
+  	return(res)
+  } else {
+    # Real Time recognition
+    # ZIDat is a table with VIS measurements and automatic Ident
+  	# taxa must correspond to levels in ZIDat$Ident
+  	if (!is.null(taxa)) {
+  		mustcontain( levels(ZIDat$Ident), taxa, "taxa not in ZIDat")
+  #		if (!all(taxa %in% levels(ZIDat$Ident)))
+  #			stop("taxa not in ZIDat")
+  		Dat <- ZIDat[ZIDat$Ident %in% taxa, ] # Select taxa
+  	}
+    if (is.null(groups)) {
+  		# Total spectrum only
+  		groups <- list("")
+  		names(groups) <- "total"
+  	}
+    mustbe( groups, "list" )
+
+    res <- lapply( groups, function( g ){
+  		if (length(g) == 1 && g == "") { # Total abundance
+  			Dat <- ZIDat$FIT_Diameter_ABD/1000 # in 'mm'
+  		} else { # Abundance for given groups
+  			Dat <- ZIDat$FIT_Diameter_ABD[ZIDat$Ident %in% g ]/1000 # in 'mm'
+  		}
+  		spc <- table(cut(Dat, breaks = breaks))
+  		if (use.Dil) spc <- spc * Dil
+  		spc
+  	} )
+  #	res <- list()
+  #	gnames <- names(groups)
+  #	for (i in 1: length(groups)) {
+  #		if (length(groups[[i]]) == 1 && groups[[i]] == "") { # Total abundance
+  #			Dat <- ZIDat$FIT_Diameter_ABD/1000 # in 'mm'
+  #		} else { # Abundance for given groups
+  #			Dat <- ZIDat$FIT_Diameter_ABD[ZIDat$Ident %in% groups[[i]]]/1000 # in 'mm'
+  #		}
+  #		spc <- table(cut(Dat, breaks = breaks))
+  #		if (use.Dil) spc <- spc * Dil
+  #		res[[gnames[i]]] <- spc
+  #	}
+  	names( res ) <- names( groups )
+  	attr(res, "breaks") <- breaks
+  	attr(res, "unit") <- if(use.Dil) "ind/m^3" else "count"
+  	return(res)
+  }
 }
 # }}}
 
