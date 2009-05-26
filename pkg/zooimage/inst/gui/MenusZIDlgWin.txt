@@ -22,6 +22,11 @@ $Tk.ZIDlgWin
 ||$E&xit
 |||From the &assistant	Ctrl+X			~~ closeAssistant()
 |||From &ZooImage						~~ closeZooImage()
+|$Real-time
+||&Start process...                ~~ RealT()
+||&Stop process...                 ~~ StopRealT()
+||&Export results...               ~~ SaveResults()
+||&Remove data...                  ~~ RemoveRealT()
 |$Objects
 ||&Load									~~ loadObjects()
 ||&Save									~~ saveObjects()
@@ -105,15 +110,15 @@ $Tk.ZIDlgWin
 ||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
 ||-
 ||$R Graphs
-|||&New									~~ plot.new()
-|||&Activate next						~~ {dev.set(); if( isWin() ) bringToTop()}
+|||&New									~~ windows()
+|||&Activate next						~~ {dev.set(); bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
-||Change &active dir...                 ~~ setwd(paste(tkchooseDirectory(), collapse = " "))
+||Change &active dir...                 ~~ Setwd(paste(tkchooseDirectory(), collapse = " "))
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
 |$Help
-||&Online help							~~ browseURL(help("zooimage", htmlhelp = TRUE))
+||&Online help							~~ browseURL(findhtmlhelp("zooimage"))
 ||&Manual	Ctrl+H						~~ viewManual()
 ||&Web site...							~~ browseURL("http://www.sciviews.org/zooimage")
 ||-
