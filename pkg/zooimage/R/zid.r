@@ -153,51 +153,51 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 # {{{ make.RData
 #' Make a .RData file that collates together data from all the "_dat1.zim" files of a given sample
 "make.RData" <- function(zidir, type = "ZI1", replace = FALSE, show.log = TRUE) {
-	
+
 	if (type != "ZI1") {
 		stop("only 'ZI1' is currently supported for 'type'!")
 	}
 	RDataFile <- file.path(zidir, paste(basename(zidir), "_dat1.RData", sep = ""))
-	
+
 	# File already exists
 	if (file.exists(RDataFile) && !replace){
 		return(invisible(TRUE))
 	}
-	
+
 	ok <- TRUE
 	dat1files <- list.dat1.zim(zidir)
 	if(length(dat1files) == 0) {
-		stop("no '_dat1.zim' file!" ) 
+		stop("no '_dat1.zim' file!" )
 	}
 	dat1files <- sort(dat1files)
 	fractions <- get.sampleinfo(dat1files, "fraction")
-	
+
 	# Avoid collecting duplicate informations about fractions
 	fracdup <- duplicated(fractions)
 	results <- lapply( seq.int( 1, length(dat1files) ), function(i){
-		
+
 		dat1path <- file.path(zidir, dat1files[i])
 		iszim <- tryCatch( is.zim( dat1path ), zooImageError = function(e){
-			logError( e ) 
+			logError( e )
 			FALSE
 		} )
 		if( !iszim) return(NULL)
-		
+
 		# Read the header
 		Lines <- scan(dat1path, character(), sep = "\t",
 			skip = 1, blank.lines.skip = FALSE,
 			flush = TRUE, quiet = TRUE, comment.char = "#")
 		if (length(Lines) < 1) {
-			logProcess("is empty, or is corrupted", dat1files[i]); 
-			return( NULL ) 
+			logProcess("is empty, or is corrupted", dat1files[i]);
+			return( NULL )
 		}
-		
+
 		# Trim leading and trailing spaces in Lines
 		Lines <- trim(Lines)
-        
+
 		# Convert underscore to space
 		Lines <- underscore2space(Lines)
-		
+
 		# Determine where the table of measurements starts (it is '[Data]' header)
 		endhead <- tail( which( Lines == "[Data]" ), 1)
 		if (!is.null(endhead)) {
@@ -205,29 +205,29 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 				Lines[ seq.int( 1, endhead - 1) ]
 			}
 		}
-		
+
 		# Decrypt all lines, that is, split on first occurrence of "=" into 'tag', 'value'
 		# and separate into sections
 		meta <- if (!fracdup[i] && !is.null(Lines)) {
 			parse.ini(Lines, sub("_dat1[.]zim$", "", fractions[i]))
 		}
-		
+
 		# Read the table of measurements
 		if (!is.null(endhead)) {
-			mes <- read.table(dat1path, header = TRUE, sep = "\t", 
-				dec = ".", as.is = FALSE, skip = endhead + 1, 
-				comment.char = "#")
-			
+			mes <- read.table(dat1path, header = TRUE, sep = "\t",
+				dec = ".", as.is = FALSE, skip = endhead + 1,
+				comment.char = "#", na.strings = "null")
+
 			# We have several problems here:
 			# 1) There is sometimes a column full of NAs at the end.
 			#    This is because ImageJ adds an extra tab at the end of the line.
-			
+
 			# [RF] FIXME: this should not be the case anymore because we have more control
 			#        of what ImageJ is doing
 			if (all(is.na(mes[ , ncol(mes)]))){
 				mes <- mes[ , -ncol(mes)]
 			}
-			
+
 			# 2) The first column is the 'Item', but i         ts name '!Item' is transformed into 'X.Item'
 			# 3) The '%Area' is transformed into 'X.Area'
 			Names <- names(mes)
@@ -241,18 +241,18 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 			mes <- mes[ , c(2, 1, 3:ncol(mes))]
 			Names <- Names[c(2, 1, 3:length(Names))]
 			names(mes) <- make.names(Names, unique = TRUE)
-			
+
 			Sub     <- meta$Subsample
 			Sub$Dil <- 1 / (Sub$SubPart * Sub$CellPart * Sub$Replicates * Sub$VolIni)
 			mes$Dil <- rep( Sub$Dil[ Sub$Label == fractions[i] ] , nrow(mes) )
-			
+
 		} else{
-			mes <- NULL 
+			mes <- NULL
 		}
-		
+
 		list( meta = meta, mes = mes )
 	} )
-	
+
 	notnull.filter <- Negate(is.null)
 	results        <- Filter( notnull.filter , results )
 	list.allmeta 	<- Filter( notnull.filter, lapply( results, "[[", "meta" ) )
@@ -260,21 +260,21 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	allmeta 		<- combine( .list = list.allmeta )
 	allmes  		<- combine( .list = list.allmes  )
 	rownames(allmes) <- 1:nrow(allmes)
-	
+
 	# Calculate an ECD from Area if there is not one yet
 	Names <- names(allmes)
 	if (!"ECD" %in% Names && "Area" %in% Names) {
 		ECD <- ecd(allmes$Area)
 		# Place ECD in third position (should be just after 'Label' and 'Item')
-		allmes <- data.frame(allmes[, 1:2], "ECD" = ECD, 
+		allmes <- data.frame(allmes[, 1:2], "ECD" = ECD,
 			allmes[, 3:ncol(allmes)] )
 	}
-	
+
 	# Construct a c('ZI1Dat', 'ZIDat', 'data.frame') object containing the data frame
 	# and the metadata as attribute
 	attr(allmes, "metadata") <- allmeta
 	class(allmes) <- c("ZI1Dat", "ZIDat", "data.frame")
-	
+
 	# Save these data in a file
 	ZI.sample <- allmes
 	save(ZI.sample, file = RDataFile, ascii = FALSE, version = 2, compress = TRUE)
