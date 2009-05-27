@@ -285,3 +285,46 @@
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
 
+# Function add new vignettes in a training set
+Add.Vign <- function(zidfiles, train){
+  # Check if selected zid files are already classified in the training set
+  Rdata <- list.files(train, pattern = ".RData")
+  Rdata_New <- paste(gsub(".zid", "", basename(zidfiles)), "_dat1.RData", sep = "")
+  NewZid <- Rdata_New %in% Rdata
+  if(length(unique(!NewZid)) == 1){
+    # All new or existing zid files
+    if(unique(NewZid) == TRUE){
+      # All zid files are already used in the training set
+      stop("All selected zid files are already used in the training set")
+    }
+  } else {
+    # select only new zid files
+    zidfiles <- zidfiles[!NewZid]
+    print(paste("You have selected only", length(zidfiles), " new zid files others are already used in the training set", sep = " "))
+  }
+  # extract vignettes to a new subdir in '_' and Rdata to the parental directory
+  # Create the new directory
+  NewDir <- "_/New_Vign_1"
+  # Check if the new directory name already exists
+  if(file.exists(paste(train, NewDir, sep = "/"))){
+    Vign_lst <- dir(paste(train, "_", sep = "/"), pattern = "New_Vign_")
+    NewDir <- paste("_/New_Vign_", (length(Vign_lst)+1), sep ="")
+  }
+  zmax <- length(zidfiles)
+  # Extract Rdata in the root directory
+  for (i in 1:zmax) {
+    logProcess("data", zidfiles[i])
+    Progress(i, zmax)
+    # Unzip data (*.RData files) there
+    cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.RData -d "', dir = train, '"', sep = "")
+      system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+  }
+  # Extract vignettes in the new directory
+  for (i in 1:zmax) {
+    logProcess("vignettes", zidfiles[i])
+    Progress(i, zmax)
+    # Unzip vignettes (*.jpg files) there
+    cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.jpg -d "', paste(train, NewDir, sep = "/"), '"', sep = "")
+      system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+  }
+}
