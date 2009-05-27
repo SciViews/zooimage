@@ -306,8 +306,8 @@ Add.Vign <- function(zidfiles, train){
   # Create the new directory
   NewDir <- "_/New_Vign_1"
   # Check if the new directory name already exists
-  if(file.exists(paste(train, NewDir, sep = "/"))){
-    Vign_lst <- dir(paste(train, "_", sep = "/"), pattern = "New_Vign_")
+  if(file.exists(file.path(train, NewDir))){
+    Vign_lst <- dir(file.path(train, "_"), pattern = "New_Vign_")
     NewDir <- paste("_/New_Vign_", (length(Vign_lst)+1), sep ="")
   }
   zmax <- length(zidfiles)
@@ -324,7 +324,7 @@ Add.Vign <- function(zidfiles, train){
     logProcess("vignettes", zidfiles[i])
     Progress(i, zmax)
     # Unzip vignettes (*.jpg files) there
-    cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.jpg -d "', paste(train, NewDir, sep = "/"), '"', sep = "")
+    cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.jpg -d "', file.path(train, NewDir), '"', sep = "")
       system(cmd, show.output.on.console = TRUE, invisible = TRUE)
   }
 }
