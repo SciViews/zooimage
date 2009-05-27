@@ -1458,3 +1458,12 @@ RemoveRealT <- function(){
   if(exists("rec", env = .GlobalEnv)) rm(rec, envir = .GlobalEnv)
   if(exists("Bio.tab", env = .GlobalEnv)) rm(Bio.tab, envir = .GlobalEnv)
 }
+
+AddVignToTrain <- function(){
+  # Select zid files to add in the training set
+  zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
+  # Select the training set in which add new vignettes
+  dir <- paste(tkchooseDirectory(), collapse = " ")
+  # Extract vignettes in the training set in New_Vign_X directory
+  Add.Vign(zidfiles = zid, train = dir)  
+}
