@@ -108,6 +108,7 @@ $Tk.ZIDlgWin
 |$Utilities
 ||Calibrate grayscale (16bit)			~~ calib()
 ||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
+||Add new vignettes to training set         ~~ AddVignToTrain()
 ||-
 ||$R Graphs
 |||&New									~~ windows()
