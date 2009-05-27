@@ -327,4 +327,5 @@ Add.Vign <- function(zidfiles, train){
     cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i], '" *.jpg -d "', file.path(train, NewDir), '"', sep = "")
       system(cmd, show.output.on.console = TRUE, invisible = TRUE)
   }
+  print("-- Done --")
 }
