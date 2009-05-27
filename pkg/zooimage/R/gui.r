@@ -1467,3 +1467,21 @@ AddVignToTrain <- function(){
   # Extract vignettes in the training set in New_Vign_X directory
   Add.Vign(zidfiles = zid, train = dir)  
 }
+
+ClassifVigns <- function(){
+  # Extract on zid to respective directories
+  zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE) # select zid you want to recognize and classify
+  # Look if we have a classifier object defined
+  ZIC <- getTemp("ZI.ClassName")
+  if (is.null(ZIC)) ZIC <- ""
+  ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
+    title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+  if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
+  ZICobj <- get(ZIC, envir = .GlobalEnv)
+  # Classify vignettes  
+  if(length(zid) > 1) {
+    classifVign.all(zidfiles = zid, Zic = ZICobj)
+  } else {
+    classifVign(zidfile = zid, Zic = ZICobj)
+  }
+}

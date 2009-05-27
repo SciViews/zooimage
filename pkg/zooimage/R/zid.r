@@ -614,3 +614,49 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 
 # :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1:
 
+# Functions to classify vignettes according to automatic classification
+classifVign <- function(zidfile, Zic, log = TRUE){
+  Zid <- read.zid(zidfile)
+  # Recognition of the zid file
+  Rec <- predict(Zic, Zid)
+  Gp <- unique(Rec$Ident)
+  # Create path for new directories
+  if(!is.null(attr(Zic, "path"))){
+    # There is a 'path' attribute associated with the classifer
+    GpDir <- file.path(dirname(zidfile), "Auto_Classification", attr(Zic, "path"))
+  } else {
+    # only create classifier without taxonomic relationship
+    GpDir <- file.path(dirname(zidfile), "Auto_Classification", unique(Rec$Ident))
+  }
+  # Create directories for new groups on harddisk
+  for(i in 1 : length(GpDir)){
+    if(!file.exists(GpDir)[i]){
+      dir.create(GpDir[i], showWarnings = TRUE, recursive = TRUE)
+    }
+  }
+  # Extract Vignettes
+  uncompress.zid(zidfile)
+  # Copy vignettes from zidfile directory to group directories
+  Rec$Vign <- make.Id(Rec)
+  for(i in 1:nrow(Rec)){
+     From <- file.path(file.path(dirname(zidfile), noext(zidfile)), paste(Rec$Vign[i], "jpg", sep = "."))
+     To <- file.path(GpDir[grep(as.character(Rec$Ident[i]), GpDir)], paste(Rec$Vign[i], "jpg", sep = "."))
+     file.copy(from = From, to = To, overwrite = FALSE)
+     file.remove(From)
+  }
+  # Remove directory
+  unlink(file.path(dirname(zidfile), noext(zidfile)), recursive = TRUE)
+  if(log){
+    print("Your vignettes have been exported into groups in the zid directory")
+  }
+}
+
+classifVign.all <- function(zidfiles, Zic, log = TRUE){
+  for(i in 1 : length(zidfiles)){
+    classifVign(zidfile = zidfiles[i], Zic = Zic, log = FALSE)  
+    if(log){
+      print(paste("zid file", i, "has been extracted" , sep = " "))
+    }
+  }
+  print(paste("Your", length(zidfiles), "zid files", "have been exported into groups in the zid directory" , sep = " "))
+}
