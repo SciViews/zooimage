@@ -642,16 +642,16 @@ Export <- function(){
       # first exportation
       if(length(LIST[-grep("cal", LIST)]) >= getOption("MaxCollages") + 1){ # only collages
         # Check and create new subdirectory
-        New <- paste(dirname(getOption("Path")), paste(basename(dirname(getOption("Path"))), "000001", sep = "_"), sep = "/")
+        New <- file.path(dirname(getOption("Path")), paste(basename(dirname(getOption("Path"))), "000001", sep = "_"))
         if(!file.exists(New)){
           # create the directory
           dir.create(New)
         }
-        file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = paste(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])), sep = "/"), overwrite = FALSE)
-        file.copy(getOption("Path"), paste(New, basename(getOption("Path")), sep = "/"))
+        file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = file.path(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))), overwrite = FALSE)
+        file.copy(getOption("Path"), file.path(New, basename(getOption("Path"))))
         file.remove(LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])
         # export rec table
-        write.table(rec, file = paste(New, paste(basename(New), "results.txt", sep ="_"), sep = "/"),
+        write.table(rec, file = file.path(New, paste(basename(New), "results.txt", sep ="_")),
           sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
         Collages <<- 2 # use it to create new subdirectories
       }
@@ -676,25 +676,25 @@ Export <- function(){
         } else {
           dirNumber <- Collages # 100000 to 999999
         }
-        New <- paste(dirname(getOption("Path")), paste(basename(dirname(getOption("Path"))), dirNumber, sep = "_"), sep = "/")
+        New <- file.path(dirname(getOption("Path")), paste(basename(dirname(getOption("Path"))), dirNumber, sep = "_"))
         if(!file.exists(New)){
           # create the directory
           dir.create(New)
         }
         if(length(Calib) >= 2){
           # There is a new calibration image in the directory
-          file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = paste(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])), sep = "/"), overwrite = FALSE)
-          file.copy(getOption("Path"), paste(New, basename(getOption("Path")), sep = "/"))
+          file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = file.path(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))), overwrite = FALSE)
+          file.copy(getOption("Path"), file.path(New, basename(getOption("Path"))))
           file.remove(c(Calib[1],LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))
           Collages <<- Collages + 1
         } else {
-          file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = paste(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])), sep = "/"), overwrite = FALSE)
-          file.copy(getOption("Path"), paste(New, basename(getOption("Path")), sep = "/"))
+          file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = file.path(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))), overwrite = FALSE)
+          file.copy(getOption("Path"), file.path(New, basename(getOption("Path"))))
           file.remove(LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])
           Collages <<- Collages + 1
         }
         # export rec table
-        write.table(rec, file = paste(New, paste(basename(New), "results.txt", sep ="_"), sep = "/"),
+        write.table(rec, file = file.path(New, paste(basename(New), "results.txt", sep ="_")),
           sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
       }
     }
@@ -739,7 +739,7 @@ save.loop.res <- function(lst, Classif, breaks = seq(0.25, 2, by = 0.1), conv = 
     save.dir <- choose.dir()
   }
   Bio.sample(ZIDat = rec, conv = conv, exportdir = NULL, RealT = TRUE)
-  write.table(Bio.tab, file = paste(save.dir, paste(basename(dirname(lst)), "AbdBio.txt", sep = "_"), sep = "\\"), sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
+  write.table(Bio.tab, file = file.path(save.dir, paste(basename(dirname(lst)), "AbdBio.txt", sep = "_")), sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
   # delete objects from R environment
   if(exists("tab", env = .GlobalEnv)) rm(tab, envir = .GlobalEnv)
   if(exists("rec", env = .GlobalEnv)) rm(rec, envir = .GlobalEnv)
