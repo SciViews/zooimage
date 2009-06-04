@@ -141,7 +141,7 @@ hist.spectrum <- function(spect, breaks = seq(0.05, 0.6, by = 0.05),
 loop.opts <- function(lst = ".", # path of the list file of the current FlowCAM experiment
   classif = ZIC, # Classifier
   type = NULL, # Null: barplot, "l" : line alpha code
-  SizeThreshold = NULL, # NULL or Size threshold in µm alpha code
+  SizeThreshold = NULL, # NULL or Size threshold in Âµm alpha code
   Export_Collages = NULL, # NULL or Number of collages by artificial sample alpha code
   ZIprevSmp = NULL, # Comparison with one previous sample
   ZIlist = NULL,  # Comparison several previous samples
@@ -622,7 +622,8 @@ plotLines <-function(){
       }
       # Graphical representation
       plot(c(1, ncol(Table.Size), NA, NA), c(NA, NA, min(Table.Size), max(Table.Size)),
-        xlab = "iterations", ylab = "abundance", main = paste("Total abundance for groups smaller than", getOption("SizeThreshold"), "µm",sep = " "))
+        xlab = "iterations", ylab = "abundance", 
+		main = paste("Total abundance for groups smaller than", getOption("SizeThreshold"), "Âµm",sep = " "))
       legend(x = 1, y = max(Table.Size), legend = rownames(Table.Size), fill = as.numeric(as.factor(rownames(Table.Size))))
       for(i in 1 : nrow(Table.Size)){
         lines(Table.Size[i,], col = i)
