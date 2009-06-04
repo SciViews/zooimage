@@ -116,7 +116,7 @@ $Tk.ZIDlgWin
 |||&Activate next						~~ {dev.set(); bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
-||Change &active dir...                 ~~ setwd(paste(tkchooseDirectory(), collapse = " "))
+||Change &active dir...                 ~~ zooimage:::setwd(paste(tkchooseDirectory(), collapse = " "))
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
 |$Help
