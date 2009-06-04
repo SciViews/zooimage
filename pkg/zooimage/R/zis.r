@@ -122,7 +122,7 @@
 		if (zisfile == "")
 			return(invisible())
 	} else {
-		checkFileExists( zisfile, "the file '%s' is not found!",
+		checkFileExists( zisfile, message = "the file '%s' is not found!",
 			extension = "zis" )
 	}
 	editor( zisfile, editor = editor )

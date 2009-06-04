@@ -558,7 +558,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 	sample      <- noext(basename(zidfile))
 	RdataFile   <- paste(sample, "_dat1.RData", sep ="")
 	deletefile  <- FALSE
-	checkFileExists( zidfile, "%s not found!" )
+	checkFileExists( zidfile, message = "%s not found!" )
 	# }}}
 	
 	# {{{ treat different kind of files
@@ -570,7 +570,7 @@ verify.zid <- function(zidir, type = "ZI1", check.vignettes = TRUE, show.log = T
 			if (!file.exists(rdata)) {
 				# Try to create it
 				make.RData(zidfile, show.log = FALSE)
-				checkFileExists( rdata, "Error creating the .RData file")
+				checkFileExists( rdata, message = "Error creating the .RData file")
 			}
 		} else stop( sprintf( "Unrecognized file: %s", zidfile) )
 		# }}}

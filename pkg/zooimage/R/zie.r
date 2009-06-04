@@ -902,7 +902,7 @@ ZIEimportTable <- ZIE(
 #' checkBF("test.tif")
 "checkBF" <- function(BFfile) {
 	
-	checkFileExists( BFfile, "Blank-field file '%s' not found!")
+	checkFileExists( BFfile, message = "Blank-field file '%s' not found!")
 
 	# Is it a test file?
 	if (isTestFile(BFfile)){
