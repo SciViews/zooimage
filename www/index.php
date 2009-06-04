@@ -1,4 +1,3 @@
-
 <!-- This is the project specific website template -->
 <!-- It can be changed as liked or replaced by other content -->
 
