@@ -116,7 +116,7 @@ $Tk.ZIDlgWin
 |||&Activate next						~~ {dev.set(); bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
-||Change &active dir...                 ~~ Setwd(paste(tkchooseDirectory(), collapse = " "))
+||Change &active dir...                 ~~ setwd(paste(tkchooseDirectory(), collapse = " "))
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
 |$Help
