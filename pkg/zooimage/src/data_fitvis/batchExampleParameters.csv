@@ -1,2 +1,0 @@
-select,interval,pixelsize,minsize,maxsize,use,thresholddark,thresholdlight,fill,largest,vignettes,scalebar,enhance,outline,masks,verbose
-data/S04.2008-03-10.300F4X3-2/data_export.csv,120,1.7076,25,2000,dark,25,25,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE
