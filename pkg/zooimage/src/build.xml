@@ -12,7 +12,8 @@
 	</path>
 	<!--}}}-->
 
-	<!--{{{ clean -->
+	<!--{{{ regular plugins -->
+  <!--{{{ clean -->
 	<target name="clean">
     <delete dir="build"/>
 		<delete dir="dist"/>
@@ -20,7 +21,7 @@
 	</target>
 	<!--}}}-->
 
-  <!--{{{ compile the java files -->
+	 <!--{{{ compile the java files -->
   <target name="compile" depends="clean">
     <mkdir dir="bin"/>
 		<javac srcdir="src" destdir="bin" source="1.5" target="1.5" debug="true"
@@ -68,6 +69,50 @@
 				
 		</javadoc>
 	</target>
+	<!--}}}-->
+	
+	<!--{{{ FIT VIS -->
+	
+	<target name="clean_fitvis">
+    <delete dir="build_fitvis"/>
+		<delete dir="dist_fitvis"/>
+		<delete dir="bin_fitvis"/>
+	</target>
+	
+	<!--{{{ compile the java files -->
+  <target name="compile_fitvis" depends="clean_fitvis">
+    <mkdir dir="bin_fitvis"/>
+		<javac srcdir="src_fitvis" destdir="bin_fitvis" source="1.5" target="1.5" debug="true"
+			debuglevel="lines,vars,source"> 
+			<classpath refid="zooimage.class.path"/>
+		</javac>
+	</target>
+	<!--}}}-->
+
+	<!--{{{ build the jar file -->
+  <target name="build_fitvis" depends="compile_fitvis">
+    
+	  <jar jarfile="${target}/plugins/_fitvis.jar">
+			<fileset dir="bin_fitvis" />
+			<fileset dir="src_fitvis">
+				<include name="*.xml" />
+				<include name="**/*.props" />
+				<include name="**/*.properties" />
+				<include name="**/*.html" />
+				<include name="**/*.gif" />
+				<include name="**/*.png" />
+				<include name="**/*.txt" />
+			</fileset>
+			<fileset dir="data_fitvis">
+				<include name="**" />
+			</fileset>
+		</jar>
+		
+		<copy file="data_fitvis/FITVIS.macro" tofile="${target}/plugins/FITVIS.macro"/>
+		
+  </target>
+	<!--}}}-->
+
 	<!--}}}-->
 	
 	
