@@ -1,3 +1,0 @@
-#!/bin/bash
-
-java -Xmx900m -cp .:ij.jar:plugins/_fitvis.jar org.sciviews.zooimage.fitvis.FitVisMain $@
