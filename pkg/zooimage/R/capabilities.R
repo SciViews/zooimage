@@ -32,7 +32,7 @@ checkCapable <- function( cap ){
 #' utility that checks if the zip program is available
 checkZipAvailable <- function( ){
 	checkCapabilityAvailable( "zip", 
-		sprintf('"%s" -h %s', ZIpgm("zip", "misc"), if( !isWin() ) " > /dev/null"  ), 
+		sprintf('"%s" -h %s', ZIpgm("zip", "misc"), if( !isWin() ) " > /dev/null" else "" ), 
 		"zip - program from Info-Zip not found!" )
 }
 # }}}
@@ -40,7 +40,7 @@ checkZipAvailable <- function( ){
 #{{{ checkUnzipAvailable
 checkUnzipAvailable <- function( ){
 	checkCapabilityAvailable( "unzip", 
-		sprintf('"%s" -h %s', ZIpgm("unzip", "misc"), if( !isWin() ) " > /dev/null"  ), 
+		sprintf('"%s" -h %s', ZIpgm("unzip", "misc"), if( !isWin() ) " > /dev/null" else "" ), 
 		"unzip - program from Info-Zip not found!" )
 }
 #}}}
@@ -48,7 +48,7 @@ checkUnzipAvailable <- function( ){
 #{{{ checkZipnoteAvailable
 checkZipnoteAvailable <- function( ){
 	checkCapabilityAvailable( "zipnote", 
-		sprintf('"%s" -h %s', ZIpgm("zipnote", "misc"), if( !isWin() ) " > /dev/null"  ), 
+		sprintf('"%s" -h %s', ZIpgm("zipnote", "misc"), if( !isWin() ) " > /dev/null" else "" ), 
 		"zipnote - program from Info-Zip not found!" )
 }
 # }}}
@@ -137,7 +137,7 @@ capabilities <- list(
 #{{{ checkCapabilityAvailable
 checkCapabilityAvailable <- function( cap, cmd, msg ){
 
-	program <- cap
+  program <- cap
 	if( program == "dc_raw" && !isWin() ) {
 		program <- "dcraw"
 	}
@@ -161,7 +161,7 @@ checkCapabilityAvailable <- function( cap, cmd, msg ){
 	#               and we do not want this warning to be captured by our
 	#               error trapping
 	ok <- if( isWin() ){
-		system(cmd, invisible = TRUE) == 0
+	  	system(cmd, invisible = TRUE) == 0
 	} else {
 		length( 
 			system( sprintf( " which %s 2> /dev/null" , program ), intern = TRUE )

@@ -19,7 +19,8 @@
 
 # {{{ Loading ZooImage
 ".onAttach" <- function(libname, pkgname) {
-	# {{{ check package dependencies
+
+ 	# {{{ check package dependencies
 	(require(utils) || stop("Package 'utils' is required!"))
 	(require(svMisc) || stop("Package 'svMisc' from SciViews bundle is required!"))
 	(require(svWidgets) || stop("Package 'svWidgets' is required!"))
@@ -29,9 +30,8 @@
 
 	# {{{ check capabilities
 	checkZipAvailable()
-	checkUnzipAvailable()
+  checkUnzipAvailable()
 	checkZipnoteAvailable()
-	# }}}
 
 	# {{{
 	if (!interactive()) options(ZIAssistant  = FALSE)
