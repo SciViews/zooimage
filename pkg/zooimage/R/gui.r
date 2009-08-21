@@ -824,6 +824,8 @@ ZIDlg <- function() {
 			title = "Select a ZIS file")), collapse = " ")
 	}
 	if (length(zisfile) == 0 || zisfile == "") return(invisible())
+  
+  # Add Kevin Denis option for Semi automatic classification 
 	# Option dialog box
     res <- modalAssistant(paste(getTemp("ZIname"), "samples processing"),
 		c("Each sample registered in the description.zis file",
@@ -834,13 +836,49 @@ ZIDlg <- function() {
 		"particle individually, check the option below.",
         "",
 		"Click 'OK' to proceed...", ""),
-		init = "0", check = "Save individual calculations", help.topic = "processSamples")
+		init = "0", options = "Semi Automatic Classification",
+    check = "Save individual calculations", help.topic = "processSamples")
 	# Analyze result
 	if (res == "ID_CANCEL") return(invisible())
  	# Do we save individual calculations?
  	if (res == "1") exportdir <- dirname(zisfile) else exportdir <- NULL
+ 	if (res == "1") exportdir <- dirname(zisfile) else exportdir <- NULL
+  
+  # Add Kevin Denis for semi automatic classification
+  # Do we use Semi automatic classification?
+  if (res == "Semi Automatic Classification"){
+    res <- modalAssistant(paste(getTemp("ZIname"), "samples processing"),
+    	c("Each sample registered in the description.zis file",
+    	"will be processed in turn to extract ecological",
+    	"parameters (abundances, biomasses, size spectra).",
+    	"",
+          "If you want to save calculation done on each",
+    	"particle individually, check the option below.",
+          "",
+    	"Click 'OK' to proceed...", ""),
+    	init = "0", check = "Save individual calculations", help.topic = "processSamples")
+  	# Analyze result
+  	if (res == "ID_CANCEL") return(invisible())
+   	# Do we save individual calculations?
+   	if (res == "1") exportdir <- dirname(zisfile) else exportdir <- NULL
 
-    # Get a list of samples from the description file
+    # Read the manual error correction directory called Semi.Auto
+    dir <- getTemp("ZI.TrainDir")
+    if (is.null(dir) || !file.exists(dir) || !file.info(dir)$isdir) dir <- getwd()
+    # Ask for a base directory of a training set...
+    dir <- tkchooseDirectory(initialdir = dir, mustexist = "1", title = paste("Select a", getTemp("ZIname"), "Manual classification base dir"))
+    dir <- tclvalue(dir)
+    if (is.null(dir) || dir == "" || !file.exists(dir) || !file.info(dir)$isdir)
+      return(invisible())
+    res <- get.ZITrain(dir, creator = NULL, desc = NULL, keep_ = FALSE)
+    assign("Semi.Auto", res, envir = .GlobalEnv)
+    # Create an object for condition
+    Semi.Classif <- TRUE
+  } else {
+    Semi.Classif <- FALSE
+  } 
+  
+  # Get a list of samples from the description file
 	smpdesc <- read.description(zisfile)
 	smplist <- list.samples(smpdesc)
 	# Are there samples in it?
@@ -886,12 +924,23 @@ ZIDlg <- function() {
 	if (is.null(name) || length(name) == 0 || name == "") return(invisible())
 	name <- make.names(name)	# Make sure it is a valid name!
 	# Process sample by sample and collect results together in a ZIRes object
+
+  # Add Kevin Denis for semi automatic classification
+  if(Semi.Classif){
 	res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj, ZIDesc = read.description(zisfile),
 		abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
 		bio.taxa = NULL, bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
 		spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
+		exportdir = exportdir, show.log = TRUE, bell = FALSE, SemiTab = Semi.Auto, Semi = TRUE)
+  } else {
+  res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj, ZIDesc = read.description(zisfile),
+		abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
+		bio.taxa = NULL, bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
+		spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
 		exportdir = exportdir, show.log = TRUE, bell = FALSE)
-	# Assign this result to the variable
+	}
+	
+  # Assign this result to the variable
 	assign(name, res, envir = .GlobalEnv)
 	# Remember the name of the variable
 	assignTemp("ZI.LastRES", name)

@@ -21,7 +21,7 @@
 		abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
 		bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1), headers = c("Abd", "Bio"),
 		spec.taxa = NULL, spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE,
-		exportdir = NULL, show.log = TRUE) {
+		exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE) {
     
 	# Check if the ZidFile exists
 	checkFileExists( ZidFile )
@@ -41,6 +41,21 @@
 	
 	# Predict classes (add a new column Ident to the table)
 	ZIDat <- predict(ZIClass, ZIDat)
+	
+  # Modif Kevin Denis for Semi Automatic classification
+	if(Semi){
+    if(is.null(SemiTab)){
+      stop("You must provide a table with semi automatic classification")
+    }
+    if(!inherits(SemiTab, "ZITrain")) stop("SemiTab must be a ZItrain object with manual classification")
+    # Extract ZidFile subtable from SemiTab (Semi automatic classification general table)
+    SemiClass <- SemiTab[sub("[+].*", "", as.character(SemiTab$Label)) %in% noext(ZidFile),]
+    # Repalce automatic recogntion by semi automatic one
+    for(j in 1: nrow(SemiClass)){
+      ZIDat[ZIDat$Item == j, ]$Ident <- SemiClass[SemiClass$Item == j,]$Class
+    }
+	}
+
 	Grp <- levels(ZIDat$Ident)	
 	if (is.null(abd.groups)) {
 		# Calculate groups (list with levels to consider)
@@ -90,7 +105,7 @@
 	abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
 	bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1), headers = c("Abd", "Bio"),
 	spec.taxa = NULL, spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE,
-	exportdir = NULL, show.log = TRUE, bell = FALSE) {
+	exportdir = NULL, show.log = TRUE, bell = FALSE, SemiTab = NULL, Semi = FALSE) {
 
 	# Determine which samples do we have to process...
 	if (is.null(ZidFiles)) {
@@ -115,20 +130,60 @@
 	
 	results <- lapply( 1:imax, function(i){
 		Progress(i, imax)
-		tryCatch({
-			res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
-				abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
-				bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
-				spec.taxa = spec.taxa, spec.groups = spec.groups, spec.breaks = spec.breaks, 
-				spec.use.Dil = spec.use.Dil,
-        	    exportdir = exportdir, show.log = FALSE)
-			logProcess("OK", ZidFiles[i])
-			res
-		}, zooImageError = function(e){
-			logError( e )
-			NULL
-		} )
-	} )
+		
+    # Modif Kevin Denis for semi automatic recognition
+    if(Semi){
+      if(is.null(SemiTab)){
+        stop("You must provide a table with manual classification")
+      }
+      if(!inherits(SemiTab, "ZITrain")) stop("SemiTab must be a ZItrain object with manual classification")
+      
+      if(noext(ZidFiles[i]) %in% sub("[+].*", "", as.character(SemiTab$Label))){
+    		tryCatch({
+          res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
+            abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
+            bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
+            spec.taxa = spec.taxa, spec.groups = spec.groups, spec.breaks = spec.breaks, spec.use.Dil = spec.use.Dil,
+            exportdir = exportdir, show.log = FALSE, SemiTab = Semi.Auto, Semi = TRUE)
+
+    			logProcess("OK", ZidFiles[i])
+    			res
+    		  }, zooImageError = function(e){
+    			logError( e )
+    			NULL
+    		} )      
+      } else {
+    		tryCatch({
+    			res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
+    				abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
+    				bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
+    				spec.taxa = spec.taxa, spec.groups = spec.groups, spec.breaks = spec.breaks, 
+    				spec.use.Dil = spec.use.Dil,
+            	    exportdir = exportdir, show.log = FALSE)
+    			logProcess("OK", ZidFiles[i])
+    			res
+    		  }, zooImageError = function(e){
+    			logError( e )
+    			NULL
+    		} )
+      }
+    } else { 		
+  		tryCatch({
+  			res <- process.sample(ZidFiles[i], ZIClass = ZIClass, ZIDesc = ZIDesc,
+  				abd.taxa = abd.taxa, abd.groups = abd.groups, abd.type = abd.type,
+  				bio.taxa = bio.taxa, bio.groups = bio.groups, bio.conv = bio.conv, headers = headers,
+  				spec.taxa = spec.taxa, spec.groups = spec.groups, spec.breaks = spec.breaks, 
+  				spec.use.Dil = spec.use.Dil,
+          	    exportdir = exportdir, show.log = FALSE)
+  			logProcess("OK", ZidFiles[i])
+  			res
+  		}, zooImageError = function(e){
+  			logError( e )
+  			NULL
+  		} )
+  	}
+  # end modif Kevin Denis
+	})
 	
 	ClearProgress()
 	
