@@ -1,0 +1,60 @@
+= capabilities.R
+
+ZOOIMAGEENV = environment
+checkCapable(cap)
+capabilities = list
+checkZipAvailable()
+checkUnzipAvailable()
+checkZipnoteAvailable()
+checkIdentifyAvailable()
+checkConvertAvailable()
+checkPpmtopgmAvailable()
+checkDcRawAvailable()
+checkAvailable_pnm2biff()
+checkAvailable_divide()
+checkAvailable_statistics()
+checkAvailable_biff2tiff()
+checkAvailable_java()
+checkCapabilityAvailable(cap, cmd, msg)
+getZooImageCapability(cap = "zip")
+zooImageCapabilities(...)
+
+
+= catcher.R => Nothing exported
+
+catch.env = environment
+catch(call)
+recallWithCatcher(call, debug = FALSE)
+getCatcher()
+setCatcher(catcher)
+dummyCatcher(call)
+resetCatcher()
+
+ 
+= errorHandling.R => Nothing exported
+
+stop(..., call. = TRUE, domain = NULL)
+warning(..., call. = TRUE, immediate. = FALSE, domain = NULL)
+zooImageError(msg = "error", env = parent.frame(),
+    errorClass = NULL, context = NULL, verbose = getOption("verbose"))
+zooImageWarning(msg = "warning", env = parent.frame())
+zooImageErrorDrivers = list
+zooImageWarningDrivers = list
+zooImageErrorContext(fun, context)
+zooImageWarningContext(fun, context)
+getZooImageConditionFunction(calls, drivers, default, context.fun)
+getZooImageErrorFunction(calls)
+getZooImagheWarningFunction(calls)
+[[.zooImageError(x, ...)
+[[.zooImageWarning(x, ...)
+extractMessage(err)
+
+
+== log.R
+logProcess(message, topic = NULL, file = file.path(tempdir(), "ZooImage.log"),
+    logit = TRUE, stop = FALSE, show.log = stop)
+logClear(file = file.path(tempdir(), "ZooImage.log"))
+logView(file = file.path(tempdir(), "ZooImage.log"),
+    title = paste(getTemp("ZIname"), "log"), clear = TRUE, warn = FALSE)
+logError(e, msg = NULL, ...)
+logWarning(w, msg = NULL, ...)

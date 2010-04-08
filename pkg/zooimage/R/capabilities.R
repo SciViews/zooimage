@@ -36,7 +36,6 @@ capabilities <- list(
 	"java"       = checkAvailable_java
 ) 
 
-
 # Various check*Capability functions
 # Utility that checks if the zip program is available
 checkZipAvailable <- function ()

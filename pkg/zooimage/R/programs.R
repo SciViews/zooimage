@@ -1,6 +1,6 @@
 # {{{ Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
 #
-# This file is part of ZooImage .
+# This file is part of ZooImage
 # 
 # ZooImage is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

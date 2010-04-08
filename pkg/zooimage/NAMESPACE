@@ -144,10 +144,10 @@ export(zip.img)
 export(zip.img.all)
 export(zip.ZITrain)
 
-# The following functions are NOT exported
+# The following objects are NOT exported
  # ZOOIMAGEENV (environment holding ZooImage data)
-# catch
-# catch.env
+ # catch
+ # catch.env
  # checkAvailable_java
  # checkAvailable_biff2tiff # Eliminate Xite programs
  # checkAvailable_divide # Eliminate Xite programs
@@ -163,31 +163,30 @@ export(zip.ZITrain)
  # checkUnzipAvailable
  # checkZipAvailable
  # checkZipnoteAvailable
-# dummyCatcher
+ # dummyCatcher
 # extensionPattern
-# extractMessage
+ # extractMessage
 # finish.loopfunction
-# getCatcher
+ # getCatcher
  # getZooImageCapability
-# getZooImageConditionFunction
-# getZooImageErrorFunction
-# getZooImageWarningFunction
+ # getZooImageConditionFunction
+ # getZooImageErrorFunction
+ # getZooImageWarningFunction
 # grepl
+ # recallWithCatcher
+ # resetCatcher
+ # setCatcher
+ # stop
 # unzip
-# warning
+ # warning
 # zip
 # zipnote
  # zooImageCapabilities
-# zooImageError
-# [[.zooImageError
-# zooImageErrorContext
-# zooImageErrorDrivers
-# zooImageWarning
-# [[.zooImageWarning
-# zooImageWarningContext
-# zooImageWarningDrivers
-
-# recallWithCatcher
-# resetCatcher
-# setCatcher
-# stop
+ # zooImageError
+ # [[.zooImageError
+ # zooImageErrorContext
+ # zooImageErrorDrivers
+ # zooImageWarning
+ # [[.zooImageWarning
+ # zooImageWarningContext
+ # zooImageWarningDrivers
