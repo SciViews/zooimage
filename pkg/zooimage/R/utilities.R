@@ -1,6 +1,6 @@
 # Copyright (c) 2004-2006, Ph. Grosjean <phgrosjean@sciviews.org>
 #
-# This file is part of ZooImage .
+# This file is part of ZooImage
 # 
 # ZooImage is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,119 +16,112 @@
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 # Various utility functions used by ZooImage
-    
-# {{{ warnOrStop
-#' warns or stops
-warnOrStop <- function( ..., warn.only = get("warn.only", parent.frame() ) ){
-	if( is.null(warn.only ) ) warn.only <- TRUE
-	msg <- paste( ..., sep = "" )
-	if( warn.only ) warning( msg ) else stop( msg )
-	invisible( NULL )
-}
-# }}}
-
-# {{{ getVar
-#' Get the name of one or several variables of a given class
-"getVar" <- function(class = "data.frame", default = "", multi = FALSE,
-	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE) {
-	
+# Get the name of one or several variables of a given class
+"getVar" <- function (class = "data.frame", default = "", multi = FALSE,
+	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
+{	
 	# Get one or several variables of a given object class
-	(require(utils) || stop("Package 'utils' is required!"))
-	varlist <- objects(pos = 1)		# Get objects in .GlobalEnv
+	varlist <- objects(pos = 1)	# Get objects in .GlobalEnv
 	
 	# Filter this list to keep only object inheriting a giving class...
 	Filter <- NULL
-	for (i in 1:length(varlist)) {
+	for (i in 1:length(varlist))
 		Filter[i] <- inherits(get(varlist[i]), class)
-	}
 	
 	# Keep only those objects
 	varlist <- varlist[Filter]	
 	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		warnOrStop( "There is no object of class '", paste(class, collapse = " "), "' in the user workspace!" )
+		msg <- paste("There is no object of class '",
+			paste(class, collapse = " "), "' in the user workspace!", sep = "")
+		if (isTRUE(warn.only)) warning(msg) else stop(msg)
 		varsel <- "" 
 	} else {
 		if (default == "") default <- varlist[1]
-		varsel <- select.list(varlist, preselect = default, multiple = multi, title = title)
+		varsel <- select.list(varlist, preselect = default, multiple = multi,
+			title = title)
 	}
     return(varsel)		
 }
-# }}}
 
-# {{{ getList
-#' Get the name of one or several lists with all of their components of a given class
-#' Note: this is used as a collection in other languages (no such collection in R!)
-"getList" <- function(class = "data.frame", default = "", multi = FALSE,
-	title = paste("Choose a ", class, ":", sep=""), warn.only = TRUE) {
-	
-	# Get lists of items of specified class
-	(require(utils) || stop("Package 'utils' is required!"))
-	
+# Get the name of one or more lists with their components of a given class
+# Note: this is used as a collection in other languages
+# (there is no such collection in R, so, we use az list here!)
+"getList" <- function (class = "data.frame", default = "", multi = FALSE,
+	title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
+{	
 	# Get objects in .GlobalEnv
 	filter <- function(x) {
 		item <- get(x)
-		is.list(item) && all( sapply( item, function(y) inherits( y, class ) ) )
+		is.list(item) && all(sapply(item, function(y) inherits(y, class)))
 	}
-	varlist <- Filter( filter , objects(pos = 1) )	
-	if( length(varlist) == 0 ){
-		warnOrStop( "There is no list of ", class, " objects in the user workspace" )
+	varlist <- Filter(filter, objects(pos = 1))	
+	if (length(varlist) == 0) {
+		msg <- paste("There is no list of '", class,
+			"' objects in the user workspace", sep = "")
+		if (isTRUE(warn.only)) warning(msg) else stop(msg)
 		return("")
 	}
-	if (default == ""){
-		default <- varlist[1]
-	}
-	varsel <- select.list(varlist, preselect = default, multiple = multi, title = title)
+	if (default == "") default <- varlist[1]
+	varsel <- select.list(varlist, preselect = default, multiple = multi,
+		title = title)
 	return(varsel)		
 }
-# }}}
 
-# {{{ selectFile
-#' Select one or several files of a given type
-"selectFile" <- function(
+# Select one or several files of a given type
+"selectFile" <- function (
 	type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
-	multi = FALSE, quote = TRUE) {
-	
-	type <- tryCatch( match.arg( type ), error = function(e){
-		stop( "unrecognized type" )
+	multi = FALSE, quote = TRUE)
+{	
+	type <- tryCatch(match.arg(type), error = function (e) {
+		stop("unrecognized type")
 	})
-	Type <- switch( type,  "ZipZid" = "Zip/Zid",  "ZimZis" = "Zim/Zis", type )
+	Type <- switch(type, "ZipZid" = "Zip/Zid", "ZimZis" = "Zim/Zis", type)
 	
 	# Adapt title according to 'multi'
-	if (multi) {
+	if (isTRUE(multi)) {
     	title <- paste("Select one or several", Type, "files...")
 	} else {
 		title <- paste("Select one", Type, "file...")
 	}
-	filters <- switch(type,
-		ZipZid 	= c("ZooImage files (*.zip;*.zid)"          , "*.zip;*.zid"),
-		ZimZis 	= c("ZooImage metadata files (*.zim;*.zis)" , "*.zim;*.zis"),
-		Zip		= c("ZooImage picture files (*.zip)"        , "*.zip"      ),
-		Zid		= c("ZooImage data files (*.zid)"           , "*.zid"      ),
-		Zim		= c("ZooImage metadata files (*.zim)"       , "*.zim"      ),
-		Zis		= c("ZooImage sample files (*.zis)"         , "*.zis"      ),
-		Zie		= c("ZooImage extension files (*.zie)"      , "*.zie"      ))
 	
-	res <- choose.files(caption = title, multi = multi, filters = filters )
-	if (res != "" && quote)  {
+	#if (!isWin()) {
+		filters <- switch(type,
+			ZipZid 	= c("ZooImage files"          , ".zip",
+						"ZooImage files"          , ".zid"      ),
+			ZimZis 	= c("ZooImage metadata files" , ".zim",
+						"ZooImage metadata files" , ".zis"      ),
+			Zip		= c("ZooImage picture files"  , ".zip"      ),
+			Zid		= c("ZooImage data files"     , ".zid"      ),
+			Zim		= c("ZooImage metadata files" , ".zim"      ),
+			Zis		= c("ZooImage sample files"   , ".zis"      ),
+			Zie		= c("ZooImage extension files", ".zie"      ))
+		filters <- matrix(filters, ncol = 2, byrow = TRUE)
+		res <- tk_choose.files(caption = title, multi = multi, filters = filters)
+	#} else { # Old treatment using Windows-only function
+	#	filters <- switch(type,
+	#		ZipZid 	= c("ZooImage files (*.zip;*.zid)"          , "*.zip;*.zid"),
+	#		ZimZis 	= c("ZooImage metadata files (*.zim;*.zis)" , "*.zim;*.zis"),
+	#		Zip		= c("ZooImage picture files (*.zip)"        , "*.zip"      ),
+	#		Zid		= c("ZooImage data files (*.zid)"           , "*.zid"      ),
+	#		Zim		= c("ZooImage metadata files (*.zim)"       , "*.zim"      ),
+	#		Zis		= c("ZooImage sample files (*.zis)"         , "*.zis"      ),
+	#		Zie		= c("ZooImage extension files (*.zie)"      , "*.zie"      ))
+	#	filters <- matrix(filters, ncol = 2, byrow = TRUE)
+	#	res <- choose.files(caption = title, multi = multi, filters = filters)
+	#}
+	
+	if (length(res) && res != "" && quote)
 		res <- paste('"', res, '"', sep = "")
-	}
 	return(res)
 }
-# }}}
 
-# {{{ getKey / setKey
-
-# Get a key in the registry (retrieve ZooImage configuration data)
-ziKey <- function( key ){
-	sprintf( "zooimage-%s", key )
-}
-
-"getKey" <- function(key, default.value = NULL) {
- 	
+# Get a key (permanent configuration data, from the registry if under Windows)
+"getKey" <- function (key, default.value = NULL)
+{ 	
 	# Retrieve a ZooImage key in the registry
 	# TODO: should we use this also for windows ?
 	if (!isWin()) {
-		return( getTemp( ziKey(key) , default.value) )
+		return(getTemp(sprintf("zooimage-%s", key), default.value))
 	}
 	
 	# Look if the key is defined
@@ -140,124 +133,104 @@ ziKey <- function( key ){
 	
 }
 
-# Set a key in the registry (store configuration data for next ZooImage session)
-"setKey" <- function(key, value, type = "sz") {
+# Set a key permanently (in the registry, if under Windows)
+"setKey" <- function (key, value, type = "sz")
+{
 	if(!isWin()) {
 		# TODO: should we also use this for windows ?
-		assignTemp( ziKey( key), value, TRUE )
+		assignTemp(sprintf("zooimage-%s", key), value, TRUE )
 	} else{
 		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
 	}
 	return(invisible(TRUE))
 }
-# }}}
 
-# {{{ Text manipulation
-#' Convert underscores into spaces
-"underscore2space" <- function(char) {
-	# Convert underscores to spaces in strings (underscore is used in calltips
-	# in the ZooImage Metadata Editor, because of a bug in this program)
-	gsub("_", " ", char)
-}
+# Convert underscores into spaces
+"underscore2space" <- function (char)
+	return(gsub("_", " ", char))
 
-#' Trim leading and trailing white spaces and tabs
-"trim" <- function(char) {
-	sub("\\s+$", "", sub("^\\s+", "", char))
-}
+# Trim leading and trailing white spaces and tabs
+"trim" <- function (char)
+	return(sub("\\s+$", "", sub("^\\s+", "", char)))
 
-#' Get the name of a file, without its extension
-"noext" <- function(file) {
-	# Get basename without extension
-	sub("\\.[^.]+$", "", basename(file))
-}
+# Get the name of a file, without its extension
+"noext" <- function (file)
+	return(sub("\\.[^.]+$", "", basename(file)))
 
-# }}}
-
-# {{{ get.sampleinfo
 # Get information about a sample, given its name
-"get.sampleinfo" <- function(filename, 
-	type = c("sample", "fraction", "image", "scs", "date", "id", "frac", "imgnbr"),
-	ext = "_dat1[.]zim$") {
-	
-	type <- tryCatch( match.arg(type), error = function(e){
-		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'")
-	} )
+"get.sampleinfo" <- function (filename,  type = c("sample", "fraction", "image",
+"scs", "date", "id", "frac", "imgnbr"), ext = "_dat1[.]zim$")
+{	
+	type <- tryCatch( match.arg(type), error = function (e) {
+		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id',
+		'frac' or 'imgnbr'")
+	})
 	base <- basename(filename)
-	if (ext != ""){
-		base <- sub(ext, "", base)
-	}
+	if (ext != "") base <- sub(ext, "", base)
 	
-	# filename without extension is supposed to follow the convention: scs.date.id+f[img]
-	# with scs.date.id forming an unique sample identifier
-	# Note: not all verifications are conducted. So, it sometimes returns a result even if the name does
-	# not conform to this specification!
-	### TODO: check that the name follows the convention and determine what is facultative, like date, for instance)
+	# Filename without extension is supposed to follow the convention:
+	# scs.date.id+f[img] with scs.date.id forming an unique sample identifier
+	# Note: not all verifications are conducted. So, it sometimes returns a
+	# result even if the name does not conform to this specification!
+	### TODO: check that the name follows the convention and determine what is
+	#         optional, like date, for instance)
 	res <- switch(type,
-		sample     = sub("\\+[a-zA-Z][0-9.]+$", "", base),
-		fraction   = sub("[0-9.]+$", "", base),
-		image      = base,
-		scs        = sub("^[^+.]*[+.].+$", "", base),
-		date       = as.Date(sub("^.*([0-9]{4}-[0-1][0-9]-[0-3][0-9]).*$", "\\1", base)),
-		id         = sub("^.*\\..*\\.(.*)\\+.*$", "\\1", base),
-		frac       = sub("^.*\\+([a-zA-Z]).*$", "\\1",base),
-		imgnbr     = as.numeric(sub("^.*\\+[a-zA-Z]([0-9.]*)$", "\\1", base)),
-		)
+		sample   = sub("\\+[a-zA-Z][0-9.]+$", "", base),
+		fraction = sub("[0-9.]+$", "", base),
+		image    = base,
+		scs      = sub("[+.].+$", "", base),
+		date     = as.Date(sub("^.*([0-9]{4}-[0-1][0-9]-[0-3][0-9]).*$", "\\1",
+			base)),
+		id       = sub("^.*\\..*\\.(.*)\\+.*$", "\\1", base),
+		frac     = sub("^.*\\+([a-zA-Z]).*$", "\\1",base),
+		imgnbr   = as.numeric(sub("^.*\\+[a-zA-Z]([0-9.]*)$", "\\1", base)),
+	)
 	return(res)
 }
-# }}}
 
-# {{{ ecd
-#' Calculate equivalence circular diameter (similar to equivalent spherical diameter, but for 2D images)
-"ecd" <- function(area) {
+# Calculate equivalent circular diameter (similar to equivalent spherical
+# diameter, but for 2D images)
+"ecd" <- function (area)
 	return(2 * sqrt(area / pi))
-}
-# }}}
 
-# {{{ make.Id
-#' Unique identifiers (Ids) are a combination of Label and Item
-"make.Id" <- function(df) {
-	# Make a list of Ids, combining "Label" and "Item"
+# Unique identifiers (Ids) are a combination of Label and Item
+"make.Id" <- function (df)
 	paste(df$Label, df$Item, sep = "_")
-}
-# }}}
 
-# {{{ calc.vars
-#' Calculate derived variables... default function
-"calc.vars" <- function(x) {
-	
+# Calculate derived variables... default function
+"calc.vars" <- function (x)
+{	
 	# This is the calculation of derived variables
-	# Note that you can make your own version of this function for more calculated variables!
+	# Note that you can make your own version of this function for more
+	# calculated variables!
 	
 	# A small hack to correct some 0 for Minor and Major
-	hack <- function( x ){
-		x[ x == 0 ] <- 0.000000001
-	}
-	distfun <- function( x, y ){
-		sqrt( x^2 + y^2 )
-	}
+	hack <- function (x)
+		x[x == 0] <- 0.000000001
+	distfun <- function (x, y)
+		sqrt(x^2 + y^2)
 	
-	within( x, {
-		Minor               <- hack( Minor )
-		Major               <- hack( Major ) 
+	within(x, {
+		Minor               <- hack(Minor)
+		Major               <- hack(Major) 
 		Elongation          <- Major / Minor
-		CentBoxD            <- distfun( BX + Width/2 - X  , BY + Height/2 - Y  )
-		GrayCentBoxD        <- distfun( BX + Width/2 - XM , BY + Height/2 - YM )
-		CentroidsD          <- distfun( X            - XM , Y             - YM )
+		CentBoxD            <- distfun(BX + Width/2 - X, BY + Height/2 - Y)
+		GrayCentBoxD        <- distfun(BX + Width/2 - XM, BY + Height/2 - YM)
+		CentroidsD          <- distfun(X - XM, Y - YM)
 		Range               <- Max - Min
 		MeanPos             <- (Max - Mean) / Range
 		SDNorm              <- StdDev / Range
 		CV                  <- StdDev / Mean * 100
-		Area                <- hack( Area )
+		Area                <- hack(Area)
 		logArea             <- log(Area)
-		Perim.              <- hack( Perim. )
+		Perim.              <- hack(Perim.)
 		logPerim.           <- log(Perim.)
 		logMajor            <- log(Major)
 		logMinor            <- log(Minor)
-		Feret               <- hack( Feret )
+		Feret               <- hack(Feret)
 		logFeret            <- log(Feret)
-	} )
+	})
 }
-# }}}
 
 # {{{ list.samples
 #' All sample with at least one entry in a given object
@@ -541,70 +514,60 @@ setwd <- function(dir) {
 	# Save the current default directory for future use
 	setKey("DefaultDirectory", getwd())
 }
-# }}}
 
-# {{{ ZIpgm
-#' Get the path of an executable, giving its name and subdirectory
-#' @examples 
-#' ZIpgm("zip")
-#' ZIpgm("pgmhist", "netpbm")
-#' ZIpgm("pnm2biff", "xite")
-"ZIpgm" <- function(pgm, subdir = "misc", ext = "exe") {
-	
+# Get the path of an executable, giving its name and subdirectory
+# ex.: ZIpgm("zip"), ZIpgm("pgmhist", "netpbm"), ZIpgm("pnm2biff", "xite")
+"ZIpgm" <- function (pgm, subdir = "misc", ext = "exe")
+{	
 	if (isWin()) {
-		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."), package = "zooimage")
-		if (!file.exists(pathpgm)) return("") else return(shortPathName(pathpgm))		
+		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."),
+			package = "zooimage")
+		if (!file.exists(pathpgm)) return("") else
+			return(shortPathName(pathpgm))
 	} else {	
 		# Change nothing: should be directly executable
-		if( pgm == "dc_raw" ) {
-			pgm <- "dcraw"
-		}
+		if (pgm == "dc_raw") pgm <- "dcraw"
 		return(pgm)
 	}	
 }
-# }}}
 
-# {{{ ZIpgmhelp
-#' Show textual help for executables
-#' @examples
-#' ZIpgmhelp("zip")
-#' ZIpgmhelp("pgmhist", "netpbm")
-#' ZIpgmhelp("pnm2biff", "xite")
-"ZIpgmhelp" <- function(pgm, subdir = "misc") {
+# Show textual help for executables
+# ex.: ZIpgmhelp("zip"), ZIpgmhelp("pgmhist", "netpbm")
+"ZIpgmhelp" <- function (pgm, subdir = "misc")
+{
 	# TODO: would it not be better to use the same thing on all platforms
 	#       (the doc directory)
 	if (isWin()) {
-		helpfile <- file.path(system.file(subdir, "doc", package = "zooimage"), paste(pgm, "txt", sep = "."))
-		if (!file.exists(helpfile)){
+		helpfile <- file.path(system.file(subdir, "doc", package = "zooimage"),
+			paste(pgm, "txt", sep = "."))
+		if (!file.exists(helpfile))
 			stop("No help found for ", pgm)
-		}
-		file.show(helpfile, title = paste("Help for ", pgm, " [", subdir, "]", sep = ""))		
+		file.show(helpfile, title = paste("Help for ", pgm, " [", subdir, "]",
+			sep = ""))		
 	} else {
 		system(paste("man", pgm), wait = FALSE)
 	}	
 }
-# }}}
 
-# {{{ getDec
-"getDec" <- function() {
+"getDec" <- function ()
+{
 	Dec <- getKey("OptionInOutDecimalSep", ".")
 	DecList <- c(".", ",")
 	# It must be either "." or ","!
 	if (!Dec %in% DecList) Dec <- "."
 	return(Dec)
 }
-# }}}
 
-# {{{ callStack
-#' Get the current call stack
-callStack <- function( ){
+# Get the current call stack
+"callStack" <- function ()
+{
 	calls <- sys.calls()
-	out <- lapply( calls, function(.) {
-		out <- try( as.character(.[[1]] ), silent = TRUE )
-		if( inherits( out, "try-error" ) ) NULL else out
-	} )
-	out <- unlist( out[ !sapply( out, is.null ) ] )
-	out
+	out <- lapply(calls, function(.) {
+		out <- try( as.character(.[[1]] ), silent = TRUE)
+		if (inherits(out, "try-error")) NULL else out
+	})
+	out <- unlist(out[!sapply(out, is.null)])
+	return(out)
 }
 # }}}
 

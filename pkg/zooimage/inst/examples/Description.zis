@@ -1,0 +1,26 @@
+ZI1
+[Description]
+Id=Bioman
+Name=Bioman series
+Institution=AZTI Technalia
+Objective=
+Description=
+Contact=Xabier Irigoien
+Email=xirigoien@pas.azti.es
+URL=
+Note=
+
+[Series]
+!Code	Name	Project	Institution	Country	Location	Contact	Email	URL	Note
+BIO	Bioman		AZTI Technalia	Spain	Bay of Biscay	Xabier Irigoien	xirigoien@pas.azti.es		PVA samples
+
+[Cruises]
+!Code	ShipName	ShipType	ShipCallSign	PortDeparture	PortReturn	Captain	Coordinator	Investigators	Start	End	SouthmostLat	WestmostLong	NorthmostLat	EastmostLong	Project	URL	Note
+
+[Stations]
+!Code	Location	Latitude	Longitude	Start	End	Frequency	Depth	Description	Note
+
+[Samples]
+!Label	Code	SCS	Series	Cruise	Station	Date	Time	TimeZone	Latitude	Longitude	CoordsPrec	Operator	GearType	OpeningArea	MeshSize	DepthMin	DepthMax	SampVol	SampVolPrec	TowType	Speed	Weather	Preservative	Staining	Biovolume	Temperature	Salinity	Chla	Note
+BIO.2000-05-05.p72	P72	BIO	BIO			2000-05-05							Vertical Net		150			10.56		vertical			4% buffered formalin	Haematoxylin					
+BIO.2000-05-08.p123	p123	BIO	BIO			2000-05-08							Vertical Net		150			10.97		vertical			4% buffered formalin	Haematoxylin					

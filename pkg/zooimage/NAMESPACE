@@ -38,7 +38,7 @@ export(confusion.bar)
 export(confusion.tree)
 export(create.zim)
 export(createZis)
-export(ecd)
+ export(ecd)
 export(editDescription)
 export(edit.zim)
 export(editZis)
@@ -51,10 +51,10 @@ export(focusR)
 export(FormVarsSelect)
 export(getDec)
 export(getKey)
-export(getList)
-export(get.sampleinfo)
+ export(getList)
+ export(get.sampleinfo)
 export(gettextZI)
-export(getVar)
+ export(getVar)
 export(get.ZITrain)
 export(histSpectrum)
 export(importImg)
@@ -74,7 +74,7 @@ export(logView)
 export(logWarning)
 export(lvq)
 export(makeClass)
-export(make.Id)
+ export(make.Id)
 export(make.RData)
 export(makeTrain)
 export(makeZid)
@@ -110,7 +110,7 @@ export(recode.ZITrain)
 export(refresh.zims)
 export(removeObjects)
 export(saveObjects)
-export(selectFile)
+ export(selectFile)
 export(setKey)
 export(setwd)
 export(Spectrum)
@@ -144,27 +144,40 @@ export(zip.img)
 export(zip.img.all)
 export(zip.ZITrain)
 
+# The following functions are NOT exported
+ # ZOOIMAGEENV (environment holding ZooImage data)
 # catch
 # catch.env
-# checkCapabilityAvailable
-# checkUnzipAvailable
-# checkZipAvailable
-# checkZipnoteAvailable
+ # checkAvailable_java
+ # checkAvailable_biff2tiff # Eliminate Xite programs
+ # checkAvailable_divide # Eliminate Xite programs
+ # checkAvailable_pnm2biff # Eliminate Xite programs
+ # checkAvailable_statistics # Eliminate Xite programs
+ # checkCapabilityAvailable
+ # checkCapable
+ # checkCapabilityAvailable
+ # checkConvertAvailable # Eliminate?
+ # checkDcRawAvailable # Eliminate?
+ # checkIdentifyAvailable # Eliminate?
+ # checkPpmtopgmAvailable # Eliminate?
+ # checkUnzipAvailable
+ # checkZipAvailable
+ # checkZipnoteAvailable
 # dummyCatcher
 # extensionPattern
 # extractMessage
 # finish.loopfunction
 # getCatcher
-# getZooImageCapability
+ # getZooImageCapability
 # getZooImageConditionFunction
 # getZooImageErrorFunction
 # getZooImageWarningFunction
 # grepl
 # unzip
-#warning
+# warning
 # zip
 # zipnote
-# zooImageCapabilities
+ # zooImageCapabilities
 # zooImageError
 # [[.zooImageError
 # zooImageErrorContext
