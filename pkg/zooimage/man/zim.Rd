@@ -17,7 +17,7 @@
 \usage{
 create.zim(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
     edit = TRUE, wait = FALSE)
-edit.zim(name, editor = getOption("ZIEditor"), wait = FALSE)
+edit.zim(name, editor = getOption("ZIEditor"), wait = FALSE, \dots)
 make.zim(dir = ".", pattern = "\\.[tT][iI][fF]$", images =
     list.files(dir, pattern), show.log = TRUE, bell = FALSE)
 extract.zims(zipdir = ".", zipfiles = list.files(zipdir, pattern =
@@ -59,6 +59,7 @@ verify.zim(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE)
   \item{is.dat1}{ Is it a '\_dat1.zim' file, that is a file collecting metadata AND objects measurements? }
   \item{check.table}{ Try to read the table of measurements in the '[Data]' section. Ignored if
     \code{is.dat1 = FALSE} }
+  \item{\dots}{ Further arguments passed to the \code{edit()} method (not used here). }
 }
 
 \value{

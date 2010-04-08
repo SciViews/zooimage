@@ -130,7 +130,6 @@ loopAsynch()
 
 \author{ Kevin Denis <Kevin.Denis@umons.ac.be> and Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
-\seealso{ \code{\link{Bio.sample}} }
 \examples{
 # TO DO
 # 
