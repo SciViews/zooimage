@@ -1,24 +1,27 @@
 \name{utilities}
 \alias{calc.vars}
- \alias{ecd}
- \alias{get.sampleinfo}
+\alias{ClearProgress}
+\alias{combine}
+\alias{ecd}
+\alias{get.sampleinfo}
 \alias{getKey}
- \alias{getList}
+\alias{getList}
 \alias{gettextZI}
- \alias{getVar}
+\alias{getVar}
 \alias{getDec}
 \alias{list.add}
 \alias{list.merge}
+\alias{list.reduce}
 \alias{list.samples}
- \alias{make.Id}
- \alias{noext}
+\alias{make.Id}
+\alias{noext}
 \alias{parse.ini}
 \alias{Progress}
- \alias{selectFile}
+\alias{selectFile}
 \alias{setKey}
 \alias{setwd}
- \alias{trim}
- \alias{underscore2space}
+\alias{trim}
+\alias{underscore2space}
 \alias{ZIpgm}
 \alias{ZIpgmhelp}
 
@@ -29,8 +32,10 @@
 }
 
 \usage{
-list.add(x, y)
 list.merge(x, y)
+list.add(\dots, .list = list(\dots))
+list.reduce(\dots, .list = list(\dots), FUN = "+")
+combine(\dots, .list = list(\dots))
 
 calc.vars(x)
 ecd(area)
@@ -39,27 +44,28 @@ get.sampleinfo(filename, type = c("sample", "fraction", "image", "scs",
     "date", "id", "frac", "imgnbr"), ext = "_dat1[.]zim$")
 list.samples(obj)
 
- getVar(class = "data.frame", default = "", multi = FALSE,
+getVar(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
- getList(class = "data.frame", default = "", multi = FALSE,
+getList(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep=""), warn.only = TRUE)
- selectFile(type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
+selectFile(type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
     multi = FALSE, quote = TRUE)
 
 getDec()
 
- noext(file)
- trim(char)
- underscore2space(char)
+noext(file)
+trim(char)
+underscore2space(char)
 parse.ini(data, label = "1")
 
 Progress(value, max.value = NULL)
+ClearProgress()
 setwd(dir)
 
 getKey(key, default.value = NULL)
 setKey(key, value, type = "sz")
 
-gettextZI(...)
+gettextZI(\dots)
 
 ZIpgm((pgm, subdir = "misc", ext = "exe")
 ZIpgmhelp((pgm, subdir = "misc")
@@ -68,6 +74,10 @@ ZIpgmhelp((pgm, subdir = "misc")
 \arguments{
   \item{x}{ A 'ZIDat' object, or a data frame with correct column labels }
   \item{y}{ Another 'ZIDat' object or data frame }
+  \item{\dots}{ Several items to combine together }
+  \item{.list}{ A list of items to combine together }
+  \item{FUN}{ The function to use for creating the combination (\code{"+"}) by
+    default }
   \item{area}{ A numerical vector with areas from which ECDs are calculated
     (Equivalent Circular Diameter, a more suitable term for 2D images than ESD,
 	Equivalent Spherical Diameter) }
@@ -117,7 +127,9 @@ ZIpgmhelp((pgm, subdir = "misc")
 }
 
 \value{
-  The combined object is returned for \code{list.add()} and \code{list.merge}.
+  The combined object is returned for \code{combine()}, \code{list.add()},
+  \code{list.reduce()} and \code{list.merge}. \code{list.add()} is just a
+  shortcut for \code{list.reduce(FUN = "+")}.
 
   The data.frame with additional columns for calculated variables with
   \code{calc.vars}
@@ -143,7 +155,8 @@ ZIpgmhelp((pgm, subdir = "misc")
   files are merged together (typically using \code{list.add()} or
   \code{list.merge()}.
 
-  Nothing for \code{Progress()} and \code{setwd()}.
+  Nothing for \code{Progress()}, \code{ClearProgress()} and \code{setwd()} (they
+  are used in the GUI for their side-effect there).
 
   For \code{getKey()}, either the content of the key, or the default.value is
   returned. \code{setKey()} returns \code{TRUE} or \code{FALSE}, depending if

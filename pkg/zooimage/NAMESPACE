@@ -1,19 +1,19 @@
-import(utils)
-import(tcltk)
-import(tcltk2)
-import(svMisc)
-import(svWidgets)
-import(svDialogs)
-import(ipred)
-import(MASS)
+ import(utils)
+ import(tcltk)
+ import(tcltk2)
+ import(svMisc)
+ import(svWidgets)
+ import(svDialogs)
+ import(ipred)
+ import(MASS)
 #import(RandomForest)
-import(class)
-import(rpart)
-import(e1071)
-import(nnet)
-import(tree)
-import(gplots)
-import(RColorBrewer)
+ import(class)
+ import(rpart)
+ import(e1071)
+ import(nnet)
+ import(tree)
+ import(gplots)
+ import(RColorBrewer)
 
 export(Abd.sample)
 export(AboutZI)
@@ -21,11 +21,12 @@ export(acquireImg)
 export(analyzeClass)
 export(BFcorrection)
 export(Bio.sample)
-export(calc.vars)
+ export(calc.vars)
 export(calib)
 export(calibrate)
 export(checkBF)
 export(clean.after.zid)
+ export(ClearProgress)
 export(closeAssistant)
 export(closeZooImage)
 export(compareExif)
@@ -49,11 +50,11 @@ export(extract.zims)
 export(focusGraph)
 export(focusR)
 export(FormVarsSelect)
-export(getDec)
+ export(getDec)
 export(getKey)
  export(getList)
  export(get.sampleinfo)
-export(gettextZI)
+ export(gettextZI)
  export(getVar)
 export(get.ZITrain)
 export(histSpectrum)
@@ -62,16 +63,16 @@ export(isTestFile)
 export(is.zim)
 export(list.add)
 export(list.dat1.zim)
-export(list.merge)
+ export(list.merge)
 export(listObjects)
 export(list.samples)
 export(list.zim)
 export(loadObjects)
-export(logClear)
-export(logError)
-export(logProcess)
-export(logView)
-export(logWarning)
+ export(logClear)
+ export(logError)
+ export(logProcess)
+ export(logView)
+ export(logWarning)
 export(lvq)
 export(makeClass)
  export(make.Id)
@@ -86,7 +87,7 @@ export(modalAssistant)
 export(nnet2)
 export(noext)
 export(optInOutDecimalSep)
-export(parse.ini)
+ export(parse.ini)
 export(plotAbdBio)
 export(plot.ZITable)
 export(predict.lvq)
@@ -99,7 +100,7 @@ export(processImg)
 export(process.sample)
 export(process.samples)
 export(processSamples)
-export(Progress)
+ export(Progress)
 export(RawConvert)
 export(read.description)
 export(readExifRaw)
@@ -112,7 +113,7 @@ export(removeObjects)
 export(saveObjects)
  export(selectFile)
 export(setKey)
-export(setwd)
+ export(setwd)
 export(Spectrum)
 export(Spectrum.sample)
 export(startPgm)
@@ -138,16 +139,19 @@ export(ZIEimportJpg)
 export(ZIEimportTable)
 export(ZIEimportTif)
 export(ZIEimportZie)
-export(ZIpgm)
-export(ZIpgmhelp)
+ export(ZIpgm)
+ export(ZIpgmhelp)
 export(zip.img)
 export(zip.img.all)
 export(zip.ZITrain)
 
 # The following objects are NOT exported
  # ZOOIMAGEENV (environment holding ZooImage data)
+ # backspaces
+ # callstack
  # catch
  # catch.env
+ # chekcAllFileExist
  # checkAvailable_java
  # checkAvailable_biff2tiff # Eliminate Xite programs
  # checkAvailable_divide # Eliminate Xite programs
@@ -158,29 +162,66 @@ export(zip.ZITrain)
  # checkCapabilityAvailable
  # checkConvertAvailable # Eliminate?
  # checkDcRawAvailable # Eliminate?
+ # checkDirExists
+ # checkEmptyDir
+ # checkFileExists
+ # checkFirstLine
  # checkIdentifyAvailable # Eliminate?
  # checkPpmtopgmAvailable # Eliminate?
  # checkUnzipAvailable
  # checkZipAvailable
  # checkZipnoteAvailable
  # dummyCatcher
-# extensionPattern
+ # editor(file, editor = getOption("ZIEditor"))
+ # extensionPattern
  # extractMessage
-# finish.loopfunction
+ # finish.loopfunction
+ # force.dir.create
  # getCatcher
+ # getSample
  # getZooImageCapability
  # getZooImageConditionFunction
  # getZooImageErrorFunction
  # getZooImageWarningFunction
-# grepl
+ # hasExtension
+ # imagemagick(prog, args, ...)
+ # imagemagick_convert(file, size1, size2)
+ # imagemagick_identify(file)
+ # imageViewer(dir = getwd())
+ # list.files.ext
+ # list.dat1.zim
+ # list.dir
+ # list.zim
+ # list.zid
+ # list.zip
+ # misc(prog, args, ...)
+ # misc_dcraw(file, arguments, output)
+ # mustallbe
+ # mustallmatch
+ # mustbe
+ # mustbeString
+ # mustcontain
+ # mustmatch
+ # netpbm(prog, args, ...)
+ # netpbm_pgmhist(file, delete = TRUE)
+ # netpbm_ppmtopgm(ppm, pgm)
+ # netpbm_tifftopnm(input, output)
+ # program(prog, args, ..., dir)
  # recallWithCatcher
  # resetCatcher
  # setCatcher
  # stop
-# unzip
+ # template
+ # unzip
  # warning
-# zip
-# zipnote
+ # xite(prog, args, ...)
+ # xite_biff2tiff(cor, tif)
+ # xite_divide(meangray, image, bf, cor)
+ # xite_pnm2biff(input, output)
+ # xite_statistics(file)
+ # zip
+ # zip_addcomments(
+ # zipnote
  # zooImageCapabilities
  # zooImageError
  # [[.zooImageError
