@@ -1,4 +1,4 @@
-# Copyright (c) 2004-2007, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 #
@@ -77,11 +77,16 @@
 	assignTemp("ZIguiPackage", ZIguiPackage)
 
 	# Determine where to find the metadata editor
-	if (isWin()) {
-		ZIEditorExe <- system.file( "MetaEditor", "Sc1.exe",
-			package = "zooimage")
-		if (file.exists(ZIEditorExe)) options(ZIEditor = ZIEditorExe)
-	}
+	if (interactive()) {
+		if (isWin()) {
+			ZIEditorExe <- system.file("MetaEditor", "Sc1.exe",
+				package = "zooimage")
+			if (file.exists(ZIEditorExe)) options(ZIEditor = ZIEditorExe)
+		} else {
+			### TODO: define a better editor here!
+			options(ZIEditor = getOption("editor"))
+		}
+	} else options(ZIEditor = "")
 
 	# The directory that contains binary executables
 	bindir <- system.file("bin", package = "zooimage")
@@ -100,7 +105,7 @@
 	XnViewExe <- file.path(bindir, "XnView", "XnView.exe")
 	if (isWin()) {
 		if (file.exists(XnViewExe)) options(ImageViewer = XnViewExe)
-	} else{
+	} else {
 		# TODO: deal with mac
 		# TODO: can we rely on nautilus ? it might not be installed on
 		#       kde based distributions

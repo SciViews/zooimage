@@ -26,9 +26,8 @@ clean.after.zid(path = ".", samples = NULL)
 read.zid(zidfile)
 uncompress.zid(zidfile, path = dirname(zidfile), delete.source = FALSE,
     show.log = TRUE)
-uncompress.zid.all(path = ".", zidfiles = list.files(path = path, pattern =
-    "^.*[.][zZ][iI][dD]"), path.extract = path, skip.existing.dirs = TRUE,
-    delete.source = FALSE, show.log = TRUE, bell = FALSE)
+uncompress.zid.all(path = ".", zidfiles = list.zid(path), path.extract = path,
+    skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE, bell = FALSE)
 verify.zid(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE)
 verify.zid.all(path = ".", samples = NULL, type = "ZI1", check.vignettes = TRUE,
     show.log = TRUE, bell = FALSE)

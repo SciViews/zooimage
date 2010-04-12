@@ -10,8 +10,8 @@
   from .zim files are embedded as zip comments.
 }
 \usage{
-zip.img(imagefile, verify.zimfile = TRUE, replace = FALSE, delete.source = TRUE,
-    check.zip = TRUE, show.log = TRUE)
+zip.img(imagefile, zimfile = NULL, verify.zimfile = TRUE, replace = FALSE,
+    delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 zip.img.all(path = ".", images = NULL, check = TRUE, replace = FALSE,
     delete.source = replace, show.log = TRUE, bell = FALSE)
 unzip.img(zipfile)
@@ -20,6 +20,8 @@ unzip.img.all(path = ".", zipfiles = NULL)
 
 \arguments{
   \item{imagefile}{ The filename of the image }
+  \item{zimfile}{ Then filename of the corresponding .zim file (calculated
+    automatically if \code{NULL}, by default) }
   \item{verify.zimfile}{ Do we verify the .zim file before zipping data? }
   \item{replace}{ Do we replace existing .zip files? }
   \item{delete.source}{ Should the original file be deleted? }

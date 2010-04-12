@@ -14,15 +14,16 @@
   in ZooImage with imported data.
 }
 \usage{
-make.zie(path = ".", Filemap = "Filemap.zie", check = TRUE, replace = FALSE,
-	move.to.raw = TRUE, show.log = TRUE, bell = FALSE)
-compile.zie(path = ".", Tablefile = "Table.txt",
-	Template = "Template.zie", Filemap = paste("Filemap_", noext(Tablefile), ".zie", sep = ""),
-	Nrange = c(8, 8), replace = TRUE, make.it = FALSE, show.log = make.it)
+make.zie(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
+	move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$",show.log = TRUE,
+	bell = FALSE)
+compile.zie(path = ".", Tablefile = "Table.txt", Template = "ImportTemplate.zie",
+    Filemap = paste("Import_", noext(Tablefile), ".zie", sep = ""),
+	Nrange = c(1, 1000), replace = TRUE, make.it = FALSE, show.log = make.it)
 ZIE(title, filter, description, pattern, command, author, version, date,
-    license, url, depends = "R (>= 2.2.0), zooimage (>= 0.4-0)",
+    license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
     type = c("import", "export"))
-print.ZIE(x, ...)
+print.ZIE(x, \dots)
 RawConvert(RawFile, OutputFile = "fileconv.pgm",
 	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
 	check = TRUE)
@@ -31,28 +32,35 @@ RawConvert(RawFile, OutputFile = "fileconv.pgm",
 \arguments{
   \item{path}{ The path where the images and the .zie file are located }
   \item{Filemap}{ The name of the .zie file mapping images to convert }
-  \item{check}{ Do we check if conversion programs (dc_raw and ppmtopgm) are available? }
+  \item{check}{ Do we check if conversion programs (dc_raw and ppmtopgm) are
+  available? }
   \item{replace}{ Do we replace existing files (not used yet)? }
-  \item{move.to.raw}{ Do we move processed files to the '_raw' subdirectory (currently, it is always the case)? }
+  \item{move.to.raw}{ Do we move processed files to the '_raw' subdirectory
+  (currently, it is always the case)? }
+  \item{zip.images}{ The pattern to use for images extension in the zipped file }
   \item{show.log}{ Do we display the log at the end of the process? }
   \item{bell}{ Do we ring the bell when the process is done? }
-  \item{Tabelfile}{ A tab-delimited ASCII file containing a table defining
-    samples and samples characteristics used to compile .zim files and to convert/rename images }
+  \item{Tablefile}{ A tab-delimited ASCII file containing a table defining
+    samples and samples characteristics used to compile .zim files and to
+	convert/rename images }
   \item{Template}{ A template to use for creating the .zie file }
-  \item{Nrange}{ A range (two integers) giving min and max number of images for each sample/fraction }
+  \item{Nrange}{ A range (two integers) giving min and max number of images for
+  each sample/fraction }
   \item{make.it}{ Do we make the .zie (run its commands) after compiling it? }
   \item{title}{ The title of the ZooImage Extension }
   \item{filter}{ A filter to apply to select concerned files }
   \item{description}{ A short description of the ZooImage Extension }
   \item{pattern}{ A regular expression to use to select concerned files }
   \item{command}{ A string holding the R command to run to convert images }
-  \item{author}{ Who wrote and maintains the ZooImage Extension? Please, provide also an email address }
+  \item{author}{ Who wrote and maintains the ZooImage Extension? Please, provide
+  also an email address }
   \item{version}{ Version of the ZooImage Extension as x.y-z, in a string }
   \item{date}{ Date at which the extension was compiled as yyyy-mm-dd }
   \item{license}{ Which are the license terms for this ZooImage Extension? }
   \item{url}{ A link to a web page dedicated to this ZooImage Extension }
   \item{depends}{ Which R packages does this ZooImage Extension requires? }
   \item{type}{ Type of ZooImage extension; currently, only "import" or "export" }
+  \item{x}{ A ZIE object }
   \item{\dots}{ further arguments passes to the function (currently not in use) }
   \item{RawFile}{ A RAW file from a digital camera to convert }
   \item{OutputFile}{ The name of the output file after conversion }

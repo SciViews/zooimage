@@ -1,4 +1,4 @@
-# Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2009-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 # 
@@ -90,7 +90,6 @@ catch <- function (call)
 		if (is.null(catcher))
 			base::stop(sprintf( "'%s' does not have a catcher",
 				as.character(call[[1]])))
-		}
 		setCatcher(catcher) 
 		recallWithCatcher(call)
 	}

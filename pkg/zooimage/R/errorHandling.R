@@ -1,4 +1,4 @@
-# Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2009-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 #
@@ -54,7 +54,7 @@
 # the error either to the standard warning function or to the generation of a
 # zooImageWarning condition when a batch function is in the call stack
 #
-warning <- function (..., call. = TRUE, immediate. = FALSE, domain = NULL)
+"warning" <- function (..., call. = TRUE, immediate. = FALSE, domain = NULL)
 {
 	calls <- callStack()
 	if (all( regexpr("\\.all$", calls) == -1)) {
@@ -90,6 +90,26 @@ errorClass = NULL, context = NULL, verbose = getOption("verbose"))
 	}
 	class(err) <- c(errorClass, "zooImageError", "error", "condition")
  	return(err)
+}
+
+# Warning condition used in ZooImage batch treatments
+#
+# This function creates a condition of class "zooImageWarning".
+# These conditions are used in conjunction with the calling handler
+# mechanism in zooImage batch calls to grab additional information
+# about the context in which the warning function was called
+#
+# This function is called when a function that is directly or indirectly called
+# by a batch treatment function calls the warning function
+#
+# msg: the error message
+# env: the environment in which the problem occured
+zooImageWarning <- function (msg = "warning", env = parent.frame())
+{
+   w <- simpleWarning(message = msg)
+   w$env <- env
+   class(w) <- c("zooImageWarning", "warning", "condition")
+   return(w)
 }
 
 # If a ZooImage function has a driver in this list
@@ -149,8 +169,9 @@ zooImageWarningContext <- function (fun, context)
 {
 	force(context)
 	function(msg, env = parent.frame()) {
-		zooImageWarning(msg, env, paste("zooImageWarning", fun, sep = "_"),
-			context = context)
+		#zooImageWarning(msg, env, paste("zooImageWarning", fun, sep = "_"),
+		#	context = context)
+		zooImageWarning(msg, env)
 	}
 }
 
@@ -194,26 +215,6 @@ getZooImageWarningFunction <- function (calls)
 # dots: what to extract from the environment
 `[[.zooImageError` <- function (x, ...)
 	x$env[[...]]
-
-# Warning condition used in ZooImage batch treatments
-#
-# This function creates a condition of class "zooImageWarning".
-# These conditions are used in conjunction with the calling handler
-# mechanism in zooImage batch calls to grab additional information
-# about the context in which the warning function was called
-#
-# This function is called when a function that is directly or indirectly called
-# by a batch treatment function calls the warning function
-#
-# msg: the error message
-# env: the environment in which the problem occured
-zooImageWarning <- function (msg = "warning", env = parent.frame())
-{
-   w <- simpleWarning(message = msg)
-   w$env <- env
-   class(w) <- c("zooImageWarning", "warning", "condition")
-   return(w)
-}
 
 # Extract an object from the environment in which the warning was generated
 #

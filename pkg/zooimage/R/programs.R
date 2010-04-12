@@ -1,4 +1,4 @@
-# Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2009-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 # 
@@ -67,9 +67,9 @@
 {
 	size <- imagemagick("identify", '  -format "%s" %s', '%w %h', file)
 	size <- as.numeric(strsplit(size, " ")[[1]])
-	if (is.na(Size) || is.null(Size) || length(Size) != 2 || Size[1] < 100 ||
-		Size[2] < 100)
-		stop("Error while getting image size with 'identify'", FileConv) 
+	if (is.na(size) || is.null(size) || length(size) != 2 || size[1] < 100 ||
+		size[2] < 100)
+		stop("Error while getting image size with 'identify'", file) 
 	return(size)
 }
 

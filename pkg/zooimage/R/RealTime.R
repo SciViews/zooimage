@@ -1,3 +1,21 @@
+# Copyright (c) 2008-2010, Ph. Grosjean <phgrosjean@sciviews.org>
+#
+# This file is part of ZooImage
+# 
+# ZooImage is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+# 
+# ZooImage is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+
+
 # read.lst for both FlowCAM II and III by Kevin Denis
 read.lst <- function (x, skip = 2) {
   # Determine the version of the FlowCAM
@@ -73,21 +91,22 @@ read.lst <- function (x, skip = 2) {
 	if (!inherits(ZIDat, "ZIDat") && !inherits(ZIDat, "data.frame"))
 		stop("'ZIDat' must be a ZIDat object, or a data.frame!")
 	# Possibly load a specific package for prediction
-	package <- attr(object, "package")
-	if (is.null(package)) {
-        # This is for old version, we make sure to load
-        # MASS, RandomForest, class, rpart, e1071, ipred
-        # Rem: nnet has a special treatment in nnet2
-        (require(MASS) || stop("package 'MASS' is required!"))
-        (require(RandomForest) || stop("package 'RandomForest' is required!"))
-        (require(class) || stop("package 'class' is required!"))
-        (require(rpart) || stop("package 'rpart' is required!"))
-        (require(e1071) || stop("package 'e1071' is required!"))
-        (require(ipred) || stop("package 'ipred' is required!"))
-    } else {
-        # Make sure that the specific required package is loaded
-        eval(parse(text = paste("require(", package, ")", sep = "")))
-    }
+	# Note: this is done in NAMESPACE
+	#package <- attr(object, "package")
+	#if (is.null(package)) {
+    #    # This is for old version, we make sure to load
+    #    # MASS, RandomForest, class, rpart, e1071, ipred
+    #    # Rem: nnet has a special treatment in nnet2
+    #    (require(MASS) || stop("package 'MASS' is required!"))
+    #    (require(RandomForest) || stop("package 'RandomForest' is required!"))
+    #    (require(class) || stop("package 'class' is required!"))
+    #    (require(rpart) || stop("package 'rpart' is required!"))
+    #    (require(e1071) || stop("package 'e1071' is required!"))
+    #    (require(ipred) || stop("package 'ipred' is required!"))
+    #} else {
+    #    # Make sure that the specific required package is loaded
+    #    eval(parse(text = paste("require(", package, ")", sep = "")))
+    #}
 
   class(object) <- class(object)[-1]
 	data <- as.data.frame(ZIDat)
@@ -754,7 +773,8 @@ tclFun_<- function(f, name = deparse(substitute(f))) {
   # and give it the same name)
   # Indeed, .Tcl.callback(f) in tcltk package does the job... but it gives
   # cryptic names like R_call 0x13c7168
-  require(tcltk) || stop("Package 'tcltk' is needed!")
+  # Note: done in NAMESPACE
+  #require(tcltk) || stop("Package 'tcltk' is needed!")
   # Check that 'f' is a function with no arguments (cannot handle them, currently)
   is.function(f) || stop("'f' must be a function!")
   is.null(formals(f)) || stop("The function used cannot (yet) have arguments!")

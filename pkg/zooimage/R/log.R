@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 #
@@ -51,4 +51,4 @@ title = paste(getTemp("ZIname"), "log"), clear = TRUE, warn = FALSE)
 	logProcess(if (is.null(msg)) e$msg else msg, e$context, stop = FALSE, ...)
 
 "logWarning" <- function(w, msg = NULL, ...)
-	logProcess(if (is.null(msg)) e$msg else msg, w$context, stop = FALSE, ...)
+	logProcess(if (is.null(msg)) w$msg else msg, w$context, stop = FALSE, ...)

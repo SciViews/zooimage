@@ -1,4 +1,4 @@
-# Copyright (c) 2004-2006, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 # 
@@ -214,32 +214,33 @@ multi = FALSE, quote = TRUE)
 	# Note that you can make your own version of this function for more
 	# calculated variables!
 	
-	# A small hack to correct some 0 for Minor and Major
-	hack <- function (x)
+	# A small hack to correct some 0 (which can be problematic in further calcs)
+	noZero <- function (x)
 		x[x == 0] <- 0.000000001
-	distfun <- function (x, y)
+	# Euclidean distance between two points
+	distance <- function (x, y)
 		sqrt(x^2 + y^2)
 	
-	within(x, {
-		Minor               <- hack(Minor)
-		Major               <- hack(Major) 
-		Elongation          <- Major / Minor
-		CentBoxD            <- distfun(BX + Width/2 - X, BY + Height/2 - Y)
-		GrayCentBoxD        <- distfun(BX + Width/2 - XM, BY + Height/2 - YM)
-		CentroidsD          <- distfun(X - XM, Y - YM)
-		Range               <- Max - Min
-		MeanPos             <- (Max - Mean) / Range
-		SDNorm              <- StdDev / Range
-		CV                  <- StdDev / Mean * 100
-		Area                <- hack(Area)
-		logArea             <- log(Area)
-		Perim.              <- hack(Perim.)
-		logPerim.           <- log(Perim.)
-		logMajor            <- log(Major)
-		logMinor            <- log(Minor)
-		Feret               <- hack(Feret)
-		logFeret            <- log(Feret)
-	})
+	x$Minor <- noZero(x$Minor)
+	x$Major <- noZero(x$Major) 
+	x$Elongation <- x$Major / x$Minor
+	x$CentBoxD <- distance(x$BX + x$Width/2 - x$X, x$BY + x$Height/2 - x$Y)
+	x$GrayCentBoxD <- distance(x$BX + x$Width/2 - x$XM, x$BY + x$Height/2 - x$YM)
+	x$CentroidsD <- distance(x$X - x$XM, x$Y - x$YM)
+	x$Range <- x$Max - x$Min
+	x$MeanPos <- (x$Max - x$Mean) / x$Range
+	x$SDNorm <- x$StdDev / x$Range
+	x$CV <- x$StdDev / x$Mean * 100
+	x$Area <- noZero(x$Area)
+	x$logArea <- log(x$Area)
+	x$Perim. <- noZero(x$Perim.)
+	x$logPerim. <- log(x$Perim.)
+	x$logMajor <- log(x$Major)
+	x$logMinor <- log(x$Minor)
+	x$Feret <- noZero(x$Feret)
+	x$logFeret <- log(x$Feret)
+
+	return(x)
 }
 
 # All sample with at least one entry in a given object

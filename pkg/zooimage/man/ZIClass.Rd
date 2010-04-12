@@ -16,9 +16,9 @@ ZIClass(df, algorithm = c("lda", "randomForest"), package = c("MASS",
     "randomForest"), Formula = Class ~ logArea + Mean + StdDev + Mode + Min +
     Max + logPerim. + logMajor + logMinor + Circ. + logFeret + IntDen +
     Elongation + CentBoxD + GrayCentBoxD + CentroidsD + Range + MeanPos +
-    SDNorm + CV + Median + Skew + Kurt, calc.vars = "calc.vars", ...)
-predict.ZIClass(object, ZIDat, class.only = FALSE, ...)
-confu(classes1, classes2)
+    SDNorm + CV, calc.vars = "calc.vars", k.xval = 10, \dots)
+predict.ZIClass(object, ZIDat, calc.vars = TRUE, class.only = FALSE, \dots)
+confu(classes1, classes2, classes.predicted = FALSE)
 }
 
 \arguments{
@@ -27,12 +27,15 @@ confu(classes1, classes2)
   \item{package}{ The R package where functions performing this algorithm can be found }
   \item{Formula}{ A formula with first memeber being the classification and the second member being measurement separated by a '+' sign }
   \item{calc.vars}{ A function to use to calculate variables from the original data frame }
+  \item{k.xval}{ The k time for cross-validation }
   \item{\dots}{ Further arguments to pass to the classification algorithm (see help of that particular function) }
   \item{object}{ A 'ZIClass' object }
   \item{ZIDat}{ A 'ZIDat' object where items should be classified }
   \item{class.only}{ If TRUE, retrun just a vector with classification, otherwise, return a 'ZIDat' object with 'Ident' column appended to it }
   \item{classes1}{ One classification to compare }
   \item{classes2}{ A second classification to compare }
+  \item{classes.predicted}{ Do we compare classes with predicted classes, or just two
+    differnet classifications? }
 }
 
 \value{

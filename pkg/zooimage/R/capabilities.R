@@ -1,4 +1,4 @@
-# Copyright (c) 2009, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2009-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 # 
@@ -20,21 +20,6 @@ ZOOIMAGEENV <- new.env()
 checkCapable <- function (cap)
 	if (cap %in% names(capabilities))
 		capabilities[[cap]]()
-
-capabilities <- list(
-	"zip"        = checkZipAvailable, 
-	"unzip"      = checkUnzipAvailable, 
-	"zipnote"    = checkZipnoteAvailable,
-	"identify"   = checkIdentifyAvailable,
-	"convert"    = checkConvertAvailable,
-	"ppmtopgm"   = checkPpmtopgmAvailable, 
-	"dc_raw"     = checkDcRawAvailable, 
-	"pnm2biff"   = checkAvailable_pnm2biff, 
-	"divide"     = checkAvailable_divide, 
-	"statistics" = checkAvailable_statistics, 
-	"biff2tiff"  = checkAvailable_biff2tiff, 
-	"java"       = checkAvailable_java
-) 
 
 # Various check*Capability functions
 # Utility that checks if the zip program is available
@@ -188,3 +173,18 @@ zooImageCapabilities <- function (...)
 	}
 	return(snapshot) 
 }
+
+capabilities <- list(
+	"zip"        = checkZipAvailable, 
+	"unzip"      = checkUnzipAvailable, 
+	"zipnote"    = checkZipnoteAvailable,
+	"identify"   = checkIdentifyAvailable,
+	"convert"    = checkConvertAvailable,
+	"ppmtopgm"   = checkPpmtopgmAvailable, 
+	"dc_raw"     = checkDcRawAvailable, 
+	"pnm2biff"   = checkAvailable_pnm2biff, 
+	"divide"     = checkAvailable_divide, 
+	"statistics" = checkAvailable_statistics, 
+	"biff2tiff"  = checkAvailable_biff2tiff, 
+	"java"       = checkAvailable_java
+)

@@ -15,7 +15,7 @@
   automatic classification of various objects from .zid files.
 }
 \usage{
-get.ZITrain(dir, creator = NULL, desc = NULL, keep_ = FALSE)
+get.ZITrain(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE)
 expand.ZITrain(ZITrain, ZIDdir, destination)
 make.ZIRecode.level(ZITrain, level = 1)
 read.ZITrain(file)
@@ -30,6 +30,7 @@ zip.ZITrain(dir, zipfile, overwrite = FALSE)
   \item{creator}{ The name of the author of this classification (or the method, if done automatically) }
   \item{desc}{ A short description of this classification }
   \item{keep_}{ Do we keep items in the '\_' subdirectory (corresponding to unclassified ones)? }
+  \item{na.rm}{ Do we remove item with missing values? By default, not. }
   \item{ZITrain}{ A 'ZITrain' object }
   \item{ZIDdir}{ A directory where corresponding .zid files are located (to get the vignettes) }
   \item{destination}{ A directory where to expand a classification contained in a 'ZITrain' object }

@@ -18,18 +18,18 @@
 create.zim(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
     edit = TRUE, wait = FALSE)
 edit.zim(name, editor = getOption("ZIEditor"), wait = FALSE, \dots)
-make.zim(dir = ".", pattern = "\\.[tT][iI][fF]$", images =
+make.zim(dir = ".", pattern = extensionPattern("tif"), images =
     list.files(dir, pattern), show.log = TRUE, bell = FALSE)
-extract.zims(zipdir = ".", zipfiles = list.files(zipdir, pattern =
-    "\\.[zZ][iI][pP]$"), path = NULL, replace = FALSE, check.unzip = TRUE,
-    show.log = TRUE, bell = FALSE)
-refresh.zims(zipdir = ".", zipfiles = list.files(zipdir, pattern =
-    "\\.[zZ][iI][pP]$"), zimdir = NULL, check.zip = TRUE, check.zim = TRUE,
-    show.log = TRUE, bell = FALSE)
-list.zim(zidir)
-list.dat1.zim(zidir)
+extract.zims(zipdir = ".", zipfiles = list.zip(zipdir), path = NULL,
+    replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
+refresh.zims(zipdir = ".", zipfiles = list.files.ext(zipdir, "zip"),
+    zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE,
+    bell = FALSE)
+list.zim(zidir, \dots)
+list.dat1.zim(zidir, \dots)
 is.zim(zimfile, check.ext = FALSE)
-verify.zim(zimfile, check.ext = FALSE, is.dat1 = FALSE, check.table = FALSE)
+verify.zim(zimfile, check.ext = FALSE,
+    is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 }
 
 \arguments{
@@ -253,61 +253,59 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
 
 \seealso{ \code{\link{logProcess}}, \code{\link{make.zie}}, \code{\link{zip.img}}, \code{\link{zip.img.all}}, \code{\link{compress.zid}}, }
 \examples{
-    # Create a minimalist .zim file from current template
-    (zimfile <- paste(tempfile(), "zim", sep = "."))
-    create.zim(zimfile, edit = FALSE)
+# Create a minimalist .zim file from current template
+(zimfile <- paste(tempfile(), "zim", sep = "."))
+create.zim(zimfile, edit = FALSE)
 
-    # Display its content
-    if (interactive()) file.show(zimfile)
+# Display its content
+if (interactive()) file.show(zimfile)
 
-    # list zim files in the temporary directory
-    list.zim(tempdir())
+# list zim files in the temporary directory
+list.zim(tempdir())
 
-    # Is this a correct .zim file?
-    is.zim(zimfile)
-    verify.zim(zimfile) # Returns 0 => verification OK, with 0 records in [Data]
+# Is this a correct .zim file?
+is.zim(zimfile)
+verify.zim(zimfile) # Returns 0 => verification OK, with 0 records in [Data]
 
+## The rest of this example is for programmers
+# Add more required sections and keys for metadata verifications
+# Add more required columns in the table of measurements
+options(ZI.zim = list(active = TRUE,
+    zim.required = c("[NewSection]", "requiredkey1", "requiredkey2"),
+    dat1.zim.required = c("[PostProcess]", "requiredkey3"),
+    dat1.data.required = c("Area", "Perim.", "Circ.", "Feret")))
+try(verify.zim(zimfile)) # Of course, these new keys are missing!
 
-    ##### The rest of this example is for programmers #####
-    # Add more required sections and keys for metadata verifications
-    # Add more required columns in the table of measurements
-    option(ZI.zim = list(active = TRUE,
-        zim.required = c("[NewSection]", "requiredkey1", "requiredkey2"),
-        dat1.zim.required = c(("[PostProcess]", "requiredkey3"),
-        dat1.data.required = c("Area", "Perim.", "Circ.", "Feret"))
-    verify.zim(zimfile) # Of course, these new keys are missing!
+# Now, inactivate these extra verifications without deleting them
+oZI.zim <- getOption("ZI.zim")
+oZI.zim$active <- FALSE
+options(ZI.zim = oZI.zim)
+rm(oZI.zim) # not needed any more
+verify.zim(zimfile) # This time, extra verifications are not used any more => OK!
 
-    # Now, inactivate these extra verifications without deleting them
-    oZI.zim <- getOption("ZI.zim")
-    oZI.zim$active <- FALSE
-    option(ZI.zim = oZI.zim)
-    rm(oZI.zim) # not needed any more
-    verify.zim(zimfile) # This time, extra verifications are not used any more => OK!
+# Add some verification code to the existing verification procedure
+options(ZI.zim = list(active = TRUE,
+    verify = function (zimfile, ...) {
+        # Your verification code here, for instance:
+        Lines <- scan(zimfile, character(), sep = "\t", skip = 1, flush = TRUE,
+		    quiet = TRUE, comment.char = "#")
+        # Check if 'Code=B' or 'Code=C', using regular expression
+        # Extra spaces are allowed before and after '=', and after the value
+        if (length(grep("^Code\\s*=\\s*[B|C]\\s*$", Lines)) == 0) {
+            # The condition is not matched!
+            return("[Fraction] Code must be either 'B', or 'C'!")
+        } else {
+            # Everything is fine: return an empty string
+            return("")
+        }
+}))
+try(verify.zim(zimfile)) # Since Code=A, verification fails!
 
-    # Add some verification code to the existing verification procedure
-    option(ZI.zim = list(active = TRUE,
-        verify = function(zimfile, ...) {
-            # Your verification code here, for instance:
-            Lines <- scan(zimfile, character(), sep = "\t", skip = 1, flush = TRUE,
-		        quiet = TRUE, comment.char = "#")
-            # Check if 'Code=B' or 'Code=C', using regular expression
-            # Note: look at regular expression syntax (for instance, at:
-            #       http://zez.org/article/articleprint/11/)
-            # Extra spaces are allowed before and after '=', and after the value
-            if (length(grep("^Code\\s*=\\s*[B|C]\\s*$", Lines)) == 0) {
-                # The condition is not matched!
-                return("[Fraction] Code must be either 'A', or 'B'!")
-            } else {
-                # Everything is fine: return an empty string
-                return("")
-            }
-        })
-    verify.zim(zimfile) # Since Code=A, verification fails!
+# Reset original verification rules
+options(ZI.zim = NULL)
 
-    # Reset original verification rules
-    option(ZI.zim = NULL)
-
-    # Erase the example .zim file
-    unlink(zimfile)
+# Erase the example .zim file
+unlink(zimfile)
 }
+
 \keyword{ utilities }

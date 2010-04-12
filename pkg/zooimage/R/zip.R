@@ -1,4 +1,4 @@
-# Copyright (c) 2004, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 #

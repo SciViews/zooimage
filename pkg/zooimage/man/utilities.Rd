@@ -47,7 +47,7 @@ list.samples(obj)
 getVar(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
 getList(class = "data.frame", default = "", multi = FALSE,
-	title = paste("Choose a ", class, ":", sep=""), warn.only = TRUE)
+	title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
 selectFile(type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
     multi = FALSE, quote = TRUE)
 
@@ -67,8 +67,8 @@ setKey(key, value, type = "sz")
 
 gettextZI(\dots)
 
-ZIpgm((pgm, subdir = "misc", ext = "exe")
-ZIpgmhelp((pgm, subdir = "misc")
+ZIpgm(pgm, subdir = "misc", ext = "exe")
+ZIpgmhelp(pgm, subdir = "misc")
 }
 
 \arguments{
@@ -93,7 +93,9 @@ ZIpgmhelp((pgm, subdir = "misc")
     \code{get.sampleinfo()}, the format to use for a key in \code{setKey()}, or
 	the type of file to select in \code{selectFile()} }
   \item{ext}{ The pattern to use (regular expression) to eliminate file
-    extension from the 'filename' }
+    extension from the 'filename', or (for \code{ZIpgm()}) the extension for the
+	executable under Windows (usually, exe). This has no effect on other
+	platforms) }
   \item{obj}{ Usually a 'ZIDat' object from which all samples are listed }
   \item{class}{ The class of objects to retrieve (or class of list components
     for \code{getList()}) }
@@ -109,21 +111,18 @@ ZIpgmhelp((pgm, subdir = "misc")
   \item{char}{ A character string to rework, or a vector of character strings }
   \item{data}{ A vector containing the data to parse }
   \item{label}{ A label to include for the parsed data }
-  \item{value}{ A value for the progression }
+  \item{value}{ A value for the progression (\code{Progress()}), or data to
+    place in the key (\code{setKey()}) }
   \item{max.value}{ The maximum value, when task is done. If \code{NULL},
     assumes that value is in percent }
   \item{dir}{ The directory to switch to }
   \item{key}{ The registry key to manipulate }
   \item{default.value}{ Value to use if the key is absent in the registry }
-  \item{value}{ Data to place in the key }
-  \item{\dots}{ Some strings to be translated in the current language }
   \item{pgm}{ The name of an executable located in the zooimage package (under
     Windows), or on the system (elsewhere) }
   \item{subdir}{ The subdirectory (to the zooimage install directory) where the
     executable should be located under Windows (this has no effect on other
 	platforms) }
-  \item{ext}{ The extension for the executable under Windows (usually, exe).
-    This has no effect on other platforms) }
 }
 
 \value{

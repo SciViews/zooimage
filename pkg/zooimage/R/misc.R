@@ -1,4 +1,4 @@
-# Copyright (c) 2004-2006, Ph. Grosjean <phgrosjean@sciviews.org>
+# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
 #
 # This file is part of ZooImage
 # 
@@ -153,7 +153,6 @@ message = 'Path "%s" does not exist or is not a directory')
 	out <- dir.create(path, ...)
 	if (!out)
 		stop("could not create directory")
-	}
 	return(out)
 }
 
