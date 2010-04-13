@@ -48,7 +48,7 @@ getVar(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
 getList(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
-selectFile(type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
+selectFile(type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis", "Zie"),
     multi = FALSE, quote = TRUE)
 
 getDec()

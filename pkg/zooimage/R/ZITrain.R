@@ -144,6 +144,7 @@ na.rm = FALSE)
 	# Get measurement infos
     #### TODO: Kevin, you cannot use this! You must refer to ZI.sample directly
 	# in the arguments of the function!
+	ZI.sample <- NULL
 	load(Dats[1])
 	Dat <- ZI.sample
 	Classes <- class(Dat)

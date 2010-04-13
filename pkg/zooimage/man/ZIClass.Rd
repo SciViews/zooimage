@@ -17,7 +17,8 @@ ZIClass(df, algorithm = c("lda", "randomForest"), package = c("MASS",
     Max + logPerim. + logMajor + logMinor + Circ. + logFeret + IntDen +
     Elongation + CentBoxD + GrayCentBoxD + CentroidsD + Range + MeanPos +
     SDNorm + CV, calc.vars = "calc.vars", k.xval = 10, \dots)
-predict.ZIClass(object, ZIDat, calc.vars = TRUE, class.only = FALSE, \dots)
+predict.ZIClass(object, ZIDat, calc.vars = TRUE, class.only = FALSE,
+    type = "class", na.rm = FALSE, \dots)
 confu(classes1, classes2, classes.predicted = FALSE)
 }
 
@@ -32,6 +33,8 @@ confu(classes1, classes2, classes.predicted = FALSE)
   \item{object}{ A 'ZIClass' object }
   \item{ZIDat}{ A 'ZIDat' object where items should be classified }
   \item{class.only}{ If TRUE, retrun just a vector with classification, otherwise, return a 'ZIDat' object with 'Ident' column appended to it }
+  \item{type}{ The type of result to return, \code{"class"} by default }
+  \item{na.rm}{ Do we eliminate entries with missing data first? }
   \item{classes1}{ One classification to compare }
   \item{classes2}{ A second classification to compare }
   \item{classes.predicted}{ Do we compare classes with predicted classes, or just two

@@ -113,21 +113,35 @@ calc.vars = "calc.vars", k.xval = 10, ...)
 }
 
 "predict.ZIClass" <- function (object, ZIDat, calc.vars = TRUE,
-class.only = FALSE, ...)
+class.only = FALSE, type = "class", na.rm = FALSE, ...)
 {
 
 	# Make sure we have correct objects
 	mustbe(object, "ZIClass")
 	mustbe(ZIDat , c("ZIDat", "data.frame"))
-
+	
 	# Possibly load a specific package for prediction
-	# Note: this is done in NAMESPACE
-	# package <- attr(object, "package")
-	# if (!is.null(package)) require(package, character.only = TRUE)
+	package <- attr(object, "package")
+	if (!is.null(package)) {
+        # Make sure that the specific required package is loaded
+        eval(parse(text = paste("require(", package, ")", sep = "")))
+    }
+
     class(object) <- class(object)[-1]
 	data <- as.data.frame(ZIDat)
+	
 	if (calc.vars) data <- attr(object, "calc.vars")(data)
-	Ident <- predict(object, newdata = data, type = "class")
+	if (isTRUE(na.rm)) na.omit(data)
+	
+	if (type != "prob") {
+		Ident <- predict(object, newdata = data, type = type)
+	} else {
+		if (inherits(object, "randomForest")) {
+			Ident <- predict(object, newdata = data, type = type)
+		} else if (inherits(object, "lda")) {
+			Ident <- predict(object, newdata = data)$posterior
+		} else stop("Cannot calculate yet for other algorithms than Random Forest or LDA")
+	}
 
 	# Special case for prediction from an LDA (list with $class item)
 	if (inherits(Ident, "list") && "class" %in% names(Ident))
@@ -136,6 +150,9 @@ class.only = FALSE, ...)
 		res <- cbind(ZIDat, Ident)
 		class(res) <- class(ZIDat)
 	} else res <- Ident
+	
+	# New metadata attribute
+	attr(res, "metadata") <- attr(ZIDat, "metadata")
 	return(res)
 }
 

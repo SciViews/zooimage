@@ -15,803 +15,751 @@
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# read.lst for both FlowCAM II and III by Kevin Denis
-read.lst <- function (x, skip = 2) {
-  # Determine the version of the FlowCAM
-  ncol <- length(read.table(x, header = FALSE, sep = ":", dec = ".", skip = 2, nrow = 1))
-  if(ncol <= 44){
-    # FlowCAM II with 44 columns
-    # read the table
-    tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
-    col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area", "FIT_Raw_Feret_Max",
-    "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
-    "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD", "FIT_Diameter_ABD",
-    "FIT_Length", "FIT_Width", "FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
-    "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness", "FIT_Elongation",
-    "FIT_Sum_Intensity", "FIT_Roughness", "FIT_Feret_Max_Angle", "FIT_Avg_Red",
-    "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak",
-    "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
-    "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
-    "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
-    "FIT_CaptureY", "FIT_High_U32", "FIT_Low_U32", "FIT_Total"), skip = skip)
-    # Add columns present in list files from FlowCAM III
-    tab$FIT_Feret_Min_Angle <- NA
-    tab$FIT_Edge_Gradient <- NA
-    tab$FIT_Timestamp1 <- NA
-    tab$FIT_Timestamp2 <- NA
-    tab$FIT_Source_Image <- NA
-    tab$FIT_Calibration_Image <- NA
-    tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-    # new variables calculation (present in dataexport.csv from the FlowCAM)
-    tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
-    tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
-    tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
-    tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
-    tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
-    tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
-    tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
-  } else {
-    # FlowCAM III with 47 columns
-    # read the table
-    tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
-    col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area", "FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min",
-    "FIT_Raw_Feret_Mean", "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
-    "FIT_Diameter_ABD", "FIT_Length", "FIT_Width", "FIT_Diameter_ESD", "FIT_Perimeter",
-    "FIT_Convex_Perimeter", "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
-    "FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness", "FIT_Feret_Max_Angle",
-    "FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC",
-    "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
-    "FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
-    "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",
-    "FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image", "FIT_Calibration_Image"), skip = skip)
-    # Add columns present in list files from FlowCAM II
-    tab$FIT_High_U32 <- NA
-    tab$FIT_Low_U32 <- NA
-    tab$FIT_Total <- NA
-    # new variables calculation (present in dataexport.csv from the FlowCAM)
-    tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
-    tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
-    tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
-    tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
-    tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
-    tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
-    tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
-    tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-  }
-  return(tab)
-}
-
-# Prediction of classes in real-time
-"predict.ZIClass.Real.Time" <-
-	function(object, ZIDat, calc.vars = TRUE, class.only = FALSE, type = "class", na.rm = NULL, ...) {
-	# Make sure we have correct objects
-	if (!inherits(object, "ZIClass"))
-		stop("'object' must be a ZIClass object!")
-	if (!inherits(ZIDat, "ZIDat") && !inherits(ZIDat, "data.frame"))
-		stop("'ZIDat' must be a ZIDat object, or a data.frame!")
-	# Possibly load a specific package for prediction
-	# Note: this is done in NAMESPACE
-	#package <- attr(object, "package")
-	#if (is.null(package)) {
-    #    # This is for old version, we make sure to load
-    #    # MASS, RandomForest, class, rpart, e1071, ipred
-    #    # Rem: nnet has a special treatment in nnet2
-    #    (require(MASS) || stop("package 'MASS' is required!"))
-    #    (require(RandomForest) || stop("package 'RandomForest' is required!"))
-    #    (require(class) || stop("package 'class' is required!"))
-    #    (require(rpart) || stop("package 'rpart' is required!"))
-    #    (require(e1071) || stop("package 'e1071' is required!"))
-    #    (require(ipred) || stop("package 'ipred' is required!"))
-    #} else {
-    #    # Make sure that the specific required package is loaded
-    #    eval(parse(text = paste("require(", package, ")", sep = "")))
-    #}
-
-  class(object) <- class(object)[-1]
-	data <- as.data.frame(ZIDat)
-	if (calc.vars) data <- attr(object, "calc.vars")(data)
-	if (!is.null(na.rm)) na.omit(data)
-  if(type != "prob"){
-    Ident <- predict(object, newdata = data, type = type)
-  } else {
-  if(inherits(object, "randomForest")) {
-    Ident <- predict(object, newdata = data, type = type)
-  }
-  if(inherits(object, "lda")) {
-    Ident <- predict(object, newdata = data)$posterior
-  }
-  }
-	# Special case for prediction from an LDA (list with $class item)
-	if (inherits(Ident, "list") && "class" %in% names(Ident))
-		Ident <- Ident$class
-	if (!class.only) {
-		res <- cbind(ZIDat, Ident)
-		class(res) <- class(ZIDat)
-	} else res <- Ident
+"realtimeSlope" <- function (ZIDat, breaks, log = TRUE)
+{
+	if (!"FIT_Diameter_ABD" %in% names(ZIDat))
+		stop("The 'FIT_Diameter_ABD' column is required in 'ZIDat' but not found")
+	Dat <- as.vector(table(cut(ZIDat$FIT_Diameter_ABD/1000, breaks = breaks)))
+	if (isTRUE(log)) Dat <- log10(Dat + 1)
+	midpoints <- (breaks[-1] + breaks[-length(breaks)]) / 2
+	Lm <- lm(Dat ~ midpoints)
+	res <- coef(Lm)[2]
+	attr(res, "lm") <- Lm
 	return(res)
 }
 
-# Calculation of biomass
-Biomass <- function(tab){
-		res <- NULL
-    grps <- levels(tab$Ident)
-    for(i in 1:length(grps)){
-      res[i] <- sum(tab$Biomass[tab$Ident %in% grps[i]])
+# Loop to run process and comparisons in real-time (delay interval is in ms)
+"realtimeLoop" <- function (delay = 15000)
+{
+	continue <- TRUE
+	# Function to execute at regular interval
+	realtimeProcess(List = getOption("Path"), ZIClass = getOption("Classifier"),
+		conv = getOption("conv"), Collage = getOption("Collage"),
+		FlowCell = getOption("FlowCell"), ImgPerSec = getOption("ImgPerSec"),
+		Size = getOption("Size"), Lag = getOption("Lag"))
+	#realtimePlotMobile(ZIDat = rec, group = getOption("Group"),
+	#	identify = getOption("identify"), breaks = getOption("breaks"),
+	#	log = getOption("log"), RealT = TRUE)
+	#realtimePlot(ZIDat = rec, type = getOption("type"), Abd = getOption("Abd"),
+	#	Bio = getOption("Bio"), Group = getOption("Group"),
+	#	Concentration = getOption("Concentration"),
+	#	Spectra = getOption("Spectra"), breaks = getOption("breaks"),
+	#	Compa = getOption("Compa"), log = getOption("log"))
+  
+	# Is there a stop signal?
+	if (existsTemp(".realtimeStopItFlag")) {
+		rmTemp(".realtimeStopItFlag")
+		timer <- NULL
+	} else { # Continue...
+		# Run realtimeLoop after 'delay' ms
+		timer <- .Tcl(paste("after", as.integer(delay)[1], "realtimeLoop"))
+	}
+	return(invisible(timer))
+}
+
+"realtimeStop" <- function ()
+	assignTemp(".realtimeStopItFlag", TRUE)
+
+"realtimeReset" <- function () {
+	assignTemp("rtData", NULL)
+	assignTemp("rtRecords", NULL)
+	assignTemp("rtTime", NULL)
+}
+
+"realtimeOptions" <- function (
+lstdir = ".", 		# Path of the list file of the current FlowCAM experiment
+ZIClass,			# Classifier to use
+type = "b", 		# "b" : barplot, "l" : line alpha code
+SizeThreshold = NULL, # NULL or Size threshold in µm alpha code
+breaks = seq(0.05, 3, by = 0.1),  # in mm
+convdir = ".", 		# Path of the conversion table
+ImgPerSec = 7,
+FlowCell = 600,
+Concentration = "p/mL",	# "Absolute", "Relative" or "p/mL"
+Collage = NULL, 	# NULL: no mobile window, TRUE: use collage, FALSE: use number of vignettes
+Size = 5,			# The size of the mobile window
+Lag = 2,			# The lag between two successive mobile windows
+Abd = NULL,			# NULL, TRUE or FALSE
+Bio = NULL,			# NULL, TRUE or FALSE
+Spectra = NULL,		# NULL, TRUE or FALSE
+Compa = NULL,		# NULL, FALSE or a path of a list of sample to compare with
+Group = NULL,		# The group to recognize and/or plot
+identify = FALSE,	# Identify points on plot (TRUE or FALSE)
+log = FALSE,		# Transform data in log10(x + 1)
+Slope = FALSE)
+{
+	# Check and/or convert arguments
+	lstdir <- as.character(lstdir)[1]
+	
+	if (!inherits(ZIClass, "ZIClass"))
+		stop("'ZIClass' must be a classifier of class 'ZIClass'")
+
+	type <- as.character(type)[1]
+    if (!type %in% c("b", "l"))
+		stop("type must be 'b' (barplot) or 'l' (lines)")
+
+	if (!is.null(SizeThreshold) && !is.numeric(SizeThreshold))
+		stop("'SizeThreshold' must be a numeric value in microns or NULL")
+		
+	if (!is.numeric(breaks))
+		stop("breaks must be the size interval (a vector of numeric values)")
+  
+	convdir <- as.character(convdir)[1]
+	
+	ImgPerSec <- as.numeric(ImgPerSec)[1]
+	if (ImgPerSec < 0)
+		stop("'ImgPerSec' must be the number of images taken by the FlowCAM per Second")
+
+	FlowCell <- as.integer(FlowCell)[1]
+
+	Concentration <- as.character(Concentration)[1]
+	if (!Concentration %in% c("p/mL", "Relative", "Absolute"))
+		stop("'Concentration' must be \"p/mL\", \"Absolute\" or \"Relative\"")
+
+	if (!is.null(Collage)) Collage <- isTRUE(Collage)
+
+	Size <- as.numeric(Size)[1]
+	if (Size <= 0)
+		stop("'Size' must be the value of the interval size (a positivce number)")
+
+	Lag <- as.numeric(Lag)[1]
+	if (Lag < 0)
+		stop("'Lag' must be the value of the lag between two mobile windows (postive or zero)")
+  
+	if (!is.null(Abd)) Abd <- isTRUE(Abd)
+  
+	if (!is.null(Bio)) Bio <- isTRUE(Bio)
+  
+	if (!is.null(Spectra)) Spectra <- isTRUE(Spectra)
+
+	if (!is.null(Compa)) {
+		Compa <- as.character(Compa)
+		if (length(Compa) == 1) {
+			if(length(grep(pattern = ".[Zz][Ii][Dd]", x = Compa)) >= 1) {
+				# This a zid file
+				Smp <- read.zid(Compa)
+			} else {
+				# This is a list file
+				Smp <- read.lst(Compa)
+			}
+			Smp <- predict(ZIClass, Smp, calc.vars = FALSE, class.only = FALSE)
+			Smp <- BiomassTab(ZIDat = Smp, conv = convdir, RealT = TRUE)
+			List <- list(Smp)
+			names(List) <- noext(basename(Compa))
+		} else {
+			List <- list()
+			if (length(grep(pattern = ".[Zz][Ii][Dd]", x = Compa)) >= 1) {
+				# This a zid file
+				for (i in 1 : length(Compa))
+					List[[i]] <- BiomassTab(ZIDat = predict(ZIClass,
+						read.zid(Compa[i]), calc.vars = FALSE,
+						class.only = FALSE), conv = convdir, RealT = TRUE)
+			} else {
+				# This is a list file
+				for (i in 1 : length(Compa))
+					List[[i]] <- BiomassTab(ZIDat = predict(ZIClass,
+						read.lst(Compa[i]), calc.vars = FALSE,
+						class.only = FALSE), conv = convdir, RealT = TRUE)
+			}
+			names(List) <- noext(basename(Compa))
 		}
-		names(res) <- grps
-		return(res)
+      	Compa <- List
+    } else Compa <- FALSE
+  
+	if (!is.null(Group)) Group <- as.character(Group)[1] 
+  
+	identify <- isTRUE(identify)
+  
+	log <- isTRUE(log)
+  
+	Slope <- isTRUE(Slope)
+
+	# Construct the options object and save it in options
+	opts <- list(lstdir, ZIClass, type, SizeThreshold, breaks, convdir,
+		ImgPerSec, FlowCell, Size, Lag, Concentration, Abd, Bio, Spectra, Group,
+		Compa, identify, log, Slope)
+	options("ZIrealtimeOpts" = opts)
+	return(invisible(opts))
 }
 
-# Plot of histograms and line for exponential decrease for size spectra
-hist.spectrum <- function(spect, breaks = seq(0.05, 0.6, by = 0.05),
-	width = 0.1, xlab = "classes (mm)", ylab = "log(abundance + 1)", main = "",
-	ylim = c(0, 10)) {
-	spect.lm <- lm(spect ~ breaks[-length(breaks)])
-    print(summary(spect.lm))
-    slope <- format(coef(spect.lm)[2], digits = 3)
-    main <- paste(main, " (slope = ", slope, ")", sep = "")
-	barplot(spect, width = 0.1, space = 0, xlab = xlab, ylab = ylab, main = main, ylim = ylim)
-	#abline(a = coef(spect.lm)[1], b = coef(spect.lm)[2], col = 2, lwd = 2)
-  return(invisible(spect.lm))
+"realtimeProcess" <- function(List, ZIClass, conv = c(1, 0, 1), Collage = NULL,
+FlowCell = 600, ImgPerSec = 5, Size = 5, Lag = 2)
+{
+	if (!existsTemp("rtData")) {
+		# First iteration
+		# Calculation of elapsed time
+		TIME <- TimeElapsed(List)
+		# Read the list file
+		tab <- read.lst(List, skip = 2)
+		# If no measurements in the list file
+		if (dim(tab)[1] == 0) {
+			print("The list file is empty")
+			rmTemp("rtData")
+		} else {
+			rec <- getTemp("rtRecord")
+			if (is.null(rec)) {
+				rec <- predict(ZIClass, tab, calc.vars = FALSE,
+					class.only = FALSE) # Ident
+				rec <- BiomassTab(ZIDat = rec, conv = conv,
+					RealT = TRUE) # Biomass
+				# Proceed to the mobile window
+				if (!is.null(Collage))
+					rec <- mobileWindow(RealT = TRUE)
+				# Add Sec and Vol column to the general table
+				if (!"sec" %in% names(rec))
+					rec <- AddSecVol(ZIDat = rec, FlowCell = FlowCell,
+						ImagePerSec = ImgPerSec)
+				assignTemp("rtRecord", rec)
+			}
+		}
+		# Create Attributes
+		if (!is.null(rec)) {
+			Abd <- table(rec$Ident)
+			Bio <- tapply(rec$Biomass, rec$Ident, sum)
+			# Remove NA and 0 from tables Abd and Bio to avoid any log problem
+			Abd[is.na(Abd)] <- 1e-09
+			Abd[Abd == 0] <- 1e-09
+			Bio[is.na(Bio)] <- 1e-09
+			Bio[Bio == 0] <- 1e-09
+			# Add attributes to rec
+			attr(rec, "Abd") <- Abd
+			attr(rec, "Bio") <- Bio
+			attr(rec, "Skip") <- nrow(tab)
+			# used to know the number of row to skip to get new measurements
+			attr(rec, "RowToSkip") <- nrow(rec)
+			# used to create a trnasect after the cruise
+			attr(rec, "VolumeDigitized") <- VolumeDigi(rec = rec,
+				FlowCell = FlowCell, ImgPerSec = ImgPerSec)
+			# Attribute for time elapsed
+			attr(rec, "TimeElapsed") <- TIME
+			# this parameter is used by VolumeDigi(List)
+			assignTemp("rtRecord", rec)
+		}
+	} else {
+		# There is one lst (non empty tab) list in memory
+		rec1 <- rec # recognition table from the previous iteration
+		Abd1 <- attr(rec1, "Abd") # Abd from the previous iteration
+		Bio1 <- attr(rec1, "Bio") # Bio from the previous iteration
+		# read the complete table to know if new results have been added
+		# Calculation of elapsed time
+		TIME <- TimeElapsed(List)
+		New <- read.lst(List, skip = 2) # read the New tab after the elapsed time
+		# Check if new measurements added in New
+		attr(rec, "Skip") <- c(attr(rec, "Skip"), nrow(New))
+		# Comparision with the previous Skip
+		if (attr(rec, "Skip")[length(attr(rec, "Skip"))] !=
+			attr(rec, "Skip")[length(attr(rec, "Skip"))- 1]) {
+			# Extract only new measurements
+			tab <- New[(attr(rec, "Skip")[length(attr(rec, "Skip")) - 1] + 1):
+				attr(rec, "Skip")[length(attr(rec, "Skip"))], ]
+			# Return the object in R
+			tab <- getTemp("rtData")
+			# recognition of tab
+			rec <- predict(ZIClass, tab, calc.vars = FALSE,
+				class.only = FALSE) # Ident
+			rec <- BiomassTab(ZIDat = rec, conv = conv, RealT = TRUE) # Biomass
+
+			# Add Sec and Vol information
+			if (!"sec" %in% names(rec)) 
+				rec <- AddSecVol(ZIDat = rec, FlowCell = FlowCell,
+					ImagePerSec = ImgPerSec)
+			# Create new tables
+			Abd <- table(rec$Ident)
+			Bio <- tapply(rec$Biomass, rec$Ident, sum)
+			# Remove NA and 0
+			Abd[is.na(Abd)] <- 1e-09
+			Abd[Abd == 0] <- 1e-09
+			Bio[is.na(Bio)] <- 1e-09
+			Bio[Bio == 0] <- 1e-09
+			# Paste the two tables : the previous and the new ones
+			rec <- rbind(rec1, rec)
+			if (!is.null(Collage)) {
+				# calculation of the rest of the mobile window
+				attr(rec, "Intervals") <- attr(rec1, "Intervals")
+				# because it is used to determine the range in mobileWindow
+				rec <<- mobileWindow(RealT = TRUE)
+				NewInterval <- attr(rec, "Intervals")
+				# Extracted here because it will be lost after the rbind operation
+				NewMobile_Tab <- attr(rec, "Mobile_Tab")
+				NewTime <- attr(rec, "Time")
+			}
+			# When we rbind rec, we loose attributes --> Add new attributes
+			attr(rec, "Skip") <- c(attr(rec, "Skip"), nrow(New))
+			if (!is.null(Abd1)) attr(rec, "Abd") <<- cbind(Abd1, Abd)
+			if (!is.null(Bio1)) attr(rec, "Bio") <<- cbind(Bio1, Bio)
+			if (!is.null(Collage)) {
+				# Attribute of the mobile window
+				attr(rec, "Time") <- c(attr(rec1, "Time")[
+					-length(attr(rec1, "Time"))], NewTime)
+				# everything excepted last iteration
+				attr(rec, "Intervals") <- cbind(attr(rec1, "Intervals")[
+					, -ncol(attr(rec1, "Intervals"))], NewInterval)
+				# everything excepted last iteration
+				attr(rec, "Mobile_Tab") <- cbind(attr(rec1, "Mobile_Tab")[
+					, -ncol(attr(rec1, "Mobile_Tab"))], NewMobile_Tab[, -1])
+				# everything excepted last iteration
+				attr(rec, "Size") <- Size
+				attr(rec, "Lag") <- Lag
+				attr(rec, "Collage") <- Collage
+				assignTemp("rtRecord", rec)
+			}
+		} else {
+			# There are no new measurements in list file
+			cat("There are no new measurements in list file or experiment finished\n")
+			# Remove the last element of the Skip attribute
+			attr(rec, "Skip") <- attr(rec, "Skip")[
+				-length(attr(rec, "Skip"))]
+			# Add attributes
+			if (!is.null(Abd1))
+				attr(rec, "Abd") <- cbind(attr(rec, "Abd"),
+					rep(1e-09, nrow(attr(rec, "Abd"))))
+			if (!is.null(Bio1))
+				attr(rec, "Bio") <- cbind(attr(rec, "Bio"),
+					rep(1e-09, nrow(attr(rec, "Bio"))))
+			assignTemp("rtRecord", rec)
+		}
+		# Attributes with the number of rows to skip
+		attr(rec, "RowToSkip") <- c(attr(rec, "RowToSkip"), nrow(rec))
+		# 2010-01-06
+		# Attribute for time elapsed
+		attr(rec, "TimeElapsed") <- TIME
+		# this parameter is used by VolumeDigi()
+		# Calculation of digitized volume
+		# 2010-01-06
+
+		# 2009-11-26
+		attr(rec, "VolumeDigitized") <- c(attr(rec, "VolumeDigitized"),
+			VolumeDigi(rec = rec, FlowCell = FlowCell, ImgPerSec = ImgPerSec))
+		# 2009-11-26
+		assignTemp("rtRecord", rec)
+	}
+	# Write a table with Volume and nrow of rec
+	Time <- attr(rec, "TimeElapsed")
+	Vol <- attr(rec, "VolumeDigitized")
+	Row <- attr(rec, "RowToSkip")
+	write.table(data.frame(Time, Vol, Row), file = file.path(dirname(List),
+		paste(basename(List), "RowToSkip.txt", sep = "_")),
+		sep = "\t", dec = ".", row.names = FALSE)
+	# Save data as Rdata
+	save(rec, file = file.path(dirname(List),
+		paste(basename(List),"rec.Rdata", sep = "_")))
+	# Change class(rec)
+	if (!inherits(rec, "RealT"))
+		class(rec) <- c("RealT", class(rec))
+	assignTemp("rtRecord", rec)
 }
 
-# Function which controls arguments
-loop.opts <- function(lst = ".", # path of the list file of the current FlowCAM experiment
-  classif = ZIC, # Classifier
-  type = NULL, # Null: barplot, "l" : line alpha code
-  SizeThreshold = NULL, # NULL or Size threshold in microns alpha code
-  Export_Collages = NULL, # NULL or Number of collages by artificial sample alpha code
-  ZIprevSmp = NULL, # Comparison with one previous sample
-  ZIlist = NULL,  # Comparison several previous samples
-  Abd.all = TRUE, # NULL or TRUE
-  Abd.gp = NULL, # NULL or groups to plot
-  Spec.all = NULL,  # NULL or TRUE
-  Spec.gp = NULL, # NULL or groups to plot
-  Bio.all = NULL, # NULL or TRUE
-  Bio.gp = NULL, # NULL or groups to plot
-  breaks = seq(0.05, 3, by = 0.1),  # in mm
-  conv = ".", #c(1, 0, 1), # or conversion table
-  ZICompAbd = NULL,
-  ZICompSpectra = NULL,
-  ZICompBiomass = NULL,
-  ZICompSlope = NULL,
-  ZICompAbd.gp = NULL,
-  ZICompBio.gp = NULL
-  ){
-  # Print in global environment default values for tab, rec, and TabGroups
-  tab <<- NULL
-  rec <<- NULL
-  # Check argument
-  if(!is.character(lst)){
-    stop("lst must be a character string with the path of the list file")
-  } else {
-    options(Path = lst) # Path used in the process function and lst an arguement of the loop.opts function
-  }
-  if(!inherits(classif, "ZIClass")){
-    stop("classif must be a classifier of class ZIClass")
-  } else {
-    options(Classifier = classif)
-  }
-  # Lines graphical representation
-  if(!is.null(type)){
-    options(type = "l")
-    TabGroups <<- NULL
-  } else {
-    options(type = FALSE)
-  }
-  # Size threshold
-  if(!is.null(SizeThreshold)){
-    options(SizeThreshold = SizeThreshold)
-    TabGroupsSize <<- NULL
-  } else {
-    options(SizeThreshold = FALSE)
-  }
-  # Collage and results exportation
-  if(!is.null(Export_Collages)){
-    options(MaxCollages = Export_Collages)
-    Collages <<- NULL
-  } else {
-    options(MaxCollages = FALSE)
-  }
-  # Abundances
-  if(!is.null(Abd.all)){
-    options(Abd.all = TRUE)
-  } else {
-    options(Abd.all = FALSE)
-  }
-  if(!is.null(Abd.gp)){
-    options(Abd.gp = Abd.gp)
-  } else {
-    options(Abd.gp = FALSE)
-  }
-  # Size Spectrum
-  # total size spectrum
-  if (!is.null(Spec.all)){
-    if (!is.null(Spec.gp)){
-      stop("total spectrum only")
-    } else {
-      options(Spec.all = TRUE)
-    #options(breaks = breaks)
-    }
-  } else {
-    options(Spec.all = FALSE)
-  }
-  # Size spectrum by groups
-  if (!is.null(Spec.gp)){
-    if (!inherits(Spec.gp, "character")) stop("groups must be a vector with names of groups")
-    gp.Spec <- as.list(Spec.gp)
-    names(gp.Spec) <- Spec.gp # list with levels = names of groups
-    options(gp.Spec = gp.Spec)
-    #options(breaks = breaks)
-  } else {
-    options(gp.Spec = FALSE)
-  }
-  # Biomass
-  # Biomass for all groups
-  if(!is.null(Bio.all)){
-    options(Bio.all = TRUE)
-  #options(conv = conv)
-  } else {
-    options (Bio.all = FALSE)
-  }
-  # Biomass by group
-  if(!is.null(Bio.gp)){
-    if (!inherits(Bio.gp, "character")) stop("groups must be a vector with names of groups")
-    gp.Bio <- as.list(Bio.gp)
-    names(gp.Bio) <- Bio.gp
-    options(gp.Bio = gp.Bio)
-    #options(conv = conv)
-  } else {
-    options(gp.Bio = FALSE)
-  }
-  if(!is.numeric(breaks)){
-    stop("breaks must be the size intervall")
-  } else {
-    options(breaks = breaks)
-  }
-  if(!is.character(conv)){
-   stop("conv must be the path of a conversion table")
-  } else {
-    Conv <- read.table(conv, header = TRUE, sep = "\t")
-    options(conv = Conv)
-  }
-  #### Parameters for the comparison in near real time ####
-  # the sample to compare with
-  if(!is.null(ZIprevSmp)){
-    if(!is.character(ZIprevSmp)) {
-      stop("'ZIprevSmp' must be the path of the list file to compare")
-    } else {
-      options(ZIprevSmp = ZIprevSmp)
-    }
-  } else {
-    options(ZIprevSmp = FALSE)
-  }
-  # comparison of abundances
-  if(!is.null(ZICompAbd)){
-    options(ZICompAbd = TRUE)
-  } else {
-    options(ZICompAbd = FALSE)
-  }
-  # Compa of abundances of some groups
-  if(!is.null(ZICompAbd.gp)){
-    options(ZICompAbd.gp = ZICompAbd.gp)
-  } else {
-    options(ZICompAbd.gp = FALSE)
-  }
-  # comparison of size spectra
-  if(!is.null(ZICompSpectra)){
-    options(ZICompSpectra = TRUE)
-  } else {
-    options(ZICompSpectra = FALSE)
-  }
-  # Comparison of Biomass
-  if(!is.null(ZICompBiomass)){
-    options(ZICompBiomass = TRUE)
-  } else {
-    options(ZICompBiomass = FALSE)
-  }
-  # Comparison of biomass by groups
-  if(!is.null(ZICompBio.gp)){
-    options(ZICompBio.gp = ZICompBio.gp)
-  } else {
-    options(ZICompBio.gp = FALSE)
-  }
-  # Comparison of size spectra slope
-  if(!is.null(ZICompSlope)){
-    options(ZICompSlope = TRUE)
-  } else {
-    options(ZICompSlope = FALSE)
-  }
-  # Comparison with more than one sample
-  #if(!is.null(ZICompMultiple)) options(CompMultiple = TRUE)
-  if(!is.null(ZIlist)){
-    if(!is.character(ZIlist)){
-      stop("'ZIlist' must be a character string of the files to analyze")
-    } else {
-      options(ZIlist = ZIlist)
-    }
-  } else {
-    options(ZIlist = FALSE)
-  }
+# read.lst for both FlowCAM II and III by Kevin Denis
+"read.lst" <- function (x, skip = 2)
+{
+	# Determine the version of the FlowCAM
+	ncol <- length(read.table(x, header = FALSE, sep = ":", dec = ".", skip = 2, nrow = 1))
+	if (ncol <= 44) {
+		# FlowCAM II with 44 columns
+		# read the table
+		tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
+			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area", "FIT_Raw_Feret_Max",
+			"FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
+			"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD", "FIT_Diameter_ABD",
+			"FIT_Length", "FIT_Width", "FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
+			"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness", "FIT_Elongation",
+			"FIT_Sum_Intensity", "FIT_Roughness", "FIT_Feret_Max_Angle", "FIT_Avg_Red",
+			"FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak",
+			"FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
+			"FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
+			"FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
+			"FIT_CaptureY", "FIT_High_U32", "FIT_Low_U32", "FIT_Total"), skip = skip)
+		# Add columns present in list files from FlowCAM III
+		tab$FIT_Feret_Min_Angle <- NA
+		tab$FIT_Edge_Gradient <- NA
+		tab$FIT_Timestamp1 <- NA
+		tab$FIT_Timestamp2 <- NA
+		tab$FIT_Source_Image <- NA
+		tab$FIT_Calibration_Image <- NA
+		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
+		# new variables calculation (present in dataexport.csv from the FlowCAM)
+		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
+		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
+		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
+		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
+		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
+		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
+		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
+	} else {
+		# FlowCAM III with 47 columns
+		# read the table
+		tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
+		col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area", "FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min",
+			"FIT_Raw_Feret_Mean", "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
+			"FIT_Diameter_ABD", "FIT_Length", "FIT_Width", "FIT_Diameter_ESD", "FIT_Perimeter",
+			"FIT_Convex_Perimeter", "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
+			"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness", "FIT_Feret_Max_Angle",
+			"FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC",
+			"FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
+			"FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
+			"FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",
+			"FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image", "FIT_Calibration_Image"), skip = skip)
+		# Add columns present in list files from FlowCAM II
+		tab$FIT_High_U32 <- NA
+		tab$FIT_Low_U32 <- NA
+		tab$FIT_Total <- NA
+		# new variables calculation (present in dataexport.csv from the FlowCAM)
+		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
+		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
+		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
+		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
+		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
+		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
+		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
+		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
+	}
+	# Try to extract metadata from ctx files
+	ctxfile <- sub("lst$", "ctx", x)
+	if (file.exists(ctxfile)) {
+		# There is an associated ctx file
+		Ctx <- scan(ctxfile, character(), sep = "\t", skip = 0,
+			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE,
+			comment.char = "")
+		KeyValue <- function (x, key, as.numeric = TRUE) {
+			pos <- grep(paste("^", key, sep = ""), x)
+			if (length(pos) < 1) return(NULL)
+			str <- x[pos[1]]
+			res <- strsplit(str, "=")[[1]][2]
+			res <- trim(res)
+			if (isTRUE(as.numeric)) res <- as.numeric(res)
+			return(res)
+		}		
+		Version <- KeyValue(Ctx, "SoftwareVersion", as.numeric = FALSE)
+		if (Version == "2.2.1") {
+			AcceptableLeft <- KeyValue(Ctx, "AcceptableLeft")
+			AcceptableRight <- KeyValue(Ctx, "AcceptableRight")
+			AcceptableTop <- KeyValue(Ctx, "AcceptableTop")
+			AcceptableBottom <- KeyValue(Ctx, "AcceptableBottom")
+			MinESD <- KeyValue(Ctx, "MinESD")
+			MaxESD <- KeyValue(Ctx, "MaxESD")
+			RawImageTotal <- KeyValue(Ctx, "RawImageTotal")
+			FlowCellDepth <- KeyValue(Ctx, "FlowCellDepth")
+			FlowCellWidth <- KeyValue(Ctx, "FlowCellWidth")
+			ImagePerSec <- KeyValue(Ctx, "AutoImageRate")
+			CalibConstant <- KeyValue(Ctx, "CalibrationConstant")
+			TotalVolume <- KeyValue(Ctx, "TotalVolumeML")
+		} else warning("Ctx version not recognized (", Version, ")\n", sep = "")
+    
+		# Must be metadata and must conform to the specification of a ZIDat/zim file
+		attr(tab, "metadata") <- list(Version, AcceptableLeft, AcceptableRight,
+			AcceptableTop, AcceptableBottom, MinESD, MaxESD, RawImageTotal,
+			FlowCellDepth, FlowCellWidth, ImagePerSec, CalibConstant, TotalVolume)
+	} else attr(tab, "metadata") <- NULL
+	class(tab) <- c("ZI1Dat", "ZIDat", "data.frame")
+	return(tab)
 }
 
-# Function to plot information about current sample
-SampleCurrent <- function(){
-  if(!is.character(getOption("type")) && !is.numeric(getOption("SizeThreshold"))){  # if we want to have the line representation
-    # Check if rec in R
-    if (!exists("rec", env = .GlobalEnv)) stop("There is no recognition table in memory")
-    # Plot the different graphes
-    if (getOption("Abd.all")){
-      barplot(table(rec$Ident)/nrow(rec)*100, xlab = "Groups", ylab = "Abundance (%)", main = "Relative abundance")# to improve
-    }
-    if (is.character(getOption("Abd.gp"))){
-      barplot((table(rec$Ident)[names(table(rec$Ident)) %in% getOption("Abd.gp")])/nrow(rec)*100, xlab = "Groups", ylab = "Abundance (%)", main = "relative abundance by groups")
-    }
-    if (getOption("Spec.all")){
-      Spec <- Spectrum(ZIDat = rec, use.Dil = FALSE, breaks = getOption("breaks"), RealT = TRUE)
-      #barplot(Spec$total/nrow(rec)*100, xlab = "size interval", ylab = "Abundance", main = "Total size spectrum") # in relative abundance
-      barplot(Spec$total, xlab = "size interval", ylab = "Abundance", main = "Total size spectrum")
-    }
-    if (is.list(getOption("gp.Spec"))){
-      Spec <- Spectrum(ZIDat = rec, use.Dil = FALSE, breaks = getOption("breaks"), groups = getOption("gp.Spec"), RealT = TRUE)
-      par(mfrow = c(length(getOption("gp.Spec")),1))
-      for(i in 1:length(getOption("gp.Spec"))) {
-        #barplot(Spec[[i]]/nrow(rec)*100, xlab = "size interval", ylab = names(getOption("gp.Spec")[i]), main = "Size spectra by groups") # in relative abundance
-        barplot(Spec[[i]], xlab = "size interval", ylab = "Abundance", main = paste("Size spectrum for", names(getOption("gp.Spec")[i]), sep = " "))
-      }
-    }
-    if (getOption("Bio.all")){
-      Bio <- Bio.sample(ZIDat = rec, conv = getOption("conv"), exportdir = NULL, RealT = TRUE)
-      barplot(Bio/sum(Bio)*100, xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass")
-    }
-    if (is.list(getOption("gp.Bio"))){
-      Bio <- Bio.sample(ZIDat = rec, conv = getOption("conv"), exportdir = NULL, RealT = TRUE)
-      barplot(Bio[names(Bio) %in% getOption("gp.Bio")]/sum(Bio)*100, xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass by groups")
-    }
-  }
+# Calculation of elapsed time and create the attr(rec, "TimeElapsed")
+"TimeElapsed" <- function (List)
+{
+	# Info <- file.info(getOption("Path"))
+	Info <- file.info(List)
+	Time <- getTemp("rtTime")
+	if (is.null(Time)) {
+		# First iteration
+		Passed <- difftime(time1 = Info$ctime, time2 = Sys.time(), units = "sec")
+		Time2 <- abs(as.numeric(Passed))
+		assignTemp("rtTime", Time2)
+	} else {
+	    Passed <- difftime(time1 = Info$ctime, time2 = Sys.time(), units = "sec")
+	    Time2 <- abs(as.numeric(Passed)) - sum(Time)
+	    assignTemp("rtTime", c(Time, Time2))
+	}
+	return(Time)
 }
 
-# Function of comparison between current sample and a previous FlowCAM digitization
-CompaSamplePrev <- function(){
-  #if(!is.character(getOption("ZIlist"))){ # If we do not compare sample to a list
-  if(unique(getOption("ZIprevSmp") != FALSE)){
-    if(!is.null(getOption("ZIprevSmp"))){ # If we want to compare with a previous sample
-      if(is.character(getOption("ZIlist"))) stop("You must select only one prevous sample and not a list of samples")
-      if(!is.character(getOption("ZIprevSmp"))) stop ("You must provide a character string") # check if prevSmp is empty
-      # Calculate general table for sample to compare
-      PrevTable <- read.lst(getOption("ZIprevSmp"))
-      PrevRec <- predict.ZIClass.Real.Time(getOption("Classifier"), PrevTable, calc.vars = TRUE, class.only = FALSE)
-      PrevSmp <- Bio.sample(ZIDat = PrevRec, conv = getOption("conv"), exportdir = NULL, RealT = TRUE)
-      PrevSmp <- Bio.tab
-      rm(Bio.tab, envir = .GlobalEnv)
-      # Calculate table for the sample currently analysed
-      if (!exists("rec", env = .GlobalEnv)){
-        stop("You must have a recognition file in memory")
-      } else {
-        CurrentSmp <- Bio.sample(ZIDat = rec, conv = getOption("conv"), exportdir = NULL, RealT = TRUE)
-        CurrentSmp <- Bio.tab
-      }
-      # Comparision of the two samples
-      if (getOption("ZICompAbd")){
-        # Statistics
-        print(paste("Difference in abundance between the previous and the current sample is", nrow(PrevSmp)- nrow(CurrentSmp), "particles", sep = " "))
-        # Dominant Species
-        PrevSpecies <- sort(table(PrevRec$Ident), decreasing = TRUE)
-        #print(paste("Dominant species of the previous sample :", max(PrevSpecies), "particles of", names(PrevSpecies)[PrevSpecies == max(PrevSpecies)], sep = " "))
-        print(paste("The 3 most abundant taxa of the previous sample :",
-          PrevSpecies[1], " particles of ", names(PrevSpecies)[PrevSpecies == PrevSpecies[1]], ", ",
-          PrevSpecies[2], " particles of ", names(PrevSpecies)[PrevSpecies == PrevSpecies[2]], ", ",
-          PrevSpecies[3], " particles of ", names(PrevSpecies)[PrevSpecies == PrevSpecies[3]], ", ",
-          sep = ""))
-        CurrentSpecies <- sort(table(rec$Ident), decreasing = TRUE)
-        print(paste("The 3 most abundant taxa of the current sample :",
-          CurrentSpecies[1], " particles of ", names(CurrentSpecies)[CurrentSpecies == CurrentSpecies[1]], ", ",
-          CurrentSpecies[2], " particles of ", names(CurrentSpecies)[CurrentSpecies == CurrentSpecies[2]], ", ",
-          CurrentSpecies[3], " particles of ", names(CurrentSpecies)[CurrentSpecies == CurrentSpecies[3]], ", ",
-          sep = ""))
-        # Graphic representation
-        par(mfrow = c(2,1))
-        barplot(table(PrevSmp$Ident)/nrow(PrevSmp)*100, xlab = "Groups", ylab = "Abundance (%)", main = "Relative abundance in the previous sample") # to improve
-        barplot(table(CurrentSmp$Ident)/nrow(CurrentSmp)*100, xlab = "Groups", ylab = "Abundance (%)", main = "Relative abundance in the current sample") # to improve
-      }
-      # Comparison of abundances for some groups
-      if(is.character(getOption("ZICompAbd.gp"))){
-        par(mfrow = c(2,1))
-        barplot((table(PrevSmp$Ident)[names(table(PrevSmp$Ident)) %in% getOption("ZICompAbd.gp")])/nrow(PrevSmp)*100,
-          xlab = "Groups", ylab = "Abundance (%)", main = "Relative abundance by groups in the previous sample")
-        barplot((table(CurrentSmp$Ident)[names(table(CurrentSmp$Ident)) %in% getOption("ZICompAbd.gp")])/nrow(CurrentSmp)*100,
-          xlab = "Groups", ylab = "Abundance (%)", main = "Relative abundance by groups in the current sample")
-      }
-      if(getOption("ZICompSpectra")){
-        # Graphs
-        PrevDat <- PrevSmp$FIT_Diameter_ABD/1000
-        Prevspc <- table(cut(PrevDat, breaks = getOption("breaks")))/length(PrevDat)*100
-        CurrentDat <- CurrentSmp$FIT_Diameter_ABD/1000
-        Currentspc <- table(cut(CurrentDat, breaks = getOption("breaks")))/length(CurrentDat)*100
-        # Compa of size spectra
-        par(mfrow = c(2,1))
-        barplot(Prevspc, xlab = "size interval", ylab = "Abundance", main = "Previous sample")
-        barplot(Currentspc, xlab = "size interval", ylab = "Abundance", main = "Current sample")
-      }
-      if(getOption("ZICompBiomass")){
-        # Graphs
-        par(mfrow = c(2,1))
-        BioPrev <- Biomass(PrevSmp)
-        BioCurrent <- Biomass(CurrentSmp)
-        barplot(BioPrev/sum(BioPrev)*100, xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass in the previous sample")
-        barplot(BioCurrent/sum(BioCurrent)*100, xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass in the current sample")
-      }
-      if(is.character(getOption("ZICompBio.gp"))){
-        BioPrev <- Biomass(PrevSmp)
-        BioCurrent <- Biomass(CurrentSmp)
-        par(mfrow = c(2,1))
-        barplot(BioPrev[names(BioPrev) %in% getOption("ZICompBio.gp")]/sum(BioPrev)*100,
-          xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass by groups in the previous sample")
-        barplot(BioCurrent[names(BioCurrent) %in% getOption("ZICompBio.gp")]/sum(BioCurrent)*100,
-          xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass by groups in the current sample")
-      }
-      if(getOption("ZICompSlope")){
-        par(mfrow = c(2,1))
-        hist.spectrum(spect = log(as.vector(table(cut(PrevSmp$FIT_Diameter_ABD/1000, breaks = getOption("breaks"))))+1), breaks = getOption("breaks"))
-        hist.spectrum(spect = log(as.vector(table(cut(CurrentSmp$FIT_Diameter_ABD/1000, breaks = getOption("breaks"))))+1), breaks = getOption("breaks"))
-      }
-    }
-  }
+# Calculation of the digitized volume using the Time elapsed attirbute
+"VolumeDigi" <- function (rec, FlowCell = 600, ImgPerSec = 5)
+{
+	Height <- (767 - 0) * unique(rec$FIT_Cal_Const)
+	Width <- (1023 - 0) * unique(rec$FIT_Cal_Const)
+	Area <- Height * Width
+	Volume <- (Area / (10^8)) * (FlowCell/10000) # mL
+	if (all(is.na(rec$FIT_Source_Image))) {
+		# We have to calculate volume using the elapsed time
+		res <- Volume * ImgPerSec * attr(rec, "TimeElapsed")
+	} else {
+		# We have the information from the new FlowCAM about the raw images
+		if (length(attr(rec, "RowToSkip")) == 1) { 
+			# First iteration completed
+			Raw <- rec$FIT_Source_Image[attr(rec, "RowToSkip")]
+		} else {
+			# more than one iteration
+			if (attr(rec, "RowToSkip")[length(attr(rec, "RowToSkip")) - 1] ==
+				attr(rec, "RowToSkip")[length(attr(rec, "RowToSkip"))]) {
+				# No new data added at the list file --> Use the elapsed time
+				# to apprixamte number of raw images
+				Raw <- ImgPerSec * attr(rec, "TimeElapsed")[
+					length(attr(rec, "TimeElapsed"))]
+			} else {
+				# New measurements are added at hte end of the list file
+				# 2009-11-26
+				NewRaw <- rec$FIT_Source_Image[attr(rec, "RowToSkip")[
+					length(attr(rec, "RowToSkip"))]]
+				PrevisousRaw <- rec$FIT_Source_Image[attr(rec, "RowToSkip")[
+					length(attr(rec, "RowToSkip")) - 1] + 1]
+				Raw <- (NewRaw - PrevisousRaw) + 1
+				# 2009-11-26
+			}
+		}
+		res <- Volume * Raw
+	}
+	return(res)
 }
 
-# Function of comparison between current sample and a list of previous FlowCAM digitizations
-CompaSampleList <- function() {
-  if(unique(getOption("ZIlist") != FALSE)){
-  #if(!is.character(getOption("ZIprevSmp"))){ # If we do not compare sample a previous sample
-    if(!is.null(getOption("ZIlist"))){ # If we want to compare with a list of samples
-      # comparison between more than one sample :
-      if(is.character(getOption("ZIprevSmp"))) stop ("You must select some samples in a list and not only one sample") # check if prevSmp is empty
-      if(!is.character(getOption("ZIlist"))) stop("the list of list files must be a character string")
-      SelectSamples <- lapply(getOption("ZIlist"), FUN = read.lst) # read all list files
-      names(SelectSamples) <- gsub(".lst$", "", basename(getOption("ZIlist")))
-      # Predictions of selected samples
-      for(i in 1:length(names(SelectSamples))){
-        SelectSamples[[i]] <- predict.ZIClass.Real.Time(getOption("Classifier"), SelectSamples[[i]], calc.vars = TRUE, class.only = FALSE)
-        SelectSamples[[i]] <- Bio.sample(ZIDat = SelectSamples[[i]], conv = getOption("conv"), exportdir = NULL, RealT = TRUE)
-        SelectSamples[[i]] <- Bio.tab
-      }
-      # Calculate table for the sample currently analysed
-      if (!exists("rec", env = .GlobalEnv)){
-        stop("must have a recognition file in memory")
-      } else {
-        CurrentSmp <- Bio.sample(ZIDat = rec, conv = getOption("conv"), exportdir = NULL, RealT = TRUE)
-        CurrentSmp <- Bio.tab
-      }
-      # Comparison of abundances
-      if (getOption("ZICompAbd")){
-        par(mfrow=c(length(SelectSamples) + 1, 1))
-        barplot(table(CurrentSmp$Ident) / nrow(CurrentSmp)*100, xlab = "Groups", ylab = "Abundance (%)", main = "Current sample")
-        for (i in 1 : length(SelectSamples)) barplot(table(SelectSamples[[i]]$Ident)/nrow(SelectSamples[[i]])*100, xlab = "Groups", ylab = "Abundance (%)", main = names(SelectSamples[i]))
-      }
-      # Comparison of abundances by groups
-      if(is.character(getOption("ZICompAbd.gp"))){
-        par(mfrow=c(length(SelectSamples) + 1, 1))
-        barplot(table(CurrentSmp$Ident)[names(table(CurrentSmp$Ident)) %in% getOption("ZICompAbd.gp")]/nrow(CurrentSmp)*100,
-          xlab = "Groups", ylab = "Abundance (%)", main = "Relative abundance by groups in the current sample")
-        for (i in 1 : length(SelectSamples)){
-          barplot(table(SelectSamples[[i]]$Ident)[names(table(SelectSamples[[i]]$Ident)) %in% getOption("ZICompAbd.gp")]/nrow(SelectSamples[[i]])*100,
-          xlab = "Groups", ylab = "Abundances (%)", main = paste("Relative abundance by groups in", names(SelectSamples[i]), sep = " "))
+# Function to add a column for biomass calculation
+"BiomassTab" <- function (ZIDat, conv = c(1, 0, 1), RealT = FALSE)
+{
+	if (!isTRUE(RealT)) {
+		if (!inherits(ZIDat, "ZIDat"))
+			stop("ZIDat must be a 'ZIDat' object")
+	}
+	# Convert ECD (biomass calculation, etc.)
+	# Check arguments
+	Smp <- ZIDat
+	if (nrow(Smp) == 0)
+		stop("no data for this sample/taxa in ZIDat")
+	# Add P1/P2/P3 conversion params to the table
+	if (inherits(conv, "data.frame")) {
+		if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3") ||
+			c("Group", "a", "b", "c")))
+			stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
+		IdSmp <- as.character(Smp$Ident)
+		IdSmpU <- unique(IdSmp)
+		IdConv <- as.character(conv$Group)
+		# Eliminate [other] from the table and the list and keep its values for further use
+		IsOther <- (IdConv == "[other]")
+		Other <- conv[IsOther, ]
+		if (sum(IsOther) > 0) {
+			IdConv <- IdConv[!IsOther]
+			conv <- conv[!IsOther, ]
+			conv$Group <- as.factor(as.character(conv$Group))
+		}
+        if (!all(IdSmpU %in% IdConv)) {
+            if (nrow(Other) > 0) {
+                # Fill all the other groups with the formula for other
+				# and issue a warning
+                NotThere <- IdSmpU[!(IdSmpU %in% IdConv)]
+                warning("Applying default [other] biomass conversion for ",
+					paste(NotThere, collapse = ", "))
+                N <- length(NotThere)
+                conv2 <- data.frame(Group = NotThere, P1 = rep(Other[1, 2], N),
+                    P2 = rep(Other[1, 3], N), P3 = rep(Other[1, 4], N))
+                conv <- rbind(conv, conv2)
+                conv$Group <- as.factor(as.character(conv$Group))
+            } else {
+                # All groups must be there: stop!
+                stop("Not all 'Ident' in sample match 'Group' in the conv table")
+            }
         }
-      }
-      # comparison of Spectra
-      if(getOption("ZICompSpectra")){
-        par(mfrow=c(length(SelectSamples) + 1, 1))
-        barplot(table(cut(CurrentSmp$FIT_Diameter_ABD/1000, breaks = getOption("breaks"))),
-        xlab = "size interval", ylab = "Abundance", main = "Total size spectrum for the current sample")
-        for (i in 1 : length(SelectSamples)){
-          barplot(table(cut(SelectSamples[[i]]$FIT_Diameter_ABD/1000, breaks = getOption("breaks"))),
-          xlab = "size interval", ylab = "Abundance", main = paste("Total size spectrum of", names(SelectSamples[i]), sep = " "))
-        }
-      }
-      # comparison of biomass
-      if(getOption("ZICompBiomass")){
-        par(mfrow=c(length(SelectSamples)+1, 1))
-        barplot(Biomass(CurrentSmp)/sum(Biomass(CurrentSmp))*100, xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass in the current sample")
-        for (i in 1 : length(SelectSamples)) barplot(Biomass(SelectSamples[[i]])/sum(Biomass(SelectSamples[[i]]))*100, xlab = "Groups", ylab = "Biomass (%)", main = paste("Relative biomass in ",names(SelectSamples[i]), sep = " "))
-      }
-      # Comparison of biomass by groups
-      if(is.character(getOption("ZICompBio.gp"))){
-        par(mfrow=c(length(SelectSamples)+1, 1))
-        barplot(Biomass(CurrentSmp)[names(Biomass(CurrentSmp)) %in% getOption("ZICompBio.gp")]/sum(Biomass(CurrentSmp)),
-          xlab = "Groups", ylab = "Biomass (%)", main = "Relative biomass by groups in the current sample")
-        for (i in 1 : length(SelectSamples)){
-          barplot(Biomass(SelectSamples[[i]])[names(Biomass(SelectSamples[[i]])) %in% getOption("ZICompBio.gp")]/sum(Biomass(SelectSamples[[i]]))*100,
-          xlab = "Groups", ylab = "Biomass (%)", main = paste("Relative biomass by groups in", names(SelectSamples[i]), sep = " "))
-          }
-      }
-      # comparison of slopes
-      if(getOption("ZICompSlope")){
-        par(mfrow=c(length(SelectSamples)+1, 1))
-        hist.spectrum(spect = log(as.vector(table(cut(CurrentSmp$FIT_Diameter_ABD/1000, breaks = getOption("breaks"))))+1), breaks = getOption("breaks"))
-        for (i in 1 : length(SelectSamples)) hist.spectrum(spect = log(as.vector(table(cut(SelectSamples[[i]]$FIT_Diameter_ABD/1000, breaks = getOption("breaks"))))+1), breaks = getOption("breaks"))
-      }
-    }
-  }
-} # end of multi sample part
+		# Line number of the corresponding parameter
+		# is calculated as the level of a factor whose levels
+		# are the same as in the conversion table
+		Pos <- as.numeric(factor(IdSmp, levels = as.character(conv$Group)))
+		Smp$P1 <- conv[Pos, "P1"]
+		Smp$P2 <- conv[Pos, "P2"]
+		Smp$P3 <- conv[Pos, "P3"]
+	} else { # Use the same three parameters for all
+		if (length(conv) != 3)
+			stop("You must provide a vector with three numbers")
+		Smp$P1 <- conv[1]
+		Smp$P2 <- conv[2]
+		Smp$P3 <- conv[3]
+	}
+	# Individual contributions to biomass by m^3
+	if (!isTRUE(RealT)) {
+		Smp$Biomass <- (Smp$P1 * Smp$ECD + Smp$P2)^Smp$P3 * Smp$Dil
+	} else {
+		Smp$Biomass <- (Smp$P1 * Smp$FIT_Diameter_ABD + Smp$P2)^Smp$P3
+	}
+    # AZTI special treatment
+    # introducimos la formula de montagnes y la correccion para ESD(2.61951)
+	#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$ECD)/2)^3)^0.991) * Smp$Dil
 
-# Function which recognizes unknown particles
-process <- function() {
-  #if (!exists("tab", env = .GlobalEnv)) {
-  if (is.null(tab)) {
-    # First iteration
-    # At the beginning, pos <- 0, TabGroups <- NULL, tab <- NULL, rec <- NULL
-    # Code to execute at regular basis
-    tab <- read.lst(getOption("Path"), skip = 2)
-    # if no measurements in the list file
-    if(nrow(tab) == 0){
-      warning("The list file is empty")
-      tab <<- NULL
-      #rm(tab, envir = .GlobalEnv) # add , envir = .GlobalEnv
-    } else {
-      #return the object in R
-      tab <<- tab # extract tab from tcltk to R consol
-      # recognition of first tab
-      if(is.null(rec)){
-        # First iteration
-        rec <<- predict.ZIClass.Real.Time(getOption("Classifier"), tab, calc.vars = TRUE, class.only = FALSE)
-      } else {
-        rec <<- rbind(rec1, rec)
-      }
-      # Table of groups
-      if(is.character(getOption("type"))){
-        if(is.null(TabGroups)){
-          # First iteration
-          TabGroups <<- table(rec$Ident)
-        } else {
-          TabGroups <<- cbind(TabGroups, table(rec$Ident))
-        }
-      }
-      if(is.numeric(getOption("SizeThreshold"))){
-        if(is.null(TabGroupsSize)){
-          TabGroupsSize <<- table(rec[rec$FIT_Diameter_ABD < getOption("SizeThreshold"), "Ident"])
-        } else {
-          TabGroupsSize <<- cbind(TabGroupsSize, table(rec[rec$FIT_Diameter_ABD < getOption("SizeThreshold"), "Ident"]))
-        }
-      }
-    }
-  } else {
-    # There is one lst (non empty tab) list in memory
-    pos <- tab[nrow(tab), 1] # number of rows to skip to get new measurements
-    rec1 <- rec # recogntion table from the previous iteration
-    # read the complete table to know if new results have been added
-    n <- read.lst(getOption("Path"), skip = 2) # read new tab
-    # chech if new measurements added in n
-    if (pos != n[nrow(n),1]){
-      # there is new measurements in the list file
-      tab <- read.lst(getOption("Path"), skip = pos + 2)
-      #return the object
-      tab <<- tab # extract tab from tcltk to R consol
-      # recognition of tab
-      rec <<- predict.ZIClass.Real.Time(getOption("Classifier"), tab, calc.vars = TRUE, class.only = FALSE)
-      if(is.character(getOption("type"))){
-        TabGroups <<- cbind(TabGroups, table(rec$Ident))
-      }
-      if(is.numeric(getOption("SizeThreshold"))){
-        TabGroupsSize <<- cbind(TabGroupsSize, table(rec[rec$FIT_Diameter_ABD < getOption("SizeThreshold"), "Ident"]))
-      }
-      rec <<- rbind(rec1, rec)
-    } else {
-      # There is no new measurements in list file
-      print("There are no new measurements in list file or experiment finished")
-      #rm(tab, envir = .GlobalEnv) # add , envir = .GlobalEnv
-    }
-  }
-  # Graphs using 'SampleCurrent' function
+	# Add metadata attribute
+	attr(Smp, "metadata") <- attr(ZIDat, "metadata")
+	return(Smp)
 }
 
-# Function to plot particles in function of a size threshold
-plotLines <-function(){
-  if(is.character(getOption("type"))){  # if we want to have the line representation
-    if(!is.na(ncol(TabGroups))){ # do not plot at the first iteration
-      # Select all groups
-      if (getOption("Abd.all")){
-        Table <- TabGroups
-      }
-      # Select only wanted groups
-      if (is.character(getOption("Abd.gp"))){
-        Table <- TabGroups[rownames(TabGroups) %in% getOption("Abd.gp"), ]
-      }
-      if(is.numeric(getOption("SizeThreshold"))){
-        # plot both graphs
-        par(mfrow = c(2,1))
-      }
-      # Graphical representation
-      plot(c(1, ncol(Table), NA, NA), c(NA, NA, min(Table), max(Table)), xlab = "iterations", ylab = "abundance", main = "Total abundance")
-      legend(x = 1, y = max(Table), legend = rownames(Table), fill = as.numeric(as.factor(rownames(Table))))
-      for(i in 1 : nrow(Table)){
-        lines(Table[i,], col = i)
-      }
-    }
-  }
-  if(is.numeric(getOption("SizeThreshold"))){
-    if(!is.na(ncol(TabGroupsSize))){
-      # Select all groups
-      if (getOption("Abd.all")){
-        Table.Size <- TabGroupsSize
-      }
-      # Select only wanted groups
-      if (is.character(getOption("Abd.gp"))){
-        Table.Size <- TabGroupsSize[rownames(TabGroupsSize) %in% getOption("Abd.gp"), ]
-      }
-      # Graphical representation
-      plot(c(1, ncol(Table.Size), NA, NA), c(NA, NA, min(Table.Size), max(Table.Size)),
-        xlab = "iterations", ylab = "abundance", 
-		    main = substitute(paste("Total abundance for groups smaller than ", thres, " ", mu * m), list(thres = getOption("SizeThreshold")))
-		  )
-      legend(x = 1, y = max(Table.Size), legend = rownames(Table.Size), fill = as.numeric(as.factor(rownames(Table.Size))))
-      for(i in 1 : nrow(Table.Size)){
-        lines(Table.Size[i,], col = i)
-      }
-    }
-  }
+# Add Sec and Volume column
+"AddSecVol" <- function (ZIDat, FlowCell, ImagePerSec)
+{
+	if (!inherits(ZIDat, "data.frame"))
+		stop("ZIDat must be an object of class 'data.frame'")
+	if (!is.numeric(FlowCell))
+		stop("FlowCell must be a numrical value with the depth of the FlowCell used")
+	if (!is.numeric(ImagePerSec))
+		stop("ImagePerSec must be the number of image per second saved by the FlowCAM")
+	ZIDat$Sec <- ZIDat$FIT_Source_Image / ImagePerSec
+	Vol <- Volume(Lst = ZIDat, FlowCell = FlowCell)
+	ZIDat$Vol <- ZIDat$FIT_Source_Image * Vol
+	return(ZIDat)
 }
 
-# function to create artificial sub samples
-Export <- function(){
-  if(is.numeric(getOption("MaxCollages"))){
-    # List collage in the current directory
-    LIST <- list.files(dirname(getOption("Path")), recursive = FALSE, pattern = ".tif$", full.names = TRUE)
-    # List calibration image in the current directory
-    Calib <- LIST[grep("cal", LIST)]
-    if(is.null(Collages)){
-      # first exportation
-      if(length(LIST[-grep("cal", LIST)]) >= getOption("MaxCollages") + 1){ # only collages
-        # Check and create new subdirectory
-        New <- file.path(dirname(getOption("Path")), paste(basename(dirname(getOption("Path"))), "000001", sep = "_"))
-        if(!file.exists(New)){
-          # create the directory
-          dir.create(New)
-        }
-        file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = file.path(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))), overwrite = FALSE)
-        file.copy(getOption("Path"), file.path(New, basename(getOption("Path"))))
-        file.remove(LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])
-        # export rec table
-        write.table(rec, file = file.path(New, paste(basename(New), "results.txt", sep ="_")),
-          sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
-        Collages <<- 2 # use it to create new subdirectories
-      }
-    } else {
-      if(length(LIST[-grep("cal", LIST)]) >= getOption("MaxCollages") + 1){ # only collages
-        # Search a new calibration image
-        # Check and create new subdirectory
-        if(Collages < 10){ # 1 to 9
-          dirNumber <- paste("00000", Collages, sep ="")
-        }
-        if(Collages < 100 && Collages > 9){ # 10 to 99
-          dirNumber <- paste("0000", Collages, sep ="")
-        }
-        if(Collages < 1000 && Collages > 99){ # 100 to 999
-          dirNumber <- paste("000", Collages, sep ="")
-        }
-        if(Collages < 10000 && Collages > 999){ # 1000 to 9999
-          dirNumber <- paste("00", Collages, sep ="")
-        }
-        if(Collages < 100000 && Collages > 9999){ # 10000 to 99999
-          dirNumber <- paste("0", Collages, sep ="")
-        } else {
-          dirNumber <- Collages # 100000 to 999999
-        }
-        New <- file.path(dirname(getOption("Path")), paste(basename(dirname(getOption("Path"))), dirNumber, sep = "_"))
-        if(!file.exists(New)){
-          # create the directory
-          dir.create(New)
-        }
-        if(length(Calib) >= 2){
-          # There is a new calibration image in the directory
-          file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = file.path(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))), overwrite = FALSE)
-          file.copy(getOption("Path"), file.path(New, basename(getOption("Path"))))
-          file.remove(c(Calib[1],LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))
-          Collages <<- Collages + 1
-        } else {
-          file.copy(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]), to = file.path(New, basename(c(Calib, LIST[-grep("cal", LIST)][1:getOption("MaxCollages")]))), overwrite = FALSE)
-          file.copy(getOption("Path"), file.path(New, basename(getOption("Path"))))
-          file.remove(LIST[-grep("cal", LIST)][1:getOption("MaxCollages")])
-          Collages <<- Collages + 1
-        }
-        # export rec table
-        write.table(rec, file = file.path(New, paste(basename(New), "results.txt", sep ="_")),
-          sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
-      }
-    }
-  }
+# Mobile window
+"mobileWindow" <- function (ZIDat, size = 1, lag = 1, Collage = FALSE, FlowCell,
+ImagePerSec, RealT = FALSE)
+{
+	if (!isTRUE(RealT)) {
+		rec <- getTemp("rtRecord")
+		Time <- numeric()
+		if (!inherits(ZIDat, "data.frame"))
+			stop("ZIDat must be an object of class 'data.frame'")
+		if (!"Ident" %in% colnames(ZIDat))
+			stop("ZIDat must contain a column Ident")
+		if (lag < 1)
+			stop("lag must be higher than 1")
+		if (size < lag)
+			stop("size must be larger or equal to lag")
+		if (!"sec" %in% names(ZIDat))
+			ZIDat <- AddSecVol(ZIDat = ZIDat, FlowCell = FlowCell,
+				ImagePerSec = ImagePerSec)
+		if (isTRUE(Collage)) {
+			for (i in 1:(length(levels(ZIDat$FIT_Filename)) - (2 * size))) {
+				if (i <= 1) {
+					df <- data.frame(Int = (0 + i):(i + (2* size)))
+					Tab <- data.frame(table(ZIDat[ZIDat$FIT_Filename %in%
+						levels(ZIDat$FIT_Filename)[df[, i]], ]$Ident))
+				} else {
+					df[, i] <- data.frame(Int = df[, (i - 1)] + lag)
+					Tab[, i+1] <- table(ZIDat[ZIDat$FIT_Filename %in%
+						levels(ZIDat$FIT_Filename)[df[, i]], ]$Ident)
+				}
+				Time[i] <- mean(ZIDat[ZIDat$FIT_Filename %in%
+					levels(ZIDat$FIT_Filename)[df[size + 1, i]], ]$Sec)
+				if (!all(df[, i] < length(levels(ZIDat$FIT_Filename)))) {
+					warning("The loop has been stoped because at the end of the table")
+					break
+				}
+			}
+		} else {
+			for (i in 1:(dim(ZIDat)[1] - (2 * size))) {
+				if (i <= 1) {
+					df <- data.frame(Int = (0 + i) : (i + (2* size)))
+					Tab <- data.frame(table(ZIDat[df[, i],]$Ident))
+				} else {
+					df[, i] <- data.frame(Int = df[, (i - 1)] + lag)
+					Tab[, i+1] <- table(ZIDat[df[, i], ]$Ident)
+				}
+				Time[i] <- ZIDat[df[size, i], ]$Sec
+				if (!all(df[, i] < nrow(ZIDat))) {
+					warning("The loop has been stoped because at the end of the table")
+					break
+				}
+			}
+		}
+		attr(ZIDat, "Time") <- Time
+		attr(ZIDat, "Size") <- size
+		attr(ZIDat, "Lag") <- lag
+		attr(ZIDat, "Intervals") <- df
+		attr(ZIDat, "Mobile_Tab") <- Tab
+		attr(ZIDat, "Collage") <- Collage
+		return(ZIDat)
+	} else {
+		Temp <- numeric()
+		if (!"sec" %in% names(rec))
+			assignTemp("rtRecord", AddSecVol(ZIDat = rec,
+				FlowCell = getOption("FlowCell"),
+				ImagePerSec = getOption("ImgPerSec")))
+		if (getOption("Collage")) {
+			# determine the starting point for the loop
+			if (is.null(attr(rec, "Intervals"))) {
+				Range <- 1:(length(levels(rec$FIT_Filename)) - (2 * getOption("Size")))
+			} else {
+				Range <- attr(rec, "Intervals")[1, ncol(attr(rec, "Intervals"))]:
+					(length(levels(rec$FIT_Filename)) - (2 * getOption("Size")))
+			}
+			for (i in Range) {
+				if (grep(i, Range)[1] <= 1) {
+					df <- data.frame(Int = (0 + i) : (i + (2* getOption("Size"))))
+					Tab <- data.frame(table(rec[rec$FIT_Filename %in%
+						levels(rec$FIT_Filename)[df[, (i + 1) - Range[1]]], ]$Ident))
+				} else {
+					df[, (i + 1) - Range[1]] <- data.frame(Int = df[, ((i + 1) -
+						Range[1] - 1)] + getOption("Lag"))
+					Tab[, ((i + 1) - Range[1]) + 1] <-
+						table(rec[rec$FIT_Filename %in%
+						levels(rec$FIT_Filename)[df[, (i + 1) - Range[1]]], ]$Ident)
+				}
+				Temp[(i + 1) - Range[1]] <- mean(rec[rec$FIT_Filename %in%
+					levels(rec$FIT_Filename)[df[getOption("Size") + 1, (i + 1) -
+					Range[1]]], ]$Sec)
+				if (!all(df[, (i + 1) - Range[1]] <
+					length(levels(rec$FIT_Filename)))) {
+					warning("The loop has been stoped because at the end of the table")
+					break
+				}
+			}
+		} else {
+			# Determine the starting point for the loop
+			if (is.null(attr(rec, "Intervals"))) {
+				Range <- 1:(dim(rec)[1] - (2 * getOption("Size")))
+			} else {
+				Range <- attr(rec, "Intervals")[1, ncol(attr(rec, "Intervals"))]:
+					(dim(rec)[1] - (2 * getOption("Size")))
+			}
+			for (i in Range) {
+				if (grep(i, Range)[1] <= 1) {
+					df <- data.frame(Int = (0 + i) : (i + (2 * getOption("Size"))))
+					Tab <- data.frame(table(rec[df[, (i + 1) - Range[1]],]$Ident))
+				} else {
+					df[, (i + 1) - Range[1]] <- data.frame(Int = df[, ((i + 1) -
+						Range[1] - 1)] + getOption("Lag"))
+					Tab[, ((i + 1) - Range[1])+1] <- table(rec[df[, (i + 1) -
+						Range[1]], ]$Ident)
+				}
+				Temp[(i + 1) - Range[1]] <- rec[df[getOption("Size"), (i + 1) -
+					Range[1]] ,]$Sec
+				if (!all(df[, (i + 1) - Range[1]] < nrow(rec))) {
+					warning("The loop has been stoped because at the end of the table")
+					break
+				}
+			}
+		}
+		attr(rec, "Time") <- Temp
+		attr(rec, "Size") <- getOption("Size")
+		attr(rec, "Lag") <- getOption("Lag")
+		attr(rec, "Intervals") <- df
+		attr(rec, "Mobile_Tab") <- Tab
+		attr(rec, "Collage") <- getOption("Collage")
+		assignTemp("rtRecord", rec)
+		return(rec)
+	}
 }
 
-# Function to select groups to keep for the comparison
-SelectGroups <- function(ZIC){
-  select.list(levels(attr(ZIC, "classes")), multiple = TRUE, title = "Select taxa you want to plot")
+"save.loop.res" <- function (lst, Classif, breaks = seq(0.25, 2, by = 0.1),
+conv = c(1, 0, 1), save.dir = NULL) {
+	res <- getTemp("rtRecord")
+	if (is.null(rec))
+		rec <- predict(Classif, read.lst(lst),
+			calc.vars = TRUE, class.only = FALSE)
+	if (!is.null(save.dir)) {
+		if (!is.character(save.dir))
+			stop("The exportation path must be a character string")
+	} else {
+		save.dir <- choose.dir()
+	}
+	Bio.sample(ZIDat = rec, conv = conv, exportdir = NULL, RealT = TRUE)
+	# TODO: what is Bio.tab???
+	#write.table(Bio.tab, file = paste(save.dir, paste(basename(dirname(lst)),
+	#	"AbdBio.txt", sep = "_"), sep = "\\"), sep = "\t", dec = ".",
+	#	col.names = TRUE, na = "NA", row.names = FALSE)
+	# Delete objects from R environment
+	rmTemp("rtData")
+	rmTemp("rtRecord")
+	rmTemp("rtTime")
 }
 
-# Function to select samples to compare with the current one
-SmpToComp <- function(Prev = NULL, Samples = NULL, Table = NULL){
-  # Only one previous list file
-  if(!is.null(Prev)){
-    if(!is.character(Prev)) stop("You must provide the path of the list file to compare")
-    Smp <- Prev
-  }
-  # More than one previous list file
-  if(!is.null(Samples)){
-    if(!is.character(Samples)) stop("You must provide the path of a directory containing list files to compare")
-    Names <- gsub(".lst$", "", basename(Samples)) # name of the list
-    samples <- select.list(Names, multiple = TRUE, title = "Select samples to compare") # selection of samples to compare
-    Smp <- Samples[Names %in% samples]
-  }
-  # With a table of recognition
-  if(!is.null(Table)){
-    print("not implemented yet")
-    Smp <- NULL
-  }
-  return(Smp)
-}
-
-# save results in the directory you choose and delete files created with loop.opts function
-save.loop.res <- function(lst, Classif, breaks = seq(0.25, 2, by = 0.1), conv = c(1, 0, 1), save.dir = NULL){
-  if (!exists("rec", env = .GlobalEnv)){
-    rec <- predict.ZIClass.Real.Time(Classif, read.lst(lst), calc.vars = TRUE, class.only = FALSE)
-  }
-  if(!is.null(save.dir)){
-    if(!is.character(save.dir)) stop("The exportation path must be a character string")
-  } else {
-    save.dir <- choose.dir()
-  }
-  Bio.sample(ZIDat = rec, conv = conv, exportdir = NULL, RealT = TRUE)
-  write.table(Bio.tab, file = file.path(save.dir, paste(basename(dirname(lst)), "AbdBio.txt", sep = "_")), sep = "\t", dec = ".", col.names = TRUE, na = "NA", row.names = FALSE)
-  # delete objects from R environment
-  if(exists("tab", env = .GlobalEnv)) rm(tab, envir = .GlobalEnv)
-  if(exists("rec", env = .GlobalEnv)) rm(rec, envir = .GlobalEnv)
-  if(exists("Bio.tab", env = .GlobalEnv)) rm(Bio.tab, envir = .GlobalEnv)
-}
-
-# tcl function to control the loop
-tclFun_<- function(f, name = deparse(substitute(f))) {
-  # Register a simple R function (without arguments) as a callback in Tcl,
-  # and give it the same name)
-  # Indeed, .Tcl.callback(f) in tcltk package does the job... but it gives
-  # cryptic names like R_call 0x13c7168
-  # Note: done in NAMESPACE
-  #require(tcltk) || stop("Package 'tcltk' is needed!")
-  # Check that 'f' is a function with no arguments (cannot handle them, currently)
-  is.function(f) || stop("'f' must be a function!")
-  is.null(formals(f)) || stop("The function used cannot (yet) have arguments!")
-  # Make sure the name of the function is valid
-  if (!is.character(name)) stop("'name' must be a character string!") else
-  name <- make.names(name[1])
-  res <- .Tcl.callback(f)
-  # Make sure this is correct (R_call XXXXXXXX)
-  if (length(grep("R_call ", res) > 0)) # Create a proc with the same name in Tcl
-  .Tcl(paste("proc ", name, " {} {", res, "}", sep = ""))
-  # Return the R_call XXXXXXXX string, as .Tcl.callback() does
-  return(res)
-  # Rem: if you delete the R 'f' function, the Tcl 'f' function still works (?!)
-}
-
-# loop to run process and compa
-loopAsynch <- function() {
-  # Code to execute
-  continue <- TRUE
-  # External function to execute at regular interval
-  process()
-  SampleCurrent()
-  plotLines()
-  Export()
-  CompaSamplePrev()
-  CompaSampleList()
-  # Reexecute the function at regular interval
-  if (exists("...stop", env = .GlobalEnv)) {
-    # Stop loop
-    rm(list = "...stop", envir = .GlobalEnv)
-    continue <- FALSE
-  }
-  if (!continue) {
-    timer <- NULL
-  } else {
-    # (Re)install the timer
-    timer <- .Tcl("after 15000 loopAsynch") # run function after 'number' ms
-  }
-  return(invisible(timer))
+"Volume" <- function (Lst, FlowCell)
+{
+	Height <- (767 - 0) * unique(Lst$FIT_Cal_Const)
+	Width <- (1023 - 0) * unique(Lst$FIT_Cal_Const)
+	Area <- Height * Width
+	Volume <- (Area / (10^8)) * (FlowCell/10000) # mL
+	return(Volume)
 }

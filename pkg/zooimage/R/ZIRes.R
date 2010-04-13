@@ -144,7 +144,7 @@ show.log = TRUE, bell = FALSE, SemiTab = NULL, Semi = FALSE)
 						headers = headers, spec.taxa = spec.taxa,
 						spec.groups = spec.groups, spec.breaks = spec.breaks,
 						spec.use.Dil = spec.use.Dil, exportdir = exportdir,
-						show.log = FALSE, SemiTab = Semi.Auto, Semi = TRUE)
+						show.log = FALSE, SemiTab = SemiTab, Semi = TRUE)
 
 					logProcess("OK", ZidFiles[i])
 					return(res)
@@ -223,7 +223,7 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 		tryCatch({
 			Spectrum(Smp, im, taxa = taxa, groups = groups, breaks = breaks,
 				use.Dil = use.Dil)
-		}, zooImageError = function (e) retrun(NULL))
+		}, zooImageError = function (e) return(NULL))
 	})
 	list.add(lists)
 }
@@ -573,15 +573,15 @@ main = "", ylim = c(0, 2), plot.exp = FALSE)
 {	
 	# Plot of histograms and optionally line for exponential decrease
 	# for size spectra
-	if (plot.exp) {
+	if (isTRUE(plot.exp)) {
 		spect.lm <- lm(spect ~ class)
 		print(summary(spect.lm))
 		slope <- format(coef(spect.lm)[2], digits = 3)
 		main <- paste(main, " (slope = ", slope, ")", sep = "")
 		class2 <- class - lag
 		spect.lm2 <- lm(spect ~ class2)
-		if (!log.scale) {
-			spect <- 10^Spect - 1
+		if (!isTRUE(log.scale)) {
+			spect <- 10^spect - 1
 			expdat <- 10^predict(spect.lm2) - 1
 		}
 	}

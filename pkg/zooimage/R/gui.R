@@ -346,11 +346,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		grepl(pattern, Images[1])
 
 	# Determine which kind of data it is
-    if (has(".zfc")) {
-	    setKey("ImageIndex", "5")
-		return(importFlowCamFiles(path = dir, ZFCfiles = Images, check = FALSE,
-			show.log = TRUE))
-	} else if (has(pattern = "^Import_.*[.]zie$")) {
+	if (has(pattern = "^Import_.*[.]zie$")) {
 		setKey("ImageIndex", "3")
 		return(make.zie(path = dir, Filemap = Images[1], check = TRUE,
 			show.log = TRUE))
@@ -377,10 +373,10 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		}
 		return(res)
 	} else if (has(".tif")) {
-		pattern <- extensionPattern (".tif")
+		pattern <- extensionPattern(".tif")
         setKey("ImageIndex", "1")
 	} else if (has("jpg")) {
-        pattern <- extensionPatter("jpg")
+        pattern <- extensionPattern("jpg")
         setKey("ImageIndex", "2")
 	} else stop("Unrecognized data type!")
 
@@ -932,7 +928,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 			bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
 			spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks,
 			spec.use.Dil = TRUE, exportdir = exportdir, show.log = TRUE,
-			bell = FALSE, SemiTab = Semi.Auto, Semi = TRUE)
+			bell = FALSE, SemiTab = Semi.Classif, Semi = TRUE)
 	} else {
 		res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj,
 			ZIDesc = read.description(zisfile), abd.taxa = NULL,
@@ -1188,12 +1184,36 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	return(res)
 }
 
+# Little function to help the user
+# Function to select groups to keep for the comparison
+"selectGroups" <- function (ZIC, multiple = TRUE, title = "Select taxa you want to plot")
+	select.list(levels(attr(ZIC, "classes")), multiple = multiple, title = title)
+
+"selectSamples" <- function (Samples = NULL) {
+	if (is.null(Samples)) {
+		Files <- selectFile(type = "LstZid", multi = TRUE, quote = FALSE)
+		if (length(Files) == 1 &&
+			length(grep(pattern = ".[Ll][Ss][Tt]", x = Files)) >= 1) {
+			# List files
+			Samples <- list.files(dirname(dirname(Files)), recursive = TRUE,
+				pattern = "\\.lst$", full.names = TRUE)
+		} else Samples <- Files	
+	}
+	Names <- sub(".lst$", "", basename(Samples)) # Names of the list
+	Sel <- select.list(Names, multiple = TRUE,
+		title = "Select samples to compare") # Selection of samples to compare
+	res <- Samples[Names %in% Sel]
+	return(res)
+}
+
+
+# TODO: rework all this!!!
 # Functions and dialog box created for the real time recogntion
 "RealT" <- function ()
 {
  	# Process real time recognition during a FlowCAM experiment
 	# First remove existing file from the global environment before read a new sample
-	RemoveRealT()
+	realtimeReset()
 	# Ask for an algorithm and one or several sample to compare
 	defval <- "Only One Sample"
 	opts <- c("Only One Sample",
@@ -1272,7 +1292,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		if (res == "Total Abundance") Abd.all <- TRUE
 		if (res == "Abundance of groups") {
 			Abd.all <- NULL
-			Abd.gp <- SelectGroups(ZICobj)
+			Abd.gp <- selectGroups(ZICobj)
 		}
 		if (res == "Total Size Spectra") {
 			Abd.all <- NULL
@@ -1280,7 +1300,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		}
 		if (res == "Size Spectra of groups") {
 			Abd.all <- NULL
-			Spec.gp <- SelectGroups(ZICobj)
+			Spec.gp <- selectGroups(ZICobj)
 		}
 		if (res == "Total Biomass") {
 			Abd.all <- NULL
@@ -1288,33 +1308,33 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		}
 		if (res == "Biomass of groups") {
 			Abd.all <- NULL
-			Bio.gp <- SelectGroups(ZICobj)
+			Bio.gp <- selectGroups(ZICobj)
 		}
 		# Loop parameters
-		loop.opts(lst = Current, # path of the list file of the FlowCAM run
-			classif = ZICobj, # Classifer
-			ZIprevSmp = NULL, # Comparison with one previous sample
-			ZIlist = NULL, # Comparison several previous samples
-			################## One Sample
-			Abd.all = Abd.all, # NULL or TRUE
-			Abd.gp = Abd.gp, # NULL or groups to plot
-			Spec.all = Spec.all, # NULL or TRUE
-			Spec.gp = Spec.gp, # NULL or groups
-			Bio.all = Bio.all, # NULL or TRUE
-			Bio.gp = Bio.gp, # NULL or groups
-			breaks = brks, # in mm
-			conv = ConvFile, # or conversion table
-			################## More than one sample
-			ZICompAbd = NULL,
-			ZICompSpectra = NULL,
-			ZICompBiomass = NULL,
-			ZICompSlope = NULL,
-			ZICompAbd.gp = NULL,
-			ZICompBio.gp = NULL
-		)
+		#realtimeOptions(lstdir = Current, # path of the list file of the FlowCAM run
+		#	ZIClass = ZICobj, # Classifer
+		#	ZIprevSmp = NULL, # Comparison with one previous sample
+		#	ZIlist = NULL, # Comparison several previous samples
+		#	################## One Sample
+		#	Abd.all = Abd.all, # NULL or TRUE
+		#	Abd.gp = Abd.gp, # NULL or groups to plot
+		#	Spec.all = Spec.all, # NULL or TRUE
+		#	Spec.gp = Spec.gp, # NULL or groups
+		#	Bio.all = Bio.all, # NULL or TRUE
+		#	Bio.gp = Bio.gp, # NULL or groups
+		#	breaks = brks, # in mm
+		#	conv = ConvFile, # or conversion table
+		#	################## More than one sample
+		#	ZICompAbd = NULL,
+		#	ZICompSpectra = NULL,
+		#	ZICompBiomass = NULL,
+		#	ZICompSlope = NULL,
+		#	ZICompAbd.gp = NULL,
+		#	ZICompBio.gp = NULL
+		#)
 		# Run automatic recognition and plot
-		tclFun_(loopAsynch)
-		loopAsynch()
+		tclFun(realtimeLoop)
+		realtimeLoop()
 	}
 	if (res == "Comparison with One Other Sample") {
 		cat("You will compare the current sample with sample already digitized\n")
@@ -1335,7 +1355,8 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		Prev <- paste(as.character(tkgetOpenFile(filetypes =
 			"{{FlowCAM list file} {.lst}}",
 			title = "Select the lst file of the previous sample")), collapse = " ")
-		Prev <- SmpToComp(Prev = Prev)
+		# TODO: there is no Prev argument in selectSamples()!?
+		#Prev <- selectSamples(Prev = Prev)
 		# Select a conversion table
 		ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"),
 			"Conversion.txt"))
@@ -1382,7 +1403,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 			ZICompAbd <- TRUE
 		if (res == "Abundance of groups") {
 			ZICompAbd <- NULL
-			ZICompAbd.gp <- SelectGroups(ZICobj)
+			ZICompAbd.gp <- selectGroups(ZICobj)
 		}
 		if (res == "Total Size Spectra") {
 			ZICompAbd <- NULL
@@ -1394,37 +1415,37 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		}
 		if (res == "Biomass of groups") {
 			ZICompAbd <- NULL
-			ZICompBio.gp <- SelectGroups(ZICobj)
+			ZICompBio.gp <- selectGroups(ZICobj)
 		}
 		if (res == "Slope of size spectra") {
 			ZICompAbd <- NULL
 			ZICompSlope <- TRUE
 		}
 		# Loop parameters
-		loop.opts(lst = Current, # path of the list file of the FlowCAM run
-			classif = ZICobj, # Classifer
-			ZIprevSmp = Prev, # Comparison with one previous sample
-			ZIlist = NULL, # Comparison several previous samples
-			################## One Sample
-			Abd.all = NULL, # NULL or TRUE
-			Abd.gp = NULL, # NULL or groups to plot
-			Spec.all = NULL, # NULL or TRUE
-			Spec.gp = NULL, # NULL or groups
-			Bio.all = NULL, # NULL or TRUE
-			Bio.gp = NULL, # NULL or groups
-			breaks = brks, # in mm
-			conv = ConvFile, # or conversion table
-			################## More than one sample
-			ZICompAbd = ZICompAbd,
-			ZICompSpectra = ZICompSpectra,
-			ZICompBiomass = ZICompBiomass,
-			ZICompSlope = ZICompSlope,
-			ZICompAbd.gp = ZICompAbd.gp,
-			ZICompBio.gp = ZICompBio.gp
-		)
+		#realtimeOptions(lstdir = Current, # path of the list file of the FlowCAM run
+		#	ZIClass = ZICobj, # Classifer
+		#	ZIprevSmp = Prev, # Comparison with one previous sample
+		#	ZIlist = NULL, # Comparison several previous samples
+		#	################## One Sample
+		#	Abd.all = NULL, # NULL or TRUE
+		#	Abd.gp = NULL, # NULL or groups to plot
+		#	Spec.all = NULL, # NULL or TRUE
+		#	Spec.gp = NULL, # NULL or groups
+		#	Bio.all = NULL, # NULL or TRUE
+		#	Bio.gp = NULL, # NULL or groups
+		#	breaks = brks, # in mm
+		#	conv = ConvFile, # or conversion table
+		#	################## More than one sample
+		#	ZICompAbd = ZICompAbd,
+		#	ZICompSpectra = ZICompSpectra,
+		#	ZICompBiomass = ZICompBiomass,
+		#	ZICompSlope = ZICompSlope,
+		#	ZICompAbd.gp = ZICompAbd.gp,
+		#	ZICompBio.gp = ZICompBio.gp
+		#)
 		# Run automatic recognition and plot
-		tclFun_(loopAsynch)
-		loopAsynch()
+		tclFun(realtimeLoop)
+		realtimeLoop()
 	}
 	if (res == "Comparison with Several Other Samples") {
 		cat("You will compare the current sample with a list of samples already digitized\n")
@@ -1444,7 +1465,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	    # Select the Previous sample
 	    List <- list.files(choose.dir(,caption = "Select general directory"),
 			recursive = TRUE, pattern = ".lst$", full.names = TRUE)
-	    ListSamples <- SmpToComp(Samples = List)
+	    ListSamples <- selectSamples(Samples = List)
 	
 	    # Select a conversion table
 	   	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"),
@@ -1491,7 +1512,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 			ZICompAbd <- TRUE
 	    if (res == "Abundance of groups") {
 			ZICompAbd <- NULL
-			ZICompAbd.gp <- SelectGroups(ZICobj)
+			ZICompAbd.gp <- selectGroups(ZICobj)
 	    }
 	    if (res == "Total Size Spectra") {
 			ZICompAbd <- NULL
@@ -1503,44 +1524,38 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	    }
 	    if (res == "Biomass of groups") {
 			ZICompAbd <- NULL
-			ZICompBio.gp <- SelectGroups(ZICobj)
+			ZICompBio.gp <- selectGroups(ZICobj)
 	    }
 	    if (res == "Slope of size spectra") {
 			ZICompAbd <- NULL
 			ZICompSlope <- TRUE
 	    }
 	    # Loop parameters
-	    loop.opts(lst = Current, # path of the list file of the FlowCAM run
-			classif = ZICobj, # Classifer
-			ZIprevSmp = NULL, # Comparison with one previous sample
-			ZIlist = ListSamples, # Comparison several previous samples
-			################## One Sample
-			Abd.all = NULL, # NULL or TRUE
-			Abd.gp = NULL, # NULL or groups to plot
-			Spec.all = NULL, # NULL or TRUE
-			Spec.gp = NULL, # NULL or groups
-			Bio.all = NULL, # NULL or TRUE
-			Bio.gp = NULL, # NULL or groups
-			breaks = brks, # in mm
-			conv = ConvFile, # or conversion table
-			################## More than one sample
-			ZICompAbd = ZICompAbd,
-			ZICompSpectra = ZICompSpectra,
-			ZICompBiomass = ZICompBiomass,
-			ZICompSlope = ZICompSlope,
-			ZICompAbd.gp = ZICompAbd.gp,
-			ZICompBio.gp = ZICompBio.gp
-	    )
+	#    realtimeOptions(lstdir = Current, # path of the list file of the FlowCAM run
+	#		ZIClass = ZICobj, # Classifer
+	#		ZIprevSmp = NULL, # Comparison with one previous sample
+	#		ZIlist = ListSamples, # Comparison several previous samples
+	#		################## One Sample
+	#		Abd.all = NULL, # NULL or TRUE
+	#		Abd.gp = NULL, # NULL or groups to plot
+	#		Spec.all = NULL, # NULL or TRUE
+	#		Spec.gp = NULL, # NULL or groups
+	#		Bio.all = NULL, # NULL or TRUE
+	#		Bio.gp = NULL, # NULL or groups
+	#		breaks = brks, # in mm
+	#		conv = ConvFile, # or conversion table
+	#		################## More than one sample
+	#		ZICompAbd = ZICompAbd,
+	#		ZICompSpectra = ZICompSpectra,
+	#		ZICompBiomass = ZICompBiomass,
+	#		ZICompSlope = ZICompSlope,
+	#		ZICompAbd.gp = ZICompAbd.gp,
+	#		ZICompBio.gp = ZICompBio.gp
+	#    )
 	    # Run automatic recognition and plot
-	    tclFun_(loopAsynch)
-	    loopAsynch()
+	    tclFun(realtimeLoop)
+	    realtimeLoop()
 	}
-}
-
-"StopRealT" <- function ()
-{
-	#### TODO: change this: cannot work using variables in .GlobalEnv!
-	assign("...stop", 1, envir = .GlobalEnv)
 }
 
 "SaveResults" <- function ()
@@ -1548,16 +1563,6 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	save.loop.res(lst = getOption("Path"), Classif = getOption("Classifier"),
 		breaks = getOption("breaks"), conv = getOption("conv"),
 		save.dir = dirname(getOption("Path")))
-}
-
-"RemoveRealT" <- function ()
-{
-	if (exists("tab", env = .GlobalEnv))
-		rm(tab, envir = .GlobalEnv)
-	if (exists("rec", env = .GlobalEnv))
-		rm(rec, envir = .GlobalEnv)
-	if (exists("Bio.tab", env = .GlobalEnv))
-		rm(Bio.tab, envir = .GlobalEnv)
 }
 
 "AddVignToTrain" <- function ()

@@ -55,7 +55,7 @@ title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
 
 # Get the name of one or more lists with their components of a given class
 # Note: this is used as a collection in other languages
-# (there is no such collection in R, so, we use az list here!)
+# (there is no such collection in R, so, we use a list here!)
 "getList" <- function (class = "data.frame", default = "", multi = FALSE,
 title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
 {	
@@ -79,13 +79,14 @@ title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
 
 # Select one or several files of a given type
 "selectFile" <- function (
-type = c("ZipZid", "ZimZis", "Zip", "Zid", "Zim", "Zis", "Zie"),
+type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis", "Zie"),
 multi = FALSE, quote = TRUE)
 {	
 	type <- tryCatch(match.arg(type), error = function (e) {
 		stop("unrecognized type")
 	})
-	Type <- switch(type, "ZipZid" = "Zip/Zid", "ZimZis" = "Zim/Zis", type)
+	Type <- switch(type, "ZipZid" = "Zip/Zid", "ZimZis" = "Zim/Zis",
+		"LstZid" = "Lst/Zid", type)
 	
 	# Adapt title according to 'multi'
 	if (isTRUE(multi)) {
@@ -100,6 +101,8 @@ multi = FALSE, quote = TRUE)
 						"ZooImage files"          , ".zid"      ),
 			ZimZis 	= c("ZooImage metadata files" , ".zim",
 						"ZooImage metadata files" , ".zis"      ),
+			LstZid  = c("FlowCAM list files"      , ".lst",
+						"ZooImage files"          , ".zid"      ),
 			Zip		= c("ZooImage picture files"  , ".zip"      ),
 			Zid		= c("ZooImage data files"     , ".zid"      ),
 			Zim		= c("ZooImage metadata files" , ".zim"      ),
