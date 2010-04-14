@@ -1,5 +1,5 @@
 # PhytoImage1 Tk menu
-# by Ph. Grosjean, 2006 <phgrosjean@sciviews.org>
+# by Ph. Grosjean, 2006-2010 <phgrosjean@sciviews.org>
 
 # Create a Tk menu (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin
@@ -22,6 +22,11 @@ $Tk.ZIDlgWin
 ||$E&xit
 |||From the &assistant	Ctrl+X			~~ closeAssistant()
 |||From &PhytoImage						~~ closePhytoImage()
+|$Real-time
+||&Start process...                		~~ realtimeRun()
+||&Stop process...                 		~~ realtimeStop()
+||&Export results...               		~~ realtimeSave()
+||&Remove data...                  		~~ realtimeReset()
 |$Objects
 ||&Load									~~ loadObjects()
 ||&Save									~~ saveObjects()
@@ -36,9 +41,6 @@ $Tk.ZIDlgWin
 ||Image &analyzer (ImageJ)				~~ startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)
 ||&Metadata editor (Sc1)				~~ startPgm("ZIEditor", cmdline = selectFile("ZimZis"))
 ||--
-||&Zip-Zid viewer (Filzip)				~~ startPgm("ZipViewer", cmdline = selectFile("ZipZid"))
-||CD-DVD &burner (DeepBurner)			~~ startPgm("DVDBurner")
-||---
 ||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
 |$Functions
 ||$PhytoImage &Metadata (zim)
@@ -105,8 +107,8 @@ $Tk.ZIDlgWin
 ||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
 ||-
 ||$R Graphs
-|||&New									~~ windows()
-|||&Activate next						~~ {dev.set(); bringToTop()}
+|||&New									~~ dev.new()
+|||&Activate next						~~ {dev.set(); if (isRgui()) bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
 ||Change &active dir...                 ~~ Setwd(paste(tkchooseDirectory(), collapse = " "))
@@ -114,7 +116,7 @@ $Tk.ZIDlgWin
 ||Define decimal separator...			~~ optInOutDecimalSep()
 
 |$Help
-||&Online help							~~ browseURL(findhtmlhelp("zooimage"))
+||&Online help							~~ help("phytoimage")
 ||&Manual	Ctrl+H						~~ viewManual()
 ||&Web site...							~~ browseURL("http://www.sciviews.org/zooimage")
 ||-

@@ -1,5 +1,5 @@
 # ZooImage1 Tk menu
-# by Ph. Grosjean, 2005 <phgrosjean@sciviews.org>
+# by Ph. Grosjean, 2005-2010 <phgrosjean@sciviews.org>
 
 # Create a Tk menu (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin
@@ -23,10 +23,10 @@ $Tk.ZIDlgWin
 |||From the &assistant	Ctrl+X			~~ closeAssistant()
 |||From &ZooImage						~~ closeZooImage()
 |$Real-time
-||&Start process...                ~~ RealT()
-||&Stop process...                 ~~ StopRealT()
-||&Export results...               ~~ SaveResults()
-||&Remove data...                  ~~ RemoveRealT()
+||&Start process...                		~~ realtimeRun()
+||&Stop process...                 		~~ realtimeStop()
+||&Export results...               		~~ realtimeSave()
+||&Remove data...                  		~~ realtimeReset()
 |$Objects
 ||&Load									~~ loadObjects()
 ||&Save									~~ saveObjects()
@@ -41,9 +41,6 @@ $Tk.ZIDlgWin
 ||Image &analyzer (ImageJ)				~~ startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)
 ||&Metadata editor (Sc1)				~~ startPgm("ZIEditor", cmdline = selectFile("ZimZis"))
 ||--
-||&Zip-Zid viewer (Filzip)				~~ startPgm("ZipViewer", cmdline = selectFile("ZipZid"))
-||CD-DVD &burner (DeepBurner)			~~ startPgm("DVDBurner")
-||---
 ||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
 |$Functions
 ||$ZooImage &Metadata (zim)
@@ -91,7 +88,6 @@ $Tk.ZIDlgWin
 |||unzip.ZITrain()						~~ guiDlgFunction("unzip.ZITrain")
 |||---
 |||re&code.ZITrain()					~~ guiDlgFunction("recode.ZITrain")
-|||make.ZIRecode.level()				~~ guiDlgFunction("make.ZIRecode.level()")
 ||$ZooImage &Classifier
 |||ZIClass()							~~ guiDlgFunction("ZIClass")
 |||predict()							~~ guiDlgFunction("predict.ZIClass")
@@ -112,15 +108,15 @@ $Tk.ZIDlgWin
 ||Automatic classification of vignettes     ~~ ClassifVigns()
 ||-
 ||$R Graphs
-|||&New									~~ windows()
-|||&Activate next						~~ {dev.set(); bringToTop()}
+|||&New									~~ dev.new()
+|||&Activate next						~~ {dev.set(); if (isRgui()) bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
 ||Change &active dir...                 ~~ zooimage:::setwd(paste(tkchooseDirectory(), collapse = " "))
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
 |$Help
-||&Online help							~~ browseURL(findhtmlhelp("zooimage"))
+||&Online help							~~ help("zooimage")
 ||&Manual	Ctrl+H						~~ viewManual()
 ||&Web site...							~~ browseURL("http://www.sciviews.org/zooimage")
 ||-

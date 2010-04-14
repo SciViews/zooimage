@@ -217,7 +217,7 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 }
 
 # New function v1.2-2 using library gplots
-"confusion.tree" <- function (confmat, maxval, margin=NULL, Rowv = TRUE,
+"confusion.tree" <- function (confmat, maxval, margin = NULL, Rowv = TRUE,
 Colv = TRUE)
 {
 	nX <- nrow(confmat)
@@ -228,8 +228,8 @@ Colv = TRUE)
 	# Note: done in NAMESPACE
 	# require(RColorBrewer)
 	# require(gplots)
-	mypalette <- brewer.pal(maxval-1, "Spectral")
-	heatmap.2(confmat, col= c(0,mypalette), symm = TRUE, margin = margin,
+	mypalette <- brewer.pal(maxval - 1, "Spectral")
+	heatmap.2(confmat, col= c(0, mypalette), symm = TRUE, margin = margin,
 		trace = "both", Rowv = Rowv, Colv = Colv, cexRow = 0.2 + 1 / log10(nX),
 		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE)
 }
@@ -237,75 +237,68 @@ Colv = TRUE)
 # New function v 1.2-2 false positive and negative
 "confusion.bar" <- function (confmat, mar = NULL)
 {
-	mustbe(confmat, c("table", "matrix"))
-	Nn <- nrow(confmat)
+	if (!inherits(confmat, c("table", "matrix")))
+		stop("'confmat' must be a table or a matrix")
+	TP <- tp <- diag(confmat)
+	fn <- rowSums(confmat) - tp
+	fp <- colSums(confmat) - tp
+	# Express fn and fp in proportions
+	FN <- fn <- fn / (fn + tp)
+	FP <- fp <- fp / (tp + fp)
+	FP[is.na(FP)] <- 1
+	# Rescale values so that:
+	# fn/tp ratio and tp/fp ratio are kept, using same tp
+	# total fn + tp + fp makes 100
+	fp <- tp / (1 - fp) * fp
+	# Rescale all so that they sum to 1
+	scale <- fn + tp + fp
+	fn <- fn / scale * 100
+	tp <- tp / scale * 100
+	fp <- fp / scale * 100
+	# Just in case we have no tp at all:
+	fn[is.na(tp)] <- 50
+	fp[is.na(tp)] <- 50
+	tp[is.na(tp)] <- 0
+	res <- matrix(c(fp, tp, fn), ncol = 3)
+	colnames(res) <- c( "fp", "tp", "fn")
+	# Order items from smallest to largest tp
+	pos <- order(res[, 2], decreasing = TRUE)
+	res <- res[pos, ]
+	FN <- FN[pos]
+	FP <- FP[pos]
+	TP <- TP[pos]
 
-	## percent of correctly predicted objects in the test set
-	pred.tok <- diag(confmat) / colSums(confmat) * 100
-
-	# If there are no items good recognize 0/0 = NaN so replace NaN by 0 for
-	# calculation
-  	if (NaN %in% pred.tok)
-		pred.tok[pred.tok == "NaN"] <- 0
-
-	# Percent of items in the test set predicted in its category
-	pred.tfrac <- diag(confmat) / rowSums(confmat) * 100
-	pred.tfrac[is.nan(pred.tfrac)] <- 0
-	prediction <- cbind(pred.tok, pred.tfrac)
-	prediction.df <- data.frame(prediction)
-	CR <- prediction[1:Nn, 2]
-	FN <- 100 - CR # flase negatives = objects which exist in the test set
-	# but not in the training set;
-
-	# they are wrongly predicted as not to belong to a particular group
-	prediction.df$FN <- FN
-
-	#put to scale
-	CR2 <- prediction[1:Nn, 1]
-	FP <- 100-CR2 # False positives
-	prediction.df$FP <- FP
-	prediction.df <- round(prediction.df, 0)
-	Failure <- prediction.df[c("FN", "FP")]
-
-	# Put all data to scale
-	allN <- CR + FN # all negative
-	allP <- CR2 + FP # all positive
-	cr <- (CR / allN) * 100 # % good identify by pc
-	cr2 <- (CR2 / allP) * 100 # % good identify by pc
-	fn <- (FN / allN) * 100 # percentage of FN
-	fp <- (FP / allP) * 100 # percentage of FP
-	all <- matrix(c(fn, cr, cr2, fp), ncol = 4)
-	colnames(all) <- c( "fn", "cr", "cr2", "fp")
-	Order <- order(all[, 2] + all[, 3] , decreasing = TRUE)
-	all2 <- t(all[Order, ]) # Transpose the sorted matrix
-	Failure <- Failure[Order, ] # Sort failures
-	Failure.mat <- as.matrix(Failure)
-	Nmat <- ncol(all2)
-
-	# Plotting of the data
-	valx  <- matrix(c(rep(2 , Nmat), rep(198, Nmat)), ncol = 2)
-	valx2 <- matrix(c(rep(98, Nmat), rep(102, Nmat)), ncol = 2)
+	# Plot
+	if (is.null(mar)) mar <- c(1.1, 8.1, 4.1, 2.1)
 	omar  <- par("mar")
 	on.exit(par(omar)) # mar = margin size c(bottom, left, top, right)
 	par(mar = mar)
-	barplot(all2[, !is.na(all2[2, ])], horiz = TRUE,
-		col = c("PeachPuff2", "green3", "green3", "lemonChiffon2"),
+	barplot(t(res), horiz = TRUE, col = c("PeachPuff2", "green3", "lemonChiffon2"),
 		xaxt = "n", las = 1, space = 0)
-	text(valx, row(valx) - 0.45, Failure.mat , cex = 0.7)
-	text(valx2, row(valx2) - 0.45, 100 - Failure.mat , cex = 0.7)
+	abline(v = (1:9) * 10, lty = 2)
+	abline(v = 50, lwd = 2)
+
+	# Print the fraction of fp and fn
+	text(rep(4, length(FP)), 1:length(FP) - 0.1,
+		paste(round((1 - FP) * 100), "%", sep = ""),
+		adj = c(1, 1), cex = 0.7)
+	text(rep(99, length(FN)), 1:length(FN) - 0.1,
+		paste(round((1 - FN) * 100), "%", sep = ""),
+		adj = c(1, 1), cex = 0.7)
+
+	# Print the number of true positives
+	xpos <- res[, 1] + res[, 2] / 2 
+	text(xpos, 1:length(FN) - 0.1, round(TP),
+		adj = c(0.5, 1), cex = 0.7)
 
 	# Add a legend
-  	legend(100, Nmat + (Nmat / 15), legend = c("false negative (FN)",
-		"true positive (TP)", "false positive (FP)"),
-		xjust = 0.5, fill = c("PeachPuff2", "green3", "lemonChiffon2"),
+  	legend(50, length(FN) * 1.05, legend = c("false positive (FP)",
+		"true positive (TP)", "false negative (FN)"),
+		xjust = 0.5, yjust = 1, fill = c("PeachPuff2", "green3", "lemonChiffon2"),
 		bty = "n", horiz = TRUE)
-	legend(100, Nmat / 55, "Percentage", xjust = 0.5, bty = "n")
-	segx0 <- rep(c(25, 50, 75, 125, 150, 175), 2)
-	segy0 <- rep(c(0, Nmat), c(6, 6))
-	segments(segx0[c(1:6)], segy0[c(1:6)], segx0[c(7:12)], segy0[c(7:12)],
-		col = "red", lty = 2)
-	valx3 <- c(25, 50, 75, 125, 150, 175)
-	text(valx3[1:6], -(Nmat / 35), labels = segx0[c(1:3, 7:9)], cex = 0.7)
+	axis(2, 1:length(FN) - 0.5, tick = FALSE, las = 1, cex.axis = 0.7,
+		labels = names(attr(confmat, "nbr.per.class")))
+	title(main = "Precision tp/(tp+fp) at left versus recall tp/(tp+fn) at right")
 }
 
 "nnet2" <- function (formula, data, size = 7, rang = 0.1, decay = 5e-4,

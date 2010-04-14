@@ -111,22 +111,6 @@
 		#       kde based distributions
 	}
 
-	# Determine where to find the zip viewer (Filzip under Windows)
-	## TODO... currently, it is in a fixed position
-	if (isWin()) {
-		FilzipExe <- file.path(bindir, "Filzip", "Filzip.exe")
-		if (file.exists(FilzipExe)) options(ZipViewer = FilzipExe)
-	} else {
-		# TODO: alternate program to inspect .zid files?
-	}
-
-	# Determine where to find the DVD burner (DeepBurner under Windows)
-	## TODO... currently, it is in a fixed position
-	if (isWin()) {
-		DeepBurnerExe <- file.path(bindir, "DeepBurner", "DeepBurner.exe")
-		if (file.exists(DeepBurnerExe)) options(DVDBurner = DeepBurnerExe)
-	}
-
 	# Determine where to find VueScan
 	## TODO... currently, it is in a fixed position
 	VueScanExe <- file.path(bindir, "VueScan", "VueScan.exe")

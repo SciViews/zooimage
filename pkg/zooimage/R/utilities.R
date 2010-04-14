@@ -32,7 +32,12 @@ title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
 {	
 	# Get one or several variables of a given object class
 	varlist <- objects(pos = 1)	# Get objects in .GlobalEnv
-	
+	if (length(varlist) == 0) {
+		msg <- paste("There is no object of class '",
+			paste(class, collapse = " "), "' in the user workspace!", sep = "")
+		if (isTRUE(warn.only)) warning(msg) else stop(msg)
+		return("")
+	}
 	# Filter this list to keep only object inheriting a giving class...
 	Filter <- NULL
 	for (i in 1:length(varlist))
@@ -79,17 +84,17 @@ title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
 
 # Select one or several files of a given type
 "selectFile" <- function (
-type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis", "Zie"),
-multi = FALSE, quote = TRUE)
+type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData"),
+multi = FALSE, quote = TRUE, title = NULL)
 {	
 	type <- tryCatch(match.arg(type), error = function (e) {
 		stop("unrecognized type")
 	})
 	Type <- switch(type, "ZipZid" = "Zip/Zid", "ZimZis" = "Zim/Zis",
-		"LstZid" = "Lst/Zid", type)
+		"LstZid" = "Lst/Zid", "TifPgm" = "Tiff/Pgm", type)
 	
 	# Adapt title according to 'multi'
-	if (isTRUE(multi)) {
+	if (isTRUE(multi) && !is.null(title)) {
     	title <- paste("Select one or several", Type, "files...")
 	} else {
 		title <- paste("Select one", Type, "file...")
@@ -107,7 +112,15 @@ multi = FALSE, quote = TRUE)
 			Zid		= c("ZooImage data files"     , ".zid"      ),
 			Zim		= c("ZooImage metadata files" , ".zim"      ),
 			Zis		= c("ZooImage sample files"   , ".zis"      ),
-			Zie		= c("ZooImage extension files", ".zie"      ))
+			Zie		= c("ZooImage extension files", ".zie"      ),
+			Zic     = c("ZooImage Classification Scheme",".zic" ),
+			Img     = c("Tiff image files"        , ".tif",
+						"Jpeg image files"        , ".jpg",
+						"Zooimage import extensions",".zie",
+						"Table and ImportTemplate.zie",".txt"   ),
+			TifPgm  = c("Tiff image files"        , ".tif"      ),
+						"Pgm image files"         , ".pgm",
+			RData   = c("R data"                  , ".RData"    ))
 		filters <- matrix(filters, ncol = 2, byrow = TRUE)
 		res <- tk_choose.files(caption = title, multi = multi, filters = filters)
 	#} else { # Old treatment using Windows-only function
@@ -152,7 +165,7 @@ multi = FALSE, quote = TRUE)
 	if(!isWin()) {
 		# TODO: should we also use this for windows ?
 		assignTemp(sprintf("zooimage-%s", key), value, TRUE )
-	} else{
+	} else {
 		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
 	}
 	return(invisible(TRUE))
