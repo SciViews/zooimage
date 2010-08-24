@@ -823,7 +823,7 @@ FlowCell = 600, ImgPerSec = 5, Size = 5, Lag = 2)
 			if (length(pos) < 1) return(NULL)
 			str <- x[pos[1]]
 			res <- strsplit(str, "=")[[1]][2]
-			res <- trim(res)
+			res <- trimstring(res)
 			if (isTRUE(as.numeric)) res <- as.numeric(res)
 			return(res)
 		}		

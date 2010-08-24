@@ -1,7 +1,6 @@
 \name{utilities}
 \alias{calc.vars}
 \alias{ClearProgress}
-\alias{combine}
 \alias{ecd}
 \alias{get.sampleinfo}
 \alias{getKey}
@@ -20,7 +19,7 @@
 \alias{selectFile}
 \alias{setKey}
 \alias{setwd}
-\alias{trim}
+\alias{trimstring}
 \alias{underscore2space}
 \alias{ZIpgm}
 \alias{ZIpgmhelp}
@@ -35,7 +34,6 @@
 list.merge(x, y)
 list.add(\dots, .list = list(\dots))
 list.reduce(\dots, .list = list(\dots), FUN = "+")
-combine(\dots, .list = list(\dots))
 
 calc.vars(x)
 ecd(area)
@@ -55,7 +53,7 @@ selectFile(type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis",
 getDec()
 
 noext(file)
-trim(char)
+trimstring(char)
 underscore2space(char)
 parse.ini(data, label = "1")
 
@@ -127,9 +125,9 @@ ZIpgmhelp(pgm, subdir = "misc")
 }
 
 \value{
-  The combined object is returned for \code{combine()}, \code{list.add()},
-  \code{list.reduce()} and \code{list.merge}. \code{list.add()} is just a
-  shortcut for \code{list.reduce(FUN = "+")}.
+  The combined object is returned for \code{list.add()}, \code{list.reduce()}
+  and \code{list.merge}. \code{list.add()} is just a shortcut for
+  \code{list.reduce(FUN = "+")}.
 
   The data.frame with additional columns for calculated variables with
   \code{calc.vars}
@@ -143,7 +141,7 @@ ZIpgmhelp(pgm, subdir = "misc")
   an empty string (\code{""}) is returned in case there is no corresponding
   element found.
 
-  Transformed strings for \code{noext()}, \code{trim()} and
+  Transformed strings for \code{noext()}, \code{trimstring()} and
   \code{underscore2space()}
 
   \code{parse.ini()} reads the data and creates a list of data frames. Each
@@ -186,7 +184,7 @@ ZIpgmhelp(pgm, subdir = "misc")
 \examples{
 # Character strings and filenames manipulation functions
 underscore2space("Some_string_to_convert")
-trim("    \tString with\textra spaces  \t")
+trimstring("    \tString with\textra spaces  \t")
 noext(paste(tempfile(), ".ext", sep = ""))
 
 # Given a correct ZooImage name for a sample, return parts of it

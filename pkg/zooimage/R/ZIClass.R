@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-# Version 1.2.0: check package loading, and add a 'package' attribute to ZIClass
-### TODO: allow for defining parameters and use a plugin mechanism
-
 # Modifications in calculation of probabilities to accept variables selection v1.2-2
 "ZIClass" <- function (df, algorithm = c("lda", "randomForest"),
 package = c("MASS", "randomForest"), Formula = Class ~ logArea + Mean + StdDev +
@@ -86,11 +83,11 @@ calc.vars = "calc.vars", k.xval = 10, ...)
 	algorithm <- attr(x, "algorithm")
 	classes <- attr(x, "classes")
 	lclasses <- levels(classes)
-    predict <- attr(x, "predict")
+    predicted <- attr(x, "predict")
 	k <- attr(x, "k")
 	cat("A ZIClass object predicting for", length(lclasses), "classes:\n")
 	print(lclasses)
-	Confu <- confu(classes, predict)
+	Confu <- ZIConf(classes, predicted)
 	mism <- 100 * (1 - (sum(diag(Confu)) / sum(Confu)))
 
 	# Change the number of digits to display
@@ -117,8 +114,10 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 {
 
 	# Make sure we have correct objects
-	mustbe(object, "ZIClass")
-	mustbe(ZIDat , c("ZIDat", "data.frame"))
+	if (!inherits(object, "ZIClass"))
+		stop("'object' must be a 'ZIClass' object")
+	if (!inherits(ZIDat, c("ZIDat", "data.frame")))
+		stop("'ZIDat' must be a 'ZIDat' or 'data.frame' object")
 	
 	# Possibly load a specific package for prediction
 	package <- attr(object, "package")
@@ -156,151 +155,6 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 	return(res)
 }
 
-"confu" <- function (classes1, classes2, classes.predicted = FALSE)
-{
-	if (is.factor(classes1) || is.factor(classes2)) {
-		if (NROW(classes1) != NROW(classes2))
-			stop("Not same number of items in classes1 and classes2")
-
-		# Check that levels match
-		mustmatch(levels(classes1), levels(classes2),
-			msg = "'Class' levels in the two objects do not match")
-		clCompa <- data.frame(Class.x = classes1, Class.y = classes2)
-	} else { # Merge two data frame according to common objects in "Id" column
-
-		# Check levels match
-		mustmatch(levels(classes1$Class), levels(classes2$Class),
-			msg = "Levels for 'Class' in the two objects do not match")
-
-		# Are there common objects left?
-		clCompa <- merge(classes1, classes2, by = "Id")
-		if (nrow(clCompa) == 0)
-			stop("No common objects between the two 'classes' objects")
-	}
-
-	# How many common objects by level?
-	NbPerClass <- table(clCompa$Class.x)
-
-	# Confusion matrix
-	if (classes.predicted) {
-		Conf <- table(classes = clCompa$Class.x, predicted = clCompa$Class.y)
-	} else {
-		Conf <- table(Class1 = clCompa$Class.x, Class2 = clCompa$Class.y)
-	}
-
-	# Pourcent of common objects
-	Acc <- sum(diag(Conf)) / sum(Conf) * 100
-
-	# Change labels to get a more compact presentation
-	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
-	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
-
-	# Results
-	attr(Conf, "accuracy") <- Acc
-	attr(Conf, "nbr.per.class") <- NbPerClass
-	return(Conf)
-}
-
-"confu.map" <- function (set1, set2, level = 1)
-{
-	opar <- par(no.readonly = TRUE)
-	on.exit(par(opar))
-    par(mar = c(5, 12, 4, 2) + 0.1)
-
-	n <- length(levels(set1))
-	image(1:n, 1:n, 1 / (t(confu(set1, set2)[n:1, 1:n])), col = heat.colors(10),
-		xlab = "", ylab = "", xaxt = "n", yaxt = "n")
-    axis(1, at = 1:n, las = 2)
-    axis(2, at = n:1, labels = paste(levels(set1), 1:n), las = 1)
-    abline(h = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
-    abline(v = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
-}
-
-# New function v1.2-2 using library gplots
-"confusion.tree" <- function (confmat, maxval, margin = NULL, Rowv = TRUE,
-Colv = TRUE)
-{
-	nX <- nrow(confmat)
-	nY <- ncol(confmat)
-	nZ <- nX * nY
-	confmat <- pmin(confmat, maxval)
-
-	# Note: done in NAMESPACE
-	# require(RColorBrewer)
-	# require(gplots)
-	mypalette <- brewer.pal(maxval - 1, "Spectral")
-	heatmap.2(confmat, col= c(0, mypalette), symm = TRUE, margin = margin,
-		trace = "both", Rowv = Rowv, Colv = Colv, cexRow = 0.2 + 1 / log10(nX),
-		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE)
-}
-
-# New function v 1.2-2 false positive and negative
-"confusion.bar" <- function (confmat, mar = NULL)
-{
-	if (!inherits(confmat, c("table", "matrix")))
-		stop("'confmat' must be a table or a matrix")
-	TP <- tp <- diag(confmat)
-	fn <- rowSums(confmat) - tp
-	fp <- colSums(confmat) - tp
-	# Express fn and fp in proportions
-	FN <- fn <- fn / (fn + tp)
-	FP <- fp <- fp / (tp + fp)
-	FP[is.na(FP)] <- 1
-	# Rescale values so that:
-	# fn/tp ratio and tp/fp ratio are kept, using same tp
-	# total fn + tp + fp makes 100
-	fp <- tp / (1 - fp) * fp
-	# Rescale all so that they sum to 1
-	scale <- fn + tp + fp
-	fn <- fn / scale * 100
-	tp <- tp / scale * 100
-	fp <- fp / scale * 100
-	# Just in case we have no tp at all:
-	fn[is.na(tp)] <- 50
-	fp[is.na(tp)] <- 50
-	tp[is.na(tp)] <- 0
-	res <- matrix(c(fp, tp, fn), ncol = 3)
-	colnames(res) <- c( "fp", "tp", "fn")
-	# Order items from smallest to largest tp
-	pos <- order(res[, 2], decreasing = TRUE)
-	res <- res[pos, ]
-	FN <- FN[pos]
-	FP <- FP[pos]
-	TP <- TP[pos]
-
-	# Plot
-	if (is.null(mar)) mar <- c(1.1, 8.1, 4.1, 2.1)
-	omar  <- par("mar")
-	on.exit(par(omar)) # mar = margin size c(bottom, left, top, right)
-	par(mar = mar)
-	barplot(t(res), horiz = TRUE, col = c("PeachPuff2", "green3", "lemonChiffon2"),
-		xaxt = "n", las = 1, space = 0)
-	abline(v = (1:9) * 10, lty = 2)
-	abline(v = 50, lwd = 2)
-
-	# Print the fraction of fp and fn
-	text(rep(4, length(FP)), 1:length(FP) - 0.1,
-		paste(round((1 - FP) * 100), "%", sep = ""),
-		adj = c(1, 1), cex = 0.7)
-	text(rep(99, length(FN)), 1:length(FN) - 0.1,
-		paste(round((1 - FN) * 100), "%", sep = ""),
-		adj = c(1, 1), cex = 0.7)
-
-	# Print the number of true positives
-	xpos <- res[, 1] + res[, 2] / 2 
-	text(xpos, 1:length(FN) - 0.1, round(TP),
-		adj = c(0.5, 1), cex = 0.7)
-
-	# Add a legend
-  	legend(50, length(FN) * 1.05, legend = c("false positive (FP)",
-		"true positive (TP)", "false negative (FN)"),
-		xjust = 0.5, yjust = 1, fill = c("PeachPuff2", "green3", "lemonChiffon2"),
-		bty = "n", horiz = TRUE)
-	axis(2, 1:length(FN) - 0.5, tick = FALSE, las = 1, cex.axis = 0.7,
-		labels = names(attr(confmat, "nbr.per.class")))
-	title(main = "Precision tp/(tp+fp) at left versus recall tp/(tp+fn) at right")
-}
-
 "nnet2" <- function (formula, data, size = 7, rang = 0.1, decay = 5e-4,
 maxit = 1000, ...)
 {
@@ -317,7 +171,8 @@ maxit = 1000, ...)
 {
 	# Note: done in NAMESPACE
 	# require(nnet)
-	mustbe(object, "nnet2")
+	if (!inherits(object, "nnet2"))
+		stop("'object' must be a 'nnet2' object")
     class(object) <- class(object)[-1]
 	res <- predict(object, newdata = newdata, type = type, ...)
 	# If type is class, we got a character vector... but should get a factor
@@ -348,7 +203,8 @@ maxit = 1000, ...)
 {
    	# Note: done in NAMESPACE
 	# require(class)
-	mustbe(object, "lvq")
+	if (!inherits(object, "lvq"))
+		stop("'object' must be a 'lvq' object")
     if (missing(newdata)) newdata <- object$data
 	lvqtest(object$codebook, newdata[, object$vars[-1]])
 }
@@ -357,7 +213,8 @@ maxit = 1000, ...)
 FormVarsSelect <- function (x)
 {
 	# x must be a ZItrain object
-	mustbe(x, "ZI1Train")
+	if (!inherits(x, "ZITrain"))
+		stop("'x' must be a 'ZITrain' object")
 
 	# Parameters measured on particles and new variables calculated
 	mes <- as.vector(colnames(calc.vars(x)))

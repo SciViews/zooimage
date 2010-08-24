@@ -175,65 +175,6 @@ message = 'file "%s" is not a valid ZooImage version 1 file', stop = FALSE)
 	out[file.info(file.path(dir, basename(out)))$isdir]
 }
 
-# Must utilities
-"mustbe" <- function (x, class, msg)
-{
-	if (!any(sapply(class, function (cl) inherits(x, cl))))
-	if (length(class) == 1) {
-		if (missing(msg))
-			msg <- sprintf("'%s' must be a '%s' object",
-				deparse(substitute(x)), as.character(class))
-		stop(msg)
-	} else {
-		if (missing(msg))
-			msg <- paste("'%s' must be of one of these classes: ",
-				deparse(substitute(x)), paste(class, collapse = ", "), sep = "")
-		stop(msg)
-	}
-}
-
-"mustallbe" <- function (..., .list = list(...), class, msg)
-	return(invisible(lapply(.list, mustbe, class = class, msg = msg)))
-
-"mustmatch" <- function (x, y, msg)
-{
-	if (!all(sort(x)  == sort(y))) {
-		if (missing(msg)) msg <- sprintf("'%s' and '%s' must match",
-			deparse(substitute(x)), deparse(substitute(y)))
-		stop(msg)
-	}
-	return(invisible(NULL))
-}
-
-"mustallmatch" <- function (..., .list = list(...), msg = "all must match")
-{
-	n <- length(.list)
-	if (n==0 || n == 1) stop("need at list 2 elements")
-	first <- .list[[1]]
-	for (i in 2:n)
-		mustmatch(first, .list[[i]], msg = msg)
-	return(invisible(NULL))
-}
-
-"mustcontain" <- function (container, element, msg)
-{
-	if (!all(element %in% container)) {
-		if (missing(msg))
-			msg <- sprintf("'%s' must contain '%s'",
-				deparse(substitute(container)), deparse(substitute(element)))
-		stop(msg)
-	}
-}
-
-"mustbeString" <- function (x, length)
-{
-	if (!is.character(x))
-		stop(sprintf("%s must be a character string", deparse(substitute(x))))
-	if (!missing(length) && !length(x) == length)
-		stop(sprintf("%s must be a character string of length %d",
-			deparse(substitute(x)), length))
-}
-
 # Get a template file from the "ZITemplate" option
 "template" <- function (file = "default.zim", dir = getOption("ZITemplates"))
 {

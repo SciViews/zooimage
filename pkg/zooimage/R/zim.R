@@ -137,7 +137,7 @@ is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 	if (length(Lines) < 1) stop("File is empty!")
 
 	# Trim leading and trailing white spaces
-	Lines <- trim(Lines)
+	Lines <- trimstring(Lines)
 
 	# Check that all required fields are present for a simple .zim file
     misfields <- reqfields[!(reqfields %in% Lines)]
@@ -156,7 +156,7 @@ is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 		posHeaders <- grep("^\\[Data\\]$", Lines)[1] + 1
 		LineHeader <- scan(zimfile, character(), sep = "%", skip = posHeaders,
 			nmax = 1, flush = TRUE, quiet = TRUE, comment.char = "=")
-		Headers <- trim(strsplit(LineHeader, "\t")[[1]])
+		Headers <- trimstring(strsplit(LineHeader, "\t")[[1]])
 		misHeaders <- reqcols[!(reqcols %in% Headers)]
 		if (length(misHeaders) > 0)
 		    stop(paste("Missing columns in the table:", paste(misHeaders,

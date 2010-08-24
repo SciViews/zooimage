@@ -18,8 +18,8 @@ histSpectrum(spect, class = 1:18 * 0.3/3 + 0.2, lag = 0.25, log.scale = TRUE,
     width = 0.1, xlab = "classes (mm)", ylab = if (log.scale)
     "log(abundance + 1)/m^3" else "Abundance (ind./m^3", main = "", ylim = c(0, 2),
     plot.exp = FALSE)
-merge.ZITable(x, y, ...)
-plot.ZITable(x, y, ...)
+\method{merge}{ZITable}(x, y, ...)
+\method{plot}{ZITable}(x, y, ...)
 plotAbdBio(t, y1, y2, y3, ylim = c(0, 3), xlab = "Date", ylab = "log(abundance + 1)",
     main = "", cols = c("green", "blue", "red"), pchs = 1:3, hgrid = 1:3, vgrid = t,
     vline = NULL, xleg = min(vgrid), yleg = ylim[2], legend = c("series 1",

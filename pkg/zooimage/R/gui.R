@@ -704,8 +704,8 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	# Analyze a classifier, using a ZI1Class object (new version)
 	# Ask for an option of analysis
  	defval <- "Confusion matrix"
-	opts <- c("Confusion matrix", "Confusion matrix reworked",
-		"False positive and negative")
+	opts <- c("Print", "Plot (simple)", "Plot (with tree)",
+		"Precision/recall")
 	# Then, show the dialog box
  	res <- modalAssistant(paste(getTemp("ZIClass"), "Analyze a classifier"),
 		c("This is a simplified version of the analysis of classifiers",
@@ -721,15 +721,13 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		warn.only = FALSE)
 	if (is.null(ZIC)) stop("No current classifier. Please, make one first!")
 	ZIC <- get(ZIC, envir = .GlobalEnv)
-	classes <- attr(ZIC, "classes")
-	predicted <- attr(ZIC, "kfold.predict")
-	conf <- confu(classes, predicted, classes.predicted = TRUE)
-	print(conf)
-	if (res == "Confusion matrix") confu.map(classes, predicted)
-	if (res == "Confusion matrix reworked") confusion.tree(conf, maxval = 10,
-		margin = c(2,10), Rowv = TRUE, Colv = TRUE)
-	if (res == "False positive and negative") confusion.bar(conf)
-	#return(invisible(res))
+	conf <- ZIConf(ZIC)
+	switch(res,
+		`Print` = print(conf),
+		`Plot (simple)` = plot(conf, type = "image"),
+		`Plot (with tree)` = plot(conf, type = "tree_image"),
+		`Precision/recall` = plot(conf, type = "precision_recall"))
+	return(invisible(res))
 }
 
 # Edit a samples description file... or create a new one!

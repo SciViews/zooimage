@@ -20,7 +20,7 @@
 # type: must be ZI1 
 # check.vignettes: do we check vignettes as well
 # show.log: do we show a log at the end
-verify.zid <- function (zidir, type = "ZI1", check.vignettes = TRUE,
+"verify.zid" <- function (zidir, type = "ZI1", check.vignettes = TRUE,
 show.log = TRUE)
 {	
 	# Check the format of the file
@@ -167,7 +167,7 @@ check.vignettes = TRUE, show.log = TRUE, bell = FALSE)
 		}
 
 		# Trim leading and trailing spaces in Lines
-		Lines <- trim(Lines)
+		Lines <- trimstring(Lines)
 
 		# Convert underscore to space
 		Lines <- underscore2space(Lines)
@@ -222,8 +222,20 @@ check.vignettes = TRUE, show.log = TRUE, bell = FALSE)
 	results <- Filter(notnull.filter , results)
 	list.allmeta <- Filter(notnull.filter, lapply(results, "[[", "meta"))
 	list.allmes <- Filter(notnull.filter, lapply(results, "[[", "mes"))
-	allmeta <- combine(.list = list.allmeta)
-	allmes <- combine(.list = list.allmes)
+	
+	combine <- function (.list) {
+		force(.list)
+		mergefun <- function (x, y) {
+			if (all(sort(names(x)) == sort(names(y)))) {
+				rbind(x, y)
+			} else {
+				merge(x, y, all = TRUE)
+			}
+		}
+		Reduce(mergefun, .list)
+	}	
+	allmeta <- combine(list.allmeta)
+	allmes <- combine(list.allmes)
 	rownames(allmes) <- 1:nrow(allmes)
 
 	# Calculate an ECD from Area if there is not one yet

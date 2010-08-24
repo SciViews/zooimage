@@ -283,7 +283,7 @@ show.log = TRUE, bell = FALSE)
 		###       processed!)
 		Progress(i, nLines)
 		if (!grepl("^[-][>]", Lines[i])) {	# This is not a state change command
-			File <- MakeImageName(trim(sub("[=].*$", "", Lines[i])))
+			File <- MakeImageName(trimstring(sub("[=].*$", "", Lines[i])))
 			checkFileExists(File)
 			if (File %in% allImages) 
 				stop(sprintf("Duplicated use of the same file : '%s' !", File))
@@ -412,7 +412,7 @@ show.log = TRUE, bell = FALSE)
 		Key <- sub("^[-][>]([^ =]+).*$", "\\1", dat)
 		# Special treatment if Key == "Sample"
 		if (Key == "Sample") {
-			attr(zimData, "Sample") <- trim(sub("^[^=]+=", "", dat))
+			attr(zimData, "Sample") <- trimstring(sub("^[^=]+=", "", dat))
 			# Indicate that we process another sample
 			attr(zimData, "MakeZim") <- TRUE # Tell to make the zim file
 			attr(zimData, "Exif") <- ""
@@ -461,7 +461,7 @@ show.log = TRUE, bell = FALSE)
 		
 		# This is not a state change command
 		if (length(res) == 1 && res == FALSE) {	
-			File <- MakeImageName(trim(sub("[=].*$", "", Lines[i])))
+			File <- MakeImageName(trimstring(sub("[=].*$", "", Lines[i])))
 			
 			# Determine the name of the converted file
 			if (Convert != "") {
@@ -480,7 +480,7 @@ show.log = TRUE, bell = FALSE)
 			# and check if it is a calibration file
 			FileConvExt <- tolower(sub("^.*[.]", "", FileConv))
 			# Calculate the final name we want for the converted file
-			NewFile <- trim(sub("^.*[=]", "", Lines[i]))
+			NewFile <- trimstring(sub("^.*[=]", "", Lines[i]))
 			# 1) If this is 'key' or 'key=' (NeWFile == ""), then,
 			#    the file is not renamed!
 			if (NewFile == "") {

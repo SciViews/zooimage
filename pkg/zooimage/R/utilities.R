@@ -123,19 +123,6 @@ multi = FALSE, quote = TRUE, title = NULL)
 			RData   = c("R data"                  , ".RData"    ))
 		filters <- matrix(filters, ncol = 2, byrow = TRUE)
 		res <- tk_choose.files(caption = title, multi = multi, filters = filters)
-	#} else { # Old treatment using Windows-only function
-	#	filters <- switch(type,
-	#		ZipZid 	= c("ZooImage files (*.zip;*.zid)"          , "*.zip;*.zid"),
-	#		ZimZis 	= c("ZooImage metadata files (*.zim;*.zis)" , "*.zim;*.zis"),
-	#		Zip		= c("ZooImage picture files (*.zip)"        , "*.zip"      ),
-	#		Zid		= c("ZooImage data files (*.zid)"           , "*.zid"      ),
-	#		Zim		= c("ZooImage metadata files (*.zim)"       , "*.zim"      ),
-	#		Zis		= c("ZooImage sample files (*.zis)"         , "*.zis"      ),
-	#		Zie		= c("ZooImage extension files (*.zie)"      , "*.zie"      ))
-	#	filters <- matrix(filters, ncol = 2, byrow = TRUE)
-	#	res <- choose.files(caption = title, multi = multi, filters = filters)
-	#}
-	
 	if (length(res) && res != "" && quote)
 		res <- paste('"', res, '"', sep = "")
 	return(res)
@@ -176,7 +163,7 @@ multi = FALSE, quote = TRUE, title = NULL)
 	return(gsub("_", " ", char))
 
 # Trim leading and trailing white spaces and tabs
-"trim" <- function (char)
+"trimstring" <- function (char)
 	return(sub("\\s+$", "", sub("^\\s+", "", char)))
 
 # Get the name of a file, without its extension
@@ -262,7 +249,8 @@ multi = FALSE, quote = TRUE, title = NULL)
 # All sample with at least one entry in a given object
 "list.samples" <- function (obj)
 { 	
-	mustbe(obj, c("ZIDat", "ZIDesc","ZITrain"))
+	if (!inherits(obj, c("ZIDat", "ZIDesc","ZITrain")))
+		stop("'obj' must be a 'ZIDat', 'ZIDesc', or 'ZITrain' object")
 	
 	# List all samples represented in a given object
 	if (inherits(obj, "ZIDat")) {
@@ -289,11 +277,11 @@ multi = FALSE, quote = TRUE, title = NULL)
 	
 	# is str a section
 	is.section <- function (str)
-		as.logical(length(grep("^\\[.+\\]$", trim(str)) > 0))
+		as.logical(length(grep("^\\[.+\\]$", trimstring(str)) > 0))
 
 	# Get the name of a section
 	get.section.name <- function (str)
-		sub("^\\[", "", sub("\\]$", "", trim(str)))
+		sub("^\\[", "", sub("\\]$", "", trimstring(str)))
 
 	# Transform a vector of characters into a data frame,
 	# possibly with type conversion
@@ -304,7 +292,7 @@ multi = FALSE, quote = TRUE, title = NULL)
 		return(character(0))
 	
 	# Trim leading and trailing white spaces
-	data <- trim(data)
+	data <- trimstring(data)
 	
 	# Convert underscore to space
 	data <- underscore2space(data)
@@ -327,8 +315,8 @@ multi = FALSE, quote = TRUE, title = NULL)
 	# Make sure we have a section for the first entries (otherwise, use [.])
 	if (!is.section(data[1, 1]))
 		data <- rbind(c("[.]", "[.]"), data)
-	Names <- as.vector(trim(data[, 1]))
-	Dat <- as.vector(trim(data[, 2]))
+	Names <- as.vector(trimstring(data[, 1]))
+	Dat <- as.vector(trimstring(data[, 2]))
 	
 	# Determine which is a section header
 	Sec <- grep("\\[.+\\]$", Names)
@@ -365,14 +353,13 @@ multi = FALSE, quote = TRUE, title = NULL)
 # Merge two lists of data frames
 "list.merge" <- function (x, y)
 {	
-	mustallbe(x, y, class = "list")
-	
+	if (!inherits(x, "list") || !inherits(y, "list"))
+		stop("'x' and 'y' must both be 'list' objects")
 	xitems <- names(x)
 	yitems <- names(y)
 	xandy <- xitems[xitems %in% yitems]
 	xonly <- xitems[!(xitems %in% xandy)]
 	yonly <- yitems[!(yitems %in% xandy)]
-	
 	# First merge common items
 	if (length(xandy) > 0) {
 		res <- lapply(xandy, function (item) {
@@ -382,23 +369,9 @@ multi = FALSE, quote = TRUE, title = NULL)
 	} else {
 		res <- list()
 	}
-	
 	if (length(xonly) > 0) res[xonly] <- x[xonly]
 	if (length(yonly) > 0) res[yonly] <- y[yonly]
 	return(res)
-}
-
-"combine" <- function (..., .list = list(...))
-{
-	force(.list)
-	mergefun <- function (x, y) {
-		if (all(sort(names(x)) == sort(names(y)))) {
-			rbind(x, y)
-		} else {
-			merge(x, y, all = TRUE)
-		}
-	}
-	Reduce(mergefun, .list)
 }
 
 # Add items across two lists (names must be the same)

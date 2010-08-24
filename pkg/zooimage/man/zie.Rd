@@ -23,7 +23,7 @@ compile.zie(path = ".", Tablefile = "Table.txt", Template = "ImportTemplate.zie"
 ZIE(title, filter, description, pattern, command, author, version, date,
     license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
     type = c("import", "export"))
-print.ZIE(x, \dots)
+\method{print}{ZIE}(x, \dots)
 RawConvert(RawFile, OutputFile = "fileconv.pgm",
 	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
 	check = TRUE)

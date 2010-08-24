@@ -25,7 +25,8 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 	checkFileExists(ZidFile)
 	
 	# Check if ZIClass is of the right class
-	mustbe(ZIClass, "ZIClass")
+	if (!inherits(ZIClass, "ZIClass"))
+		stop("'ZIClass' must be a 'ZIClass' object")
 	
 	# Get ZIDat from the ZidFile
 	ZIDat <- read.zid(ZidFile)
@@ -113,7 +114,8 @@ show.log = TRUE, bell = FALSE, SemiTab = NULL, Semi = FALSE)
 	} else { # Check that all zid files have entries in ZIDesc
 		Samples <- get.sampleinfo(ZidFiles, type = "sample",
 			ext = extensionPattern(".zid"))
-		mustcontain(ZIDesc$Label, Samples, "One or more samples not in ZIDesc!")
+		if (!all(Samples %in% ZIDesc$Label))
+			stop("One or more samples not in 'ZIDesc'!")
 	}
 	
 	# Start the process
@@ -209,8 +211,10 @@ show.log = TRUE, bell = FALSE, SemiTab = NULL, Semi = FALSE)
 breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 {	
 	# Check arguments
-	mustbe(ZIDat, "ZIDat")
-	mustbeString(sample, 1)
+	if (!inherits(ZIDat, "ZIDat"))
+		stop("'ZIDat' must be a 'ZIDat' object")
+	if (!is.character(sample) || length(sample) != 1)
+		stop("'sample' must be a single character string")
 	
 	# Extract only data for a given sample
 	# Sample is everything before a '+' sign
@@ -233,8 +237,10 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 {
 	if (!isTRUE(RealT)) {
 		# Check arguments
-		mustbe(ZIDat, "ZIDat")
-		mustbeString(image, 1)
+		if (!inherits(ZIDat, "ZIDat"))
+			stop("'ZIDat' must be a 'ZIDat' object")
+		if (!is.character(image) || length(image) != 1)
+		stop("'image' must be a single character string")
 
 		# Select the image
 		dat <- ZIDat[ZIDat$Label == image, ]
@@ -246,7 +252,8 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 
 		# Taxa must correspond to levels in ZIDat$Ident
 		if (!is.null(taxa)) {
-			mustcontain( levels(dat$Ident), taxa, "taxa not in ZIDat")
+			if (!all(taxa %in% levels(dat$Ident)))
+				stop("taxa not in 'ZIDat'")
 			dat <- dat[dat$Ident %in% taxa, ] # Select taxa
 		}
 		if (is.null(groups)) {
@@ -254,7 +261,8 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 			groups <- list("")
 			names(groups) <- "total"
 		}
-		mustbe(groups, "list")
+		if (!inherits(groups, "list"))
+			stop("'groups' must be a 'list' object")
 
 		res <- lapply(groups, function (g) {
 			if (length(g) == 1 && g == "") { # Total abundance
@@ -275,9 +283,8 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 		# ZIDat is a table with VIS measurements and automatic Ident
 		# taxa must correspond to levels in ZIDat$Ident
 		if (!is.null(taxa)) {
-			mustcontain(levels(ZIDat$Ident), taxa, "taxa not in ZIDat")
-	#		if (!all(taxa %in% levels(ZIDat$Ident)))
-	#			stop("taxa not in ZIDat")
+			if (!all(taxa %in% levels(dat$Ident)))
+				stop("taxa not in 'ZIDat'")
 			Dat <- ZIDat[ZIDat$Ident %in% taxa, ] # Select taxa
 		}
 		if (is.null(groups)) {
@@ -285,7 +292,8 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 			groups <- list("")
 			names(groups) <- "total"
 		}
-		mustbe(groups, "list")
+		if (!inherits(groups, "list"))
+			stop("'groups' must be a 'list' object")
 
 		res <- lapply( groups, function (g) {
 			if (length(g) == 1 && g == "") { # Total abundance
@@ -322,8 +330,10 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 {
 	if (!isTRUE(RealT)) {
 		# Check arguments
-		mustbe(ZIDat, "ZIDat")
-		mustbeString(sample, 1)
+		if (!inherits(ZIDat, "ZIDat"))
+			stop("'ZIDat' must be a 'ZIDat' object")
+		if (!is.character(sample) || length(sample) != 1)
+			stop("'sample' must be a single character string")
 
 		# Extract only data for a given sample
 		Smps <- getSample(ZIDat$Label, unique = TRUE, must.have = sample)
@@ -331,7 +341,8 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 
 		# Subsample, depending on taxa we keep
 		if (!is.null(taxa)) {
-				mustcontain(levels(Smp$Ident), taxa, "taxa not in the sample")
+				if (!all(taxa %in% levels(Smp$Ident)))
+					stop("taxa not in the sample")
 				Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
 		}
 		if (nrow(Smp) == 0)
@@ -399,7 +410,8 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 			res <- sum(Smp$Biomass)
 			names(res) <- header
 		} else {
-			mustbe(groups, "list")
+			if (!inherits(groups, "list"))
+				stop("'groups' must be a 'list' object")
 			res <- if (length(groups) == 1 && groups=="") {
 				sum(Smp$Biomass)
 			} else {
@@ -413,7 +425,8 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 		# Subsample, depending on taxa we keep
 		Smp <- ZIDat
 		if (!is.null(taxa)) {
-			mustcontain(levels(Smp$Ident), taxa, "taxa not in the sample")
+			if (!all(taxa %in% levels(Smp$Ident)))
+				stop("taxa not in the sample")
 			Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
 		}
 		if (nrow(Smp) == 0)
@@ -487,7 +500,8 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 				res[i] <- sum(Smp$Biomass[Smp$Ident %in% grps[i]])
 			names(res) <- grps
 		} else {
-			mustbe(groups, "list")
+			if (!inherits(groups, "list"))
+				stop("'groups' must be a 'list' object")
 			res <- if (length(groups) == 1 && groups=="") {
 				sum(Smp$Biomass)
 			} else {
@@ -504,8 +518,10 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 type = c("absolute", "log", "relative"), header = "Abd")
 {
 	# Check arguments
-	mustbe(ZIDat, "ZIDat")
-	mustbeString(sample, 1)
+	if (!inherits(ZIDat, "ZIDat"))
+		stop("'ZIDat' must be a 'ZIDat' object")
+	if (!is.character(sample) || length(sample) != 1)
+		stop("'sample' must be a single character string")
 	type <- match.arg(type, several.ok = FALSE)
 	
 	# Extract only data for a given sample
@@ -538,7 +554,8 @@ type = c("absolute", "log", "relative"), header = "Abd")
 		res <- sum(Smp$Coef)
 		names(res) <- header
 	} else {
-		mustbe(groups, "list")
+		if (!inherits(groups, "list"))
+			stop("'groups' must be a 'list' object")
 		res <- if (length(groups) == 1 && groups == "") {
 			sum(Smp$Coef)
 		} else {
@@ -556,12 +573,23 @@ type = c("absolute", "log", "relative"), header = "Abd")
 
 "merge.ZITable" <- function (x, y, ...)
 {	
-	data <- list( x, y, ... )
-	mustallbe(.list = data, class = "ZITable", 
-		msg = "objects must all be ZITable objects")
-	mustallmatch(.list = lapply(data, attr, "breaks"), 
+	data <- list(x, y, ...)
+	lapply(data, function (x) {
+		if (!inherits(x, "ZITable")) stop("arguments must all be 'ZITable' objects")
+	})
+	
+	mustallmatch <- function (.list, msg = "all must match") {
+		n <- length(.list)
+		if (n < 2) stop("need at list 2 elements")
+		first <- .list[[1]]
+		for (i in 2:n)
+			if (!all(sort(first)  == sort(.list[[i]]))) stop(msg)
+		return()
+	}
+
+	mustallmatch(lapply(data, attr, "breaks"),
 		msg = "breaks of all objects must match")
-	mustallmatch(.list = lapply( data, attr, "unit"), 
+	mustallmatch(lapply( data, attr, "unit"), 
 		msg = "units of all objects must match")
 	Reduce("+", data) 
 }

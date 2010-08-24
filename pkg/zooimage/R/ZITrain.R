@@ -193,12 +193,14 @@ na.rm = FALSE)
 "recode.ZITrain" <- function (ZITrain, ZIRecode, warn.only = FALSE)
 {	
 	# Check classes
-	mustbe(ZITrain, "ZITrain")
-	mustbe(ZIRecode, "ZIRecode")
+	if (!inherits(ZITrain, "ZITrain"))
+		stop("'ZITrain' must be a 'ZITrain' object")
+	if (!inherits(ZIRecode, "ZIRecode"))
+		stop("'ZIRecode' must be a 'ZIRecode' object")
 	
 	# Check that all levels in ZITrain$Class are represented in ZIRecode
-	mustmatch(levels(ZITrain$Class), ZIRecode[ , 1], 
-		msg = "Not all levels of ZIRecode match levels of ZITrain")
+	if (!all(sort(levels(ZITrain$Class))  == sort(levels(ZIRecode[ , 1]))))
+			stop("Not all levels of ZIRecode match levels of ZITrain")
 	
 	# Class column of ZITrain is transformed into a character vector
 	Class <- as.character(ZITrain$Class)
@@ -220,7 +222,8 @@ na.rm = FALSE)
 "make.ZIRecode.level" <- function (ZITrain, level = 1)
 {
 	# Check class
-	mustbe(ZITrain, "ZITrain")
+	if (!inherits(ZITrain, "ZITrain"))
+			stop("'ZITrain' must be a 'ZITrain' object")
 	
 	# Get the "path" attribute
 	Path <- attr(ZITrain, "path")
