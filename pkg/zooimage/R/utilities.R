@@ -218,15 +218,17 @@ multi = FALSE, quote = TRUE, title = NULL)
 	# calculated variables!
 	
 	# A small hack to correct some 0 (which can be problematic in further calcs)
-	noZero <- function (x)
+	noZero <- function (x){
 		x[x == 0] <- 0.000000001
+		return(x)
+	}
 	# Euclidean distance between two points
 	distance <- function (x, y)
 		sqrt(x^2 + y^2)
 	
 	x$Minor <- noZero(x$Minor)
 	x$Major <- noZero(x$Major) 
-	x$Elongation <- x$Major / x$Minor
+	x$AspectRatio <- x$Minor / x$Major 
 	x$CentBoxD <- distance(x$BX + x$Width/2 - x$X, x$BY + x$Height/2 - x$Y)
 	x$GrayCentBoxD <- distance(x$BX + x$Width/2 - x$XM, x$BY + x$Height/2 - x$YM)
 	x$CentroidsD <- distance(x$X - x$XM, x$Y - x$YM)
@@ -242,7 +244,15 @@ multi = FALSE, quote = TRUE, title = NULL)
 	x$logMinor <- log(x$Minor)
 	x$Feret <- noZero(x$Feret)
 	x$logFeret <- log(x$Feret)
-
+	x$MeanDia <- (x$Major + x$Minor) / 2
+	x$MeanFDia <- (x$Feret + x$Minor) / 2
+	x$Transp1 <- 1 - (x$ECD / x$MeanDia)
+	x$Transp2 <- 1 - (x$ECD / x$MeanFDia)
+	x$Transp2[x$Transp2 < 0] <- 0
+	PA <- x$Perim.^2/16 - x$Area
+	x$Elongation <- ifelse(PA <= 0, 1, x$Area / (x$Perim./4 - PA^.5)^2)
+	x$Compactness <-  x$Perim.^2/4/pi/x$Area  # env. 1/Circ.
+	x$Roundness <- 4 * x$Area / (pi * sqrt(x$Major))
 	return(x)
 }
 
