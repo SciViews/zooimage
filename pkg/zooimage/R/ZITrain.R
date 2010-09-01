@@ -278,12 +278,12 @@ na.rm = FALSE)
 {
 	# Check if selected zid files are already classified in the training set
 	Rdata <- list.files(train, pattern = ".RData")
-	Rdata_New <- paste(gsub(".zid", "", basename(zidfiles)),
-		"_dat1.RData", sep = "")
+	Rdata_New <- paste(gsub(".zid", "", basename(zidfiles)), "_dat1.RData", sep = "")
 	NewZid <- Rdata_New %in% Rdata
+	
 	if (length(unique(!NewZid)) == 1) {
 		# All new or existing zid files
-		if (unique(NewZid) == TRUE) # All zids are already in the training set
+		if (isTRUE(unique(NewZid))) # All zids are already in the training set
 			stop("All selected zid files are already included in the training set")
 	} else {
 		# Select only new zid files
@@ -291,32 +291,41 @@ na.rm = FALSE)
 		cat("You have selected only", length(zidfiles),
 			"new zid files. The others are already used in the training set")
 	}
+	
 	# Extract vignettes to a new subdir in '_' and Rdata to the parental directory
 	# Create the new directory
 	NewDir <- "_/New_Vign_1"
+	
 	# Check if the new directory name already exists
 	if (file.exists(file.path(train, NewDir))) {
 		Vign_lst <- dir(file.path(train, "_"), pattern = "New_Vign_")
 		NewDir <- paste("_/New_Vign_", (length(Vign_lst)+1), sep = "")
 	}
+	
+	# Check if NewDir exist
+	ToPath <- file.path(dir, NewDir)
+	if(!file.exists(ToPath)){
+		# Create this directory
+		force.dir.create(ToPath)
+	}
+	
 	zmax <- length(zidfiles)
 	# Extract Rdata in the root directory
 	for (i in 1:zmax) {
 		logProcess("data", zidfiles[i])
 		Progress(i, zmax)
-		# Unzip data (*.RData files) there
-		cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i],
-			'" *.RData -d "', dir = train, '"', sep = "")
-		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+		# Using a temporary directory to unzip all files and then copy
+		# the RData files to the train directory
+		td <- tempfile()
+		unzip(zipfile = zidfiles[i], exdir = td, overwrite = FALSE)
+		datafiles <- file.path(td, list.files(td,
+			pattern = extensionPattern(".RData"), recursive = TRUE))
+		if (length(datafiles)) file.copy(datafiles, dir)
+		vignettes <- file.path(td, list.files(td,
+			pattern = extensionPattern(".jpg"), recursive = TRUE))
+		if (length(vignettes)) file.copy(vignettes, file.path(ToPath, basename(vignettes)))
+		unlink(td, recursive = TRUE)
 	}
-	# Extract vignettes in the new directory
-	for (i in 1:zmax) {
-		logProcess("vignettes", zidfiles[i])
-		Progress(i, zmax)
-		# Unzip vignettes (*.jpg files) there
-		cmd <- paste('"', ZIpgm("unzip", "misc"), '" -jqq "', zidfiles[i],
-			'" *.jpg -d "', file.path(train, NewDir), '"', sep = "")
-		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
-	}
+	ClearProgress()
 	cat("-- Done --\n")
 }

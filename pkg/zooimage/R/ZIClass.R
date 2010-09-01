@@ -210,30 +210,41 @@ maxit = 1000, ...)
 }
 
 # Formula calculation by variables selection for the classifier creation v1.2-2
-FormVarsSelect <- function (x)
+FormVarsSelect <- function (ZITrain)
 {
-	# x must be a ZItrain object
-	if (!inherits(x, "ZITrain"))
-		stop("'x' must be a 'ZITrain' object")
+	# ZITrain must be a ZItrain object
+	if (!inherits(ZITrain, "ZITrain"))
+		stop("'ZITrain' must be a 'ZITrain' object")
 
 	# Parameters measured on particles and new variables calculated
-	mes <- as.vector(colnames(calc.vars(x)))
+	mes <- as.vector(colnames(calc.vars(ZITrain)))
 
 	# Selection of features for the creation of the classifier
-	keep <- select.list(list = mes, preselect = c("ECD", "FIT_Area_ABD",
-		"FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
-		"FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio",
-		"FIT_Transparency", "FIT_Intensity", "FIT_Sigma_Intensity",
-		"FIT_Sum_Intensity", "FIT_Compactness", "FIT_Elongation",
-		"FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
-		"FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
-		"Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width",
-		"Height", "Major", "Minor", "Circ.", "Feret", "IntDen", "Median",
-		"Skew", "Kurt", "Elongation", "CentBoxD", "GrayCentBoxD", "CentroidsD",
-		"Range", "MeanPos", "SDNorm", "CV", "logArea", "logPerim.", "logMajor",
-		"logMinor", "logFeret"),
-		multiple = TRUE, title = "Select variables to keep")
+#	keep <- select.list(list = mes, preselect = c("ECD", "FIT_Area_ABD",
+#		"FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
+#		"FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio",
+#		"FIT_Transparency", "FIT_Intensity", "FIT_Sigma_Intensity",
+#		"FIT_Sum_Intensity", "FIT_Compactness", "FIT_Elongation",
+#		"FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
+#		"FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
+#		"Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width",
+#		"Height", "Major", "Minor", "Circ.", "Feret", "IntDen", "Median",
+#		"Skew", "Kurt", "Elongation", "CentBoxD", "GrayCentBoxD", "CentroidsD",
+#		"Range", "MeanPos", "SDNorm", "CV", "logArea", "logPerim.", "logMajor",
+#		"logMinor", "logFeret"),
+#		multiple = TRUE, title = "Select variables to keep")
+	Notkeep <- select.list(list = mes, preselect = c("Id", "FIT_Cal_Const", "Item", "FIT_Raw_Area", "FIT_Raw_Feret_Max",
+		"FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean", "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Feret_Max_Angle",
+		"FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
+		"FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",         
+		"FIT_CaptureY", "FIT_Edge_Gradient", "FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image", "FIT_Calibration_Image",
+		"FIT_High_U32", "FIT_Low_U32", "FIT_Total", "FIT_Red_Green_Ratio", "FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio",   
+		"FIT_Ch2_Ch1_Ratio" , "X.Item.1", "X", "Y", "XM", "YM", "BX", "BY", "Width", "Height", "Angle", "XStart", "YStart",
+		"Count",  "Label", "Dil", "Class"),
+		multiple = TRUE, title = "Select variables to avoid")
+	
 	# Creation of one formula for classifier calculation
+	keep <- mes[!mes %in% Notkeep]
 	res <- as.formula(paste("Class ~ ", paste(keep, collapse= "+")))
 	return(res)
 }

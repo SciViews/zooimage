@@ -248,3 +248,153 @@ main = "Precision (at left) versus recall (at right)")
 		cex = cex)
 	return(invisible(res))
 }
+
+# Modif K. Denis
+# Graphical representation of the confusion matrix
+"confuPlot" <- function (manual, automatic, label = "manual \\ auto",
+sort = "complete", cex = 1, left.mar = 10, colfun = NULL,
+ncols = 41, col0 = FALSE, grid.col = "gray", asp = 1, ...)
+{
+	# Default color function
+	rwb.colors <- function (n, alpha = 1, gamma = 1, s = 0.9, v = 0.9)
+	{
+		if ((n <- as.integer(n[1L])) <= 0) return(character(0L))
+		# Define the initial (red) and final (blue) colors with white in between
+		cols <- c(hsv(0, s, v, gamma, alpha),   # Red
+				  hsv(0, 0, v, gamma, alpha),   # White
+				  hsv(2/3, s, v, gamma, alpha)) # Blue
+		# Use a color ramp from red to white to blue
+		return(colorRampPalette(cols)(n))
+	}
+	if (is.null(colfun)) colfun <- rwb.colors
+	
+	# Calculate margins
+	mar <- c(3, left.mar, 3, 3) + 0.1
+	# Check manual and automatic
+	if (missing(automatic) || is.null(automatic)) {
+		# This must be a ZIClass object, or something equivalent
+		automatic <- attr(manual, "kfold.predict")
+		manual <- attr(manual, "classes")
+	}	
+	# Get levels
+	manuLev <- levels(manual)
+	autoLev <- levels(automatic)
+	if (!identical(manuLev, autoLev))
+		stop("Factor levels for 'manu' and 'auto' must be the same!")
+	l <- length(manuLev)
+	# Calculate confusion matrix
+	confu <- table(manual, automatic)
+	# Do we sort items?
+	if (!is.null(sort) && !is.na(sort) && sort != FALSE && sort != "") {
+		# Grouping of items
+		confuSim <- confu + t(confu)
+		confuSim <- max(confuSim) - confuSim
+		confuDist <- structure(confuSim[lower.tri(confuSim)], Size = l, Diag = FALSE,
+			Upper = FALSE, method = "confusion", call = "", class = "dist")
+		order <- hclust(confuDist, method = sort)$order
+		confu <- confu[order, order]
+		autoLev <- autoLev[order]
+		manuLev <- manuLev[order]
+	}
+	# Recode levels so that a number is used in front of manu labels
+	# and shown in auto
+	autoLev <- formatC(1:length(autoLev), width = 2, flag = "0")
+	manuLev <- paste(manuLev, autoLev, sep = "-")
+	row.names(confu) <- manuLev
+	colnames(confu) <- autoLev
+	# Calculate colors (use a transfo to get 0, 1, 2, 3, 4, 7, 10, 15, 25+)
+	confuCol <- confu
+	confuCol <- log(confuCol + .5) * 2.33
+	confuCol[confuCol < 0] <- if (isTRUE(col0)) 0 else NA
+	confuCol[confuCol > 10] <- 10
+	# Negative values (in blue) on the diagonal (correct IDs)
+	diag(confuCol) <- -diag(confuCol)	
+	# Make an image of this matrix
+	omar <- par(no.readonly = TRUE)
+	on.exit(par(mar = omar))
+	par(mar = mar, cex = cex)
+	image(1:l, 1:l, -t(confuCol[nrow(confuCol):1, ]), zlim = c(-10, 10), asp = asp, bty = "n",
+		col = colfun(ncols), xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
+	# Print the actual numbers
+	confuTxt <- as.character(confu[l:1, ])
+	confuTxt[confuTxt == "0"] <- ""
+	text(rep(1:l, each = l), 1:l, labels = confuTxt)
+	# The grid
+	abline(h = 0:l + 0.5, col = grid.col)
+	abline(v = 0:l + 0.5, col = grid.col)
+	# The axis labels
+	axis(1, 1:l, labels = autoLev, tick =  FALSE, padj = 0)
+	axis(2, 1:l, labels = manuLev[l:1], tick =  FALSE, las = 1, hadj = 1)
+	axis(3, 1:l, labels = autoLev, tick =  FALSE) #, cex.lab = cex)
+	axis(4, 1:l, labels = autoLev[l:1], tick =  FALSE, las = 1, hadj = 0)
+	# Legend at top-left
+	mar[2] <- 1.1
+	par (mar = mar, new = TRUE)
+	plot(0, 0, type = "n", xaxt = "n", yaxt = "n", bty = "n")
+	mtext(label, adj = 0, line = 1, cex = cex)
+	# Return the confusion matrix, as displayed, in text format
+	return(invisible(confu))
+}
+
+# Table with stats per groupe precision, recall, etc
+ConfMatStats <- function(ZIClass, ZIConf = NULL, sort.by = "FN"){
+    if(is.null(ZIConf)){
+        ZIConf <- ZIConf(ZIClass)
+    }
+    # True positive --> all organism on diagonal!
+    TP <- diag(ZIConf)
+    # Sum of true positive
+    SumTP <- sum(TP)
+    
+    # Sum rows and columns
+    SumRow <- rowSums(ZIConf) # TP + FN
+    SumCol <- colSums(ZIConf) # TP + FP
+    
+    # Out of diagonal
+    # False negative item
+    FN <- SumRow - TP
+    # False positive items
+    FP <- SumCol - TP
+    
+    # Total
+    Tot <- sum(ZIConf)
+    
+    # General stats
+    # Accuracy (TN + TP) / (TP + TN + FP + FN)
+    Accuracy <- SumTP / Tot * 100
+    Error <- 100 - Accuracy
+    
+    # Stats by group
+
+    # Proportion of false negative
+    FalseNeg <- FN / SumRow * 100
+
+    # Proportion of false positive
+    FalsePos <- FP / SumCol * 100
+
+    # Recall = True positive rate = Sensitivity = Probability of detection = TP / (TP + FN)
+    Recall <- TP / (TP + FN)
+
+    # Precision = TP / (TP + FP)
+    Precision <- TP / (TP + FP)
+
+    # Specificity = 1 - FP = TN / (TN + FP)
+    TN <- numeric()
+    for(i in 1:length(TP)){
+        TN[i] <- SumTP - TP[i]
+    }
+    Specificity = TN / (TN + FP) # 100 - FalsePos
+
+    # Bias
+    Bias <- SumCol - SumRow
+    
+    res <- data.frame(FN = round(FalseNeg, digit = 3), FP = round(FalsePos, digit = 3),
+        Recall = round(Recall, digit = 3), Precision = round(Precision, digit = 3), SumTS = SumRow, SumPred = SumCol, Bias = Bias)
+    
+    # Sort the table in function of one parameter by default FN
+    res <- res[order(res[, sort.by]), ]
+    
+    attr(res, "GeneralStats") <- c(Accuracy = Accuracy, Error = Error)
+    cat(paste("Accuracy:", round(Accuracy, digits = 2), "%", "\n", "Error:", round(Error, digits = 2), "%", "\n"))
+    return(res)
+}

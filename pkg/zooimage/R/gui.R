@@ -703,9 +703,12 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 {
 	# Analyze a classifier, using a ZI1Class object (new version)
 	# Ask for an option of analysis
- 	defval <- "Confusion matrix"
-	opts <- c("Print", "Plot (simple)", "Plot (with tree)",
-		"Precision/recall")
+# Modif K. Denis
+ 	defval <- "Print Confusion Matrix"
+#	opts <- c("Print", "Plot (simple)", "Plot (with tree)",
+#		"Precision/recall")
+	opts <- c("Print Confusion Matrix", "Plot Confusion Matrix", "Print Precision/recall",
+		"Plot Precision/recall")
 	# Then, show the dialog box
  	res <- modalAssistant(paste(getTemp("ZIClass"), "Analyze a classifier"),
 		c("This is a simplified version of the analysis of classifiers",
@@ -722,10 +725,15 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	if (is.null(ZIC)) stop("No current classifier. Please, make one first!")
 	ZIC <- get(ZIC, envir = .GlobalEnv)
 	conf <- ZIConf(ZIC)
+#	switch(res,
+#		`Print` = print(conf),
+#		`Plot (simple)` = plot(conf, type = "image"),
+#		`Plot (with tree)` = plot(conf, type = "tree_image"),
+#		`Precision/recall` = plot(conf, type = "precision_recall"))
 	switch(res,
-		`Print` = print(conf),
-		`Plot (simple)` = plot(conf, type = "image"),
-		`Plot (with tree)` = plot(conf, type = "tree_image"),
+		`Print Confusion Matrix` = print(conf),
+		`Plot Confusion Matrix` = confuPlot(ZIC),
+		`Print Precision/recall` = print(ConfMatStats(ZIConf = conf)),
 		`Precision/recall` = plot(conf, type = "precision_recall"))
 	return(invisible(res))
 }
