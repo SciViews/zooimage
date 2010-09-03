@@ -777,111 +777,126 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
     assignTemp("ZI.LastZIS", zisfile)
 }
 
-"processSamples" <- function ()
-{
+"processSamples" <-
+	function() {
 	# Ask for a description.zis file, look at all samples described there
 	# Calculate abundances, total and partial size spectra and possibly biomasses
 	# Get the last edited description.zis file
 	# Get a possibly saved directory as default one
 	zisfile <- getTemp("ZI.LastZIS")
-	if (is.null(zisfile) || !file.exists(zisfile)) zisfile <- ""
-    # Ask for a file
-	if (zisfile != "") {
-		zisfile <- paste(as.character(tkgetOpenFile(filetypes =
-			"{{ZooImage samples description} {.zis}}",
+	if (is.null(zisfile) || !file.exists(zisfile))
+		zisfile <- ""
+	# Ask for a file
+	if (zisfile != "") {	
+		zisfile <- paste(as.character(tkgetOpenFile(filetypes = "{{ZooImage samples description} {.zis}}",
 			initialfile = basename(zisfile), initialdir = dirname(zisfile),
-			title = "Select a ZIS file")), collapse = " ")
-	} else if (file.exists(file.path(getwd(), "Description.zis"))) {
-		zisfile <- paste(as.character(tkgetOpenFile(filetypes =
-			"{{ZooImage samples description} {.zis}}",
-			initialfile = "Description.zis", initialdir = getwd(),
-			title = "Select a ZIS file")), collapse = " ")
-	} else {
-		zisfile <- paste(as.character(tkgetOpenFile(filetypes =
-			"{{ZooImage samples description} {.zis}}",
-			title = "Select a ZIS file")), collapse = " ")
+			title = "Select a ZIS file")), collapse = " ")		
 	}
-	if (length(zisfile) == 0 || zisfile == "") return(invisible())
-  
-	# Add Kevin Denis option for Semi automatic classification 
-	# Option dialog box
-    res <- modalAssistant(paste(getTemp("ZIname"), "samples processing"),
-		c("Each sample registered in the description.zis file",
-		"will be processed in turn to extract ecological",
-		"parameters (abundances, biomasses, size spectra).",
-		"",
-        "If you want to save calculation done on each",
-		"particle individually, check the option below.",
-        "",
-		"Click 'OK' to proceed...", ""),
-		init = "0", options = "Semi Automatic Classification",
-		check = "Save individual calculations", help.topic = "processSamples")
-	# Analyze result
-	if (res == "ID_CANCEL") return(invisible())
- 	# Do we save individual calculations?
- 	if (res == "1") exportdir <- dirname(zisfile) else exportdir <- NULL
- 	if (res == "1") exportdir <- dirname(zisfile) else exportdir <- NULL
-  
-	# Add Kevin Denis for semi automatic classification
-	# Do we use Semi automatic classification?
-	if (res == "Semi Automatic Classification") {
-		res <- modalAssistant(paste(getTemp("ZIname"), "samples processing"),
-	    	c("Each sample registered in the description.zis file",
-	    	"will be processed in turn to extract ecological",
-	    	"parameters (abundances, biomasses, size spectra).",
-	    	"",
-	          "If you want to save calculation done on each",
-	    	"particle individually, check the option below.",
-	          "",
-	    	"Click 'OK' to proceed...", ""),
-	    	init = "0", check = "Save individual calculations",
-			help.topic = "processSamples")
-		# Analyze result
-		if (res == "ID_CANCEL") return(invisible())
-		# Do we save individual calculations?
-		if (res == "1") exportdir <- dirname(zisfile) else exportdir <- NULL
+	else if (file.exists(file.path(getwd(), "Description.zis"))) {
+		zisfile <- paste(as.character(tkgetOpenFile(filetypes = "{{ZooImage samples description} {.zis}}",
+			initialfile = "Description.zis", initialdir = getwd(),
+			title = "Select a ZIS file")), collapse = " ")		
+	}
+	else {
+		zisfile <- paste(as.character(tkgetOpenFile(filetypes = "{{ZooImage samples description} {.zis}}",
+			title = "Select a ZIS file")), collapse = " ")		
+	}
+	if (length(zisfile) == 0 || zisfile == "")
+		return(invisible())
 
-		# Read the manual error correction directory called Semi.Auto
+	# Add Kevin to use manual validation 2010-08-03
+	# Option dialog box
+	res <- modalAssistant(paste(getTemp("ZIname"), "samples processing"),
+		c(
+			"Each sample registered in the description.zis file",
+			"will be processed in turn to extract ecological",
+			"parameters (abundances, biomasses, size spectra).",
+			"",
+			"If you want to save calculation done on each",
+			"particle individually, check the option below.",
+			"",
+			"Click 'OK' to proceed...", ""
+		), init = "0",
+		options = "Manual Validation", check = "Save individual calculations",
+		help.topic = "processSamples")
+	# Analyze result
+	if (res == "ID_CANCEL")
+		return(invisible())
+	# Do we save individual calculations?
+	if (res == "1")
+		exportdir <- dirname(zisfile)
+	else exportdir <- NULL
+	# Add Kevin for semi auto classif
+	# Do we use Semi automatic classification?
+	if (res == "Manual Validation"){
+		res <- modalAssistant(paste(getTemp("ZIname"), "samples processing"),
+		c(
+			"Each sample registered in the description.zis file",
+			"will be processed in turn to extract ecological",
+			"parameters (abundances, biomasses, size spectra)",
+			"after manual validation of automatic predictions",
+			"done in the '_manualValidation' directory", 
+			"",
+			"If you want to save calculation done on each",
+			"particle individually, check the option below.",
+			"",
+			"Click 'OK' to proceed...", ""
+		), init = "0",
+		check = "Save individual calculations", help.topic = "processSamples")
+		# Analyze result
+		if (res == "ID_CANCEL")
+			return(invisible())
+		# Do we save individual calculations?
+		if (res == "1")
+			exportdir <- dirname(zisfile)
+		else exportdir <- NULL
+		
+		# Select the directory where manual validation is done
 		dir <- getTemp("ZI.TrainDir")
 		if (is.null(dir) || !file.exists(dir) || !file.info(dir)$isdir)
 			dir <- getwd()
 		# Ask for a base directory of a training set...
 		dir <- tkchooseDirectory(initialdir = dir, mustexist = "1",
-			title = paste("Select a", getTemp("ZIname"),
-			"Manual classification base dir"))
+			title = paste("Select a", getTemp("ZIname"), "Manual validation base dir"))
 		dir <- tclvalue(dir)
-		if (is.null(dir) || dir == "" || !file.exists(dir) ||
-			!file.info(dir)$isdir) return(invisible())
-		res <- get.ZITrain(dir, creator = NULL, desc = NULL, keep_ = FALSE)
-		assign("Semi.Auto", res, envir = .GlobalEnv)
-		# Create an object for condition
-		Semi.Classif <- TRUE
+		if (is.null(dir) || dir == "" || !file.exists(dir) || !file.info(dir)$isdir)
+			return(invisible())
+		# Read the directory
+		ZIManTable <- get.ZIMan(dir)
+		cat("Read the manual validation directory -- Done --\n")		
+		ManValid <- TRUE
 	} else {
-		Semi.Classif <- FALSE
+		# Classification without any manual validation
+		ManValid <- FALSE
 	} 
-  
+	
 	# Get a list of samples from the description file
 	smpdesc <- read.description(zisfile)
 	smplist <- list.samples(smpdesc)
+	
 	# Are there samples in it?
-	if (length(smplist) == 0) stop("No sample found in the description file!")
+	if (length(smplist) == 0)
+		stop("No sample found in the description file!")	
+	
 	# Are there corresponding .zid files for all samples?
 	zisdir <- dirname(zisfile)
-	if (zisdir == ".") zisdir <- getwd()
+	if (zisdir == ".")
+		zisdir <- getwd()
 	zidfiles <- file.path(zisdir, paste(smplist, ".zid", sep = ""))
-	if(!all(file.exists(zidfiles)) ||
-	   !all(regexpr("[.][zZ][iI][dD]$", zidfiles) > 0))
+	if(!all(file.exists(zidfiles)) || !all(regexpr("[.][zZ][iI][dD]$", zidfiles) > 0))
 		stop("One or more .zid files do not exist or is invalid!")
-    # Get a classifier
+	
+	# Get a classifier
 	ZIC <- getTemp("ZI.ClassName")
-	if (is.null(ZIC)) ZIC <- ""
-	ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-	if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
-	ZICobj <- get(ZIC, envir = .GlobalEnv)
-
-	# Read a conversion table from disk (from /etc/Conversion.txt)
-	# or an other position
+	if (is.null(ZIC))
+		ZIC <- ""
+	ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC, title = "Choose a classifier (ZIClass object):",
+		warn.only = FALSE)
+	if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == ""))
+		return(invisible())
+	ZICobj <- get(ZIC, envir = .GlobalEnv)	
+	
+	# Read a conversion table from disk (from /etc/Conversion.txt) or an other position
 	# First read the registry to determine which file to use...
 	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"),
 		"Conversion.txt"))
@@ -889,54 +904,66 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	if (!file.exists(ConvFile) || ConvFile == "")
 		ConvFile <- file.path(getTemp("ZIetc"), "Conversion.txt")
 	# Ask for selecting a Conversion file
+
 	if (isWin()) {
-		ConvFile2 <- choose.files(default = ConvFile,
-			caption = "Select a conversion file...",
-			multi = FALSE, filters = c("Biomass Conversion table (*Conversion.txt)",
-			"*Conversion.txt"))
-	} else {
-		ConvFile2 <- tk_choose.files(default = ConvFile,
-			caption = "Select a conversion file...",
-			multi = FALSE, filters = matrix(c("Biomass Conversion table",
-			".txt"), ncol = 2, byrow = TRUE))
+	    ConvFile2 <- choose.files(default = ConvFile, caption = "Select a conversion file...", 
+		multi = FALSE, filters = c("Biomass Conversion table (*Conversion.txt)", 
+		"*Conversion.txt"))
 	}
-	if (length(ConvFile2) == 0 || ConvFile2 == "") return(invisible())
-	# Cancelled dialog box
+	else {
+	    ConvFile2 <- tk_choose.files(default = ConvFile, caption = "Select a conversion file...", 
+		multi = FALSE, filters = matrix(c("Biomass Conversion table", 
+		    ".txt"), ncol = 2, byrow = TRUE))
+	}
+
+	if (length(ConvFile2) == 0 || ConvFile2 == "")
+		return(invisible()) # Cancelled dialog box
+	
 	# Read the data from this table
 	conv <- read.table(ConvFile2, header = TRUE, sep = "\t")
+	
 	# Save this config for later use
 	setKey("ConversionFile", ConvFile2)
-
+	
 	# Get class breaks for size spectra
-	brks <- dialogString("Breaks for size spectrum classes (empty for no spectrum):",
+	# Get class breaks for size spectra
+	if (isWin()) {
+		brks <- winDialogString("Breaks for size spectrum classes (empty for no spectrum):",
+			default = "seq(0.25, 2, by = 0.1)")
+	} else {	
+		brks <- guiDlgInput("Breaks for size spectrum classes (empty for no spectrum):",
 			"Size spectrum classes", default = "seq(0.25, 2, by = 0.1)")
-	if (is.null(brks) || length(brks) == 0 || brks == "") return(invisible())
+	}
+ 	if (is.null(brks) || length(brks) == 0 || brks == "")
+		return(invisible())
 	brks <- eval(parse(text = brks))
 
 	# Get a name for the variable containing results
-	name <- dialogString("Name for the ZIRes object to create:",
-		"Process samples",  default = "ZIres")
-	if (is.null(name) || length(name) == 0 || name == "") return(invisible())
-	name <- make.names(name)	# Make sure it is a valid name!
-	# Process sample by sample and collect results together in a ZIRes object
-
-	# Add Kevin Denis for semi automatic classification
-	if (Semi.Classif) {
-		res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj,
-			ZIDesc = read.description(zisfile), abd.taxa = NULL,
-			abd.groups = NULL, abd.type = "absolute", bio.taxa = NULL,
-			bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
-			spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks,
-			spec.use.Dil = TRUE, exportdir = exportdir, show.log = TRUE,
-			bell = FALSE, SemiTab = Semi.Classif, Semi = TRUE)
-	} else {
-		res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj,
-			ZIDesc = read.description(zisfile), abd.taxa = NULL,
-			abd.groups = NULL, abd.type = "absolute", bio.taxa = NULL,
-			bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
-			spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks,
-			spec.use.Dil = TRUE, exportdir = exportdir, show.log = TRUE,
-			bell = FALSE)
+	if (isWin()) {
+		name <- winDialogString("Name for the ZIRes object to create:",
+			default = "ZIres")
+	} else {	
+		name <- guiDlgInput("Name for the ZIRes object:",
+			"Process samples", default = "ZIres")
+	}
+	if (is.null(name) || length(name) == 0 || name == "")
+		return(invisible())
+	name <- make.names(name)
+	# Add Kevin for manual validation
+	if(isTRUE(ManValid)){
+		res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj, ZIDesc = read.description(zisfile),
+			abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
+			bio.taxa = NULL, bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
+			spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
+			exportdir = exportdir, show.log = TRUE, bell = FALSE, ZIMan = ZIManTable)
+	}
+	else {
+		# Process sample by sample and collect results together in a ZIRes object
+		res <- process.samples(path = dirname(zisfile), ZidFiles = NULL, ZICobj, ZIDesc = read.description(zisfile),
+			abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute",
+			bio.taxa = NULL, bio.groups = NULL, bio.conv = conv, headers = c("Abd", "Bio"),
+			spec.taxa = NULL, spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
+			exportdir = exportdir, show.log = TRUE, bell = FALSE, ZIMan = NULL)
 	}
 	
 	# Assign this result to the variable
@@ -1217,23 +1244,66 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 	Add.Vign(zidfiles = zid, train = dir)  
 }
 
-"ClassifVigns" <- function ()
+"ClassifVigns" <- function()
 {
-	# Extract on zid to respective directories
-	zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
-	# Select zid you want to recognize and classify
-	# Look if we have a classifier object defined
-	ZIC <- getTemp("ZI.ClassName")
-	if (is.null(ZIC)) ZIC <- ""
-	ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-	if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == ""))
-		return(invisible())
-	ZICobj <- get(ZIC, envir = .GlobalEnv)
-	# Classify vignettes  
-	if (length(zid) > 1) {
-		classifVign.all(zidfiles = zid, Zic = ZICobj)
-	} else {
-		classifVign(zidfile = zid, Zic = ZICobj)
-	}
+  # Extract on zid to respective directories
+  zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE) # select zid you want to recognize and classify
+  # Look if we have a classifier object defined
+  ZIC <- getTemp("ZI.ClassName")
+  if (is.null(ZIC)) ZIC <- ""
+  ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
+    title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+  if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
+  ZICobj <- get(ZIC, envir = .GlobalEnv)
+
+  # Classify vignettes  
+  if(length(zid) > 1) {
+    classifVign.all(zidfiles = zid, Dir = "_manuValidation", ZIClass = ZICobj)
+  } else {
+    classifVign(zidfile = zid, Dir = noext(zid), ZIClass = ZICobj)
+  }
+}
+
+# Subpart of zid file and return a subtable corresponding to the trheshold
+"subpartZIDat" <- function()
+{
+    # Select files to use
+    zidFile <- selectFile(type = "Zid", multi = FALSE, quote = FALSE) # select zid you want to recognize and classify
+
+    # Read the zid file
+    Zid <- read.zid(zidFile)
+
+    # Select a parameter to use for the threshold
+    Threshold <- createThreshold(ZIDat = ZIDat)    
+
+    # apply the thresold
+    res <- SubpartThreshold(ZIDat = Zid, Filter = Threshold)
+    return(res)
+}
+
+# Classify vignettes after Filter
+"classifyAfterFilter" <- function(){
+    # Extract on zid to respective directories
+    zid <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
+    
+    # Look if we have a classifier object defined
+    ZIC <- getTemp("ZI.ClassName")
+    if (is.null(ZIC)) ZIC <- ""
+    ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
+      title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+    if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == "")) return(invisible())
+    ZICobj <- get(ZIC, envir = .GlobalEnv)
+
+    # Give a name for the final directory
+    FinalDir <- zooimage:::dialogString("Name for the automatic classification directory:",
+        "Parameter filter", default = "filterClassification")
+    
+    # Read the zid file
+    ZIDat <- read.zid(zid)
+    
+    # Select a parameter to use for the threshold
+    Threshold <- createThreshold(ZIDat = ZIDat)        
+    
+    # Classify vignettes
+    classifVign(zidfile = zid, ZIDat = ZIDat, ZIClass = ZICobj, Dir = FinalDir, Filter = Threshold)
 }

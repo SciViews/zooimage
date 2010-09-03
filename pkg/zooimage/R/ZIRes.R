@@ -30,6 +30,40 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 	
 	# Get ZIDat from the ZidFile
 	ZIDat <- read.zid(ZidFile)
+	
+	# By default, we have to predict ZidFile with a classifier
+	MakePredictions <- TRUE
+	
+	# Modify Kevin 2010-08-03
+	if(!is.null(ZIMan)) {
+		# We want to use a ZIMan table
+		if(!inherits(ZIMan, "ZIMan"))
+			stop("ZIMan must be a data.frame of class 'ZIMan'")
+		
+		# List of samples allready manually validated
+		AllSamples <- attr(ZIMan, "Samples")
+		
+		# Check if manual validation exists for this zid file
+		if(noext(ZidFile) %in% AllSamples){
+			# The ZidFile has been manually validated --> use Class column for identification
+			# Subtable of ZidFile vignettes
+			Vignettes <- make.Id(ZIDat)
+			ZIDat <- ZIMan[ZIMan$Id %in% Vignettes,]
+			# Order Table
+			ZIDat <- ZIDat[order(ZIDat$Item),]
+			# We don't have to predict this sample anymore!)
+			MakePredictions <- FALSE
+		}
+	}
+	
+	if(isTRUE(MakePredictions)){
+		# Check if ZIClass is a classifier
+		if(!inherits(ZIClass, "ZIClass")) stop("ZIClass must be an object of class 'ZIClass'")
+		# We have to recognize the zid file with a classifier
+		ZIDat <- predict(ZIClass, ZIDat)
+	}
+	
+	# Get ZIDat from the ZidFile
 	Sample <- get.sampleinfo(ZidFile, type = "sample",
 		ext = extensionPattern(".zid"))
 	
@@ -38,25 +72,15 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 	if (nrow(RES) != 1)
 		stop("ZIDesc has no data for that sample!")
 	
-	# Predict classes (add a new column Ident to the table)
-	ZIDat <- predict(ZIClass, ZIDat)
-	
-  # Modif Kevin Denis for Semi Automatic classification
-	if (isTRUE(Semi)) {
-		if(is.null(SemiTab))
-			stop("You must provide a table with semi automatic classification")
-		if (!inherits(SemiTab, "ZITrain"))
-			stop("SemiTab must be a ZItrain object with manual classification")
-		# Extract ZidFile subtable from SemiTab
-		# (Semi automatic classification general table)
-		SemiClass <- SemiTab[sub("[+].*", "", as.character(SemiTab$Label)) %in%
-			noext(ZidFile),]
-		# Replace automatic recogntion by semi automatic one
-		for (j in 1: nrow(SemiClass))
-		ZIDat[ZIDat$Item == j, ]$Ident <- SemiClass[SemiClass$Item == j, ]$Class
+	# Use manual validation if it is present
+	if(isTRUE(MakePredictions)){
+		# Use Automatic prediction
+		Grp <- levels(ZIDat$Ident)	
+	} else {
+		# Use manual validation as identification
+		Grp <- levels(ZIDat$Class)
 	}
-
-	Grp <- levels(ZIDat$Ident)	
+	
 	if (is.null(abd.groups)) {
 		# Calculate groups (list with levels to consider)
 		abd.groups <- as.list(c("", Grp))
@@ -75,7 +99,7 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 			bio.groups <- as.list(c("", Grp))
 			names(bio.groups) <- c("total", Grp)
 		}
-        BIO <- Bio.sample(ZIDat, Sample, taxa = bio.taxa, conv = bio.conv,
+		BIO <- Bio.sample(ZIDat, Sample, taxa = bio.taxa, conv = bio.conv,
 			groups = bio.groups, header = headers[2], exportdir = exportdir)
 		RES <- cbind(RES, t(BIO))
 	}
@@ -103,13 +127,14 @@ ZIDesc = read.description("Description.zis"), abd.taxa = NULL, abd.groups = NULL
 abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1),
 headers = c("Abd", "Bio"), spec.taxa = NULL, spec.groups = NULL,
 spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE, exportdir = NULL,
-show.log = TRUE, bell = FALSE, SemiTab = NULL, Semi = FALSE)
+show.log = TRUE, bell = FALSE, ZIMan = NULL)
 {
 	# Determine which samples do we have to process...
 	if (is.null(ZidFiles)) {
     	# Get the list of files from ZIDesc
 		ZidFiles <- paste(ZIDesc$Label, ".zid", sep = "")
-		if (path == ".") path <- getwd()
+		if (path == ".")
+			path <- getwd()
 		ZidFiles <- file.path(path, ZidFiles)
 	} else { # Check that all zid files have entries in ZIDesc
 		Samples <- get.sampleinfo(ZidFiles, type = "sample",
@@ -129,68 +154,24 @@ show.log = TRUE, bell = FALSE, SemiTab = NULL, Semi = FALSE)
 	results <- lapply(1:imax, function (i) {
 		Progress(i, imax)
 		
-		# Modif Kevin Denis for semi automatic recognition
-		if (isTRUE(Semi)) {
-			if (is.null(SemiTab))
-				stop("You must provide a table with manual classification")
-			if (!inherits(SemiTab, "ZITrain"))
-				stop("SemiTab must be a ZItrain object with manual classification")
-      
-			if (noext(ZidFiles[i]) %in% sub("[+].*", "",
-				as.character(SemiTab$Label))) {
-				tryCatch({
-					res <- process.sample(ZidFiles[i], ZIClass = ZIClass,
-						ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
-						abd.type = abd.type, bio.taxa = bio.taxa,
-						bio.groups = bio.groups, bio.conv = bio.conv,
-						headers = headers, spec.taxa = spec.taxa,
-						spec.groups = spec.groups, spec.breaks = spec.breaks,
-						spec.use.Dil = spec.use.Dil, exportdir = exportdir,
-						show.log = FALSE, SemiTab = SemiTab, Semi = TRUE)
+		# Modif Kevin Denis for manual validation --> Add ZIMan argument
+		tryCatch({
+			res <- process.sample(ZidFiles[i], ZIClass = ZIClass,
+				ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
+				abd.type = abd.type, bio.taxa = bio.taxa,
+				bio.groups = bio.groups, bio.conv = bio.conv,
+				headers = headers, spec.taxa = spec.taxa,
+				spec.groups = spec.groups, spec.breaks = spec.breaks, 
+				spec.use.Dil = spec.use.Dil, exportdir = exportdir,
+				show.log = FALSE, ZIMan = ZIMan)
+			
+			logProcess("OK", ZidFiles[i])
+			return(res)
+		}, zooImageError = function (e) {
+			logError(e)
+			return(NULL)
+		})
 
-					logProcess("OK", ZidFiles[i])
-					return(res)
-				  }, zooImageError = function (e) {
-					logError(e)
-					return(NULL)
-				})      
-			} else {
-				tryCatch({
-					res <- process.sample(ZidFiles[i], ZIClass = ZIClass,
-						ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
-						abd.type = abd.type, bio.taxa = bio.taxa,
-						bio.groups = bio.groups, bio.conv = bio.conv,
-						headers = headers, spec.taxa = spec.taxa,
-						spec.groups = spec.groups, spec.breaks = spec.breaks, 
-						spec.use.Dil = spec.use.Dil, exportdir = exportdir,
-						show.log = FALSE)
-					
-					logProcess("OK", ZidFiles[i])
-					return(res)
-				  }, zooImageError = function (e) {
-					logError(e)
-					return(NULL)
-				})
-			}
-		} else { 		
-			tryCatch({
-				res <- process.sample(ZidFiles[i], ZIClass = ZIClass,
-					ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
-					abd.type = abd.type, bio.taxa = bio.taxa,
-					bio.groups = bio.groups, bio.conv = bio.conv,
-					headers = headers, spec.taxa = spec.taxa,
-					spec.groups = spec.groups, spec.breaks = spec.breaks, 
-					spec.use.Dil = spec.use.Dil, exportdir = exportdir,
-					show.log = FALSE)
-				
-				logProcess("OK", ZidFiles[i])
-				return(res)
-			}, zooImageError = function (e) {
-				logError(e)
-				return(NULL)
-			})
-		}
-		# End modif Kevin Denis
 	})
 	
 	ClearProgress()
@@ -222,7 +203,7 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 	Smp <- ZIDat[Smps == sample, ]
 	
 	# Determine the number of images in this sample
-	imgs <- unique(ZIDat$Label)
+	imgs <- as.character(unique(ZIDat$Label))
 	lists <- lapply( imgs, function(im) {
 		tryCatch({
 			Spectrum(Smp, im, taxa = taxa, groups = groups, breaks = breaks,
@@ -235,74 +216,90 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 "Spectrum" <- function (ZIDat, image,  taxa = NULL, groups = NULL,
 	breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE, RealT = FALSE)
 {
+	# Modif Kev for manual validation 2010-08-03 All $Ident replaced by [, Predictions]
+	if("Class" %in% names(ZIDat)){
+		# We use manual validation
+		Predictions <- "Class"
+	} else {
+		# We use automatic recognition
+		Predictions <- "Ident"
+	}
 	if (!isTRUE(RealT)) {
 		# Check arguments
-		if (!inherits(ZIDat, "ZIDat"))
+		if (!inherits(ZIDat, "ZIDat")) 
 			stop("'ZIDat' must be a 'ZIDat' object")
-		if (!is.character(image) || length(image) != 1)
-		stop("'image' must be a single character string")
-
+		if (!is.character(image) || length(image) != 1) 
+			stop("'image' must be a single character string")
+		
 		# Select the image
 		dat <- ZIDat[ZIDat$Label == image, ]
 		if (nrow(dat) == 0)
 			warning("ZIDat contains no '", image, "' data!")
 
 		# Remember dilution (in case there are no data)
-		Dil <- if (nrow(dat) > 0) dat$Dil[1] else 1
+		Dil <- if (nrow(dat) > 0)
+			dat$Dil[1]
+		else 1
 
-		# Taxa must correspond to levels in ZIDat$Ident
+		# Taxa must correspond to levels in ZIDat[, Predictions]
 		if (!is.null(taxa)) {
-			if (!all(taxa %in% levels(dat$Ident)))
-				stop("taxa not in 'ZIDat'")
-			dat <- dat[dat$Ident %in% taxa, ] # Select taxa
+			if (!all(taxa %in% levels(dat[, Predictions]))) 
+			    stop("taxa not in 'ZIDat'")
+			dat <- dat[dat[, Predictions] %in% taxa, ]
 		}
 		if (is.null(groups)) {
 			# Total spectrum only
 			groups <- list("")
 			names(groups) <- "total"
 		}
-		if (!inherits(groups, "list"))
-			stop("'groups' must be a 'list' object")
-
+		if (!inherits(groups, "list")) 
+		    stop("'groups' must be a 'list' object")
+ 
 		res <- lapply(groups, function (g) {
-			if (length(g) == 1 && g == "") { # Total abundance
-				Dat <- dat$ECD
-			} else { # Abundance for given groups
-				Dat <- dat$ECD[dat$Ident %in% g]
+			if (length(g) == 1 && g == "") {
+			    Dat <- dat$ECD
+			} else {
+			    # Abundance for given groups
+			    Dat <- dat$ECD[dat[, Predictions] %in% g]
 			}
 			spc <- table(cut(Dat, breaks = breaks))
-			if (isTRUE(use.Dil)) spc <- spc * Dil
+			if (isTRUE(use.Dil))
+				spc <- spc * Dil
 			return(spc)
 		})
 		names(res) <- names(groups)
 		attr(res, "breaks") <- breaks
-		attr(res, "unit")   <- if(use.Dil) "ind/m^3" else "count"
+		attr(res, "unit")  <- if(use.Dil)
+			"ind/m^3"
+		else "count"
 		return(res)
 	} else {
 		# Real Time recognition
 		# ZIDat is a table with VIS measurements and automatic Ident
 		# taxa must correspond to levels in ZIDat$Ident
 		if (!is.null(taxa)) {
-			if (!all(taxa %in% levels(dat$Ident)))
-				stop("taxa not in 'ZIDat'")
-			Dat <- ZIDat[ZIDat$Ident %in% taxa, ] # Select taxa
+			if (!all(taxa %in% levels(ZIDat[, Predictions])))
+				stop("taxa not in ZIDat")
+			Dat <- ZIDat[ZIDat[, Predictions] %in% taxa, ] # Select taxa
 		}
 		if (is.null(groups)) {
 			# Total spectrum only
 			groups <- list("")
 			names(groups) <- "total"
 		}
-		if (!inherits(groups, "list"))
-			stop("'groups' must be a 'list' object")
-
+		if (!inherits(groups, "list")) 
+		    stop("'groups' must be a 'list' object")
+ 
 		res <- lapply( groups, function (g) {
 			if (length(g) == 1 && g == "") { # Total abundance
 				Dat <- ZIDat$FIT_Diameter_ABD/1000 # in 'mm'
-			} else { # Abundance for given groups
-				Dat <- ZIDat$FIT_Diameter_ABD[ZIDat$Ident %in% g ]/1000 # in 'mm'
+			}
+			else { # Abundance for given groups
+				Dat <- ZIDat$FIT_Diameter_ABD[ZIDat[, Predictions] %in% g ]/1000 # in 'mm'
 			}
 			spc <- table(cut(Dat, breaks = breaks))
-			if (isTRUE(use.Dil)) spc <- spc * Dil
+			if (isTRUE(use.Dil))
+				spc <- spc * Dil
 			return(spc)
 		})
 	#	res <- list()
@@ -328,11 +325,20 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 "Bio.sample" <- function (ZIDat, sample, taxa = NULL, groups = NULL,
 conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 {
+	# Modif Kev for manual validation 2010-08-03 All $Ident replaced by [, Predictions]
+	if("Class" %in% names(ZIDat)){
+		# We use manual classification
+		Predictions <- "Class"
+	} else {
+		# We use automatic recogntion
+		Predictions <- "Ident"
+	}
+	
 	if (!isTRUE(RealT)) {
 		# Check arguments
-		if (!inherits(ZIDat, "ZIDat"))
+		if (!inherits(ZIDat, "ZIDat")) 
 			stop("'ZIDat' must be a 'ZIDat' object")
-		if (!is.character(sample) || length(sample) != 1)
+		if (!is.character(sample) || length(sample) != 1) 
 			stop("'sample' must be a single character string")
 
 		# Extract only data for a given sample
@@ -341,19 +347,25 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 
 		# Subsample, depending on taxa we keep
 		if (!is.null(taxa)) {
-				if (!all(taxa %in% levels(Smp$Ident)))
-					stop("taxa not in the sample")
-				Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
+			if (!all(taxa %in% levels(Smp[, Predictions]))) 
+				stop("taxa not in the sample")
+			Smp <- Smp[Smp[, Predictions] %in% taxa, ] # Select taxa
 		}
 		if (nrow(Smp) == 0)
 			stop("no data for this sample/taxa in ZIDat")
 
 		# Add P1/P2/P3 conversion params to the table
 		if (inherits(conv, "data.frame")) {
-			if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")) ||
-				!all(names(conv)[1:4] == c("Group", "a", "b", "c")))
-				stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
-			IdSmp <- as.character(Smp$Ident)
+
+# BUG if not abc as colnmaes even if P1 , P2 and P3 are correct!
+#			if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")) ||
+#				!all(names(conv)[1:4] == c("Group", "a", "b", "c")))
+#				stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
+			if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")))
+				stop("conv must have 'Group', 'P1', 'P2', 'P3'")
+# BUG if not abc as colnmaes even if P1 , P2 and P3 are correct!
+
+			IdSmp <- as.character(Smp[, Predictions])
 			IdSmpU <- unique(IdSmp)
 			IdConv <- as.character(conv$Group)
 			# Eliminate [other] from the table and the list and keep its values
@@ -365,22 +377,23 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 				conv <- conv[!IsOther, ]
 				conv$Group <- as.factor(as.character(conv$Group))
 			}
+			
 			if (!all(IdSmpU %in% IdConv)) {
 				if (nrow(Other) > 0) {
-			        # Fill all the other groups with the formula for other
+					# Fill all the other groups with the formula for other
 					# and issue a warning
-			        NotThere <- IdSmpU[!(IdSmpU %in% IdConv)]
-			        warning("Applying default [other] biomass conversion for ",
+					NotThere <- IdSmpU[!(IdSmpU %in% IdConv)]
+					warning("Applying default [other] biomass conversion for ",
 						paste(NotThere, collapse = ", "))
-			        N <- length(NotThere)
-			        conv2 <- data.frame(Group = NotThere, P1 = rep(Other[1, 2], N),
-			            P2 = rep(Other[1, 3], N), P3 = rep(Other[1, 4], N))
-			        conv <- rbind(conv, conv2)
-			        conv$Group <- as.factor(as.character(conv$Group))
-			    } else {
-			        # All groups must be there: stop!
-			        stop("Not all 'Ident' in sample match 'Group' in the conv table")
-			    }
+					N <- length(NotThere)
+					conv2 <- data.frame(Group = NotThere, P1 = rep(Other[1, 2], N),
+						P2 = rep(Other[1, 3], N), P3 = rep(Other[1, 4], N))
+					conv <- rbind(conv, conv2)
+					conv$Group <- as.factor(as.character(conv$Group))
+				} else {
+					# All groups must be there: stop!
+					stop("Not all 'Ident' in sample match 'Group' in the conv table")
+				}
 			}
 			# Line number of the corresponding parameter
 			# is calculated as the level of a factor whose levels
@@ -389,7 +402,8 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 			Smp$P1 <- conv[Pos, "P1"]
 			Smp$P2 <- conv[Pos, "P2"]
 			Smp$P3 <- conv[Pos, "P3"]
-		} else { # Use the same three parameters for all
+		} else {
+			# Use the same three parameters for all
 			if (length(conv) != 3)
 				stop("You must provide a vector with three numbers")
 			Smp$P1 <- conv[1]
@@ -402,7 +416,7 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 		# introducimos la formula de montagnes y la correccion para ESD(2.61951)
 		#Smp$Biomass <- (0.109 * (pi*4/3*((2.61951*Smp$ECD)/2)^3)^0.991) * Smp$Dil
 		if (!is.null(exportdir))
-		    write.table(Smp, file = paste(file.path(exportdir, sample),
+			write.table(Smp, file = paste(file.path(exportdir, sample),
 				"_Bio.txt", sep = ""), sep = "\t", row.names = FALSE)
 
 		if (is.null(groups)) {
@@ -410,33 +424,39 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 			res <- sum(Smp$Biomass)
 			names(res) <- header
 		} else {
-			if (!inherits(groups, "list"))
+			if (!inherits(groups, "list")) 
 				stop("'groups' must be a 'list' object")
-			res <- if (length(groups) == 1 && groups=="") {
+ 			res <- if (length(groups) == 1 && groups=="") {
 				sum(Smp$Biomass)
 			} else {
-				sapply(groups, function(g) sum(Smp$Biomass[Smp$Ident %in% g]))
+				sapply(groups, function(g) sum(Smp$Biomass[Smp[, Predictions] %in% g]))
 			}
 			names(res) <- paste(header, names(groups))
 		}
 		return(res)
 	} else {
 		# Real time recognition -> use FlowCAM measurements
-		# Subsample, depending on taxa we keep
 		Smp <- ZIDat
 		if (!is.null(taxa)) {
-			if (!all(taxa %in% levels(Smp$Ident)))
+			if (!all(taxa %in% levels(Smp[, Predictions])))
 				stop("taxa not in the sample")
-			Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
+			Smp <- Smp[Smp[, Predictions] %in% taxa, ]
 		}
 		if (nrow(Smp) == 0)
 			stop("no data for this sample/taxa in ZIDat")
+		
 		# Add P1/P2/P3 conversion params to the table
 		if (inherits(conv, "data.frame")) {
-			if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")) ||
-				!all(names(conv)[1:4] == c("Group", "a", "b", "c")))
-				stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
-			IdSmp <- as.character(Smp$Ident)
+
+# BUG if not abc as colnmaes even if P1 , P2 and P3 are correct!
+#			if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")) ||
+#				!all(names(conv)[1:4] == c("Group", "a", "b", "c")))
+#				stop("conv must have 'Group', 'P1', 'P2', 'P3' or 'a', 'b', 'c' columns!")
+			if (!all(names(conv)[1:4] == c("Group", "P1", "P2", "P3")))
+				stop("conv must have 'Group', 'P1', 'P2', 'P3'columns!")
+# BUG if not abc as colnmaes even if P1 , P2 and P3 are correct!
+
+			IdSmp <- as.character(Smp[, Predictions])
 			IdSmpU <- unique(IdSmp)
 			IdConv <- as.character(conv$Group)
 			# Eliminate [other] from the table and the list and keep its values
@@ -481,31 +501,24 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 		}
 		# Individual contributions to biomass by m^3
 		Smp$Biomass <- (Smp$P1 * Smp$FIT_Diameter_ABD + Smp$P2) ^ Smp$P3
-		# No dilution because real time process
-		# AZTI special treatment
-		# introducimos la formula de montagnes y la correccion para ESD(2.61951)
-		#Smp$Biomass <- (0.109 *
-		#(pi*4/3*((2.61951*Smp$FIT_Diameter_ABD)/2)^3)^0.991) * Smp$Dil
 		if (!is.null(exportdir))
 			write.table(Smp, file = paste(file.path(exportdir, sample),
 				"_Bio.txt", sep = ""), sep = "\t", row.names = FALSE)
-		# Export table in global R
-		# TODO: we should get rid of this!!!
 		assign("Bio.tab", Smp, envir = .GlobalEnv)
 		if (is.null(groups)) {
 			# Biomass of all groups
 			res <- NULL
-			grps <- levels(Smp$Ident)
+			grps <- levels(Smp[, Predictions])
 			for (i in 1:length(grps))
-				res[i] <- sum(Smp$Biomass[Smp$Ident %in% grps[i]])
+				res[i] <- sum(Smp$Biomass[Smp[, Predictions] %in% grps[i]])
 			names(res) <- grps
 		} else {
-			if (!inherits(groups, "list"))
+			if (!inherits(groups, "list")) 
 				stop("'groups' must be a 'list' object")
-			res <- if (length(groups) == 1 && groups=="") {
+ 			res <- if (length(groups) == 1 && groups=="") {
 				sum(Smp$Biomass)
 			} else {
-				sapply(groups, function (g) sum(Smp$Biomass[Smp$Ident %in% g]))
+				sapply(groups, function (g) sum(Smp$Biomass[Smp[, Predictions] %in% g]))
 			}
 			names(res) <- names(groups)
 		}
@@ -518,11 +531,20 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, RealT = FALSE)
 type = c("absolute", "log", "relative"), header = "Abd")
 {
 	# Check arguments
-	if (!inherits(ZIDat, "ZIDat"))
+	if (!inherits(ZIDat, "ZIDat")) 
 		stop("'ZIDat' must be a 'ZIDat' object")
-	if (!is.character(sample) || length(sample) != 1)
+	if (!is.character(sample) || length(sample) != 1) 
 		stop("'sample' must be a single character string")
-	type <- match.arg(type, several.ok = FALSE)
+ 	type <- match.arg(type, several.ok = FALSE)
+
+	# Modif Kev for manual validation 2010-08-03 All $Ident replaced by [, Predictions]
+	if("Class" %in% names(ZIDat)){
+		# We use manual classification
+		Predictions <- "Class"
+	} else {
+		# We use automatic recogntion
+		Predictions <- "Ident"
+	}
 	
 	# Extract only data for a given sample
 	Smps <- getSample(ZIDat$Label, unique = TRUE, must.have = sample)
@@ -530,9 +552,9 @@ type = c("absolute", "log", "relative"), header = "Abd")
 	
 	# Subsample, depending on taxa we keep
 	if (!is.null(taxa)) {
-		if (!all(taxa %in% levels(Smp$Ident)))
+		if (!all(taxa %in% levels(Smp[, Predictions])))
 			stop("taxa not in the sample")
-		Smp <- Smp[Smp$Ident %in% taxa, ] # Select taxa
+		Smp <- Smp[Smp[, Predictions] %in% taxa, ] # Select taxa
 	}
 	if (nrow(Smp) == 0)
 		stop("no data for this sample/taxa in ZIDat")
@@ -542,8 +564,7 @@ type = c("absolute", "log", "relative"), header = "Abd")
 		Table <- table(Smp$Dil)
 		Coefs <- 1 / Table / length(Table)
 		Dils <- as.numeric(names(Table))
-		Pos <- as.numeric(factor(as.character(Smp$Dil),
-			levels = as.character(Dils)))
+		Pos <- as.numeric(factor(as.character(Smp$Dil), levels = as.character(Dils)))
 		Smp$Coef <- Coefs[Pos]
 	} else {
 		# If absolute or log abundance, calculation in ind/m^3)
@@ -554,12 +575,12 @@ type = c("absolute", "log", "relative"), header = "Abd")
 		res <- sum(Smp$Coef)
 		names(res) <- header
 	} else {
-		if (!inherits(groups, "list"))
+		if (!inherits(groups, "list")) 
 			stop("'groups' must be a 'list' object")
-		res <- if (length(groups) == 1 && groups == "") {
+ 		res <- if (length(groups) == 1 && groups == "") {
 			sum(Smp$Coef)
 		} else {
-			sapply(groups, function (g) sum(Smp$Coef[Smp$Ident %in% g]))
+			sapply(groups, function (g) sum(Smp$Coef[Smp[, Predictions] %in% g]))
 		}
 		names(res) <- paste(header, names(groups))
 	}
