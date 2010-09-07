@@ -328,7 +328,7 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 
 	# Look if there is at least one image selected
 	if (length(Images) == 0) return(invisible())
-    dir <- dirname(Images[1])
+	dir <- dirname(Images[1])
 	Images <- basename(Images)
 
 	has <- function (extension, pattern = extensionPattern(extension))
@@ -340,6 +340,19 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 		return(make.zie(path = dir, Filemap = Images[1], check = TRUE,
 			show.log = TRUE))
     } else if (has("txt")) {
+		# Special Case for flowCAM images
+		FlowCAMPath  <- file.path(dir, Images)
+		FlowCAM.txt <- read.table(FlowCAMPath, header = TRUE, sep = "\t", dec = ".")
+		TargetName <- c("Station", "Date", "FlowCell", "Mode", "Magnification", "Exp_Name",
+			"Sample", "Dilution", "Sieve", "Volume", "Pump_Speed", "Duration", "Temperature",
+			"Salinity", "Gain_Fluo_Ch1", "Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2",
+			"Threshold_Scatter", "Min", "Max", "Size", "Dark_Threshold", "Light_Threshold",
+			"Dist_To_Nearest", "Lugol")
+		
+		if(isTRUE(all(TargetName %in% names(FlowCAM.txt)))){
+			res <- make.Zim.FlowCAM(import = FlowCAMPath, check.names = FALSE)
+			return(invisible(res))
+		}
 		pattern <- extensionPattern(".txt")
 		setKey("ImageIndex", "4")
 		logProcess("Creating .zie file...")
@@ -1306,4 +1319,26 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
     
     # Classify vignettes
     classifVign(zidfile = zid, ZIDat = ZIDat, ZIClass = ZICobj, Dir = FinalDir, Filter = Threshold)
+}
+
+# Create a batch file for FlowCAM image analysis
+"BatchFilePlugin" <- function()
+{
+  # Select a context file
+  if (isWin()) {
+    CtxFile <- choose.files(
+    caption = "Select a context file...",
+    multi = FALSE, filters = c("FlowCAM Context file",
+    "*.ctx"))
+  } else {
+    CtxFile <- tk_choose.files(
+      caption = "Select a context file...",
+      multi = FALSE, filters = matrix(c("FlowCAM Context file",
+      ".ctx"), ncol = 2, byrow = TRUE))
+  }
+
+  # create the table
+  create.BatchFile(ctx = CtxFile, fil = FALSE, largest = FALSE, vignettes = TRUE,
+    scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE, verbose = TRUE,
+    txt = FALSE, csv = TRUE, ImportName = "batchExampleParameters")
 }

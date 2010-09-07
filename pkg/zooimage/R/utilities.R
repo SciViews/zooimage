@@ -95,7 +95,7 @@ multi = FALSE, quote = TRUE, title = NULL)
 	
 	# Adapt title according to 'multi'
 	if (isTRUE(multi) && !is.null(title)) {
-    	title <- paste("Select one or several", Type, "files...")
+		title <- paste("Select one or several", Type, "files...")
 	} else {
 		title <- paste("Select one", Type, "file...")
 	}
@@ -117,12 +117,28 @@ multi = FALSE, quote = TRUE, title = NULL)
 			Img     = c("Tiff image files"        , ".tif",
 						"Jpeg image files"        , ".jpg",
 						"Zooimage import extensions",".zie",
-						"Table and ImportTemplate.zie",".txt"   ),
+						"Table and ImportTemplate.zie",".txt",
+# Modif Kev add option for FlowCAM images
+						"FlowCAM Table and ImportTemplate.zie",".txt"),
 			TifPgm  = c("Tiff image files"        , ".tif"      ),
 						"Pgm image files"         , ".pgm",
 			RData   = c("R data"                  , ".RData"    ))
 		filters <- matrix(filters, ncol = 2, byrow = TRUE)
 		res <- tk_choose.files(caption = title, multi = multi, filters = filters)
+	
+	#} else { # Old treatment using Windows-only function
+	#	filters <- switch(type,
+	#		ZipZid 	= c("ZooImage files (*.zip;*.zid)"          , "*.zip;*.zid"),
+	#		ZimZis 	= c("ZooImage metadata files (*.zim;*.zis)" , "*.zim;*.zis"),
+	#		Zip		= c("ZooImage picture files (*.zip)"        , "*.zip"      ),
+	#		Zid		= c("ZooImage data files (*.zid)"           , "*.zid"      ),
+	#		Zim		= c("ZooImage metadata files (*.zim)"       , "*.zim"      ),
+	#		Zis		= c("ZooImage sample files (*.zis)"         , "*.zis"      ),
+	#		Zie		= c("ZooImage extension files (*.zie)"      , "*.zie"      ))
+	#	filters <- matrix(filters, ncol = 2, byrow = TRUE)
+	#	res <- choose.files(caption = title, multi = multi, filters = filters)
+	#}
+	
 	if (length(res) && res != "" && quote)
 		res <- paste('"', res, '"', sep = "")
 	return(res)
@@ -522,3 +538,81 @@ multi = FALSE, quote = TRUE, title = NULL)
 	if (!Dec %in% DecList) Dec <- "."
 	return(Dec)
 }
+
+# function to be sure that numeric values are numeric!
+as.numeric.Vars <- function(ZIDat, Vars = NULL){
+    # Default values
+    if(is.null(Vars)){
+        Vars <- c("ECD",
+            "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
+            "FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio", "FIT_Transparency",
+            "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
+            "FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
+            "FIT_Feret_Max_Angle", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak",
+            "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF", "FIT_Avg_Red", "FIT_Avg_Green",
+            "FIT_Avg_Blue", "FIT_Red_Green_Ratio", "FIT_Blue_Green", "FIT_Red_Blue_Ratio",
+            "FIT_CaptureX", "FIT_CaptureY", "FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
+            "FIT_Cal_Const",
+            "Area", "Mean", "StdDev", "Mode", "Min", "Max", "X", "Y", "XM",
+            "YM", "Perim.", "BX", "BY", "Width", "Height", "Major", "Minor", "Angle", "Circ.",
+            "Feret", "IntDen", "Median", "Skew", "Kurt", "XStart", "YStart", "Dil"
+        )
+    }
+
+    # Names of ZIDat
+    Names <- names(ZIDat)
+
+    # Transform variables in numeric values
+    for (i in 1 : length(Vars)){
+        if(isTRUE(Vars[i] %in% Names)){
+            Num <- is.numeric(ZIDat[, Vars[i]])
+            if(!isTRUE(Num)){
+                ZIDat[, Vars[i]] <- as.numeric(ZIDat[, Vars[i]])
+            }
+        }
+    }
+    return(ZIDat)
+}
+
+# Function to reprocess a R.Data file in a zid file
+"NewRdata" <- function(path = "D", replace = TRUE)
+{
+  # list of zid files to reporcess
+  zid <- list.files(path = path, pattern = "^.*[.][zZ][iI][dD]")
+    if(is.null(zid)) stop("no zid files in the directory") # of no zid files
+  # path of zid files
+  path.zid <- paste(path, zid, sep = "/")
+  # loop to analyze zid files one by one
+  for (i in 1 : length(zid)){
+    # extract zid in 'path' directory
+    uncompress.zid(path.zid[i])
+    # calculate new Rdata
+    path.sample <- sub("[.][zZ][iI][dD]","",path.zid[i])
+    make.RData(path.sample, replace = replace)
+    # compress new zid file
+    compress.zid(path.sample, replace = replace)
+    }
+}
+
+# Function to create a batch file for FlowCAM image analysis
+"create.BatchFile" <- function(ctx, fil = FALSE, largest = FALSE, vignettes = TRUE,
+  scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE, verbose = TRUE,
+  txt = TRUE, csv = FALSE, ImportName = "batchExampleParameters")
+{
+  # Check arguments
+  if(!is.character(ctx)) stop("You must select a context file")
+  # Create the table of importation
+  ContextList <- read.ctx.all(ctx = ctx, fil = fil, largest = largest, vignettes = vignettes,
+    scalebar = scalebar, enhance = enhance, outline = outline, masks = masks, verbose = verbose)
+  # Write the table of importation in the sample directory
+  if(txt){
+    # Export table as txt format
+    write.table(ContextList, file = paste(dirname(dirname(ctx)), paste(ImportName, ".txt", sep = ""), sep = "/"),
+      quote = TRUE, sep = "\t", dec = ".", row.names = FALSE, col.names = TRUE)
+  } else {
+    # export table as csv format
+    write.csv(ContextList, file = paste(dirname(dirname(ctx)), paste(ImportName, ".csv", sep = ""), sep = "/"), row.names = FALSE)
+  }
+  cat(paste("Your import table has been created in", dirname(dirname(ctx)), " : your samples directory", "\n", sep = " "))
+}
+

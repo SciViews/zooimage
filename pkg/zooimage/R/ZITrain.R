@@ -187,6 +187,8 @@ na.rm = FALSE)
 	if (!is.null(desc)) attr(df, "desc") <- desc
 	Classes <- c("ZI1Train", "ZITrain", Classes)
 	class(df) <- Classes
+	# Be sure that variables are in numeric
+	df <- as.numeric.Vars(df)
 	return(df)
 }
 
