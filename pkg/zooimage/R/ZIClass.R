@@ -233,7 +233,7 @@ FormVarsSelect <- function (ZITrain)
 #		"Range", "MeanPos", "SDNorm", "CV", "logArea", "logPerim.", "logMajor",
 #		"logMinor", "logFeret"),
 #		multiple = TRUE, title = "Select variables to keep")
-	Notkeep <- select.list(list = mes, preselect = c("Id", "FIT_Cal_Const", "Item", "FIT_Raw_Area", "FIT_Raw_Feret_Max",
+	Notkeep <- select.list(choices = mes, preselect = c("Id", "FIT_Cal_Const", "Item", "FIT_Raw_Area", "FIT_Raw_Feret_Max",
 		"FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean", "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Feret_Max_Angle",
 		"FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
 		"FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",         

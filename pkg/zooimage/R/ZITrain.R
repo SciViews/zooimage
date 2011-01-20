@@ -105,14 +105,14 @@ na.rm = FALSE)
 	checkDirExists(dir)
 
 	# Make sure we have .RData files in this dir (otherwise it is perhaps not a
-    # training set root dir!
-    Dats <- list.files(dir, pattern = "_dat1[.]RData$", full.names = TRUE)
+	# training set root dir!
+	Dats <- list.files(dir, pattern = "_dat1[.]RData$", full.names = TRUE)
 	if (length(Dats) == 0)
 		stop("does not appear to be a ", getTemp("ZIname"),
 			" training set root dir!")
 
 	# list the jpg files (recursively) in the dir
-    res <- list.files.ext(dir, extension = "jpg", recursive = TRUE)
+	res <- list.files.ext(dir, extension = "jpg", recursive = TRUE)
 
 	# Check the result...
 	if (length(res) < 1)
@@ -136,7 +136,7 @@ na.rm = FALSE)
 	# Create a directory (a data frame with: Id, Class)
 	df <- data.frame(Id = Id, Class = Class)
 	df$Id <- as.character(df$Id)
-    nitems <- nrow(df)
+	nitems <- nrow(df)
 
 	# Read in all the .RData files from the root directory and merge them
     ### TODO: also collect metadata and merge them => make a merge function for
@@ -148,20 +148,37 @@ na.rm = FALSE)
 	load(Dats[1])
 	Dat <- ZI.sample
 	Classes <- class(Dat)
+	
+	# Modif Kev to free memory
+	Dat <- cbind(Id = make.Id(Dat), Dat)
+	Dat <- merge(Dat, df, by = "Id")
+
 	if (length(Dats) > 1) {
 		for (i in 2:length(Dats)) {
 			load(Dats[i])
+			ZI.sample <- cbind(Id = make.Id(ZI.sample), ZI.sample)
+			ZI.sample <- merge(ZI.sample, df, by = "Id")
 			Dat <- rbind(Dat, ZI.sample)
 		}
 	}
+	
+#	if (length(Dats) > 1) {
+#		for (i in 2:length(Dats)) {
+#			load(Dats[i])
+#			Dat <- rbind(Dat, ZI.sample)
+#		}
+#	}
+
 	rownames(Dat) <- 1:nrow(Dat)
 
 	# Create the Id column
-	Dat <- cbind(Id = make.Id(Dat), Dat)
+# Done in the loop!
+#	Dat <- cbind(Id = make.Id(Dat), Dat)
 
 	# Merge Dat & df by "Id"
-	df <- merge(Dat, df, by = "Id")
-
+#	df <- merge(Dat, df, by = "Id")
+	# rename Dat in df
+	df <- Dat
 	# Issue an error if there is no remaing row in the data frame
 	if (nrow(df) == 0)
 		stop("No valid item found (both with a vignette and with valid measurement data!")
