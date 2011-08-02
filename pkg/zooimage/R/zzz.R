@@ -58,8 +58,9 @@
 		}
 
 		# Make sure there is a key for ZooImage in the registry
-		ZIkey <- "HKEY_LOCAL_MACHINE\\Software\\ZooImage"
-		tk2reg.setkey(ZIkey)
+		## PhG: what is the purpose of tihs code?
+    ZIkey <- "HKEY_LOCAL_MACHINE\\Software\\ZooImage"
+		res <- try(tk2reg.setkey(ZIkey), silent = TRUE)
 		assignTemp("ZIkey", ZIkey)
 	}
 
