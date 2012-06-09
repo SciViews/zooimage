@@ -1,12 +1,12 @@
 Package: zooimage
 Type: Package
 Title: Analysis of numerical zooplankton images
-Version: 2.0-0
-Date: 2010-04-06
+Version: 3.0-0
+Date: 2012-05-05
 Author: Ph. Grosjean, K. Denis & R. Francois
-Maintainer: Ph. Grosjean <Philippe.Grosjean@umh.ac.be>
-Depends: R (>= 2.10.0), utils, tcltk, tcltk2, svMisc, svWidgets, svDialogs, grDevices, MASS, randomForest, ipred, rpart, e1071, nnet, class, tree, RColorBrewer, gplots
-Suggests: rJava, RWeka
+Maintainer: Ph. Grosjean <Philippe.Grosjean@umons.ac.be>
+Depends: R (>= 2.10.0), utils, svMisc, svDialogs, grDevices, MASS, randomForest, ipred, rpart, e1071, nnet, class, tree, RColorBrewer, gplots
+Suggests: rJava, RWeka, RWekajars
 Description: ZooImage is a free (open source) solution for analyzing digital
 	images of zooplankton. In combination with ImageJ, a free image analysis
 	system, it processes digital images, measures individuals, trains for

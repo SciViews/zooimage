@@ -1,5 +1,5 @@
 \name{gui}
-\alias{ExitPgm}
+\alias{exitPgm}
 \alias{closePhytoImage}
 
 \title{ The PhytoImage GUI (Graphical User Interface) }
@@ -7,15 +7,15 @@
   These function manage GUI parts, in addition to the GUI functions in the ZooImage package.
 }
 \usage{
-ExitPgm()
+exitPgm()
 closePhytoImage()
 }
 
 \value{
-  \code{ExitPgm()} and \code{closePhytoImage()} unload the phytoimage/zooimage packages
+  \code{exitPgm()} and \code{closePhytoImage()} unload the phytoimage/zooimage packages
   (for instance, to allow updating them).
 }
 
-\author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
+\author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
 \keyword{ utilities }

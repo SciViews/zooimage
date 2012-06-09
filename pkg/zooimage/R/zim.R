@@ -1,125 +1,125 @@
-# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
-#
-# This file is part of ZooImage
-#
-# ZooImage is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#
-# ZooImage is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+## Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+##
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-# Functions for manipulating .zim files (ZooImage Metadata/measurements)
-# These.zim files contain metadata required to analyze plankton images
-# and to record the way they were processed. Measurements on each identified
-# object can also be appended in a table at the end of this file (in this case,
-# the usual extension is '_dat1.zim' to indicate that data processed with
-# ZooImage version 1 are present in the file).
+## Functions for manipulating .zim files (ZooImage Metadata/measurements)
+## These.zim files contain metadata required to analyze plankton images
+## and to record the way they were processed. Measurements on each identified
+## object can also be appended in a table at the end of this file (in this case,
+## the usual extension is '_dat1.zim' to indicate that data processed with
+## ZooImage version 1 are present in the file).
 
-"make.zim" <- function (dir = ".", pattern = extensionPattern("tif"),
+zimMake <- function (dir = ".", pattern = extensionPattern("tif"),
 images = list.files(dir, pattern), show.log = TRUE, bell = FALSE)
 {
-	# Check that there are images to process
+	## Check that there are images to process
 	if (length(images) < 1)
 		stop("no images to process!")
 
-	# Name of images is something like SCS.xxxx-xx-xx.SS+Ann.tif
-	# We make the same .zim file for all ...+Ann images, so, reduce the list
-	zims <- sort(unique(get.sampleinfo(images, type = "fraction",
+	## Name of images is something like SCS.xxxx-xx-xx.SS+Ann.tif
+	## We make the same .zim file for all ...+Ann images, so, reduce the list
+	zims <- sort(unique(sampleInfo(images, type = "fraction",
 		ext = pattern)))
 	zims <- file.path(dir, sprintf("%s.zim", zims))
 	ok <- TRUE
 	zmax <- length(zims)
 	cat("Making & checking .zim files...\n")
 
-	# Start with a default template
+	## Start with a default template
 	template <- NULL
 	for (z in 1:zmax) {
 		Progress(z, zmax)
 
-		# .zim file does not exists... create it
+		## .zim file does not exists... create it
 		if (!file.exists(zims[z])) {
 			logProcess("Creating the file", zims[z])
-			create.zim(zims[z], template = template, wait = TRUE)
+			zimCreate(zims[z], template = template, wait = TRUE)
 
 			# Use the previous file as template
 			template = zims[z]
 		}
 
-		# Verify that the zim is correct
-		res <- verify.zim(zims[z])
+		## Verify that the zim is correct
+		res <- zimVerify(zims[z])
 		if (res != 0) ok <- FALSE
 	}
 
-	# Cleans up
-	ClearProgress()
-	finish.loopfunction(ok, bell = bell, show.log = show.log)
+	## Clean up
+	clearProgress()
+	finishLoop(ok, bell = bell, show.log = show.log)
 }
 
-# Check if a file is a "(_dat1).zim" file (must start with "ZI1" and have a
-# '.zim' extension)
-"is.zim" <- function (zimfile, check.ext = FALSE)
+## Check if a file is a "(_dat1).zim" file (must start with "ZI1" and have a
+## '.zim' extension)
+is.zim <- function (zimfile, check.ext = FALSE)
 {
-	# Check if the file does not exist or is a directory
+	## Check if the file does not exist or is a directory
 	checkFileExists(zimfile, force.file = TRUE, extension = "zim")
 
-	# Check the first line
+	## Check the first line
 	checkFirstLine(zimfile,
 		message = "File does not appears to be a ZooImage version 1 file, or it is corrupted!")
 
-	# Verything has passed
+	## Verything has passed
 	return(invisible(TRUE))
 }
 
-# Verify a "(_dat1).zim" file (all required fields + return the number of items
-# in it). If it succeeds, return the number of measured items as numeric
-# Otherwise, an error is generated by stop
-"verify.zim" <- function (zimfile, check.ext = FALSE,
+## Verify a "(_dat1).zim" file (all required fields + return the number of items
+## in it). If it succeeds, return the number of measured items as numeric
+## Otherwise, an error is generated by stop
+zimVerify <- function (zimfile, check.ext = FALSE,
 is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 {
-	# Required fields
-	# Here are predefined required fields before measurements
+	## Required fields
+	## Here are predefined required fields before measurements
 	reqfields <- c("[Image]", "Author", "Hardware", "Software",
         "ImageType", "[Fraction]", "Code", "Min", "Max", "[Subsample]",
         "SubPart", "SubMethod", "CellPart", "Replicates", "VolIni",
         "VolPrec")
 
-	# Then required fields when measurements are done
+	## Then required fields when measurements are done
 	reqfields2 <- c("[Process]")
-	# Finally, required column headers
+	## Finally, required column headers
     reqcols <- c("!Item", "Label", "BX", "BY", "Width", "Height")
 
-	# Determine if there are custom verification rules defined and if they
-	# are active
+	## Determine if there are custom verification rules defined and if they
+	## are active
     newRules <- getOption("ZI.zim")
     if (!is.null(newRules) && newRules$active == TRUE) {
-        # Do we delegate the whole process to a custom verification function?
+        ## Do we delegate the whole process to a custom verification function?
 		verify.all <- newRules$verify.all
         if (!is.null(verify.all) && inherits(verify.all, "function"))
             return(verify.all(zimfile = zimfile, check.ext = check.ext,
                 is.dat1 = is.dat1, chack.table = check.table))
 
-		# Should we use additional verification code instead?
+		## Should we use additional verification code instead?
 		verify <- newRules$verify
         reqfields <- c(reqfields, newRules$zim.required)
         reqfields2 <- c(reqfields2, newRules$dat1.zim.required)
         reqcols <- c(reqcols, newRules$dat1.data.required)
     } else verify <- NULL
 
-	# Check that it is a zimfile
+	## Check that it is a zimfile
 	is.zim(zimfile, check.ext = check.ext)
 
-	# Run first the extra verification code
+	## Run first the extra verification code
 	if (!is.null(verify) && inherits(verify, "function")) {
-		# We need to grab the error here and call stop from here to maintain
-		# the old API and to allow the custom version of stop to be called
-		# with the correct context of the "verify.zim" function
+		## We need to grab the error here and call stop from here to maintain
+		## the old API and to allow the custom version of stop to be called
+		## with the correct context of the zimVerify() function
 		res <- try(verify(zimfile, check.ext = check.ext, is.dat1 = is.dat1,
             check.table = check.table), silent = TRUE)
 		if (inherits(res, "try-error")) {
@@ -129,30 +129,30 @@ is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 		}
     }
 
-	# Read the file...
-	# Equal sign is used as comment char, in order to read only the field names
+	## Read the file...
+	## Equal sign is used as comment char, in order to read only the field names
     Lines <- scan(zimfile, character(), sep = "\t", skip = 1, flush = TRUE,
 		quiet = TRUE, blank.lines.skip = FALSE, comment.char = "=")
 
 	if (length(Lines) < 1) stop("File is empty!")
 
-	# Trim leading and trailing white spaces
+	## Trim leading and trailing white spaces
 	Lines <- trimstring(Lines)
 
-	# Check that all required fields are present for a simple .zim file
+	## Check that all required fields are present for a simple .zim file
     misfields <- reqfields[!(reqfields %in% Lines)]
     if (length(misfields) > 0)
         stop(paste("Missing fields:", paste(misfields, collapse = ", ")))
 
-	# Check if this is a _dat1.zim file with measurements
+	## Check if this is a _dat1.zim file with measurements
     if ("[Data]" %in% Lines) {
-        # Check for missing fields
+        ## Check for missing fields
 		misfields2 <- reqfields2[!(reqfields2 %in% Lines)]
         if (length(misfields2) > 0)
             stop(paste("Missing [Process] fields:", paste(misfields2,
 				collapse = ", ")))
 
-		# Check for required column headers
+		## Check for required column headers
 		posHeaders <- grep("^\\[Data\\]$", Lines)[1] + 1
 		LineHeader <- scan(zimfile, character(), sep = "%", skip = posHeaders,
 			nmax = 1, flush = TRUE, quiet = TRUE, comment.char = "=")
@@ -162,18 +162,18 @@ is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 		    stop(paste("Missing columns in the table:", paste(misHeaders,
 				collapse = ", ")))
 
-		# Check that the table can be read
+		## Check that the table can be read
         if (check.table) {
-			# Check the [Data] section
+			## Check the [Data] section
             posMes <- grep("^\\[Data\\]$", Lines)
             if (length(posMes) == 0) {
                 stop("Trying to read the table of measurements but no [Data] section found!")
             } else { # The [Data] section is found
-				# we try to call read.table, catch the error, and throw it again
-				# from here, because stop might have a different meaning
-				# in the context of the verify.zim function
-				# allowing to use the zooImage calling handlers,
-				# see errorHandling.R
+				## we try to call read.table, catch the error, and throw it again
+				## from here, because stop might have a different meaning
+				## in the context of the zimVerify() function
+				## allowing to use the zooImage calling handlers,
+				## see errorHandling.R
 				Mes <- try(read.table(zimfile, sep = "\t", header = TRUE,
 					skip = posMes + 1), silent = TRUE)
 				if (inherits(Mes, "try-error")) {
@@ -184,11 +184,11 @@ is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 				}
             }
         } else {
-			# Alternative method that does not read the table
-			# We don't read the table, use a different method to get the number
-			# of entries in it
-			# Read the last entry in Lines and convert it to a numeric value:
-			# should be the number of items measured
+			## Alternative method that does not read the table
+			## We don't read the table, use a different method to get the number
+			## of entries in it
+			## Read the last entry in Lines and convert it to a numeric value:
+			## should be the number of items measured
 			nItems <- Lines[length(Lines)]
 			if (sub("^[0-9]+$", "", nItems) != "")
 			    stop("Impossible to determine the number of items measured!")
@@ -199,39 +199,39 @@ is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 	} else return(0)
 }
 
-# Extract notes from .zip files and place them in .zim files
-"extract.zims" <- function (zipdir = ".", zipfiles = list.zip(zipdir),
+## Extract notes from .zip files and place them in .zim files
+zimExtractAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
 path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 {
-	# This requires the 'unzip' program! Make sure it is available
+	## This requires the 'unzip' program! Make sure it is available
 	checkCapable("unzip")
 
-	# Make sure all zipfiles are in the same directory
+	## Make sure all zipfiles are in the same directory
 	zipdirs <- dirname(zipfiles)
 	if (length(unique(zipdirs)) > 1)
 		stop("All zip files must be located in the same directory!")
 
-	# Check that the dir exists!
+	## Check that the dir exists!
 	checkDirExists(zipdir)
 
-	# Move to zipdir
+	## Move to zipdir
     inidir <- getwd()
 	setwd(zipdir)
 	on.exit(setwd(inidir))
 	zipdir <- getwd()   # That way, if we had ".", it is now expanded
 
-	# Use only basenames for zip files
+	## Use only basenames for zip files
 	zipfiles <- sort(basename(zipfiles))
 
-	# Check that zipfiles exist
+	## Check that zipfiles exist
 	if (!all(file.exists(zipfiles)))
 		stop("One or several files not found!")
 
-	# Look at the path where to place .zim files
+	## Look at the path where to place .zim files
 	if (is.null(path)) {
-		# The rule is the following one:
-		# 1) if last subdir is "_raw", then place .zim file up one level
-		# 2) else, place them in the same dir as the zip files
+		## The rule is the following one:
+		## 1) if last subdir is "_raw", then place .zim file up one level
+		## 2) else, place them in the same dir as the zip files
 		path <- zipdir
 		if (tolower(basename(path)) == "_raw") path <- dirname(path)
 	} else {    # Look if this is a valid directory
@@ -239,40 +239,40 @@ path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 		checkDirExists(path)
 	}
 
-	# Compute the names of .zim files from the names of .zip files
-	# Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from
-	# SCS.xxxx-xx-xx.SS+Fnn)
-	# If there are duplicates, only extract first one
-	zimfiles <- sprintf( "%s.zim", get.sampleinfo(zipfiles, "fraction",
+	## Compute the names of .zim files from the names of .zip files
+	## Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from
+	## SCS.xxxx-xx-xx.SS+Fnn)
+	## If there are duplicates, only extract first one
+	zimfiles <- sprintf( "%s.zim", sampleInfo(zipfiles, "fraction",
 		ext = extensionPattern(".zip")))
 	keep <- !duplicated(zimfiles)
 	zimfiles <- zimfiles[keep]
 	zipfiles <- zipfiles[keep]
 
-	# Make full path for zimfiles
+	## Make full path for zimfiles
 	zimfiles <- file.path(path, zimfiles)
 
-	# If replace == FALSE, eliminate existing .zim files from the list
+	## If replace == FALSE, eliminate existing .zim files from the list
 	if (!replace) {
 		keep <- !file.exists(zimfiles)
 		zimfiles <- zimfiles[keep]
 		zipfiles <- zipfiles[keep]
 	}
 
-	# Are there files left
+	## Are there files left
 	if (length(zimfiles) == 0)
 		stop("Done, no file to process!")
 
-	# Extract .zim files, one at a time, and check them
+	## Extract .zim files, one at a time, and check them
 	zmax <- length(zimfiles)
 
 	ok <- sapply(1:zmax, function (i) {
 		tryCatch({
-			# Extract the .zim file from zip comment
-			zipnote(zipfiles[i], zimfiles[i])
+			## Extract the .zim file from zip comment
+			zipNote(zipfiles[i], zimfiles[i])
 
-			# Check that the .zim file is created
-			if (verify.zim(zimfiles[i]) == 0) stop("problem")
+			## Check that the .zim file is created
+			if (zimVerify(zimfiles[i]) == 0) stop("problem")
 			return(TRUE)
 		}, zooImageError = function (e) {
 			logError(e)
@@ -280,36 +280,36 @@ path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 		})
 	})
 
-	# Cleans up
-	finish.loopfunction(ok = all(as.logical(ok)), ok.console.msg = "",
+	## Clean up
+	finishLoop(ok = all(as.logical(ok)), ok.console.msg = "",
 		nok.console.msg = "", bell = bell, show.log = show.log,
 		ok.log.msg = paste(zmax, ".zim files correctly extracted"),
 		nok.log.msg = paste(sum(!ok), "files not correctly extracted on", zmax))
 }
 
-# Given a list of .zip files and a path where .zim files are located,
-# the function updates comment fields of the .zip files with latest .zim content
-"refresh.zims" <- function (zipdir = ".", zipfiles = list.files.ext(zipdir,
-"zip"), zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE,
+## Given a list of .zip files and a path where .zim files are located,
+## the function updates comment fields of the .zip files with latest .zim content
+zimRefreshAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
+zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE,
 bell = FALSE)
 {
-	# Make sure 'zip' is available
+	## Make sure 'zip' is available
 	checkCapable("zip")
 
-    # Make sure we have full path for zip files
+    ## Make sure we have full path for zip files
 	if (zipdir == ".") zipdir <- getwd()
 	zipfiles <- file.path(zipdir, zipfiles)
 
-    # Check that zipfiles exist
+    ## Check that zipfiles exist
 	if (!all(file.exists(zipfiles)))
 		stop("One or several .zip files not found!")
 
-	# Look for the path where .zim files are located
+	## Look for the path where .zim files are located
 	if (is.null(zimdir)) {
-		# The rule is the following one:
-		# 1) if last subdir of .zip files is "_raw", then .zim files
-		#    should be up one level
-		# 2) else, look at the same dir
+		## The rule is the following one:
+		## 1) if last subdir of .zip files is "_raw", then .zim files
+		##    should be up one level
+		## 2) else, look at the same dir
 		zimdir <- zipdir
 		if (tolower(basename(zimdir)) == "_raw")
 			zimdir <- dirname(zimdir)
@@ -318,31 +318,31 @@ bell = FALSE)
 		checkDirExists(zimdir, message = "'%s' is not a valid directory!")
 	}
 
-	# Switch to that dir
+	## Switch to that dir
 	inidir <- getwd()
 	setwd(zimdir)
 	on.exit(setwd(inidir))
 
-	# Compute the names of zim files from the names of zip files
-	# Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from
-	# SCS.xxxx-xx-xx.SS+Fnn)
-	# If there are duplicates, only extract first one
+	## Compute the names of zim files from the names of zip files
+	## Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from
+	## SCS.xxxx-xx-xx.SS+Fnn)
+	## If there are duplicates, only extract first one
 	zimfiles <- sprintf( "%s.zim",
-		get.sampleinfo(zipfiles, "fraction", ext = extensionPattern("zip")))
+		sampleInfo(zipfiles, "fraction", ext = extensionPattern("zip")))
 
-	# Eliminate path for zimfiles
+	## Eliminate path for zimfiles
 	zimfiles <- basename(zimfiles)
 
-	# Keep only existing .zim files
+	## Keep only existing .zim files
 	keep <- file.exists(zimfiles)
 	zimfiles <- zimfiles[keep]
 	zipfiles <- zipfiles[keep]
 
-	# Are there files left?
+	## Are there files left?
 	if (length(zimfiles) == 0)
 		stop("Done, no file to update!")
 
-	# Check the zim files using verify.zim if necessary
+	## Check the zim files using zimVerify() if necessary
 	logClear()
 	ok <- TRUE
 	if (check.zim) {
@@ -354,7 +354,7 @@ bell = FALSE)
 		oks <- sapply(1:zmax, function (z) {
 			Progress(z, zmax)
 			tryCatch({
-				verify.zim(zfiles[z])
+				zimVerify(zfiles[z])
 				return(TRUE)
 			}, zooImageError = function (e) {
 				logError(e)
@@ -362,7 +362,7 @@ bell = FALSE)
 			})
 		})
 		ok <- all(oks)
-		ClearProgress()
+		clearProgress()
 	}
 
 	if (ok) {
@@ -374,58 +374,57 @@ bell = FALSE)
 		return(invisible(FALSE))
 	}
 
-	# If everything is OK, update comments in the zip files with the content
-	# of the .zim files
+	## If everything is OK, update comments in the zip files with the content
+	## of the .zim files
 	imax <- length(zipfiles)
 	cat("Update of .zip comments...\n")
 	logProcess("\nUpdate of .zip comments...")
 	for (i in 1:imax) {
 		Progress(i, imax)
 
-		# Replace the zip comment with content of the corresponding .zim file
-		zip_addcomments(zipfiles[i] , zimfiles[i],
+		## Replace the zip comment with content of the corresponding .zim file
+		zipNoteAdd(zipfiles[i] , zimfiles[i],
 			on.success = logProcess("OK", zipfiles[i]))
 	}
-	ClearProgress()
+	clearProgress()
 
-	# Cleans up
-	finish.loopfunction(ok, bell = bell, show.log = show.log)
+	## Clean up
+	finishLoop(ok, bell = bell, show.log = show.log)
 }
 
-# TODO: this looks a bit redundant with the edit.zim function
-"create.zim" <- function (zimfile = NULL, template = NULL,
+## TODO: this looks a bit redundant with the zimEdit function
+zimCreate <- function (zimfile = NULL, template = NULL,
 editor = getOption("ZIEditor"), edit = TRUE, wait = FALSE)
 {
-	# Create a .zim file from a template and edit it
+	## Create a .zim file from a template and edit it
 	if (is.null(zimfile) || zimfile == "") {
-		zimfile <- dialogString("Give a name for the new .zim file:",
-			"ZIM file creation", default = "myfile.zim")
-		if (is.null(zimfile) || length(zimfile) == 0 || zimfile == "")
-			return(invisible())
+		zimfile <- dlgInput("Give a name for the new .zim file:",
+			title = "ZIM file creation", default = "myfile.zim")$res
+		if (!length(zimfile)) return(invisible())
 		if (!hasExtension(zimfile, "zim"))
 			zimfile <- sprintf("%s.zim", zimfile)
 	}
 
-	# If the file exists, edit existing version instead
+	## If the file exists, edit existing version instead
     if (file.exists(zimfile))
 		if (isTRUE(edit)) {
-			return(edit.zim(zimfile, editor = editor, wait = wait))
+			return(zimEdit(zimfile, editor = editor, wait = wait))
 		} else return()
 
-	# Look for the template
+	## Look for the template
 	if (is.null(template)) {
 		template <- template("default.zim")
 	} else is.zim(template)
-	# Copy the template into the new file
+	## Copy the template into the new file
 	file.copy(template, zimfile)
-	# Possibly edit this new file
+	## Possibly edit this new file
 	if (isTRUE(edit)) {
-		return(edit.zim(zimfile, editor = editor, wait = wait))
+		return(zimEdit(zimfile, editor = editor, wait = wait))
 	} else return()
 }
 
-# Edit a .zim file
-"edit.zim" <- function (name, editor = getOption("ZIEditor"), wait = FALSE, ...)
+## Edit a .zim file
+zimEdit <- function (name, editor = getOption("ZIEditor"), wait = FALSE, ...)
 {
 	if (is.null(name) || name == "") {
 		name <- selectFile("Zim")
@@ -435,502 +434,534 @@ editor = getOption("ZIEditor"), edit = TRUE, wait = FALSE)
 }
 
 ## FlowCAM special treatment because the plugin doesn't export dat1.zim!
-# read list file
-"read.lst" <- function (x, skip = 2)
+## read list file
+lstRead <- function (x, skip = 2)
 {
-  # Determine the version of the FlowCAM
-  ncol <- length(read.table(x, header = FALSE, sep = ":", dec = ".", skip = 2, nrow = 1))
-  if(ncol <= 44){
-    # FlowCAM II with 44 columns
-    # read the table
-    tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
-    col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area", "FIT_Raw_Feret_Max",
-    "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
-    "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD", "FIT_Diameter_ABD",
-    "FIT_Length", "FIT_Width", "FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
-    "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness", "FIT_Elongation",
-    "FIT_Sum_Intensity", "FIT_Roughness", "FIT_Feret_Max_Angle", "FIT_Avg_Red",
-    "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak",
-    "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
-    "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
-    "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
-    "FIT_CaptureY", "FIT_High_U32", "FIT_Low_U32", "FIT_Total"), skip = skip)
-    # Add columns present in list files from FlowCAM III
-    tab$FIT_Feret_Min_Angle <- NA
-    tab$FIT_Edge_Gradient <- NA
-    tab$FIT_Timestamp1 <- NA
-    tab$FIT_Timestamp2 <- NA
-    tab$FIT_Source_Image <- NA
-    tab$FIT_Calibration_Image <- NA
-    tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-    # new variables calculation (present in dataexport.csv from the FlowCAM)
-    tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
-    tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
-    tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
-    tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
-    tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
-    tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
-    tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
-  } else {
-    # FlowCAM III with 47 columns
-    # read the table
-    tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
-    col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area", "FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min",
-    "FIT_Raw_Feret_Mean", "FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
-    "FIT_Diameter_ABD", "FIT_Length", "FIT_Width", "FIT_Diameter_ESD", "FIT_Perimeter",
-    "FIT_Convex_Perimeter", "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
-    "FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness", "FIT_Feret_Max_Angle",
-    "FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC",
-    "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
-    "FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
-    "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",
-    "FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image", "FIT_Calibration_Image"), skip = skip)
-    # Add columns present in list files from FlowCAM II
-    tab$FIT_High_U32 <- NA
-    tab$FIT_Low_U32 <- NA
-    tab$FIT_Total <- NA
-    # new variables calculation (present in dataexport.csv from the FlowCAM)
-    tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
-    tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
-    tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
-    tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
-    tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
-    tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
-    tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
-    tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-  }
-  return(tab)
+	## Determine the version of the FlowCAM
+	ncol <- length(read.table(x, header = FALSE, sep = ":", dec = ".", skip = 2,
+		nrows = 1))
+	if (ncol <= 44) {
+		## FlowCAM II with 44 columns
+		## read the table
+		tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
+			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
+				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
+				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
+				"FIT_Diameter_ABD", "FIT_Length", "FIT_Width",
+				"FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
+				"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
+				"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness",
+				"FIT_Feret_Max_Angle", "FIT_Avg_Red", "FIT_Avg_Green",
+				"FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF",
+				"FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
+				"FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
+				"FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
+				"FIT_CaptureY", "FIT_High_U32", "FIT_Low_U32", "FIT_Total"),
+			skip = skip)
+		## Add columns present in list files from FlowCAM III
+		tab$FIT_Feret_Min_Angle <- NA
+		tab$FIT_Edge_Gradient <- NA
+		tab$FIT_Timestamp1 <- NA
+		tab$FIT_Timestamp2 <- NA
+		tab$FIT_Source_Image <- NA
+		tab$FIT_Calibration_Image <- NA
+		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
+		## New variables calculation (present in dataexport.csv from the FlowCAM)
+		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
+		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
+		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
+		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
+		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
+		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
+		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
+	} else { # FlowCAM III with 47 columns
+		## Read the table
+		tab <- read.table(x, header = FALSE, sep = ":", dec = '.',
+			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
+				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
+				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
+				"FIT_Diameter_ABD", "FIT_Length", "FIT_Width",
+				"FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
+				"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
+				"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness",
+				"FIT_Feret_Max_Angle", "FIT_Feret_Min_Angle", "FIT_Avg_Red",
+				"FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak",
+				"FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
+				"FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename",
+				"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
+				"FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",
+				"FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image",
+				"FIT_Calibration_Image"),
+			skip = skip)
+		## Add columns present in list files from FlowCAM II
+		tab$FIT_High_U32 <- NA
+		tab$FIT_Low_U32 <- NA
+		tab$FIT_Total <- NA
+		## New variables calculation (present in dataexport.csv from the FlowCAM)
+		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
+		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
+		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
+		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
+		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
+		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
+		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
+		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
+	}
+	return(tab)
 }
 
-# read context file
-"read.ctx" <- function(ctx, fil = FALSE, largest = FALSE, vignettes = TRUE,
-  scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE, verbose = TRUE)
+## Read context file
+## TODO: avoid duplicated code between versions
+ctxRead <- function(ctx, fil = FALSE, largest = FALSE, vignettes = TRUE,
+scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE,
+verbose = TRUE)
 {
-  # Check arguments
-  if(!is.character(ctx)) stop("You must select a context file")
-  # Extract information from context file
-  # Scan the ctx file
-  Ctxfile <- scan(ctx, character(), sep = "\t", skip = 0,
-    blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-  # Read version of Visual SpreadSheet
-  ImageLine <- grep("^SoftwareVersion", Ctxfile)
-  SoftwareVersion <- as.character(sub("[ ]*$", "", sub("^SoftwareVersion[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-  # Read right parameters
-#  if(SoftwareVersion == "1.5.14" | SoftwareVersion == "1.5.16"){
-  if(sub("...$", "", SoftwareVersion) == "1.5" | sub("..$", "", SoftwareVersion)  == "1.5"){
-    # Read recalibration duration
-    ImageLine <- grep("^SaveIntervalMinutes", Ctxfile)
-    interval <- as.numeric(sub("[ ]*$", "", sub("^SaveIntervalMinutes[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read pixel size
-    ImageLine <- grep("^CalibrationConstant", Ctxfile)
-    pixelsize <- as.numeric(sub("[ ]*$", "", sub("^CalibrationConstant[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read minimal size
-    ImageLine <- grep("^MinESD", Ctxfile)
-    minsize <- as.numeric(sub("[ ]*$", "", sub("^MinESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read maximal size
-    ImageLine <- grep("^MaxESD", Ctxfile)
-    maxsize <- as.numeric(sub("[ ]*$", "", sub("^MaxESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read the kind of segmentation used
-    ImageLine <- grep("^CaptureDarkOrLightPixels", Ctxfile)
-    DarkOrLight <- as.numeric(sub("[ ]*$", "", sub("^CaptureDarkOrLightPixels[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    if(DarkOrLight == 0){
-      use <- "dark"
-      # Read segmentation threshold
-      ImageLine <- grep("^Threshold", Ctxfile)
-      thresholddark <- as.numeric(sub("[ ]*$", "", sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-      thresholdlight <- as.numeric(sub("[ ]*$", "", sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    }
-    if(DarkOrLight == 1){
-      use <- "light"
-      # Read segmentation threshold
-      ImageLine <- grep("^Threshold", Ctxfile)
-      thresholddark <- as.numeric(sub("[ ]*$", "", sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-      thresholdlight <- as.numeric(sub("[ ]*$", "", sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    }
-    if(DarkOrLight == 2){
-      use <- "both"
-      # Read segmentation threshold
-      ImageLine <- grep("^Threshold", Ctxfile)
-      thresholddark <- as.numeric(sub("[ ]*$", "", sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-      thresholdlight <- as.numeric(sub("[ ]*$", "", sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    }
-    # Path of the export of data
-    select <- paste(basename(dirname(ctx)), "data_export.csv", sep = "/")
-    # Sample name
-    Sample_Name <- basename(dirname(ctx))
-    # Read Fluo information
-    ImageLine <- grep("^Ch1Gain", Ctxfile)
-    Gain_Fluo_Ch1 <- as.numeric(sub("[ ]*$", "", sub("^Ch1Gain[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^Ch1Threshold", Ctxfile)
-    Threshold_Fluo_Ch1 <- as.numeric(sub("[ ]*$", "", sub("^Ch1Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^Ch2Gain", Ctxfile)
-    Gain_Fluo_Ch2 <- as.numeric(sub("[ ]*$", "", sub("^Ch2Gain[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^Ch2Threshold", Ctxfile)
-    Threshold_Fluo_Ch2 <- as.numeric(sub("[ ]*$", "", sub("^Ch2Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read information about FlowCell
-    ImageLine <- grep("^FlowCellDepth", Ctxfile)
-    FlowCell <- as.numeric(sub("[ ]*$", "", sub("^FlowCellDepth[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Distance to nearest
-    ImageLine <- grep("^DistanceToNeighbor", Ctxfile)
-    Dist_To_Nearest <- as.numeric(sub("[ ]*$", "", sub("^DistanceToNeighbor[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Calculation of volume analyzed
-    # Number of raw images analyzed
-    ImageLine <- grep("^RawImageTotal", Ctxfile)
-    Raw <- as.numeric(sub("[ ]*$", "", sub("^RawImageTotal[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Area analysed (Length * Width) in pixels
-    ImageLine <- grep("^AcceptableLeft", Ctxfile)
-    Left <- as.numeric(sub("[ ]*$", "", sub("^AcceptableLeft[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^AcceptableRight", Ctxfile)
-    Right <- as.numeric(sub("[ ]*$", "", sub("^AcceptableRight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^AcceptableTop", Ctxfile)
-    Top <- as.numeric(sub("[ ]*$", "", sub("^AcceptableTop[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^AcceptableBottom", Ctxfile)
-    Bottom <- as.numeric(sub("[ ]*$", "", sub("^AcceptableBottom[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # calculation of area of one image in µm² (R-L * PixelSize) * (B-T * PixelSize)
-    Area <- ((Right - Left) * pixelsize) * ((Bottom - Top) * pixelsize)
-    # Total volume analysed (cm³ = ml)
-    VolumeDigitized <- (Area/(10^8)) * (FlowCell/10000) * Raw
-    # New fields in the ctx FlowCAM III
-    Threshold_Scatter <- NA
-    VolumeDigitized_VIS <- NA
-    Dilution_VIS <- NA
-    AutoImageRate <- NA
-    FlashDuration <- NA
-  }
-#  if(SoftwareVersion == "2.1.47" | SoftwareVersion == "2.1.49" | SoftwareVersion == "2.2.1"){
-  if(sub("...$", "", SoftwareVersion) == "2.1" | sub("..$", "", SoftwareVersion) == "2.1" | sub("..$", "", SoftwareVersion) == "2.2" | sub("...$", "", SoftwareVersion) == "2.2"){
-    # Fields not present in new version
-    Gain_Fluo_Ch1 <- NA
-    Gain_Fluo_Ch2 <- NA
-    # Read recalibration duration
-    ImageLine <- grep("^RecalibrationIntervalMinutes", Ctxfile)
-    interval <- as.numeric(sub("[ ]*$", "", sub("^RecalibrationIntervalMinutes[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read pixel size
-    ImageLine <- grep("^CalibrationConstant", Ctxfile)
-    pixelsize <- as.numeric(sub("[ ]*$", "", sub("^CalibrationConstant[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read minimal size
-    ImageLine <- grep("^MinESD", Ctxfile)
-    minsize <- as.numeric(sub("[ ]*$", "", sub("^MinESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read maximal size
-    ImageLine <- grep("^MaxESD", Ctxfile)
-    maxsize <- as.numeric(sub("[ ]*$", "", sub("^MaxESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read the kind of segmentation used
-    ImageLine <- grep("^CaptureDarkOrLightPixels", Ctxfile)
-    CaptureDarkOrLightPixels <- as.numeric(sub("[ ]*$", "", sub("^CaptureDarkOrLightPixels[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    if(CaptureDarkOrLightPixels == 0){
-      use <- "dark"
-      # Read segmentation threshold
-      ImageLine <- grep("^ThresholdDark", Ctxfile)
-      thresholddark <- as.numeric(sub("[ ]*$", "", sub("^ThresholdDark[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-      ImageLine <- grep("^ThresholdLight", Ctxfile)
-      thresholdlight <- as.numeric(sub("[ ]*$", "", sub("^ThresholdLight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    }
-    if(CaptureDarkOrLightPixels == 1){
-      use <- "light"
-      # Read segmentation threshold
-      ImageLine <- grep("^ThresholdDark", Ctxfile)
-      thresholddark <- as.numeric(sub("[ ]*$", "", sub("^ThresholdDark[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-      ImageLine <- grep("^ThresholdLight", Ctxfile)
-      thresholdlight <- as.numeric(sub("[ ]*$", "", sub("^ThresholdLight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    }
-    if(CaptureDarkOrLightPixels == 2){
-      use <- "both"
-      # Read segmentation threshold
-      ImageLine <- grep("^ThresholdDark", Ctxfile)
-      thresholddark <- as.numeric(sub("[ ]*$", "", sub("^ThresholdDark[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-      ImageLine <- grep("^ThresholdLight", Ctxfile)
-      thresholdlight <- as.numeric(sub("[ ]*$", "", sub("^ThresholdLight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    }
-    # Path of the export of data
-    ImageLine <- grep("^AutoExportList", Ctxfile)
-    AutoExportList <- as.numeric(sub("[ ]*$", "", sub("^AutoExportList[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    if(AutoExportList == 1){
-      select <- paste(basename(dirname(ctx)), paste(basename(dirname(ctx)),".csv", sep = ""), sep = "/")
-    } else {
-      select <- paste(basename(dirname(ctx)), "data_export.csv", sep = "/")
-    }
-    # Sample name
-    Sample_Name <- basename(dirname(ctx))
-    # Read Fluo information
-    ImageLine <- grep("^Ch1Threshold", Ctxfile)
-    Threshold_Fluo_Ch1 <- as.numeric(sub("[ ]*$", "", sub("^Ch1Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^Ch2Threshold", Ctxfile)
-    Threshold_Fluo_Ch2 <- as.numeric(sub("[ ]*$", "", sub("^Ch2Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read Scatter information
-    ImageLine <- grep("^ScatterThreshold", Ctxfile)
-    Threshold_Scatter <- as.numeric(sub("[ ]*$", "", sub("^ScatterThreshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Read information about FlowCell
-    ImageLine <- grep("^FlowCellDepth", Ctxfile)
-    FlowCell <- as.numeric(sub("[ ]*$", "", sub("^FlowCellDepth[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Distance to nearest
-    ImageLine <- grep("^DistanceToNeighbor", Ctxfile)
-    Dist_To_Nearest <- as.numeric(sub("[ ]*$", "", sub("^DistanceToNeighbor[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Calculation of volume analyzed
-    # Number of raw images analyzed
-    ImageLine <- grep("^RawImageTotal", Ctxfile)
-    Raw <- as.numeric(sub("[ ]*$", "", sub("^RawImageTotal[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Area analysed (Length * Width) in pixels
-    ImageLine <- grep("^AcceptableLeft", Ctxfile)
-    Left <- as.numeric(sub("[ ]*$", "", sub("^AcceptableLeft[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^AcceptableRight", Ctxfile)
-    Right <- as.numeric(sub("[ ]*$", "", sub("^AcceptableRight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^AcceptableTop", Ctxfile)
-    Top <- as.numeric(sub("[ ]*$", "", sub("^AcceptableTop[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    ImageLine <- grep("^AcceptableBottom", Ctxfile)
-    Bottom <- as.numeric(sub("[ ]*$", "", sub("^AcceptableBottom[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # calculation of area of one image in µm² (R-L * PixelSize) * (B-T * PixelSize)
-    Area <- ((Right - Left) * pixelsize) * ((Bottom - Top) * pixelsize)
-    # Total volume analysed (cm³ = ml)
-    VolumeDigitized <- (Area/(10^8)) * (FlowCell/10000) * Raw
-    # Totla volume analyzed calculated by Visual Spreadsheet
-    ImageLine <- grep("^TotalVolumeML", Ctxfile)
-    VolumeDigitized_VIS <- as.numeric(sub("[ ]*$", "", sub("^TotalVolumeML[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Dilution
-    ImageLine <- grep("^VolumeCalibrationFactor", Ctxfile)
-    Dilution_VIS <- as.numeric(sub("[ ]*$", "", sub("^VolumeCalibrationFactor[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # AutoImage
-    ImageLine <- grep("^AutoImageRate", Ctxfile)
-    AutoImageRate <- as.numeric(sub("[ ]*$", "", sub("^AutoImageRate[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-    # Flash Duration
-    ImageLine <- grep("^FlashDuration", Ctxfile)
-    FlashDuration <- as.numeric(sub("[ ]*$", "", sub("^FlashDuration[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
-  }
-  # Create a table
-  res <- data.frame(select, interval, pixelsize, minsize, maxsize, use, thresholddark, thresholdlight,
-    fil = fil, largest = largest, vignettes = vignettes, scalebar = scalebar, enhance = enhance, outline = outline,
-    masks = masks, verbose = verbose, Sample_Name, FlowCell, Gain_Fluo_Ch1, Threshold_Fluo_Ch1,
-    Gain_Fluo_Ch2, Threshold_Fluo_Ch2, Threshold_Scatter, Dist_To_Nearest, VolumeDigitized, VolumeDigitized_VIS,
-    SoftwareVersion, Dilution_VIS, AutoImageRate, FlashDuration)
-  # Print results
-  return(res)
+	## Check arguments
+	if (!is.character(ctx)) stop("You must select a context file")
+	## Extract information from context file
+	## Scan the ctx file
+	Ctxfile <- scan(ctx, character(), sep = "\t", skip = 0,
+		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
+	## Read version of Visual SpreadSheet
+	ImageLine <- grep("^SoftwareVersion", Ctxfile)
+	SoftwareVersion <- as.character(sub("[ ]*$", "",
+		sub("^SoftwareVersion[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+	Version <- sub("...$", "", SoftwareVersion)
+	## Read right parameters
+	if (Version == "1.5") {
+		## Read recalibration duration
+		ImageLine <- grep("^SaveIntervalMinutes", Ctxfile)
+		interval <- as.numeric(sub("[ ]*$", "",
+			sub("^SaveIntervalMinutes[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read pixel size
+		ImageLine <- grep("^CalibrationConstant", Ctxfile)
+		pixelsize <- as.numeric(sub("[ ]*$", "",
+			sub("^CalibrationConstant[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read minimal size
+		ImageLine <- grep("^MinESD", Ctxfile)
+		minsize <- as.numeric(sub("[ ]*$", "",
+			sub("^MinESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read maximal size
+		ImageLine <- grep("^MaxESD", Ctxfile)
+		maxsize <- as.numeric(sub("[ ]*$", "",
+			sub("^MaxESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read the kind of segmentation used
+		ImageLine <- grep("^CaptureDarkOrLightPixels", Ctxfile)
+		DarkOrLight <- as.numeric(sub("[ ]*$", "",
+			sub("^CaptureDarkOrLightPixels[ ]*[=][ ]*", "",
+				Ctxfile[ImageLine[1]])))
+		if (DarkOrLight == 0) {
+			use <- "dark"
+		} else if (DarkOrLight == 1) {
+			use <- "light"	
+		} else use <- "both"
+		## Read segmentation threshold
+		ImageLine <- grep("^Threshold", Ctxfile)
+		thresholddark <- as.numeric(sub("[ ]*$", "",
+			sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		thresholdlight <- as.numeric(sub("[ ]*$", "",
+			sub("^Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+    
+		## Path of the export of data
+		select <- file.path(basename(dirname(ctx)), "data_export.csv")
+		## Sample name
+		Sample_Name <- basename(dirname(ctx))
+		## Read Fluo information
+		ImageLine <- grep("^Ch1Gain", Ctxfile)
+		Gain_Fluo_Ch1 <- as.numeric(sub("[ ]*$", "",
+			sub("^Ch1Gain[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^Ch1Threshold", Ctxfile)
+		Threshold_Fluo_Ch1 <- as.numeric(sub("[ ]*$", "",
+			sub("^Ch1Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^Ch2Gain", Ctxfile)
+		Gain_Fluo_Ch2 <- as.numeric(sub("[ ]*$", "",
+			sub("^Ch2Gain[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^Ch2Threshold", Ctxfile)
+		Threshold_Fluo_Ch2 <- as.numeric(sub("[ ]*$", "",
+			sub("^Ch2Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read information about FlowCell
+		ImageLine <- grep("^FlowCellDepth", Ctxfile)
+		FlowCell <- as.numeric(sub("[ ]*$", "",
+			sub("^FlowCellDepth[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Distance to nearest
+		ImageLine <- grep("^DistanceToNeighbor", Ctxfile)
+		Dist_To_Nearest <- as.numeric(sub("[ ]*$", "",
+			sub("^DistanceToNeighbor[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Calculation of volume analyzed
+		## Number of raw images analyzed
+		ImageLine <- grep("^RawImageTotal", Ctxfile)
+		Raw <- as.numeric(sub("[ ]*$", "",
+			sub("^RawImageTotal[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Area analysed (Length * Width) in pixels
+		ImageLine <- grep("^AcceptableLeft", Ctxfile)
+		Left <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableLeft[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^AcceptableRight", Ctxfile)
+		Right <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableRight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^AcceptableTop", Ctxfile)
+		Top <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableTop[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^AcceptableBottom", Ctxfile)
+		Bottom <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableBottom[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Calculation of area of one image in
+		## µm <= (R-L * PixelSize) * (B-T * PixelSize)
+		Area <- ((Right - Left) * pixelsize) * ((Bottom - Top) * pixelsize)
+		## Total volume analysed (cm³ = ml)
+		VolumeDigitized <- (Area/(10^8)) * (FlowCell/10000) * Raw
+		## New fields in the ctx FlowCAM III
+		Threshold_Scatter <- NA
+		VolumeDigitized_VIS <- NA
+		Dilution_VIS <- NA
+		AutoImageRate <- NA
+		FlashDuration <- NA
+	} else if (Version == "2.1" || Version == "2.2") {
+		## Fields not present in new version
+		Gain_Fluo_Ch1 <- NA
+		Gain_Fluo_Ch2 <- NA
+		## Read recalibration duration
+		ImageLine <- grep("^RecalibrationIntervalMinutes", Ctxfile)
+		interval <- as.numeric(sub("[ ]*$", "",
+			sub("^RecalibrationIntervalMinutes[ ]*[=][ ]*", "",
+			Ctxfile[ImageLine[1]])))
+		## Read pixel size
+		ImageLine <- grep("^CalibrationConstant", Ctxfile)
+		pixelsize <- as.numeric(sub("[ ]*$", "",
+			sub("^CalibrationConstant[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read minimal size
+		ImageLine <- grep("^MinESD", Ctxfile)
+		minsize <- as.numeric(sub("[ ]*$", "",
+			sub("^MinESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read maximal size
+		ImageLine <- grep("^MaxESD", Ctxfile)
+		maxsize <- as.numeric(sub("[ ]*$", "",
+			sub("^MaxESD[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read the kind of segmentation used
+		ImageLine <- grep("^CaptureDarkOrLightPixels", Ctxfile)
+		CaptureDarkOrLightPixels <- as.numeric(sub("[ ]*$", "",
+			sub("^CaptureDarkOrLightPixels[ ]*[=][ ]*", "",
+			Ctxfile[ImageLine[1]])))
+		if (CaptureDarkOrLightPixels == 0) {
+			use <- "dark"
+		} else if (CaptureDarkOrLightPixels == 1) {
+			use <- "light"
+		} else use <- "both"
+		## Read segmentation threshold
+		ImageLine <- grep("^ThresholdDark", Ctxfile)
+		thresholddark <- as.numeric(sub("[ ]*$", "",
+			sub("^ThresholdDark[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^ThresholdLight", Ctxfile)
+		thresholdlight <- as.numeric(sub("[ ]*$", "",
+			sub("^ThresholdLight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+
+		## Path of the export of data
+		ImageLine <- grep("^AutoExportList", Ctxfile)
+		AutoExportList <- as.numeric(sub("[ ]*$", "",
+			sub("^AutoExportList[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		if (AutoExportList == 1) {
+			select <- file.path(basename(dirname(ctx)),
+				paste(basename(dirname(ctx)),"csv", sep = "."))
+		} else {
+			select <- file.path(basename(dirname(ctx)), "data_export.csv")
+		}
+		## Sample name
+		Sample_Name <- basename(dirname(ctx))
+		## Read Fluo information
+		ImageLine <- grep("^Ch1Threshold", Ctxfile)
+		Threshold_Fluo_Ch1 <- as.numeric(sub("[ ]*$", "",
+			sub("^Ch1Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^Ch2Threshold", Ctxfile)
+		Threshold_Fluo_Ch2 <- as.numeric(sub("[ ]*$", "",
+			sub("^Ch2Threshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read Scatter information
+		ImageLine <- grep("^ScatterThreshold", Ctxfile)
+		Threshold_Scatter <- as.numeric(sub("[ ]*$", "",
+			sub("^ScatterThreshold[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Read information about FlowCell
+		ImageLine <- grep("^FlowCellDepth", Ctxfile)
+		FlowCell <- as.numeric(sub("[ ]*$", "",
+			sub("^FlowCellDepth[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Distance to nearest
+		ImageLine <- grep("^DistanceToNeighbor", Ctxfile)
+		Dist_To_Nearest <- as.numeric(sub("[ ]*$", "",
+			sub("^DistanceToNeighbor[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Calculation of volume analyzed
+		## Number of raw images analyzed
+		ImageLine <- grep("^RawImageTotal", Ctxfile)
+		Raw <- as.numeric(sub("[ ]*$", "",
+			sub("^RawImageTotal[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Area analysed (Length * Width) in pixels
+		ImageLine <- grep("^AcceptableLeft", Ctxfile)
+		Left <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableLeft[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^AcceptableRight", Ctxfile)
+		Right <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableRight[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^AcceptableTop", Ctxfile)
+		Top <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableTop[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		ImageLine <- grep("^AcceptableBottom", Ctxfile)
+		Bottom <- as.numeric(sub("[ ]*$", "",
+			sub("^AcceptableBottom[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Calculation of area of one image in µm
+		## <= (R-L * PixelSize) * (B-T * PixelSize)
+		Area <- ((Right - Left) * pixelsize) * ((Bottom - Top) * pixelsize)
+		## Total volume analysed (cm³ = ml)
+		VolumeDigitized <- (Area/(10^8)) * (FlowCell/10000) * Raw
+		## Total volume analyzed calculated by Visual Spreadsheet
+		ImageLine <- grep("^TotalVolumeML", Ctxfile)
+		VolumeDigitized_VIS <- as.numeric(sub("[ ]*$", "",
+			sub("^TotalVolumeML[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Dilution
+		ImageLine <- grep("^VolumeCalibrationFactor", Ctxfile)
+		Dilution_VIS <- as.numeric(sub("[ ]*$", "",
+			sub("^VolumeCalibrationFactor[ ]*[=][ ]*", "",
+			Ctxfile[ImageLine[1]])))
+		## AutoImage
+		ImageLine <- grep("^AutoImageRate", Ctxfile)
+		AutoImageRate <- as.numeric(sub("[ ]*$", "",
+		sub("^AutoImageRate[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+		## Flash Duration
+		ImageLine <- grep("^FlashDuration", Ctxfile)
+		FlashDuration <- as.numeric(sub("[ ]*$", "",
+		sub("^FlashDuration[ ]*[=][ ]*", "", Ctxfile[ImageLine[1]])))
+	}
+	## Create a table
+	res <- data.frame(select, interval, pixelsize, minsize, maxsize, use,
+		thresholddark, thresholdlight, fil = fil, largest = largest,
+		vignettes = vignettes, scalebar = scalebar, enhance = enhance,
+		outline = outline, masks = masks, verbose = verbose, Sample_Name,
+		FlowCell, Gain_Fluo_Ch1, Threshold_Fluo_Ch1, Gain_Fluo_Ch2,
+		Threshold_Fluo_Ch2, Threshold_Scatter, Dist_To_Nearest, VolumeDigitized,
+		VolumeDigitized_VIS, SoftwareVersion, Dilution_VIS, AutoImageRate,
+		FlashDuration)
+	## Print results
+	return(res)
 }
 
-# Read several ctx files
-"read.ctx.all" <- function(ctx, fil = FALSE, largest = FALSE, vignettes = TRUE,
-  scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE, verbose = TRUE)
+## Read several ctx files
+ctxReadAll <- function (ctx, fil = FALSE, largest = FALSE, vignettes = TRUE,
+scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE,
+verbose = TRUE)
 {
-  # Check arguments
-  if(!is.character(ctx)) stop("You must select a context file")
-  # list all ctx files to read
-  ListCtx <- list.files(path = dirname(dirname(ctx)), pattern = ".ctx", all.files = FALSE,
-    full.names = TRUE, recursive = TRUE)
-  # Create a loop
-  # make a loop to read each one
-  if(length(ListCtx) > 1){
-    # More than one ctx file to read
-    AllCtx <- NULL
-    for(i in 1 : length(ListCtx)){
-      if(is.null(AllCtx)){
-        AllCtx <- read.ctx(ListCtx[i], fil = fil, largest = largest, vignettes = vignettes,
-          scalebar = scalebar, enhance = enhance, outline = outline, masks = masks, verbose = verbose)
-      } else {
-        Ctx_i <- read.ctx(ListCtx[i], fil = fil, largest = largest, vignettes = vignettes,
-          scalebar = scalebar, enhance = enhance, outline = outline, masks = masks, verbose = verbose)
-        AllCtx <- rbind(AllCtx, Ctx_i)
-      }
-    }
-  } else {
-    # Only one ctx file to read
-    AllCtx <- read.ctx(ListCtx, fil = FALSE, largest = FALSE, vignettes = TRUE,
-      scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE, verbose = TRUE)
-  }
-  return(AllCtx)
+	## Check arguments
+	if (!is.character(ctx)) stop("You must select a context file")
+	## List all ctx files to read
+	ListCtx <- list.files(path = dirname(dirname(ctx)), pattern = ".ctx",
+		all.files = FALSE, full.names = TRUE, recursive = TRUE)
+	## Make a loop to read each one
+	lListCtx <- length(ListCtx)
+	if (lListCtx > 1) {
+		## More than one ctx file to read
+		AllCtx <- ctxRead(ListCtx[i], fil = fil, largest = largest,
+			vignettes = vignettes, scalebar = scalebar, enhance = enhance,
+			outline = outline, masks = masks, verbose = verbose)
+		for (i in 2:lListCtx)
+			AllCtx <- rbind(AllCtx, ctxRead(ListCtx[i], fil = fil,
+				largest = largest, vignettes = vignettes, scalebar = scalebar,
+				enhance = enhance, outline = outline, masks = masks,
+				verbose = verbose))
+	} else {
+		## Only one ctx file to read
+		AllCtx <- ctxRead(ListCtx, fil = FALSE, largest = FALSE,
+			vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
+			masks = FALSE, verbose = TRUE)
+	}
+	return(AllCtx)
 }
 
-# create a zim file for FlowCAM images
-"make.Zim.FlowCAM" <- function(import = ".", check.names = TRUE)
+## Create a zim file for FlowCAM images
+zimMakeFlowCAM <- function (import = ".", check.names = TRUE)
 {
-  # Importation methods for FlowCAM data
-  if(!is.character(import))
-    stop("You must select a import text file for FlowCAM images")
-  # Read this file
-  ImportFile <- read.table(import, header = TRUE, sep = "\t", dec = ".")
+	## Importation methods for FlowCAM data
+	if (!is.character(import))
+		stop("You must select a import text file for FlowCAM images")
+	## Read this file
+	ImportFile <- read.table(import, header = TRUE, sep = "\t", dec = ".")
 
-  # Check colnames
-  if(isTRUE(check.names)){
-    ColNames <- c("Station", "Date", "FlowCell", "Mode", "Magnification", "Exp_Name", "Sample", "Dilution", "Sieve", "Volume", "Pump_Speed", "Duration", "Temperature", "Salinity",
-      "Gain_Fluo_Ch1", "Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2", "Threshold_Scatter", "Min", "Max", "Size")
-    if(!isTRUE(all(ColNames %in% colnames(ImportFile)))){
-      stop(paste("Your import file contains missing columns", "Station", "Date", "FlowCell", "Mode", "Magnification", "Exp_Name", "Sample", "Dilution",
-        "Sieve", "Volume", "Pump_Speed", "Duration", "Temperature", "Salinity","Gain_Fluo_Ch1", "Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2",
-        "Threshold_Scatter", "Min", "Max", "Size", sep = " "))
-    }
-  }
+	## Check colnames
+	if (isTRUE(check.names)) {
+		ColNames <- c("Station", "Date", "FlowCell", "Mode", "Magnification",
+			"Exp_Name", "Sample", "Dilution", "Sieve", "Volume", "Pump_Speed",
+			"Duration", "Temperature", "Salinity", "Gain_Fluo_Ch1",
+			"Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2",
+			"Threshold_Scatter", "Min", "Max", "Size")
+		if (!all(ColNames %in% colnames(ImportFile)))
+			stop("Your import file contains missing columns among Station,",
+				" Date, FlowCell, Mode, Magnification, Exp_Name, Sample,",
+				" Dilution, Sieve, Volume, Pump_Speed, Duration, Temperature,",
+				" Salinity, Gain_Fluo_Ch1, Threshold_Fluo_Ch1, Gain_Fluo_Ch2,",
+				" Threshold_Fluo_Ch2, Threshold_Scatter, Min, Max, or Size")
+	}
   
-  # Check if the ImportTemplate.zie is present in the directory
-  if(!file.exists(paste(dirname(import), "ImportTemplate.zie", sep = "/")))
-    stop("Your directory must contain the 'ImportTemplate.zie' file")
+	## Check if the ImportTemplate.zie is present in the directory
+	if (!file.exists(file.path(dirname(import), "ImportTemplate.zie")))
+		stop("Your directory must contain an 'ImportTemplate.zie' file")
   
-  # Check if all samples are in the directory and export missing files
-  Not_there <- NULL
-  for(i in 1 : length(ImportFile$Exp_Name)){
-    if(!file.exists(paste(dirname(import), ImportFile$Exp_Name[i], sep = "/"))){
-      if(is.null(Not_there)){
-        Not_there <- as.character(ImportFile$Exp_Name[i])
-      } else {
-        Not_there <- c(Not_there, as.character(ImportFile$Exp_Name[i]))
-      }
-      print(paste(ImportFile$Exp_Name[i], "is not present in the process directory", sep = " "))
-    }
-  }
+	## Check if all samples are in the directory and export missing files
+	notThere <- character(0)
+	for (i in 1:length(ImportFile$Exp_Name)) {
+		if (!file.exists(file.path(dirname(import), ImportFile$Exp_Name[i]))) {
+			notThere <- c(notThere, as.character(ImportFile$Exp_Name[i]))
+			cat(ImportFile$Exp_Name[i], "is not in the process directory\n")
+		}
+	}
   
-  # Select only samples present in the process directory
-  if(!is.null(Not_there)){
-    ImportFile <- ImportFile[!(ImportFile$Exp_Name %in% Not_there), ]
-    print("Only samples in the process directory and in the import text file will be imported")
-  }
+	## Select only samples present in the process directory
+	if (length(notThere)) {
+		ImportFile <- ImportFile[!ImportFile$Exp_Name %in% notThere, ]
+		cat("Only import samples in the process dir or the import text file\n")
+	}
 
-  # Read ctx files of the samples from
-  Ctx <- paste(paste(dirname(import), ImportFile$Exp_Name, sep = "/"), paste(ImportFile$Exp_Name, "ctx", sep = "."), sep = "/")
-  # List of the ctx files data
-  CtxFile <- NULL
-  for(i in 1 : length(Ctx)){
-    if(is.null(CtxFile)){
-      CtxFile <- read.ctx(Ctx[i])
-    } else {
-      CtxFile <- rbind(CtxFile, read.ctx(Ctx[i]))
-    }
-  }
-  # Create fields to generate a table as txt format for the importation
-  Experiment <- ImportFile$Exp_Name
-  Sample <- ImportFile$Sample
-  Image <- CtxFile$Sample_Name
-  PixelSize <- CtxFile$pixelsize
-  minsize <- CtxFile$minsize
-  maxsize <- CtxFile$maxsize
-  VolumeDigitized <- CtxFile$VolumeDigitized
-  Dilution_VIS <- CtxFile$Dilution_VIS
-  SubPart <- ImportFile$Dilution / 100
-  VolIni <- ImportFile$Volume
-  CellPart <- VolumeDigitized / VolIni
-  # Table with value to change
-  Import_txt <- data.frame(Experiment, Sample, Image, PixelSize, SubPart, minsize, maxsize, VolumeDigitized, Dilution_VIS, VolIni, CellPart)
-  # Check if "ImportTemplate.zie" file exists
-  Zie <- paste(dirname(import), "ImportTemplate.zie", sep = "/")
-  if(!file.exists(Zie)){
-    print("There is no 'ImportTemplate.zie' file in the process directory")
-  }
-  # Read the "ImportTemplate.zie" file
-  Zie_File_Orig <- scan(Zie, character(), sep = "\t", skip = 0,
-    blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-  # Loop to create a file _dat1.zim
-  for(i in 1 : nrow(CtxFile)){
-    Zie_File <- Zie_File_Orig
-    # Complete fields using Import_txt
-    ImageLine <- grep("^Sample", Zie_File)
-    Sample <- as.numeric(sub("[ ]*$", "", sub("^Sample[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(Sample)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$Sample[i], sep = "")
-    }
-    ImageLine <- grep("^Experiment", Zie_File)
-    Experiment <- as.numeric(sub("[ ]*$", "", sub("^Experiment[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(Experiment)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$Experiment[i], sep = "")
-    }
-    ImageLine <- grep("^SubPart", Zie_File)
-    SubPart <- as.numeric(sub("[ ]*$", "", sub("^SubPart[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(SubPart)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$SubPart[i], sep = "")
-    }
-    ImageLine <- grep("^CellPart", Zie_File)
-    CellPart <- as.numeric(sub("[ ]*$", "", sub("^CellPart[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(CellPart)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$CellPart[i], sep = "")
-    }
-    ImageLine <- grep("^Dilution_VIS", Zie_File)
-    Dilution_VIS <- as.numeric(sub("[ ]*$", "", sub("^Dilution_VIS[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(Dilution_VIS)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$Dilution_VIS[i], sep = "")
-    }
-    ImageLine <- grep("^VolIni", Zie_File)
-    VolIni <- as.numeric(sub("[ ]*$", "", sub("^VolIni[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(VolIni)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$VolIni[i], sep = "")
-    }
-    ImageLine <- grep("^VolumeDigitized", Zie_File)
-    VolumeDigitized <- as.numeric(sub("[ ]*$", "", sub("^VolumeDigitized[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(VolumeDigitized)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$VolumeDigitized[i], sep = "")
-    }
-    ImageLine <- grep("^minsize", Zie_File)
-    minsize <- as.numeric(sub("[ ]*$", "", sub("^minsize[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(minsize)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$minsize[i], sep = "")
-    }
-    ImageLine <- grep("^maxsize", Zie_File)
-    maxsize <- as.numeric(sub("[ ]*$", "", sub("^maxsize[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(maxsize)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$maxsize[i], sep = "")
-    }
-    ImageLine <- grep("^PixSize", Zie_File)
-    PixSize <- as.numeric(sub("[ ]*$", "", sub("^PixSize[ ]*[=][ ]*", "", Zie_File[ImageLine[1]])))
-    if(is.na(PixSize)){
-      Zie_File[ImageLine[1]] <- paste(Zie_File[ImageLine[1]], Import_txt$PixelSize[i], sep = "")
-    }
-    # Read all context file
-    Context_File <- scan(Ctx[i], character(), sep = "\t", skip = 0,
-        blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
+	## Read ctx files of the samples from
+	Ctx <- file.path(dirname(import), ImportFile$Exp_Name,
+		paste(ImportFile$Exp_Name, "ctx", sep = "."))
+	lCtx <- length(Ctx)
+	if (!lCtx) {
+		CtxFile <- NULL
+	} else {
+		CtxFile <- ctxRead(Ctx[1])
+		if (lCtx > 1) for (i in 2:lCtx) CtxFile <- rbind(CtxFile, ctxRead(Ctx[i]))
+	}
+	## Create fields to generate a table as txt format for the importation
+	Experiment <- ImportFile$Exp_Name
+	Sample <- ImportFile$Sample
+	Image <- CtxFile$Sample_Name
+	PixelSize <- CtxFile$pixelsize
+	minsize <- CtxFile$minsize
+	maxsize <- CtxFile$maxsize
+	VolumeDigitized <- CtxFile$VolumeDigitized
+	Dilution_VIS <- CtxFile$Dilution_VIS
+	SubPart <- ImportFile$Dilution / 100
+	VolIni <- ImportFile$Volume
+	CellPart <- VolumeDigitized / VolIni
+	## Table with value to change
+	ImportTxt <- data.frame(Experiment, Sample, Image, PixelSize, SubPart,
+		minsize, maxsize, VolumeDigitized, Dilution_VIS, VolIni, CellPart)
+	## Check if "ImportTemplate.zie" file exists
+	Zie <- file.path(dirname(import), "ImportTemplate.zie")
+	if (!file.exists(Zie))
+		stop("There is no 'ImportTemplate.zie' file in the process directory")
+	## Read the "ImportTemplate.zie" file
+	ZieFileOrig <- scan(Zie, character(), sep = "\t", skip = 0,
+		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
+	## Loop to create a file _dat1.zim
+	for (i in 1:nrow(CtxFile)) {
+		ZieFile <- ZieFileOrig
+		## Complete fields using ImportTxt
+		ImageLine <- grep("^Sample", ZieFile)
+		Sample <- as.numeric(sub("[ ]*$", "", sub("^Sample[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(Sample)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$Sample[i], sep = "")
+		ImageLine <- grep("^Experiment", ZieFile)
+		Experiment <- as.numeric(sub("[ ]*$", "",
+			sub("^Experiment[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
+		if (is.na(Experiment)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$Experiment[i], sep = "")
+		ImageLine <- grep("^SubPart", ZieFile)
+		SubPart <- as.numeric(sub("[ ]*$", "", sub("^SubPart[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(SubPart)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$SubPart[i], sep = "")
+		ImageLine <- grep("^CellPart", ZieFile)
+		CellPart <- as.numeric(sub("[ ]*$", "", sub("^CellPart[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(CellPart)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$CellPart[i], sep = "")
+		ImageLine <- grep("^Dilution_VIS", ZieFile)
+		Dilution_VIS <- as.numeric(sub("[ ]*$", "",
+			sub("^Dilution_VIS[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
+		if (is.na(Dilution_VIS)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$Dilution_VIS[i], sep = "")
+		ImageLine <- grep("^VolIni", ZieFile)
+		VolIni <- as.numeric(sub("[ ]*$", "", sub("^VolIni[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(VolIni)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$VolIni[i], sep = "")
+		ImageLine <- grep("^VolumeDigitized", ZieFile)
+		VolumeDigitized <- as.numeric(sub("[ ]*$", "",
+			sub("^VolumeDigitized[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
+		if (is.na(VolumeDigitized)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$VolumeDigitized[i], sep = "")
+		ImageLine <- grep("^minsize", ZieFile)
+		minsize <- as.numeric(sub("[ ]*$", "", sub("^minsize[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(minsize)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$minsize[i], sep = "")
+		ImageLine <- grep("^maxsize", ZieFile)
+		maxsize <- as.numeric(sub("[ ]*$", "", sub("^maxsize[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(maxsize)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$maxsize[i], sep = "")
+		ImageLine <- grep("^PixSize", ZieFile)
+		PixSize <- as.numeric(sub("[ ]*$", "", sub("^PixSize[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(PixSize)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$PixelSize[i], sep = "")
+		## Read all context file
+		ContextFile <- scan(Ctx[i], character(), sep = "\t", skip = 0,
+			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
 
-    # Read note
-    Note <- paste(dirname(import), ImportFile$Exp_Name[i], paste(ImportFile$Exp_Name[i], "_notes.txt", sep = ""), sep = "/")
-    Note_File <- scan(Note, character(), sep = "\t", skip = 0,
-        blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-    # Write table in the sample directory
-    Tab <- c(Zie_File, "", Context_File, "", "[Notes]", Note_File)
-    Export <- paste(paste(dirname(import), CtxFile$Sample_Name[i],  sep = "/"), paste(CtxFile$Sample_Name[i], ".zim", sep = ""), sep = "/")
-#    Export <- paste(paste(dirname(import), CtxFile$Sample_Name[i], CtxFile$Sample_Name[i], sep = "/"), paste(CtxFile$Sample_Name[i], "_dat1.zim", sep = ""), sep = "/")
-    write(Tab, file = Export)
-  }
-
+		## Read note
+		Note <- file.path(dirname(import), ImportFile$Exp_Name[i],
+			paste(ImportFile$Exp_Name[i], "_notes.txt", sep = ""))
+		NoteFile <- scan(Note, character(), sep = "\t", skip = 0,
+			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
+		## Write table in the sample directory
+		Tab <- c(ZieFile, "", ContextFile, "", "[Notes]", NoteFile)
+		Export <- file.path(dirname(import), CtxFile$Sample_Name[i],
+			paste(CtxFile$Sample_Name[i], "zim", sep = "."))
+		write(Tab, file = Export)
+	}
 }
 
-# create a dat1.zim file by pooling lst and results.csv tables
-"Make.dat1.zim" <- function(Zim)
+## Create a dat1.zim file by pooling lst and results.csv tables
+zimDatMake <- function (Zim)
 {
-  # Check if the zim file exists
-  if(!file.exists(Zim)){
-    stop(paste(basename(Zim), "is not present", sep =" "))
-  }
-  # Sample name
-  Smp <- dirname(Zim)
-  # Read list file
-  LIST <- paste(Smp, paste(basename(dirname(Zim)), "lst", sep = "."), sep = "/")
-  VIS_Lst <- read.lst(LIST, skip = 2)
-  # Read ImageJ results
-  IJ <- read.table(paste(Smp, "results.csv", sep = "/"),
-    sep = ",", header = TRUE, dec = ".")
-  # Create a General table of mesurements
-  VIS_IJ_Lst <- cbind(VIS_Lst, IJ)
-  # Add Label columns
-  VIS_IJ_Lst$Label <- rep(basename(dirname(Zim)), nrow(VIS_IJ_Lst))
-  # Transform Id column in !Item column
-  names(VIS_IJ_Lst)[grep("Id", names(VIS_IJ_Lst))] <- "!Item"
-  # Select only useful columns
-  VIS_IJ_Lst$FIT_Filename <- NULL
-  # Create dat_1.zim file
-  ZIdat_File <- paste(dirname(Zim), basename(dirname(Zim)), basename(Zim), sep = "/")
-  if(!file.exists(dirname(ZIdat_File))){
-    stop(paste(dirname(ZIdat_File), "does not exist", sep =" "))
-  }
-  file.copy(from = Zim, to = ZIdat_File, overwrite = FALSE)
-  # Add table of measurements at the end
-  cat("\n[Data]\n", file = ZIdat_File, append = TRUE)
-  write.table(VIS_IJ_Lst, file = ZIdat_File, append = TRUE, quote = FALSE,
-    sep = "\t", col.names = TRUE, row.names = FALSE, dec = ".")
-  # Correctly name _dat1.zim file
-  New_ZIdat_File <- paste(dirname(ZIdat_File), sub(".zim", "_dat1.zim", basename(Zim)), sep = "/")
-  file.rename(from = ZIdat_File, to = New_ZIdat_File)
+	## Check if the zim file exists
+	if (!file.exists(Zim))
+		stop(paste(basename(Zim), "is not present", sep =" "))
+	## Sample name
+	Smp <- dirname(Zim)
+	## Read list file
+	LIST <- file.path(Smp, paste(basename(dirname(Zim)), "lst", sep = "."))
+	VIS_Lst <- lstRead(LIST, skip = 2)
+	## Read ImageJ results
+	IJ <- read.table(file.path(Smp, "results.csv"),
+		sep = ",", header = TRUE, dec = ".")
+	## Create a General table of mesurements
+	VIS_IJ_Lst <- cbind(VIS_Lst, IJ)
+	## Add Label columns
+	VIS_IJ_Lst$Label <- rep(basename(dirname(Zim)), nrow(VIS_IJ_Lst))
+	## Transform Id column in !Item column
+	names(VIS_IJ_Lst)[grep("Id", names(VIS_IJ_Lst))] <- "!Item"
+	## Select only useful columns
+	VIS_IJ_Lst$FIT_Filename <- NULL
+	## Create dat_1.zim file
+	ZIdat_File <- file.path(dirname(Zim), basename(dirname(Zim)), basename(Zim))
+	if (!file.exists(dirname(ZIdat_File)))
+		stop(dirname(ZIdat_File), " does not exist")
+	file.copy(from = Zim, to = ZIdat_File, overwrite = FALSE)
+	## Add table of measurements at the end
+	cat("\n[Data]\n", file = ZIdat_File, append = TRUE)
+	write.table(VIS_IJ_Lst, file = ZIdat_File, append = TRUE, quote = FALSE,
+		sep = "\t", col.names = TRUE, row.names = FALSE, dec = ".")
+	## Correctly name _dat1.zim file
+	New_ZIdat_File <- file.path(dirname(ZIdat_File),
+		sub(".zim", "_dat1.zim", basename(Zim)))
+	file.rename(from = ZIdat_File, to = New_ZIdat_File)
 }
 
-# create several dat1.zim files
-"Make.dat1.zim.all" <- function(Zim)
+## Create several dat1.zim files
+zimDatMakeAll <- function (Zim)
 {
-  # Search all zim files in process directory
-  Process <- dirname(dirname(Zim))
-  AllZim <- list.files(path = Process, pattern = ".zim", all.files = FALSE,
-    full.names = TRUE, recursive = TRUE)
-  # loop to create automaticaly dat1.zim files
-  for(i in 1 : length(AllZim)){
-    Make.dat1.zim(AllZim[i])
-  }
+	## Search all zim files in process directory
+	Process <- dirname(dirname(Zim))
+	AllZim <- list.files(path = Process, pattern = ".zim", all.files = FALSE,
+		full.names = TRUE, recursive = TRUE)
+	## Loop to create automaticaly dat1.zim files
+	if (length(AllZim)) for (i in 1:length(AllZim))
+		zimDatMake(AllZim[i])
 }

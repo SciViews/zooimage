@@ -1,28 +1,27 @@
-# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
-#
-# This file is part of ZooImage
-#
-# ZooImage is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#
-# ZooImage is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+##
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-# Functions for manipulating a log file for ZooImage.
-
-"logProcess" <- function (message, topic = NULL,
+## Functions for manipulating a log file for ZooImage
+logProcess <- function (message, topic = NULL,
 file = file.path(tempdir(), "ZooImage.log"), logit = TRUE, stop = FALSE,
 show.log = stop)
 {
 	if (!isTRUE(logit)) {
-		if (stop) stop(message) else warning(message)
+		if (isTRUE(stop)) stop(message) else warning(message)
 		return()
 	}
 	if (!file.exists(file))
@@ -30,25 +29,25 @@ show.log = stop)
 			"===\n\n", file = file)
 	if (!is.null(topic) && topic != "")
 		message <- paste(topic, message, sep = " - ")
-	if (stop) message <- paste("*CRITICAL*:", message)
+	if (isTRUE(stop)) message <- paste("*CRITICAL*:", message)
 	message <- paste(sub("\n$", "", message), "\n", sep = "")
 	cat(message, file = file, append = TRUE)
-	if (show.log) logView(file)
+	if (isTRUE(show.log)) logView(file)
 }
 
-"logClear" <- function (file = file.path(tempdir(), "ZooImage.log"))
+logClear <- function (file = file.path(tempdir(), "ZooImage.log"))
 	unlink(file)
 
-"logView" <- function (file = file.path(tempdir(), "ZooImage.log"),
+logView <- function (file = file.path(tempdir(), "ZooImage.log"),
 title = paste(getTemp("ZIname"), "log"), clear = TRUE, warn = FALSE)
 {
 	if (file.exists(file)) {
-    	file.show(file, title = title, delete.file = clear)
-	} else if (warn) warning("Log file '", file, "' is not found!")
+    	file.show(file, title = title, delete.file = isTRUE(clear))
+	} else if (isTRUE(warn)) warning("Log file '", file, "' is not found!")
 }
 
-"logError" <- function (e, msg = NULL, ...)
+logError <- function (e, msg = NULL, ...)
 	logProcess(if (is.null(msg)) e$msg else msg, e$context, stop = FALSE, ...)
 
-"logWarning" <- function(w, msg = NULL, ...)
+logWarning <- function (w, msg = NULL, ...)
 	logProcess(if (is.null(msg)) w$msg else msg, w$context, stop = FALSE, ...)

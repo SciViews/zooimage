@@ -1,5 +1,5 @@
-# ZooImage1 Tk menu
-# by Ph. Grosjean, 2005-2010 <phgrosjean@sciviews.org>
+# ZooImage Tk menu
+# by Ph. Grosjean, 2005-2012 <phgrosjean@sciviews.org>
 
 # Create a Tk menu (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin
@@ -10,9 +10,11 @@ $Tk.ZIDlgWin
 ||Make .&zid files...	Ctrl+Z			~~ makeZid()
 ||-
 ||&Make training set...	Ctrl+M			~~ makeTrain()
+||Add vignettes to training set         ~~ increaseTrain()
 ||&Read training set..	Ctrl+T			~~ readTrain()
 ||Make &classifier...	Ctrl+C			~~ makeClass()
 ||A&nalyze classifier...	Ctrl+N		~~ analyzeClass()
+||Automatic classification of vignettes ~~ vignettesClass()
 ||--
 ||Edit samples &description...	Ctrl+D	~~ editDescription()
 ||Process &samples...	Ctrl+S			~~ processSamples()
@@ -23,7 +25,7 @@ $Tk.ZIDlgWin
 |||From the &assistant	Ctrl+X			~~ closeAssistant()
 |||From &ZooImage						~~ closeZooImage()
 |$Real-time
-||&Start process...                		~~ realtimeRun()
+||&Start process...                		~~ realtimeStart()
 ||&Stop process...                 		~~ realtimeStop()
 ||&Export results...               		~~ realtimeSave()
 ||&Remove data...                  		~~ realtimeReset()
@@ -44,38 +46,38 @@ $Tk.ZIDlgWin
 ||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
 |$Functions
 ||$ZooImage &Metadata (zim)
-|||create.zim()                         ~~ guiDlgFunction("create.zim")
-|||edit.zim()                           ~~ guiDlgFunction("edit.zim")
+|||zimCreate()                          ~~ guiDlgFunction("zimCreate")
+|||zimEdit()                            ~~ guiDlgFunction("zimEdit")
 |||-
-|||make.zim()                           ~~ guiDlgFunction("make.zim")
-|||verify.zim()                         ~~ guiDlgFunction("verify.zim")
+|||zimMake()                            ~~ guiDlgFunction("zimMake")
+|||zimVerify()                          ~~ guiDlgFunction("zimVerify")
 |||--
-|||e&xtract.zims()                      ~~ guiDlgFunction("extract.zims")
-|||refresh.zims()                       ~~ guiDlgFunction("refresh.zims")
+|||zimE&xtractAll()                     ~~ guiDlgFunction("zimExtractAll")
+|||zimRefreshAll()                      ~~ guiDlgFunction("zimRefreshAll")
 ||$ZooImage &Picture (zip)
-|||zip.img()							~~ guiDlgFunction("zip.img")
-|||zip.img.&all()						~~ guiDlgFunction("zip.img.all")
+|||zipImg()	    						~~ guiDlgFunction("zipImg")
+|||zipImg&All()	    					~~ guiDlgFunction("zipImgAll")
 |||-
-|||unzip.img()							~~ guiDlgFunction("unzip.img")
-|||u&nzip.img.all()						~~ guiDlgFunction("unzip.img.all")
+|||unzipImg()							~~ guiDlgFunction("unzipImg")
+|||u&nzipImgAll()						~~ guiDlgFunction("unzipImgAll")
 ||$ZooImage &Data (zid)
-|||make.RData()							~~ guiDlgFunction("make.RData")
-|||read.zid()							~~ guiDlgFunction("read.zid")
-|||zid.extract()						~~ guiDlgFunction("zid.extract")
+|||makeRData()							~~ guiDlgFunction("makeRData")
+|||zidRead()							~~ guiDlgFunction("zidRead")
+|||zidExtract()	    					~~ guiDlgFunction("zidExtract")
 |||-
-|||verify.zid()							~~ guiDlgFunction("verify.zid")
-|||verify.zid.&all()						~~ guiDlgFunction("verify.zid.all")
+|||zidVerify()							~~ guiDlgFunction("zidVerify")
+|||zidVerifyAll()	    				~~ guiDlgFunction("zidVerifyAll")
 |||--
-|||compress.zid()						~~ guiDlgFunction("compress.zid")
-|||c&ompress.zid.all()					~~ guiDlgFunction("compress.zid.all")
+|||zidCompress()						~~ guiDlgFunction("zidCompress")
+|||zidC&ompressAll()					~~ guiDlgFunction("zidCompressAll")
 |||---
-|||uncompress.zid()						~~ guiDlgFunction("uncompress.zid")
-|||u&ncompress.zid.all()				~~ guiDlgFunction("uncompress.zid.all")
+|||zidUncompress()						~~ guiDlgFunction("zidUncompress")
+|||zidU&ncompressAll()		    		~~ guiDlgFunction("zidUncompressAll")
 ||$ZooImage &Samples Metadata (zis)
-|||createZis()                          ~~ guiDlgFunction("createZis")
-|||editZis()                            ~~ guiDlgFunction("editZis")
+|||zisCreate()                          ~~ guiDlgFunction("zisCreate")
+|||zisEdit()                            ~~ guiDlgFunction("zisEdit")
 |||-
-|||read.description()                   ~~ guiDlgFunction("read.description")
+|||readDescription()                    ~~ guiDlgFunction("readDescription")
 ||--
 ||$ZooImage &Training set
 |||prepare.ZITrain()					~~ guiDlgFunction("prepare.ZITrain")
@@ -88,31 +90,30 @@ $Tk.ZIDlgWin
 |||unzip.ZITrain()						~~ guiDlgFunction("unzip.ZITrain")
 |||---
 |||re&code.ZITrain()					~~ guiDlgFunction("recode.ZITrain")
+|||ZIRecodeLevels()			        	~~ guiDlgFunction("ZIRecodeLevels")
 ||$ZooImage &Classifier
 |||ZIClass()							~~ guiDlgFunction("ZIClass")
 |||predict()							~~ guiDlgFunction("predict.ZIClass")
 |||-
 |||confu()								~~ guiDlgFunction("confu")
-|||confu.&map()							~~ guiDlgFunction("confu.map")
+|||confusion&Map()					    ~~ guiDlgFunction("confusionMap")
 ||$ZooImage &Results
-|||process.sample()						~~ guiDlgFunction("process.sample")
-|||p&rocess.samples()					~~ guiDlgFunction("process.samples")
+|||sampleProcess()						~~ guiDlgFunction("sampleProcess")
+|||sampleP&rocessAll()					~~ guiDlgFunction("sampleProcessAll")
 |||-
-|||Abd.sample()							~~ guiDlgFunction("Abd.sample")
-|||Bio.sample()							~~ guiDlgFunction("Bio.sample")
-|||Spectrum.sample()					~~ guiDlgFunction("Spectrum.sample")
+|||sampleAbd()							~~ guiDlgFunction("sampleAbd")
+|||sampleBio()							~~ guiDlgFunction("sampleBio")
+|||sampleSpectrum()	    				~~ guiDlgFunction("sampleSpectrum")
 |$Utilities
 ||Calibrate grayscale (16bit)			~~ calib()
 ||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
-||Add new vignettes to training set         ~~ AddVignToTrain()
-||Automatic classification of vignettes     ~~ ClassifVigns()
 ||-
 ||$R Graphs
 |||&New									~~ dev.new()
 |||&Activate next						~~ {dev.set(); if (isRgui()) bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
-||Change &active dir...                 ~~ zooimage:::setwd(paste(tkchooseDirectory(), collapse = " "))
+||Change &active dir...                 ~~ setwd(dlgDir()$res)
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
 |$Help
@@ -120,5 +121,5 @@ $Tk.ZIDlgWin
 ||&Manual	Ctrl+H						~~ viewManual()
 ||&Web site...							~~ browseURL("http://www.sciviews.org/zooimage")
 ||-
-||&About ZooImage...					~~ AboutZI(graphical = TRUE)
+||&About ZooImage...					~~ aboutZI(graphical = TRUE)
 

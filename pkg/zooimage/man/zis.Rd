@@ -1,7 +1,7 @@
 \name{zis}
-\alias{createZis}
-\alias{editZis}
-\alias{read.description}
+\alias{zisCreate}
+\alias{zisEdit}
+\alias{readDescription}
 
 \title{ Manipulate .zis files (ZooImage Samples data) }
 \description{
@@ -9,10 +9,10 @@
   manipulate such .zis files.
 }
 \usage{
-createZis(zisfile = NULL, template = NULL, editor = getOption("ZIEditor"),
+zisCreate(zisfile = NULL, template = NULL, editor = getOption("ZIEditor"),
     wait = FALSE)
-editZis(zisfile, editor = getOption("ZIEditor"), wait = FALSE)
-read.description(zisfile = "Description.zis" , expected.sections =
+zisEdit(zisfile, editor = getOption("ZIEditor"), wait = FALSE)
+readDescription(zisfile = "Description.zis" , expected.sections =
     c("Description", "Series", "Cruises", "Stations", "Samples"))
 }
 
@@ -26,12 +26,12 @@ read.description(zisfile = "Description.zis" , expected.sections =
 }
 
 \value{
-  \code{read.description()} returns 'ZIDesc' object containing all the data in the .zis file.
+  \code{readDescription()} returns 'ZIDesc' object containing all the data in the .zis file.
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
 
-\seealso{ \code{\link{compress.zid}} }
+\seealso{ \code{\link{zidCompress}} }
 \examples{
 ##TODO...
 }

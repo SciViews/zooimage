@@ -1,8 +1,8 @@
 \name{zip}
-\alias{zip.img}
-\alias{zip.img.all}
-\alias{unzip.img}
-\alias{unzip.img.all}
+\alias{zipImg}
+\alias{zipImgAll}
+\alias{unzipImg}
+\alias{unzipImgAll}
 
 \title{ Zip and unzip raw .tif images for ZooImage and embed metadata }
 \description{
@@ -10,12 +10,12 @@
   from .zim files are embedded as zip comments.
 }
 \usage{
-zip.img(imagefile, zimfile = NULL, verify.zimfile = TRUE, replace = FALSE,
+zipImg(imagefile, zimfile = NULL, verify.zimfile = TRUE, replace = FALSE,
     delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
-zip.img.all(path = ".", images = NULL, check = TRUE, replace = FALSE,
+zipImgAll(path = ".", images = NULL, check = TRUE, replace = FALSE,
     delete.source = replace, show.log = TRUE, bell = FALSE)
-unzip.img(zipfile)
-unzip.img.all(path = ".", zipfiles = NULL)
+unzipImg(zipfile)
+unzipImgAll(path = ".", zipfiles = NULL)
 }
 
 \arguments{

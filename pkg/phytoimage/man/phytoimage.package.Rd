@@ -19,24 +19,20 @@ refer to it for the online help of these functions.
 \tabular{ll}{
 Package: \tab phytoimage\cr
 Type: \tab Package\cr
-Version: \tab 1.2-0\cr
-Date: \tab 2007-05-24\cr
+Version: \tab 3.0-0\cr
+Date: \tab 2012-05-07\cr
 License: \tab GPL 2 or above at your convenience.\cr
 }
-For any series that you analyses with PhytoImage, the only constraints are:
-- To send main metadata and a short description of your series, and the way it
-  is analyzed to Philippe.Grosjean@umh.ac.be (this will be included to the
-  PhytoImage web site (in order to keep track of its use).
-- Everytime you publish results that use PhytoImage, you must place a reference
-  to the PhytoImage web site (http://www.sciviews.org/phytoimage) in your publication.
-  For papers, send also a reprint to Philippe.Grosjean@umh.ac.be, preferrably
-  as a PDF file.
+Everytime you publish results that use PhytoImage, you must place a reference
+to the Zoo/PhytoImage web site (http://www.sciviews.org/zooimage) in your publication.
+For papers, send also a reprint to Philippe.Grosjean@umh.ac.be, preferrably
+as a PDF file.
 }
 \author{
 Philippe Grosjean & Kevin Denis, Numerical Ecology of Aquatic Systems,
-Mons-Hainaut University, Belgium.
+Mons University, Belgium.
 
-Maintainer: Philippe Grosjean <Philippe.Grosjean@umh.ac.be>
+Maintainer: Philippe Grosjean <Philippe.Grosjean@umons.ac.be>
 }
 \references{
 Not yet!

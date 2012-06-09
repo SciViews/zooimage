@@ -1,7 +1,7 @@
 \name{gui}
 \alias{ZIDlg}
-\alias{AboutZI}
-\alias{ExitZI}
+\alias{aboutZI}
+\alias{exitZI}
 \alias{closeAssistant}
 \alias{closeZooImage}
 \alias{viewManual}
@@ -15,8 +15,8 @@
 }
 \usage{
 ZIDlg()
-AboutZI(graphical = FALSE)
-ExitZI()
+aboutZI(graphical = FALSE)
+exitZI()
 closeAssistant()
 closeZooImage()
 viewManual()
@@ -31,16 +31,16 @@ optInOutDecimalSep()
 
 \value{
   \code{ZIDlg()} is called for its side effect of dispalying the main ZooImage dialog box.
-  \code{AboutZI()} gives sone information about the current ZooImage version.
-  \code{ExitZI()} unloads the zooimage package (for instance, to allow updating it).
+  \code{aboutZI()} gives sone information about the current ZooImage version.
+  \code{exitZI()} unloads the zooimage package (for instance, to allow updating it).
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
 
-\seealso{ \code{\link{compress.zid}} }
+\seealso{ \code{\link{zidCompress}} }
 \examples{
 # The dialog box can be started just by issuing
 # > ZIDlg()
 }
-\keyword{ utilities }
 
+\keyword{ utilities }

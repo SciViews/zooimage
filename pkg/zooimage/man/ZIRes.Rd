@@ -1,5 +1,5 @@
 \name{ZIRes}
-\alias{Abd.sample}
+\alias{sampleAbd}
 \alias{histSpectrum}
 \alias{merge.ZITable}
 \alias{plot.ZITable}
@@ -12,7 +12,7 @@
   and they collect them together in a 'ZIRes' table.
 }
 \usage{
-Abd.sample(ZIDat, sample, taxa = NULL, groups = NULL, type = c("absolute",
+sampleAbd(ZIDat, sample, taxa = NULL, groups = NULL, type = c("absolute",
     "log", "relative"), header = "Abd")
 histSpectrum(spect, class = 1:18 * 0.3/3 + 0.2, lag = 0.25, log.scale = TRUE,
     width = 0.1, xlab = "classes (mm)", ylab = if (log.scale)

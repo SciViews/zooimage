@@ -1,193 +1,73 @@
-# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
-#
-# This file is part of ZooImage
-# 
-# ZooImage is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# ZooImage is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-# Masking system so that the warnings related to using windows arguments
-# system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE, 
-# input = NULL, show.output.on.console = TRUE, minimized = FALSE, 
-# invisible = TRUE){
-# {		
-#  	call <- match.call()
-#  	call[[1]] <- base::system
-#  	suppressWarnings(eval(call, envir = parent.frame()))
-# }
+## Masking system so that the warnings related to using windows arguments
+## system <- function (command, intern = FALSE, ignore.stderr = FALSE, wait = TRUE, 
+## input = NULL, show.output.on.console = TRUE, minimized = FALSE, 
+## invisible = TRUE){
+## {		
+##  	call <- match.call()
+##  	call[[1]] <- base::system
+##  	suppressWarnings(eval(call, envir = parent.frame()))
+## }
 
-# Various utility functions used by ZooImage
-# Get the name of one or several variables of a given class
-"getVar" <- function (class = "data.frame", default = "", multi = FALSE,
-title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
-{	
-	# Get one or several variables of a given object class
-	varlist <- objects(pos = 1)	# Get objects in .GlobalEnv
-	if (length(varlist) == 0) {
-		msg <- paste("There is no object of class '",
-			paste(class, collapse = " "), "' in the user workspace!", sep = "")
-		if (isTRUE(warn.only)) warning(msg) else stop(msg)
-		return("")
-	}
-	# Filter this list to keep only object inheriting a giving class...
-	Filter <- NULL
-	for (i in 1:length(varlist))
-		Filter[i] <- inherits(get(varlist[i]), class)
-	
-	# Keep only those objects
-	varlist <- varlist[Filter]	
-	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		msg <- paste("There is no object of class '",
-			paste(class, collapse = " "), "' in the user workspace!", sep = "")
-		if (isTRUE(warn.only)) warning(msg) else stop(msg)
-		varsel <- "" 
-	} else {
-		if (default == "") default <- varlist[1]
-		varsel <- select.list(varlist, preselect = default, multiple = multi,
-			title = title)
-	}
-    return(varsel)		
-}
-
-# Get the name of one or more lists with their components of a given class
-# Note: this is used as a collection in other languages
-# (there is no such collection in R, so, we use a list here!)
-"getList" <- function (class = "data.frame", default = "", multi = FALSE,
-title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
-{	
-	# Get objects in .GlobalEnv
-	filter <- function(x) {
-		item <- get(x)
-		is.list(item) && all(sapply(item, function(y) inherits(y, class)))
-	}
-	varlist <- Filter(filter, objects(pos = 1))	
-	if (length(varlist) == 0) {
-		msg <- paste("There is no list of '", class,
-			"' objects in the user workspace", sep = "")
-		if (isTRUE(warn.only)) warning(msg) else stop(msg)
-		return("")
-	}
-	if (default == "") default <- varlist[1]
-	varsel <- select.list(varlist, preselect = default, multiple = multi,
-		title = title)
-	return(varsel)		
-}
-
-# Select one or several files of a given type
-"selectFile" <- function (
-type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData"),
-multi = FALSE, quote = TRUE, title = NULL)
-{	
-	type <- tryCatch(match.arg(type), error = function (e) {
-		stop("unrecognized type")
-	})
-	Type <- switch(type, "ZipZid" = "Zip/Zid", "ZimZis" = "Zim/Zis",
-		"LstZid" = "Lst/Zid", "TifPgm" = "Tiff/Pgm", type)
-	
-	# Adapt title according to 'multi'
-	if (isTRUE(multi) && !is.null(title)) {
-		title <- paste("Select one or several", Type, "files...")
-	} else {
-		title <- paste("Select one", Type, "file...")
-	}
-	
-	#if (!isWin()) {
-		filters <- switch(type,
-			ZipZid 	= c("ZooImage files"          , ".zip",
-						"ZooImage files"          , ".zid"      ),
-			ZimZis 	= c("ZooImage metadata files" , ".zim",
-						"ZooImage metadata files" , ".zis"      ),
-			LstZid  = c("FlowCAM list files"      , ".lst",
-						"ZooImage files"          , ".zid"      ),
-			Zip		= c("ZooImage picture files"  , ".zip"      ),
-			Zid		= c("ZooImage data files"     , ".zid"      ),
-			Zim		= c("ZooImage metadata files" , ".zim"      ),
-			Zis		= c("ZooImage sample files"   , ".zis"      ),
-			Zie		= c("ZooImage extension files", ".zie"      ),
-			Zic     = c("ZooImage Classification Scheme",".zic" ),
-			Img     = c("Tiff image files"        , ".tif",
-						"Jpeg image files"        , ".jpg",
-						"Zooimage import extensions",".zie",
-						"Table and ImportTemplate.zie",".txt",
-# Modif Kev add option for FlowCAM images
-						"FlowCAM Table and ImportTemplate.zie",".txt"),
-			TifPgm  = c("Tiff image files"        , ".tif"      ),
-						"Pgm image files"         , ".pgm",
-			RData   = c("R data"                  , ".RData"    ))
-		filters <- matrix(filters, ncol = 2, byrow = TRUE)
-		res <- tk_choose.files(caption = title, multi = multi, filters = filters)
-	
-	#} else { # Old treatment using Windows-only function
-	#	filters <- switch(type,
-	#		ZipZid 	= c("ZooImage files (*.zip;*.zid)"          , "*.zip;*.zid"),
-	#		ZimZis 	= c("ZooImage metadata files (*.zim;*.zis)" , "*.zim;*.zis"),
-	#		Zip		= c("ZooImage picture files (*.zip)"        , "*.zip"      ),
-	#		Zid		= c("ZooImage data files (*.zid)"           , "*.zid"      ),
-	#		Zim		= c("ZooImage metadata files (*.zim)"       , "*.zim"      ),
-	#		Zis		= c("ZooImage sample files (*.zis)"         , "*.zis"      ),
-	#		Zie		= c("ZooImage extension files (*.zie)"      , "*.zie"      ))
-	#	filters <- matrix(filters, ncol = 2, byrow = TRUE)
-	#	res <- choose.files(caption = title, multi = multi, filters = filters)
-	#}
-	
-	if (length(res) && res != "" && quote)
-		res <- paste('"', res, '"', sep = "")
-	return(res)
-}
-
-# Get a key (permanent configuration data, from the registry if under Windows)
-"getKey" <- function (key, default.value = NULL)
-{ 	
-	# Retrieve a ZooImage key in the registry
-	# TODO: should we use this also for windows ?
-	if (!isWin()) {
-		return(getTemp(sprintf("zooimage-%s", key), default.value))
-	}
-	
-	# Look if the key is defined
-	ZIkey <- getTemp("ZIkey")
-	if (key %in% tk2reg.values(ZIkey)) {
-    	# Get the content of that key
-		return(tk2reg.get(ZIkey, key))
-	} else return(default.value)
-	
-}
-
-# Set a key permanently (in the registry, if under Windows)
-"setKey" <- function (key, value, type = "sz")
+## Various utility functions used by ZooImage
+## Set a key permanently (in the registry, if under Windows)
+setKey <- function (key, value, type = "sz")
 {
-	if(!isWin()) {
-		# TODO: should we also use this for windows ?
+#	if(!isWin()) {
 		assignTemp(sprintf("zooimage-%s", key), value, TRUE )
-	} else {
-		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
-	}
+#	} else {
+#		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
+#	}
 	return(invisible(TRUE))
 }
 
-# Convert underscores into spaces
-"underscore2space" <- function (char)
+## Get a key (permanent configuration data, from the registry if under Windows)
+getKey <- function (key, default.value = NULL)
+{ 	
+	## Retrieve a ZooImage key in the registry
+	## TODO: should we use this also for windows ?
+#	if (!isWin()) {
+		return(getTemp(sprintf("zooimage-%s", key), default.value))
+#	}
+	
+	## Look if the key is defined
+#	ZIkey <- getTemp("ZIkey")
+#	if (key %in% tk2reg.values(ZIkey)) {
+#    	## Get the content of that key
+#		return(tk2reg.get(ZIkey, key))
+#	} else return(default.value)	
+}
+
+## Convert underscores into spaces
+underscore2space <- function (char)
 	return(gsub("_", " ", char))
 
-# Trim leading and trailing white spaces and tabs
-"trimstring" <- function (char)
+## Trim leading and trailing white spaces and tabs
+trimstring <- function (char)
 	return(sub("\\s+$", "", sub("^\\s+", "", char)))
 
-# Get the name of a file, without its extension
-"noext" <- function (file)
+## Get the name of a file, without its extension
+noext <- function (file)
 	return(sub("\\.[^.]+$", "", basename(file)))
 
-# Get information about a sample, given its name
-"get.sampleinfo" <- function (filename,  type = c("sample", "fraction", "image",
+## Get information about a sample, given its name
+sampleInfo <- function (filename,  type = c("sample", "fraction", "image",
 "scs", "date", "id", "frac", "imgnbr"), ext = "_dat1[.]zim$")
 {	
 	type <- tryCatch( match.arg(type), error = function (e) {
@@ -197,12 +77,12 @@ multi = FALSE, quote = TRUE, title = NULL)
 	base <- basename(filename)
 	if (ext != "") base <- sub(ext, "", base)
 	
-	# Filename without extension is supposed to follow the convention:
-	# scs.date.id+f[img] with scs.date.id forming an unique sample identifier
-	# Note: not all verifications are conducted. So, it sometimes returns a
-	# result even if the name does not conform to this specification!
+	## Filename without extension is supposed to follow the convention:
+	## scs.date.id+f[img] with scs.date.id forming an unique sample identifier
+	## Note: not all verifications are conducted. So, it sometimes returns a
+	## result even if the name does not conform to this specification!
 	### TODO: check that the name follows the convention and determine what is
-	#         optional, like date, for instance)
+	##         optional, like date, for instance)
 	res <- switch(type,
 		sample   = sub("\\+[a-zA-Z][0-9.]+$", "", base),
 		fraction = sub("[0-9.]+$", "", base),
@@ -217,28 +97,28 @@ multi = FALSE, quote = TRUE, title = NULL)
 	return(res)
 }
 
-# Calculate equivalent circular diameter (similar to equivalent spherical
-# diameter, but for 2D images)
-"ecd" <- function (area)
+## Calculate equivalent circular diameter (similar to equivalent spherical
+## diameter, but for 2D images)
+ecd <- function (area)
 	return(2 * sqrt(area / pi))
 
-# Unique identifiers (Ids) are a combination of Label and Item
-"make.Id" <- function (df)
+## Unique identifiers (Ids) are a combination of Label and Item
+makeId <- function (df)
 	paste(df$Label, df$Item, sep = "_")
 
-# Calculate derived variables... default function
-"calc.vars" <- function (x)
+## Calculate derived variables... default function
+calcVars <- function (x)
 {	
-	# This is the calculation of derived variables
-	# Note that you can make your own version of this function for more
-	# calculated variables!
+	## This is the calculation of derived variables
+	## Note that you can make your own version of this function for more
+	## calculated variables!
 	
-	# A small hack to correct some 0 (which can be problematic in further calcs)
-	noZero <- function (x){
+	## A small hack to correct some 0 (which can be problematic in further calcs)
+	noZero <- function (x) {
 		x[x == 0] <- 0.000000001
 		return(x)
 	}
-	# Euclidean distance between two points
+	## Euclidean distance between two points
 	distance <- function (x, y)
 		sqrt(x^2 + y^2)
 	
@@ -263,6 +143,7 @@ multi = FALSE, quote = TRUE, title = NULL)
 	x$MeanDia <- (x$Major + x$Minor) / 2
 	x$MeanFDia <- (x$Feret + x$Minor) / 2
 	x$Transp1 <- 1 - (x$ECD / x$MeanDia)
+	x$Transp1[x$Transp1 < 0] <- 0
 	x$Transp2 <- 1 - (x$ECD / x$MeanFDia)
 	x$Transp2[x$Transp2 < 0] <- 0
 	PA <- x$Perim.^2/16 - x$Area
@@ -272,15 +153,15 @@ multi = FALSE, quote = TRUE, title = NULL)
 	return(x)
 }
 
-# All sample with at least one entry in a given object
-"list.samples" <- function (obj)
+## All sample with at least one entry in a given object
+listSamples <- function (obj)
 { 	
 	if (!inherits(obj, c("ZIDat", "ZIDesc","ZITrain")))
 		stop("'obj' must be a 'ZIDat', 'ZIDesc', or 'ZITrain' object")
 	
-	# List all samples represented in a given object
+	## List all samples represented in a given object
 	if (inherits(obj, "ZIDat")) {
-    	res <- sort(unique(get.sampleinfo(as.character(obj$Label),
+    	res <- sort(unique(sampleInfo(as.character(obj$Label),
 			type = "sample", ext = "")))
 		return(res)
 	} else if (inherits(obj, "ZIDesc")) {
@@ -289,66 +170,66 @@ multi = FALSE, quote = TRUE, title = NULL)
 	} else if (inherits(obj, "ZITrain")) {
     	res <- as.character(obj$Id)
 		res <- sub("_[0-9]*$", "", res)
-		res <- sort(unique(get.sampleinfo(res, type = "sample", ext = "")))
+		res <- sort(unique(sampleInfo(res, type = "sample", ext = "")))
 		return(res)
 	}
 }
 
-# Parse an ini file (.zim, .zie, etc. are .ini files!)
+## Parse an ini file (.zim, .zie, etc. are .ini files!)
 ### TODO: manage the case there is no '=' in the data!
-"parse.ini" <- function (data, label = "1")
+parseIni <- function (data, label = "1")
 {
-	# Parse an ini file (tag=value => 'tag', 'value')
-	# and make a list with different sections
+	## Parse an ini file (tag=value => 'tag', 'value')
+	## and make a list with different sections
 	
-	# is str a section
+	# Is str a section?
 	is.section <- function (str)
 		as.logical(length(grep("^\\[.+\\]$", trimstring(str)) > 0))
 
-	# Get the name of a section
+	## Get the name of a section
 	get.section.name <- function (str)
 		sub("^\\[", "", sub("\\]$", "", trimstring(str)))
 
-	# Transform a vector of characters into a data frame,
-	# possibly with type conversion
+	## Transform a vector of characters into a data frame,
+	## possibly with type conversion
 	vector.convert <- function (vec)
 		as.data.frame(lapply(as.list(vec), type.convert))
 
 	if (is.null(data) || !inherits(data, "character") || length(data) < 1)
 		return(character(0))
 	
-	# Trim leading and trailing white spaces
+	## Trim leading and trailing white spaces
 	data <- trimstring(data)
 	
-	# Convert underscore to space
+	## Convert underscore to space
 	data <- underscore2space(data)
 	
-	# Eliminate empty lines
+	## Eliminate empty lines
 	data <- data[data != ""]
 	data <- paste(data, " ", sep = "")
 	if (length(data) < 1) return(character(0))
-	# Substitute the first '=' sign by another separator unlikely to appear in
-	# the argument
+	## Substitute the first '=' sign by another separator unlikely to appear in
+	## the argument
 	data <- sub("=", "&&&&&", data)
 	
-	# Split the strings according to this separator
+	## Split the strings according to this separator
 	data <- strsplit(data, "&&&&&")
 	
-	# Get a matrix
+	## Get a matrix
 	data <- t(as.data.frame(data))
 	rownames(data) <- NULL
 	
-	# Make sure we have a section for the first entries (otherwise, use [.])
+	## Make sure we have a section for the first entries (otherwise, use [.])
 	if (!is.section(data[1, 1]))
 		data <- rbind(c("[.]", "[.]"), data)
 	Names <- as.vector(trimstring(data[, 1]))
 	Dat <- as.vector(trimstring(data[, 2]))
 	
-	# Determine which is a section header
+	## Determine which is a section header
 	Sec <- grep("\\[.+\\]$", Names)
 	SecNames <- get.section.name(Names[Sec])
 	
-	# Make a vector of sections
+	## Make a vector of sections
 	if (length(Sec) == 1) {
 		SecNames <- rep(SecNames, length(Names))
 	} else {
@@ -356,28 +237,28 @@ multi = FALSE, quote = TRUE, title = NULL)
 			length(Names) + 1) - Sec)
 	}
 	
-	# Replace section headers from all vectors
+	## Replace section headers from all vectors
 	Names[Sec] <- "Label"
 	Dat[Sec] <- label
 	names(Dat) <- Names
 	
-	# Transform SecNames in a factor
+	## Transform SecNames in a factor
 	SecNames <- as.factor(SecNames)
 	
-	# Split Dat on sections
+	## Split Dat on sections
 	DatSec <- split(Dat, SecNames)
 	
-	# For each section, transform the vector in a data frame and possibly
-	# convert its content
+	## For each section, transform the vector in a data frame and possibly
+	## convert its content
 	DatSec <- lapply(DatSec, vector.convert)
 	
-	# Eliminate "Label" if it is ""
+	## Eliminate "Label" if it is ""
 	if (label == "") DatSec <- lapply(DatSec, function(x) x[-1])
 	return(DatSec)
 }
 
-# Merge two lists of data frames
-"list.merge" <- function (x, y)
+## Merge two lists of data frames
+list.merge <- function (x, y)
 {	
 	if (!inherits(x, "list") || !inherits(y, "list"))
 		stop("'x' and 'y' must both be 'list' objects")
@@ -386,7 +267,7 @@ multi = FALSE, quote = TRUE, title = NULL)
 	xandy <- xitems[xitems %in% yitems]
 	xonly <- xitems[!(xitems %in% xandy)]
 	yonly <- yitems[!(yitems %in% xandy)]
-	# First merge common items
+	## First merge common items
 	if (length(xandy) > 0) {
 		res <- lapply(xandy, function (item) {
 			merge(x[[item]], y[[item]], all = TRUE)
@@ -400,11 +281,11 @@ multi = FALSE, quote = TRUE, title = NULL)
 	return(res)
 }
 
-# Add items across two lists (names must be the same)
-"list.add" <- function (..., .list = list(...))
+## Add items across two lists (names must be the same)
+list.add <- function (..., .list = list(...))
 	list.reduce(.list= .list, FUN = "+")
 
-"list.reduce" <- function (..., .list = list(...), FUN = "+" )
+list.reduce <- function (..., .list = list(...), FUN = "+" )
 {
 	.list <- Filter(Negate(is.null), .list)
 	if (length(.list) == 1) return(.list[[1]])
@@ -416,19 +297,19 @@ multi = FALSE, quote = TRUE, title = NULL)
 	return(out)
 }
 
-# Internationalization of ZooImage: get messages in other languages
-"gettextZI" <- function (...)
+## Internationalization of ZooImage: get messages in other languages
+gettextZI <- function (...)
 {
 	### TODO: internationalization of the package
 	#gettext(..., domain = "R-zooimage")
 	return(list(...)[[1]])
 }
 
-# Display progression of long-running tasks, both on the R console
-# and in the ZooImage assistant status bar
-"Progress" <- function (value, max.value = NULL)
+## Display progression of long-running tasks, both on the R console
+## and in the ZooImage assistant status bar
+Progress <- function (value, max.value = NULL)
 {
-	# My own version of progress() that also uses the Tk window statusbar
+	## My own version of progress() that also uses the Tk window statusbar
     if (!is.numeric(value))
         stop("'value' must be numeric!")
     if (is.null(max.value)) {
@@ -439,7 +320,7 @@ multi = FALSE, quote = TRUE, title = NULL)
     if (!is.numeric(max.value))
         stop("'max.value' must be numeric or NULL!")
 	if (value > max.value)
-		stop( "use ClearProgress instead")
+		stop( "use clearProgress instead")
     
 	Max.Value <- as.character(round(max.value))
     l <- nchar(Max.Value)
@@ -455,50 +336,50 @@ multi = FALSE, quote = TRUE, title = NULL)
     }
 	flush.console()
 	
-	# Do we need to update the Tk window statusbar also?
-    if ("ZIDlgWin" %in% WinNames()) {
-    	assignTemp("statusBusy", TRUE)
-		# Calculate fraction and show it in the progress bar
-		if (!percent) value <- value / max.value * 100
-		tkconfigure(getTemp("statusProg"), value = value)
-		# Display the progress text also in the statusbar
-		tkconfigure(getTemp("statusText"), text = message)
-		.Tcl("update idletasks")
-	}
+	## Do we need to update the Tk window statusbar also?
+#    if ("ZIDlgWin" %in% WinNames()) {
+#    	assignTemp("statusBusy", TRUE)
+#		## Calculate fraction and show it in the progress bar
+#		if (!percent) value <- value / max.value * 100
+#		tkconfigure(getTemp("statusProg"), value = value)
+#		## Display the progress text also in the statusbar
+#		tkconfigure(getTemp("statusText"), text = message)
+#		.Tcl("update idletasks")
+#	}
     invisible(NULL)
 }
 
-"ClearProgress" <- function ()
+clearProgress <- function ()
 {
 	cat(backspaces(), "", sep = "")
-	if ("ZIDlgWin" %in% WinNames()) {
-		rmTemp("statusBusy")
-		tkconfigure(getTemp("statusProg") , value = 0)
-		tkconfigure(getTemp("statusText") , text = paste("Ready -", getwd()))
-	}
+#	if ("ZIDlgWin" %in% WinNames()) {
+#		rmTemp("statusBusy")
+#		tkconfigure(getTemp("statusProg") , value = 0)
+#		tkconfigure(getTemp("statusText") , text = paste("Ready -", getwd()))
+#	}
 	return(invisible(NULL))
 }
 
-# Change the working directory and update the ZooImage assistant status bar
-"setwd" <- function (dir)
-{
-	# My own setwd() function that also updates the Tk window statusbar
-	if (!is.character(dir)) return(invisible(NULL))
-	base::setwd(dir)
-	
-	# Possibly update the statusbar
-	if ("ZIDlgWin" %in% WinNames() && is.null(getTemp("statusBusy"))) {
-		tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
-		.Tcl("update idletasks")
-	}
-	
-	# Save the current default directory for future use
-	setKey("DefaultDirectory", getwd())
-}
+## Change the working directory and update the ZooImage assistant status bar
+#setwd <- function (dir)
+#{
+#	## My own setwd() function that also updates the Tk window statusbar
+#	if (!is.character(dir)) return(invisible(NULL))
+#	base::setwd(dir)
+#	
+#	## Possibly update the statusbar
+#	if ("ZIDlgWin" %in% WinNames() && is.null(getTemp("statusBusy"))) {
+#		tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
+#		.Tcl("update idletasks")
+#	}
+#	
+#	## Save the current default directory for future use
+#	setKey("DefaultDirectory", getwd())
+#}
 
-# Get the path of an executable, giving its name and subdirectory
-# ex.: ZIpgm("zip"), ZIpgm("pgmhist", "netpbm"), ZIpgm("pnm2biff", "xite")
-"ZIpgm" <- function (pgm, subdir = "misc", ext = "exe")
+## Get the path of an executable, giving its name and subdirectory
+## ex.: ZIpgm("zip"), ZIpgm("pgmhist", "netpbm"), ZIpgm("pnm2biff", "xite")
+ZIpgm <- function (pgm, subdir = "misc", ext = "exe")
 {	
 	if (isWin()) {
 		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."),
@@ -506,18 +387,18 @@ multi = FALSE, quote = TRUE, title = NULL)
 		if (!file.exists(pathpgm)) return("") else
 			return(shortPathName(pathpgm))
 	} else {	
-		# Change nothing: should be directly executable
+		## Change nothing: should be directly executable
 		if (pgm == "dc_raw") pgm <- "dcraw"
 		return(pgm)
 	}	
 }
 
-# Show textual help for executables
-# ex.: ZIpgmhelp("zip"), ZIpgmhelp("pgmhist", "netpbm")
-"ZIpgmhelp" <- function (pgm, subdir = "misc")
+## Show textual help for executables
+## ex.: ZIpgmHelp("zip"), ZIpgmHelp("pgmhist", "netpbm")
+ZIpgmHelp <- function (pgm, subdir = "misc")
 {
-	# TODO: would it not be better to use the same thing on all platforms
-	#       (the doc directory)
+	## TODO: would it not be better to use the same thing on all platforms
+	##       (the doc directory)
 	if (isWin()) {
 		helpfile <- file.path(system.file(subdir, "doc", package = "zooimage"),
 			paste(pgm, "txt", sep = "."))
@@ -530,89 +411,116 @@ multi = FALSE, quote = TRUE, title = NULL)
 	}	
 }
 
-"getDec" <- function ()
+getDec <- function ()
 {
 	Dec <- getKey("OptionInOutDecimalSep", ".")
 	DecList <- c(".", ",")
-	# It must be either "." or ","!
+	## It must be either "." or ","!
 	if (!Dec %in% DecList) Dec <- "."
 	return(Dec)
 }
 
-# function to be sure that numeric values are numeric!
-as.numeric.Vars <- function(ZIDat, Vars = NULL){
-    # Default values
-    if(is.null(Vars)){
+## Function to be sure that numeric values are numeric!
+as.numeric.Vars <- function (ZIDat, Vars = NULL)
+{
+    ## Default values
+    if (is.null(Vars)) {
         Vars <- c("ECD",
-            "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
-            "FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio", "FIT_Transparency",
-            "FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
-            "FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
-            "FIT_Feret_Max_Angle", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak",
-            "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF", "FIT_Avg_Red", "FIT_Avg_Green",
-            "FIT_Avg_Blue", "FIT_Red_Green_Ratio", "FIT_Blue_Green", "FIT_Red_Blue_Ratio",
-            "FIT_CaptureX", "FIT_CaptureY", "FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
-            "FIT_Cal_Const",
+            "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD",
+			"FIT_Diameter_ESD", "FIT_Volume_ESD", "FIT_Length", "FIT_Width",
+			"FIT_Aspect_Ratio", "FIT_Transparency", "FIT_Intensity",
+			"FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
+			"FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter",
+			"FIT_Roughness", "FIT_Feret_Max_Angle", "FIT_PPC", "FIT_Ch1_Peak",
+			"FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
+			"FIT_Ch3_TOF", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue",
+			"FIT_Red_Green_Ratio", "FIT_Blue_Green", "FIT_Red_Blue_Ratio",
+			"FIT_CaptureX", "FIT_CaptureY", "FIT_SaveX", "FIT_SaveY",
+			"FIT_PixelW", "FIT_PixelH", "FIT_Cal_Const",
             "Area", "Mean", "StdDev", "Mode", "Min", "Max", "X", "Y", "XM",
-            "YM", "Perim.", "BX", "BY", "Width", "Height", "Major", "Minor", "Angle", "Circ.",
-            "Feret", "IntDen", "Median", "Skew", "Kurt", "XStart", "YStart", "Dil"
+            "YM", "Perim.", "BX", "BY", "Width", "Height", "Major", "Minor",
+			"Angle", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt",
+			"XStart", "YStart", "Dil"
         )
     }
 
-    # Names of ZIDat
+    ## Names of ZIDat
     Names <- names(ZIDat)
 
-    # Transform variables in numeric values
-    for (i in 1 : length(Vars)){
-        if(isTRUE(Vars[i] %in% Names)){
-            Num <- is.numeric(ZIDat[, Vars[i]])
-            if(!isTRUE(Num)){
-                ZIDat[, Vars[i]] <- as.numeric(ZIDat[, Vars[i]])
-            }
-        }
+    ## Transform variables in numeric values
+    for (i in 1:length(Vars)) {
+        if (isTRUE(Vars[i] %in% Names) && !is.numeric(ZIDat[, Vars[i]]))
+            ZIDat[, Vars[i]] <- as.numeric(ZIDat[, Vars[i]])
     }
     return(ZIDat)
 }
 
-# Function to reprocess a R.Data file in a zid file
-"NewRdata" <- function(path = "D", replace = TRUE)
+## Function to reprocess a .RData file in a zid file
+## TODO: place this is .zid file management instead!
+## TODO: does not seem to be used yet!
+newRData <- function (path = "D", replace = TRUE)
 {
-  # list of zid files to reporcess
-  zid <- list.files(path = path, pattern = "^.*[.][zZ][iI][dD]")
-    if(is.null(zid)) stop("no zid files in the directory") # of no zid files
-  # path of zid files
-  path.zid <- paste(path, zid, sep = "/")
-  # loop to analyze zid files one by one
-  for (i in 1 : length(zid)){
-    # extract zid in 'path' directory
-    uncompress.zid(path.zid[i])
-    # calculate new Rdata
-    path.sample <- sub("[.][zZ][iI][dD]","",path.zid[i])
-    make.RData(path.sample, replace = replace)
-    # compress new zid file
-    compress.zid(path.sample, replace = replace)
+	## List of zid files to reporcess
+	zid <- list.files(path = path, pattern = "^.*[.][zZ][iI][dD]")
+    if (is.null(zid)) stop("no zid files in the directory")
+	## Path of zid files
+	path.zid <- paste(path, zid, sep = "/")
+	## Loop to analyze zid files one by one
+	for (i in 1 : length(zid)) {
+		## Extract zid in 'path' directory
+		zidUncompress(path.zid[i])
+		## Calculate new Rdata
+		path.sample <- sub("[.][zZ][iI][dD]", "", path.zid[i])
+		makeRData(path.sample, replace = replace)
+		## Compress new zid file
+		zidCompress(path.sample, replace = replace)
     }
 }
 
-# Function to create a batch file for FlowCAM image analysis
-"create.BatchFile" <- function(ctx, fil = FALSE, largest = FALSE, vignettes = TRUE,
-  scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE, verbose = TRUE,
-  txt = TRUE, csv = FALSE, ImportName = "batchExampleParameters")
+## Function to create a batch file for FlowCAM image analysis
+createBatchFile <- function (ctx, fil = FALSE, largest = FALSE,
+vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
+masks = FALSE, verbose = TRUE, txt = TRUE,
+import.name = "batchExampleParameters")
 {
-  # Check arguments
-  if(!is.character(ctx)) stop("You must select a context file")
-  # Create the table of importation
-  ContextList <- read.ctx.all(ctx = ctx, fil = fil, largest = largest, vignettes = vignettes,
-    scalebar = scalebar, enhance = enhance, outline = outline, masks = masks, verbose = verbose)
-  # Write the table of importation in the sample directory
-  if(txt){
-    # Export table as txt format
-    write.table(ContextList, file = paste(dirname(dirname(ctx)), paste(ImportName, ".txt", sep = ""), sep = "/"),
-      quote = TRUE, sep = "\t", dec = ".", row.names = FALSE, col.names = TRUE)
-  } else {
-    # export table as csv format
-    write.csv(ContextList, file = paste(dirname(dirname(ctx)), paste(ImportName, ".csv", sep = ""), sep = "/"), row.names = FALSE)
-  }
-  cat(paste("Your import table has been created in", dirname(dirname(ctx)), " : your samples directory", "\n", sep = " "))
+	## Check arguments
+	if (!is.character(ctx)) stop("You must provide a context file")
+	## Create the table of importation
+	ContextList <- ctxReadAll(ctx = ctx, fil = fil, largest = largest,
+		vignettes = vignettes, scalebar = scalebar, enhance = enhance,
+		outline = outline, masks = masks, verbose = verbose)
+	## Write the table of importation in the sample directory
+	if (isTRUE(txt)) { # Export table as txt format
+		write.table(ContextList, file = paste(dirname(dirname(ctx)),
+		paste(import.name, ".txt", sep = ""), sep = "/"), quote = TRUE,
+		sep = "\t", dec = ".", row.names = FALSE, col.names = TRUE)
+	} else { # Export table as csv format
+		write.csv(ContextList, file = paste(dirname(dirname(ctx)),
+		paste(import.name, ".csv", sep = ""), sep = "/"), row.names = FALSE)
+	}
+	cat(paste("Your import table has been created in", dirname(dirname(ctx)),
+		" : your samples directory", "\n", sep = " "))
 }
 
+ijplugin <- function (zimfile, ij.plugin = c("Scanner_Gray16",
+"MacroPhoto_Gray16", "Scanner_Color", "Microscope_Color"))
+{
+	ij.plugin <- match.arg(ij.plugin)
+	cmd <- sprintf('java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"',
+		system.file("imagej", "ij.jar", package = "zooimage"),
+		system.file("imagej", "plugins", "_zooimage.jar", package = "zooimage"),
+		ij.plugin, tools:::file_path_as_absolute(zimfile))
+	return(invisible(system(cmd, intern = TRUE)))
+}
+
+## Calls the class org.sciviews.zooimage.ZooImageProcessList to get 
+## the list of available processes
+getProcessList <- function ()
+{
+	cmd <- sprintf('java -cp .:"%s":"%s" org.sciviews.zooimage.ZooImageProcessList', 
+		system.file("imagej", "ij.jar", package = "zooimage"),
+		system.file("imagej", "plugins", "_zooimage.jar", package = "zooimage")
+	)
+	res <- system(cmd , intern = TRUE)
+	return(res)
+}

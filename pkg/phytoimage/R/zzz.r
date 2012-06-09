@@ -1,40 +1,56 @@
-".First.lib" <-
-function(libname, pkgname) {
-	(require(svMisc) || stop("Package 'svMisc' from SciViews bundle is required!"))
-	(require(svWidgets) || stop("Package 'svWidgets' from SciViews bundle is required!"))
-	(require(tcltk2) || stop("Package 'tcltk2' is required!"))
+## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of PhytoImage
+##
+## PhytoImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## PhytoImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with PhytoImage.  If not, see <http://www.gnu.org/licenses/>.
 
-	# Define name and icon we want for the ZooImage application
-	ZIname <- "PhytoImage1"
+## Loading and unloading PhytoImage
+
+.onLoad <- function (libname, pkgname)
+{
+	## Define name and icon we want for the ZooImage application
+	ZIname <- "PhytoImage"
 	assignTemp("ZIname", ZIname)
-	ZIetc <- file.path(.path.package(package = "phytoimage")[1], "etc")
+	ZIetc <- system.file("etc", package = "phytoimage")
 	assignTemp("ZIetc", ZIetc)
-	ZIgui <- file.path(.path.package(package = "phytoimage")[1], "gui")
+	ZIgui <- system.file("gui", package = "phytoimage")
 	assignTemp("ZIgui", ZIgui)
-	if (isWin())
-		assignTemp("ZIico", tk2ico.create(file.path(getTemp("ZIgui"), "PhytoImage.ico")))
+	#if (isWin())
+	#	assignTemp("ZIico", tk2ico.create(file.path(getTemp("ZIgui"), "PhytoImage.ico")))
 
-	# Load the various image resources
-	tkImgReadPackage("phytoimage")
-	# Load the menus
-	MenuReadPackage("phytoimage")
-	# Indicate that other GUI resources should be loaded from the phytoimage package
+	## Load the various image resources
+	#tkImgReadPackage("phytoimage")
+	## Load the menus
+	#MenuReadPackage("phytoimage")
+	## Indicate that other GUI resources should be loaded from the phytoimage package
 	ZIguiPackage <- "phytoimage"
 	assignTemp("ZIguiPackage", ZIguiPackage)
 
-	# Make sure that ZooImage will not overwrite these entries
+	## Make sure that ZooImage will not overwrite these entries
 	options(ZIredefine = TRUE)
 
-	# Load the initial zooimage package now
-	(require(zooimage) || stop("Package 'zooimage' is required!"))
+	## Load the initial zooimage package now
+	if (!require(zooimage)) stop("Package 'zooimage' is required!")
 }
 
-".Last.lib" <-
-function(libpath) {
-	# Eliminate the PhytoImage menu entries
+## Unloading PhytoImage
+.onUnload <- function (libpath)
+{
+	## Eliminate the PhytoImage menu entries
 	if (.Platform$GUI[1] == "Rgui") {
-		require(svWidgets)
-		try(MenuDel("$ConsoleMain/PhytoImage"), silent = TRUE)
-		try(MenuDel("$ConsolePopup/PhytoImage"), silent = TRUE)
+		try(menuDel("$ConsoleMain/PhytoImage"), silent = TRUE)
+		try(menuDel("$ConsolePopup/PhytoImage"), silent = TRUE)
 	}
+	try(detach("package:zooimage", unload = TRUE), silent = TRUE)
 }

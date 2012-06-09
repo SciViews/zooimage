@@ -1,7 +1,7 @@
 \name{ZITrain}
 \alias{get.ZITrain}
 \alias{expand.ZITrain}
-\alias{make.ZIRecode.level}
+\alias{ZIRecodeLevels}
 \alias{read.ZITrain}
 \alias{recode.ZITrain}
 \alias{unzip.ZITrain}
@@ -17,7 +17,7 @@
 \usage{
 get.ZITrain(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE)
 expand.ZITrain(ZITrain, ZIDdir, destination)
-make.ZIRecode.level(ZITrain, level = 1)
+ZIRecodeLevels(ZITrain, level = 1)
 read.ZITrain(file)
 recode.ZITrain(ZITrain, ZIRecode, warn.only = FALSE)
 unzip.ZITrain(zipfile, dir, overwrite = FALSE)
@@ -36,7 +36,7 @@ zip.ZITrain(dir, zipfile, overwrite = FALSE)
   \item{destination}{ A directory where to expand a classification contained in a 'ZITrain' object }
   \item{level}{ A level for the recoding }
   \item{file}{ Read or write a 'ZITrain' object from/to a text file }
-  \item{ZIRecode}{ A 'ZIRecode' object (for instance, one obtained by \code{make.ZIRecode.level} }
+  \item{ZIRecode}{ A 'ZIRecode' object (for instance, one obtained by \code{ZIRecodeLevels} }
   \item{warn.only}{ Do not interrupt execution if there is a mismatch between levels in the 'ZITrain' and 'ZIRecode' objects }
   \item{zipfile}{ A zip archive file to process }
   \item{overwrite}{ Do we overwrite existing files? }

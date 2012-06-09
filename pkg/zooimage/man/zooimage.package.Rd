@@ -16,18 +16,14 @@
   \tabular{ll}{
     Package: \tab zooimage\cr
     Type: \tab Package\cr
-    Version: \tab 2.0-0\cr
-    Date: \tab 2010-04-06\cr
+    Version: \tab 3.0-0\cr
+    Date: \tab 2012-05-05\cr
     License: \tab GPL 2 or above at your convenience.\cr
   }
-  For any series that you analyses with ZooImage, could you, please:
-  - Send main metadata and a short description of your series, and the way it
-    is analyzed to Philippe.Grosjean@umons.ac.be (this is only used internally
-    in order to keep track of the way ZooImage is used).
-  - Everytime you publish results that use ZooImage, you must place a reference
-    to the ZooImage web site (http://www.sciviews.org/zooimage) in your
-	publication. For papers, please, send also a reprint to
-	Philippe.Grosjean@umons.ac.be, preferrably as a PDF file.
+  Everytime you publish results that use ZooImage, you must place a reference
+  to the ZooImage web site (http://www.sciviews.org/zooimage) in your
+  publication. For papers, please, send also a reprint to
+  Philippe.Grosjean@umons.ac.be, preferrably as a PDF file.
 }
 
 \author{
@@ -41,12 +37,12 @@
   Maintainer: Philippe Grosjean <Philippe.Grosjean@umons.ac.be>
 }
 
-\references{
-  Not yet!
-}
+%\references{
+%  Not yet!
+%}
 
-\examples{
-# TODO...
-}
+%\examples{
+%# TODO...
+%}
 
 \keyword{package}

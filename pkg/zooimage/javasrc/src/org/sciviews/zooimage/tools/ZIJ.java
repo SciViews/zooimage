@@ -19,7 +19,7 @@ public class ZIJ {
 	private static ImagePlus image ;
 	
 	/**
-	 * Simple wrapper around the run method that prints debuggin information
+	 * Simple wrapper around the run method that prints debugging information
 	 * 
 	 * @param imp the ImagePlus on which to run the command
 	 * @param command the command

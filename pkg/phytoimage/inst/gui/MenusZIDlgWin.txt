@@ -1,5 +1,5 @@
-# PhytoImage1 Tk menu
-# by Ph. Grosjean, 2006-2010 <phgrosjean@sciviews.org>
+# PhytoImage Tk menu
+# by Ph. Grosjean, 2006-2012 <phgrosjean@sciviews.org>
 
 # Create a Tk menu (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin
@@ -10,9 +10,11 @@ $Tk.ZIDlgWin
 ||Make .&zid files...	Ctrl+Z			~~ makeZid()
 ||-
 ||&Make training set...	Ctrl+M			~~ makeTrain()
+||Add vignettes to training set         ~~ increaseTrain()
 ||&Read training set..	Ctrl+T			~~ readTrain()
 ||Make &classifier...	Ctrl+C			~~ makeClass()
 ||A&nalyze classifier...	Ctrl+N		~~ analyzeClass()
+||Automatic classification of vignettes ~~ vignettesClass()
 ||--
 ||Edit samples &description...	Ctrl+D	~~ editDescription()
 ||Process &samples...	Ctrl+S			~~ processSamples()
@@ -23,7 +25,7 @@ $Tk.ZIDlgWin
 |||From the &assistant	Ctrl+X			~~ closeAssistant()
 |||From &PhytoImage						~~ closePhytoImage()
 |$Real-time
-||&Start process...                		~~ realtimeRun()
+||&Start process...                		~~ realtimeStart()
 ||&Stop process...                 		~~ realtimeStop()
 ||&Export results...               		~~ realtimeSave()
 ||&Remove data...                  		~~ realtimeReset()
@@ -44,38 +46,38 @@ $Tk.ZIDlgWin
 ||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
 |$Functions
 ||$PhytoImage &Metadata (zim)
-|||create.zim()                         ~~ guiDlgFunction("create.zim")
-|||edit.zim()                           ~~ guiDlgFunction("edit.zim")
+|||zimCreate()                          ~~ guiDlgFunction("zimCreate")
+|||zimEdit()                            ~~ guiDlgFunction("zimEdit")
 |||-
-|||make.zim()                           ~~ guiDlgFunction("make.zim")
-|||verify.zim()                         ~~ guiDlgFunction("verify.zim")
+|||zimMake()                            ~~ guiDlgFunction("zimMake")
+|||zimVerify()                          ~~ guiDlgFunction("zimVerify")
 |||--
-|||e&xtract.zims()                      ~~ guiDlgFunction("extract.zims")
-|||refresh.zims()                       ~~ guiDlgFunction("refresh.zims")
+|||zimE&xtractAll()                     ~~ guiDlgFunction("zimExtractAll")
+|||zimRefreshAll()                      ~~ guiDlgFunction("zimRefreshAll")
 ||$PhytoImage &Picture (zip)
-|||zip.img()							~~ guiDlgFunction("zip.img")
-|||zip.img.&all()						~~ guiDlgFunction("zip.img.all")
+|||zipImg()			    				~~ guiDlgFunction("zipImg")
+|||zipImg&All()	    					~~ guiDlgFunction("zipImgAll")
 |||-
-|||unzip.img()							~~ guiDlgFunction("unzip.img")
-|||u&nzip.img.all()						~~ guiDlgFunction("unzip.img.all")
+|||unzipImg()							~~ guiDlgFunction("unzipImg")
+|||u&nzipImgAll()						~~ guiDlgFunction("unzipImgAll")
 ||$PhytoImage &Data (zid)
-|||make.RData()							~~ guiDlgFunction("make.RData")
-|||read.zid()							~~ guiDlgFunction("read.zid")
-|||zid.extract()						~~ guiDlgFunction("zid.extract")
+|||makeRData()							~~ guiDlgFunction("makeRData")
+|||zidRead()							~~ guiDlgFunction("zidRead")
+|||zidExtract()		    				~~ guiDlgFunction("zidExtract")
 |||-
-|||verify.zid()							~~ guiDlgFunction("verify.zid")
-|||verify.zid.&all()						~~ guiDlgFunction("verify.zid.all")
+|||zidVerify()							~~ guiDlgFunction("zidVerify")
+|||zidVerify&All()						~~ guiDlgFunction("zidVerifyAll")
 |||--
-|||compress.zid()						~~ guiDlgFunction("compress.zid")
-|||c&ompress.zid.all()					~~ guiDlgFunction("compress.zid.all")
+|||zidCompress()						~~ guiDlgFunction("zidCompress")
+|||zidC&ompressAll()					~~ guiDlgFunction("zidCompressAll")
 |||---
-|||uncompress.zid()						~~ guiDlgFunction("uncompress.zid")
-|||u&ncompress.zid.all()				~~ guiDlgFunction("uncompress.zid.all")
+|||zidUncompress()						~~ guiDlgFunction("zidUncompress")
+|||zidU&ncompressAll()				    ~~ guiDlgFunction("zidUncompressAll")
 ||$PhytoImage &Samples Metadata (zis)
-|||createZis()                          ~~ guiDlgFunction("createZis")
-|||editZis()                            ~~ guiDlgFunction("editZis")
+|||zisCreate()                          ~~ guiDlgFunction("zisCreate")
+|||zisEdit()                            ~~ guiDlgFunction("zisEdit")
 |||-
-|||read.description()                   ~~ guiDlgFunction("read.description")
+|||readDescription()                   ~~ guiDlgFunction("readDescription")
 ||--
 ||$PhytoImage &Training set
 |||prepare.ZITrain()					~~ guiDlgFunction("prepare.ZITrain")
@@ -88,20 +90,20 @@ $Tk.ZIDlgWin
 |||unzip.ZITrain()						~~ guiDlgFunction("unzip.ZITrain")
 |||---
 |||re&code.ZITrain()					~~ guiDlgFunction("recode.ZITrain")
-|||make.ZIRecode.level()				~~ guiDlgFunction("make.ZIRecode.level()")
+|||ZIRecodeLevels()			        	~~ guiDlgFunction("ZIRecodeLevels")
 ||$PhytoImage &Classifier
 |||ZIClass()							~~ guiDlgFunction("ZIClass")
 |||predict()							~~ guiDlgFunction("predict.ZIClass")
 |||-
 |||confu()								~~ guiDlgFunction("confu")
-|||confu.&map()							~~ guiDlgFunction("confu.map")
+|||confusion&Map()						~~ guiDlgFunction("confusionMap")
 ||$PhytoImage &Results
-|||process.sample()						~~ guiDlgFunction("process.sample")
-|||p&rocess.samples()					~~ guiDlgFunction("process.samples")
+|||sampleProcess()						~~ guiDlgFunction("sampleProcess")
+|||sampleP&rocessAll()					~~ guiDlgFunction("sampleProcessAll")
 |||-
-|||Abd.sample()							~~ guiDlgFunction("Abd.sample")
-|||Bio.sample()							~~ guiDlgFunction("Bio.sample")
-|||Spectrum.sample()					~~ guiDlgFunction("Spectrum.sample")
+|||sampleAbd()							~~ guiDlgFunction("sampleAbd")
+|||sampleBio()							~~ guiDlgFunction("sampleBio")
+|||sampleSpectrum()		    			~~ guiDlgFunction("sampleSpectrum")
 |$Utilities
 ||Calibrate grayscale (16bit)			~~ calib()
 ||Biomass conversion specification      ~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
@@ -111,10 +113,9 @@ $Tk.ZIDlgWin
 |||&Activate next						~~ {dev.set(); if (isRgui()) bringToTop()}
 |||&Close all							~~ graphics.off()
 |$Options
-||Change &active dir...                 ~~ Setwd(paste(tkchooseDirectory(), collapse = " "))
+||Change &active dir...                 ~~ setwd(dlgDir()$res)
 ||-
 ||Define decimal separator...			~~ optInOutDecimalSep()
-
 |$Help
 ||&Online help							~~ help("phytoimage")
 ||&Manual	Ctrl+H						~~ viewManual()

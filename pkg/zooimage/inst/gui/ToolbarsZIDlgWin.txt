@@ -1,5 +1,5 @@
-# ZooImage1 Tk toolbar
-# by Ph. Grosjean, 2005 <phgrosjean@sciviews.org>
+# ZooImage Tk toolbar
+# by Ph. Grosjean, 2005-2012 <phgrosjean@sciviews.org>
 
 # Create a Tk toolbar (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin

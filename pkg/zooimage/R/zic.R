@@ -1,31 +1,30 @@
-# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
-#
-# This file is part of ZooImage
-# 
-# ZooImage is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# ZooImage is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# Check that the file is a zic file
-"check.zic" <- function (file)
+## Check that the file is a zic file
+zicCheck <- function (file)
 {	
-	# This should be a .zic file directly
+	## This should be a .zic file directly
 	checkFileExists(file)
 	
-	# First line of the file must be "ZI1"
+	## First line of the file must be "ZI1"
 	checkFirstLine(file) 
 	
-	# Second line must be [path]
+	## Second line must be [path]
 	Line2 <- scan(file, character(), skip = 1, nmax = 1, quiet = TRUE)
 	if (tolower(Line2) != "[path]")
 		stop("not a ZooImage1 .zic file, or corrupted!")

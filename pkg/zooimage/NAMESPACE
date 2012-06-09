@@ -1,145 +1,145 @@
- import(utils)
- import(tcltk)
- import(tcltk2)
- import(svMisc)
- import(svWidgets)
- import(svDialogs)
- import(grDevices)
- import(ipred)
- import(MASS)
- import(randomForest)
- import(class)
- import(rpart)
- import(e1071)
- import(nnet)
- import(tree)
- import(gplots)
- import(RColorBrewer)
+import(utils)
+#import(tcltk)
+#import(tcltk2)
+import(svMisc)
+#import(svWidgets)
+import(svDialogs)
+import(grDevices)
+import(ipred)
+import(MASS)
+import(randomForest)
+import(class)
+import(rpart)
+import(e1071)
+import(nnet)
+import(tree)
+import(gplots)
+import(RColorBrewer)
 
-export(Abd.sample)
-export(AboutZI)
+export(aboutZI)
 export(acquireImg)
-export(AddVignToTrain)
 export(analyzeClass)
 export(BFcorrection)
-export(Bio.sample)
- export(calc.vars)
+export(calcVars)
 export(calib)
 export(calibrate)
 export(checkBF)
-export(ClassifVigns)
-export(clean.after.zid)
- export(ClearProgress)
+export(clearProgress)
 export(closeAssistant)
 export(closeZooImage)
 export(compareExif)
-export(compile.zie)
-export(compress.zid)
-export(compress.zid.all)
-export(create.zim)
-export(createZis)
- export(ecd)
+export(ecd)
 export(editDescription)
-export(edit.zim)
-export(editZis)
-export(ExitZI)
+export(exitZI)
 export(expand.ZITrain)
 export(exportResults)
-export(extract.zims)
 export(focusGraph)
 export(focusR)
-export(FormVarsSelect)
- export(getDec)
+export(formulaVarSel)
+export(getDec)
 export(getKey)
- export(getList)
- export(get.sampleinfo)
- export(gettextZI)
- export(getVar)
+export(getList)
+export(gettextZI)
+export(getSpectrum)
+export(getVar)
 export(get.ZITrain)
 export(histSpectrum)
 export(importImg)
+export(increaseTrain)
 export(isTestFile)
 export(is.zim)
 export(list.add)
-export(list.dat1.zim)
- export(list.merge)
+export(list.merge)
 export(listObjects)
-export(list.samples)
-export(list.zim)
+export(listSamples)
 export(loadObjects)
- export(logClear)
- export(logError)
- export(logProcess)
- export(logView)
- export(logWarning)
+export(logClear)
+export(logError)
+export(logProcess)
+export(logView)
+export(logWarning)
 export(lvq)
 export(makeClass)
- export(make.Id)
-export(make.RData)
+export(makeId)
+export(makeRData)
 export(makeTrain)
 export(makeZid)
-export(make.zie)
-export(make.zim)
-export(make.ZIRecode.level)
 export(modalAssistant)
 export(nnet2)
 export(noext)
 export(optInOutDecimalSep)
- export(parse.ini)
+export(parseIni)
 export(plotAbdBio)
 export(prepare.ZITrain)
 export(processImg)
-export(process.sample)
-export(process.samples)
+export(processSample)
+export(processSampleAll)
 export(processSamples)
- export(Progress)
-export(RawConvert)
-export(read.description)
+export(Progress)
+export(rawConvert)
+export(readDescription)
 export(readExifRaw)
 export(readTrain)
-export(read.zid)
 export(read.ZITrain)
 export(realtimeReset)
-export(realtimeRun)
 export(realtimeSave)
+export(realtimeStart)
 export(realtimeStop)
 export(recode.ZITrain)
-export(refresh.zims)
 export(removeObjects)
+export(sampleAbd)
+export(sampleBio)
+export(sampleInfo)
+export(sampleSpectrum)
 export(saveObjects)
- export(selectFile)
+export(selectFile)
 export(setKey)
- export(setwd)
-export(Spectrum)
-export(Spectrum.sample)
 export(startPgm)
 export(trimstring)
-export(uncompress.zid)
-export(uncompress.zid.all)
 export(underscore2space)
-export(unzip.img)
-export(unzip.img.all)
+export(unzipImg)
+export(unzipImgAll)
 export(unzip.ZITrain)
-export(verify.zid)
-export(verify.zid.all)
-export(verify.zim)
 export(viewManual)
 export(viewResults)
+export(vignettesClass)
 export(write.ZITrain)
 export(ZIClass)
 export(ZIConf)
-export(zid.extract)
+export(zicCheck)
+export(zidClean)
+export(zidCompress)
+export(zidCompressAll)
+export(zidExtract)
+export(zidRead)
+export(zidUncompress)
+export(zidUncompressAll)
+export(zidVerify)
+export(zidVerifyAll)
 export(ZIDlg)
 export(ZIE)
 export(ZIEimportJpg)
 export(ZIEimportTable)
 export(ZIEimportTif)
 export(ZIEimportZie)
- export(ZIpgm)
- export(ZIpgmhelp)
-export(zip.img)
-export(zip.img.all)
+export(zieCompile)
+export(zieMake)
+export(zimCreate)
+export(zimDatList)
+export(zimEdit)
+export(zimExtractAll)
+export(zimList)
+export(zimMake)
+export(zimRefreshAll)
+export(zimVerify)
+export(ZIpgm)
+export(ZIpgmHelp)
+export(zipImg)
+export(zipImgAll)
 export(zip.ZITrain)
+export(ZIRecodeLevels)
+export(zisCreate)
+export(zisEdit)
 
 S3method(predict, nnet2)
 S3method(predict, lvq)
@@ -152,82 +152,81 @@ S3method(plot, ZITable)
 S3method(merge, ZITable)
 
 # The following objects are NOT exported
- # ZOOIMAGEENV (environment holding ZooImage data)
- # backspaces
- # callstack
- # catch
- # catch.env
- # chekcAllFileExist
- # checkAvailable_java
- # checkAvailable_biff2tiff # Eliminate Xite programs
- # checkAvailable_divide # Eliminate Xite programs
- # checkAvailable_pnm2biff # Eliminate Xite programs
- # checkAvailable_statistics # Eliminate Xite programs
- # checkCapabilityAvailable
- # checkCapable
- # checkCapabilityAvailable
- # checkConvertAvailable # Eliminate?
- # checkDcRawAvailable # Eliminate?
- # checkDirExists
- # checkEmptyDir
- # checkFileExists
- # checkFirstLine
- # checkIdentifyAvailable # Eliminate?
- # checkPpmtopgmAvailable # Eliminate?
- # checkUnzipAvailable
- # checkZipAvailable
- # checkZipnoteAvailable
- # dummyCatcher
- # editor(file, editor = getOption("ZIEditor"))
- # extensionPattern
- # extractMessage
- # finish.loopfunction
- # force.dir.create
- # getCatcher
- # getSample
- # getZooImageCapability
- # getZooImageConditionFunction
- # getZooImageErrorFunction
- # getZooImageWarningFunction
- # hasExtension
- # imagemagick(prog, args, ...)
- # imagemagick_convert(file, size1, size2)
- # imagemagick_identify(file)
- # imageViewer(dir = getwd())
- # list.files.ext
- # list.dat1.zim
- # list.dir
- # list.zim
- # list.zid
- # list.zip
- # misc(prog, args, ...)
- # misc_dcraw(file, arguments, output)
- # netpbm(prog, args, ...)
- # netpbm_pgmhist(file, delete = TRUE)
- # netpbm_ppmtopgm(ppm, pgm)
- # netpbm_tifftopnm(input, output)
- # program(prog, args, ..., dir)
- # recallWithCatcher
- # resetCatcher
- # setCatcher
- # stop
- # template
- # unzip
- # warning
- # xite(prog, args, ...)
- # xite_biff2tiff(cor, tif)
- # xite_divide(meangray, image, bf, cor)
- # xite_pnm2biff(input, output)
- # xite_statistics(file)
- # zip
- # zip_addcomments(
- # zipnote
- # zooImageCapabilities
- # zooImageError
- # [[.zooImageError
- # zooImageErrorContext
- # zooImageErrorDrivers
- # zooImageWarning
- # [[.zooImageWarning
- # zooImageWarningContext
- # zooImageWarningDrivers
+# ZOOIMAGEENV (environment holding ZooImage data)
+# backspaces
+# callstack
+# catch
+# catch.env
+# checkFileExistAll
+# checkJavaAvailable
+# checkBiff2tiffAvailable # Eliminate Xite programs
+# checkDivideAvailable # Eliminate Xite programs
+# checkPnm2biffAvailable # Eliminate Xite programs
+# checkStatisticsAvailable # Eliminate Xite programs
+# checkCapabilityAvailable
+# checkCapable
+# checkCapabilityAvailable
+# checkConvertAvailable # Eliminate?
+# checkDcRawAvailable # Eliminate?
+# checkDirExists
+# checkEmptyDir
+# checkFileExists
+# checkFirstLine
+# checkIdentifyAvailable # Eliminate?
+# checkPpmtopgmAvailable # Eliminate?
+# checkUnzipAvailable
+# checkZipAvailable
+# checkZipnoteAvailable
+# dummyCatcher
+# editor
+# extensionPattern
+# extractMessage
+# finishLoop
+# forceDirCreate
+# getCatcher
+# getSample
+# getZooImageCapability
+# getZooImageConditionFunction
+# getZooImageErrorFunction
+# getZooImageWarningFunction
+# hasExtension
+# imagemagick
+# imagemagick_convert
+# imagemagick_identify
+# imageViewer
+# jpgList
+# listFilesExt
+# list.dir
+# misc
+# misc_dcraw
+# netpbm
+# netpbm_pgmhist
+# netpbm_ppmtopgm
+# netpbm_tifftopnm
+# program
+# recallWithCatcher
+# resetCatcher
+# setCatcher
+# stop
+# template
+# unzip
+# warning
+# xite
+# xite_biff2tiff
+# xite_divide
+# xite_pnm2biff
+# xite_statistics
+# zidList
+# zipList
+# zip
+# zipNoteAdd
+# zipNote
+# zooImageCapabilities
+# zooImageError
+# [[.zooImageError
+# zooImageErrorContext
+# zooImageErrorDrivers
+# zooImageWarning
+# [[.zooImageWarning
+# zooImageWarningContext
+# zooImageWarningDrivers

@@ -1,45 +1,45 @@
-# Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
-#
-# This file is part of ZooImage
-# 
-# ZooImage is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# ZooImage is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+## Copyright (c) 2004-2010, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check consistancy of a zoo image directory
-# zidir: the directory to check
-# type: must be ZI1 
-# check.vignettes: do we check vignettes as well
-# show.log: do we show a log at the end
-"verify.zid" <- function (zidir, type = "ZI1", check.vignettes = TRUE,
+## Check consistancy of a zoo image directory
+## zidir: the directory to check
+## type: must be ZI1 
+## check.vignettes: do we check vignettes as well
+## show.log: do we show a log at the end
+zidVerify <- function (zidir, type = "ZI1", check.vignettes = TRUE,
 show.log = TRUE)
 {	
-	# Check the format of the file
-	# This should be a directory containing XXX+YY_dat1.zim files + .jpg files
+	## Check the format of the file
+	## This should be a directory containing XXX+YY_dat1.zim files + .jpg files
 	if (type != "ZI1")
 		stop("only 'ZI1' is currently supported for 'type'!")
 	
-	# Check the list of _dat1.zim
-	dat1files <- list.dat1.zim(zidir)
+	## Check the list of _dat1.zim
+	dat1files <- zimDatList(zidir)
 	if(length(dat1files) == 0)
 		stop("no '_dat1.zim' file!")
 	
-    # Check the content of all these "_dat1.zim" files 
-	#     and retrieve the number of items measured
+    ## Check the content of all these "_dat1.zim" files 
+	## and retrieve the number of items measured
 	dat1files <- sort(dat1files)
-	# Default to -1 for corrupted dat1 files
+	## Default to -1 for corrupted dat1 files
 	nitems <- sapply(dat1files, function(x) {
 		tryCatch( 
-			verify.zim(file.path(zidir, x), is.dat1 = TRUE ), 
+			zimVerify(file.path(zidir, x), is.dat1 = TRUE ), 
 			zooImageError = function (e) {
 				logError(e)
 				return(-1)
@@ -47,28 +47,28 @@ show.log = TRUE)
 	})
 	ok <- all(nitems != -1)
 	
-	# Check the vignettes
+	## Check the vignettes
 	if (check.vignettes) {
-        # Check that we have corresponding vignettes (XXX+YY_ZZZ.jpg files)
+        ## Check that we have corresponding vignettes (XXX+YY_ZZZ.jpg files)
     	samples <- sub("_dat1[.]zim$", "", dat1files)
 		
-    	# Check the content of the directory for .jpg files
+    	## Check the content of the directory for .jpg files
     	for (i in 1:length(samples)) {
 			
-			# List the jpegs
+			## List the jpegs
     		regex <- gsub("[+]", "[+]", samples[i])
     		regex <- gsub("[.]", "[.]", regex)
     		regex2 <-  paste("^", regex, "_[0-9]+[.]jpg$", sep = "")
     		jpgs <- dir(zidir, pattern = regex2)
 			
-    		# Get their numbers, sort them, and make sure none are missing
+    		## Get their numbers, sort them, and make sure none are missing
     		n <- nitems[i]
     		if (n < 1) {
-				# If impossible to know how many items, just count vignettes
+				## If impossible to know how many items, just count vignettes
 				n <- length(jpgs)	
 			}
     		
-			# Construct a vector with names of vignettes as they should be
+			## Construct a vector with names of vignettes as they should be
     		chkjpgs <- paste(samples[i], "_", 1:n, ".jpg", sep = "")
     		if (length(jpgs) == 0 && length(chkjpgs) > 0) {
 				warning(paste(" no vignettes for", samples[i]))
@@ -81,88 +81,87 @@ show.log = TRUE)
         }
     } 
 	
-	# Report results
+	## Report results
 	if (ok) {
 		logProcess("OK", zidir, show.log = show.log)
 	} else {
 		logProcess("Errors found", zidir, show.log = show.log)
 	}
 	
-	# TODO: we should not return ok here ?
+	## TODO: we should not return ok here ?
 	return(invisible(ok))
 }
 
-"verify.zid.all" <- function(path = ".", samples = NULL, type = "ZI1",
+zidVerifyAll <- function(path = ".", samples = NULL, type = "ZI1",
 check.vignettes = TRUE, show.log = TRUE, bell = FALSE)
 {	
-	# Verify all of these directories
+	## Verify all of these directories
 	if (type != "ZI1")
 		stop("only 'ZI1' is currently supported for 'type'!")
 	
-	# First, switch to that directory
+	## First, switch to that directory
 	inidir <- getwd()
 	checkDirExists(path)
 	setwd(path)
 	on.exit(setwd(inidir))
 	path <- "."	# Indicate we are now in the right path
 	
-	# Process the list of samples
+	## Process the list of samples
 	if (is.null(samples)) {	# Compute them from path
 		d <- dir(path, pattern = "^[^_]")	# All items not starting with '_'
 		samples <- unique(d[file.info(d)$isdir])	# Keep only directories
 	}
 	
-	# If there is no dir, exit now
+	## If there is no dir, exit now
 	if (is.null(samples) || length(samples) == 0)
 		stop("There is no directories to verify in ", getwd())
 	
-	# Start the process
+	## Start the process
 	smax <- length(samples)
 	cat("Verification...\n")
 	
 	ok <- sapply( samples, function(s) {
-		tryCatch(verify.zid( s, type = type,
+		tryCatch(zidVerify( s, type = type,
 			check.vignettes = check.vignettes, show.log = FALSE), 
 			zooImageError = function (e) return(-1))
 	})
 	
-	# Cleans up
-	finish.loopfunction(all(ok) , bell = bell, show.log = show.log)
+	## Clean up
+	finishLoop(all(ok) , bell = bell, show.log = show.log)
 }
 
-# Make a .RData file that collates together data from all the "_dat1.zim" files
-# of a given sample
-"make.RData" <-
-function (zidir, type = "ZI1", replace = FALSE, show.log = TRUE) 
+## Make a .RData file that collates together data from all the "_dat1.zim" files
+## of a given sample
+makeRData <- function (zidir, type = "ZI1", replace = FALSE, show.log = TRUE) 
 {
     if (type != "ZI1") 
         stop("only 'ZI1' is currently supported for 'type'!")
     RDataFile <- file.path(zidir, paste(basename(zidir), "_dat1.RData", 
         sep = ""))
     
-    # File already exists
+    ## File already exists
     if (file.exists(RDataFile) && !replace) 
         return(invisible(TRUE))
     ok <- TRUE
-    dat1files <- list.dat1.zim(zidir)
+    dat1files <- zimDatList(zidir)
 
-    # modif to create zidat1zim files
-    # Create dat1zim if ity is missing (Special treatment for FlowCAM data)
+    ## modif to create zidat1zim files
+    ## Create dat1zim if ity is missing (Special treatment for FlowCAM data)
     if (length(dat1files) == 0){
-        # Try to create them
+        ## Try to create them
         SmpDir <- dirname(zidir)
         ZimFile <- file.path(SmpDir, paste(basename(zidir), ".zim", sep = ""))
-        Make.dat1.zim(ZimFile)
-        dat1files <- list.dat1.zim(zidir)
+        zimDatMake(ZimFile)
+        dat1files <- zimDatList(zidir)
         if (length(dat1files) == 0){
             stop("no '_dat1.zim' file!")
         }
     }
     
     dat1files <- sort(dat1files)
-    fractions <- get.sampleinfo(dat1files, "fraction")
+    fractions <- sampleInfo(dat1files, "fraction")
 
-    # Avoid collecting duplicate informations about fractions
+    ## Avoid collecting duplicate informations about fractions
     fracdup <- duplicated(fractions)
     results <- lapply(seq.int(1, length(dat1files)), function(i) {
         dat1path <- file.path(zidir, dat1files[i])
@@ -173,7 +172,7 @@ function (zidir, type = "ZI1", replace = FALSE, show.log = TRUE)
         if (!iszim) 
             return(NULL)
         
-        # Read the header
+        ## Read the header
         Lines <- scan(dat1path, character(), sep = "\t", skip = 1, 
             blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, 
             comment.char = "#")
@@ -182,48 +181,48 @@ function (zidir, type = "ZI1", replace = FALSE, show.log = TRUE)
             return(NULL)
         }
         
-        # Trim leading and trailing spaces in Lines
+        ## Trim leading and trailing spaces in Lines
         Lines <- trimstring(Lines)
         
-        # Convert underscore to space
+        ## Convert underscore to space
         Lines <- underscore2space(Lines)
         
-        # Determine start of the measurements table (it is '[Data]' header)
+        ## Determine start of the measurements table (it is '[Data]' header)
         endhead <- tail(which(Lines == "[Data]"), 1)
         if (!is.null(endhead)) 
             Lines <- if (endhead > 1) 
                 Lines[seq.int(1, endhead - 1)]
         
-        # Decrypt all lines, that is, split on first occurrence
-	# of "=" into 'tag', 'value' and separate into sections
-# Bug meta is not calculated if fracdup[i] = TRUE and thus there is no meta calculated
-#        meta <- if (!fracdup[i] && !is.null(Lines))
-#            parse.ini(Lines, sub("_dat1[.]zim$", "", fractions[i]))
+        ## Decrypt all lines, that is, split on first occurrence
+	## of "=" into 'tag', 'value' and separate into sections
+## Bug meta is not calculated if fracdup[i] = TRUE and thus there is no meta calculated
+##        meta <- if (!fracdup[i] && !is.null(Lines))
+##            parseIni(Lines, sub("_dat1[.]zim$", "", fractions[i]))
         if (!is.null(Lines)){
-            meta <- parse.ini(Lines, sub("_dat1[.]zim$", "", fractions[i]))
+            meta <- parseIni(Lines, sub("_dat1[.]zim$", "", fractions[i]))
         }
-# Bug
+## Bug
 
         if (!is.null(endhead)) {
             mes <- read.table(dat1path, header = TRUE, sep = "\t", 
                 dec = ".", as.is = FALSE, skip = endhead + 1, 
                 comment.char = "#", na.strings = "null")
-            # We have several problems here:
-            # 1) There is sometimes a column full of NAs at the end.
-            #    This is because ImageJ adds an extra tab at the end of the line.
-            # [RF] FIXME: this should not be the case anymore because we have
-            # more control of what ImageJ is doing
+            ## We have several problems here:
+            ## 1) There is sometimes a column full of NAs at the end.
+            ##    This is because ImageJ adds an extra tab at the end of the line.
+            ## [RF] FIXME: this should not be the case anymore because we have
+            ## more control of what ImageJ is doing
             if (all(is.na(mes[, ncol(mes)]))) 
                 mes <- mes[, -ncol(mes)]
-            # 2) The first column is the 'Item', but its name '!Item' is
-            #    transformed into 'X.Item'
-            # 3) The '%Area' is transformed into 'X.Area'
+            ## 2) The first column is the 'Item', but its name '!Item' is
+            ##    transformed into 'X.Item'
+            ## 3) The '%Area' is transformed into 'X.Area'
             Names <- names(mes)
             if (Names[1] == "X.Item") 
                 Names[1] <- "Item"
             if ("X.Area" %in% Names) 
                 Names[Names == "X.Area"] <- "PArea"
-            # Invert 'Item' and 'Label'
+            ## Invert 'Item' and 'Label'
             mes <- mes[, c(2, 1, 3:ncol(mes))]
             Names <- Names[c(2, 1, 3:length(Names))]
             names(mes) <- make.names(Names, unique = TRUE)
@@ -239,154 +238,145 @@ function (zidir, type = "ZI1", replace = FALSE, show.log = TRUE)
     })
     notnull.filter <- Negate(is.null)
     results <- Filter(notnull.filter, results)
-    list.allmeta <- Filter(notnull.filter, lapply(results, "[[", 
-        "meta"))
-    list.allmes <- Filter(notnull.filter, lapply(results, "[[", 
-        "mes"))
+    list.allmeta <- Filter(notnull.filter, lapply(results, "[[", "meta"))
+    list.allmes <- Filter(notnull.filter, lapply(results, "[[", "mes"))
     
     combine <- function(.list) {
         force(.list)
         mergefun <- function(x, y) {
             if (all(sort(names(x)) == sort(names(y)))) {
                 rbind(x, y)
-            }
-            else {
+            } else {
                 merge(x, y, all = TRUE)
             }
         }
         Reduce(mergefun, .list)
     }
 
-# Bug combine(list.allmeta) doesn't work!
-#    allmeta <- combine(list.allmeta)
+## Bug combine(list.allmeta) doesn't work!
+##    allmeta <- combine(list.allmeta)
     list.allmeta <- list.allmeta[!fracdup] # only the levels of not duplicated metadata
     Lmeta <- length(list.allmeta[])
-    if(Lmeta == 1){
-#        Lmeta <- list.allmeta
+    if (Lmeta == 1) {
+##        Lmeta <- list.allmeta
         allmeta <- combine(list.allmeta)
     } else {
         allmeta <- NULL
-        for(i in 1 : (Lmeta-1)){
+        for (i in 1 : (Lmeta-1))
             allmeta <- list.merge(list.allmeta[[i]], list.allmeta[[i + 1]])
-        }
     }
-# Bug combine(list.allmeta) doesn't work!
+## Bug combine(list.allmeta) doesn't work!
 
     allmes <- combine(list.allmes)
     rownames(allmes) <- 1:nrow(allmes)
     Names <- names(allmes)
-    # Calculate an ECD from Area if there is not one yet
+    ## Calculate an ECD from Area if there is not one yet
     if (!"ECD" %in% Names && "Area" %in% Names) {
         ECD <- ecd(allmes$Area)
-        allmes <- data.frame(allmes[, 1:2], ECD = ECD, allmes[, 
-            3:ncol(allmes)])
+        allmes <- data.frame(allmes[, 1:2], ECD = ECD, allmes[, 3:ncol(allmes)])
     }
     attr(allmes, "metadata") <- allmeta
     class(allmes) <- c("ZI1Dat", "ZIDat", "data.frame")
     ZI.sample <- allmes
-    save(ZI.sample, file = RDataFile, ascii = FALSE, version = 2, 
-        compress = TRUE)
-    if (ok) 
-        ok <- file.exists(RDataFile)
-    if (show.log) 
-        logView()
+    save(ZI.sample, file = RDataFile, ascii = FALSE, version = 2,
+		compress = TRUE)
+    if (ok) ok <- file.exists(RDataFile)
+    if (show.log) logView()
     return(invisible(ok))
 }
 
-# Compress one sample as a single .zid zipped file	
-"compress.zid" <- function (zidir, type = "ZI1", check = TRUE,
+## Compress one sample as a single .zid zipped file	
+zidCompress <- function (zidir, type = "ZI1", check = TRUE,
 check.vignettes = TRUE, replace = FALSE, delete.source = replace,
 check.zip = TRUE, show.log = TRUE)
 {		
-	# Check the format
+	## Check the format
 	if (type != "ZI1")
 		stop("only 'ZI1' is currently supported for 'type'!")
 	
-	# We need to switch to the root of sample dir first for correct path
-	# in the zip file
+	## We need to switch to the root of sample dir first for correct path
+	## in the zip file
 	rootdir <- dirname(zidir)
 	inidir <- getwd()
 	setwd(rootdir)
 	on.exit(setwd(inidir))
 	zidir <- basename(zidir) # Use only the latest dir (the "sample dir")
 	
-	# The .zid file is located in the "root" dir, same name as the
-	# "sample dir", with .zid extension
+	## The .zid file is located in the "root" dir, same name as the
+	## "sample dir", with .zid extension
 	zidfile <- paste(zidir, ".zid", sep = "")
 	if (!replace && file.exists(zidfile)) {
-		# It is not advised to delete source without rebuilding the .zid file
-		# but it was expressly asked!
+		## It is not advised to delete source without rebuilding the .zid file
+		## but it was expressly asked!
 		### TODO: verify we have the same files in the .zid and initial dir
-		# before deleting files!
+		## before deleting files!
 		if (delete.source && file.exists(zidir))
 			unlink(zidir, recursive = TRUE)
 		return(invisible(TRUE))	# Nothing else to do
 	}
 	
-	# Make sure everything is fine for this directory
+	## Make sure everything is fine for this directory
 	if (check)
-		verify.zid(zidir, type = type, check.vignettes = check.vignettes,
+		zidVerify(zidir, type = type, check.vignettes = check.vignettes,
 			show.log = FALSE)
 	
-	# Make sure the .RData file is created (or refreshed)
-	make.RData(zidir, type = type, replace = replace, show.log = FALSE)
+	## Make sure the .RData file is created (or refreshed)
+	makeRData(zidir, type = type, replace = replace, show.log = FALSE)
 	
-	# Do compress the directory in the .zip file
-	# Copy or move all corresponding files to a .zid zip-compressed file
+	## Do compress the directory in the .zip file
+	## Copy or move all corresponding files to a .zid zip-compressed file
 	invisible(zip(zidfile, zidir, delete.source = delete.source))
 }
 
-# Compress all data in the corresponding directory
-"compress.zid.all" <- function (path = ".", samples = NULL, type = "ZI1",
+## Compress all data in the corresponding directory
+zidCompressAll <- function (path = ".", samples = NULL, type = "ZI1",
 check = TRUE, check.vignettes = TRUE, replace = FALSE, delete.source = replace,
 show.log = TRUE, bell = FALSE)
 { 
-	#     COMMENT: do we really need to do that since it will be done also 
-	#              in the compress.zid function ?
 	if (type != "ZI1")
 		stop("only 'ZI1' is currently supported for 'type'!")
 	
-	# First, switch to that directory                                       
+	## First, switch to that directory                                       
 	inidir <- getwd()
 	checkDirExists(path)
 	setwd(path)
 	on.exit(setwd(inidir))
 	path <- "."	# Indicate we are now in the right path
 	
-	# Get the list of samples to process
+	## Get the list of samples to process
 	if (is.null(samples)) {	# Compute them from path
 		d <- dir(path, pattern = "^[^_]")	# All items not starting with '_'
 		samples <- unique(d[file.info(d)$isdir])	# Keep only directories
 	}
 	
-	# If there is no dir, exit now
+	## If there is no dir, exit now
 	if (is.null(samples) || length(samples) == 0)
 		stop("There is no directories to process in ", getwd())
 		
-	# Start the process
+	## Start the process
 	logClear()
 	if (check) {
 		logProcess("Verification...")
-		verify.zid.all(path = path, samples = samples, 
+		zidVerifyAll(path = path, samples = samples, 
 			check.vignettes = check.vignettes, show.log = FALSE, bell = FALSE)
-		# COMMENT: the previous version did log this message instead of the one
-		# that is generated by verify.zid.all
-		# "contains corrupted files, compression not started!"
+		## COMMENT: the previous version did log this message instead of the one
+		## that is generated by zidVerifyAll
+		## "contains corrupted files, compression not started!"
 	}
 		
-	# Compress these files
+	## Compress these files
 	smax <- length(samples)
 	cat("Compression...\n")
 	logProcess("\nCompression...")
 	ok <- TRUE
 	for (s in 1:smax) {
-		# Progress should be taken out of here since it is not really related 
-		# to the function's job, instead we could throw a condition 
-		# from compress.zid when it starts to indicates it has started
+		## Progress should be taken out of here since it is not really related 
+		## to the function's job, instead we could throw a condition 
+		## from zidCompress when it starts to indicates it has started
 		Progress(s, smax)  
 		
 		tryCatch({  
-			compress.zid(samples[s], type = type, check = FALSE, 
+			zidCompress(samples[s], type = type, check = FALSE, 
 				check.vignettes = check.vignettes, replace = replace,
 				delete.source = delete.source, check.zip = FALSE,
 				show.log = FALSE)
@@ -398,92 +388,91 @@ show.log = TRUE, bell = FALSE)
 				ok <<- FALSE
 			})
 	}
-	ClearProgress()
+	clearProgress()
 	
-	# Possibly clean the whole directory (move .zim files to \_raw
-	# and delete the \_work subdir if everything is fine
-	if (ok)
-		clean.after.zid(path = path, samples = samples)
+	## Possibly clean the whole directory (move .zim files to \_raw
+	## and delete the \_work subdir if everything is fine
+	if (ok) zidClean(path = path, samples = samples)
 	
-	# Clean up
-	finish.loopfunction(ok = ok, bell = bell, show.log = show.log)
+	## Clean up
+	finishLoop(ok = ok, bell = bell, show.log = show.log)
 }
 
-# Clean.after.zid
-"clean.after.zid" <- function (path = ".", samples = NULL)
+## Clean Zid
+zidClean <- function (path = ".", samples = NULL)
 {
-	# {Do we have samples to process
+	## Do we have samples to process
     if (length(samples) == 0) return()
 	
-    # First, switch to that directory
+    ## First, switch to that directory
 	inidir <- getwd()
     checkDirExists(path)
 	setwd(path)
 	on.exit(setwd(inidir))
 	
-	# Logging
+	## Logging
 	cat("Cleaning directory...\n")
 	logProcess("\nCleaning directory...")
     
-	# Identify paths
-	zimfiles   <- list.zim( "." )
+	## Identify paths
+	zimfiles   <- zimList( "." )
 	zimsamples <- sub("^(.*)[+].+", "\\1", zimfiles)
 	
-    # Keep only those .zim files related to samples
+    ## Keep only those .zim files related to samples
     zimfiles <- zimfiles[zimsamples %in% samples]
 	
-	# Process
+	## Process
     if (length(zimfiles) > 0) {
         rawdir <- file.path(".", "_raw")
         
-		# If the _raw subdirectory does not exists, create it
+		## If the _raw subdirectory does not exists, create it
         if (!file.exists(rawdir)) dir.create(rawdir)
 		copyto <- file.path(".", "_raw", zimfiles)
         
-		# Move these .zim files
+		## Move these .zim files
         for (i in 1:length(zimfiles))
 			file.rename(zimfiles[i], copyto[i])
     }
 	
-    # Delete completely the _work subdirectory
+    ## Delete completely the _work subdirectory
     unlink(file.path(".", "_work"), recursive = TRUE)    
 }
 
-# Uncompress a .zid file to get all its content. 
-# Use 'delete.source = TRUE' with caution!
-"uncompress.zid" <- function (zidfile, path = dirname(zidfile),
+## Uncompress a .zid file to get all its content. 
+## Use 'delete.source = TRUE' with caution!
+zidUncompress <- function (zidfile, path = dirname(zidfile),
 delete.source = FALSE, show.log = TRUE)
 {	
-	# Check if the file provided is a .zid file, and if it exists
+	## Check if the file provided is a .zid file, and if it exists
 	checkFileExists(zidfile, extension = "zid")
 	
-	# Uncompress it
+	## Uncompress it
 	unzip(zidfile, path, delete.source = delete.source)
 }
 
-# Uncompress all .zid files in the 'path.extract' directory
-"uncompress.zid.all" <- function (path = ".", zidfiles = list.zid(path),
+## Uncompress all .zid files in the 'path.extract' directory
+zidUncompressAll <- function (path = ".", zidfiles = zidList(path),
 path.extract = path, skip.existing.dirs = TRUE, delete.source = FALSE,
 show.log = TRUE, bell = FALSE)
 {	
-	# Initial checks
+	## Initial checks
 	if (is.null(zidfiles) || length(zidfiles) == 0)
         stop("no .zid files found!")
 	
-	# start the process
+	## start the process
 	logClear()
 	ok <- TRUE
 
-	# Check that dirs / files with corresponding names exist in path.extract
+	## Check that dirs / files with corresponding names exist in path.extract
 	checkdirs  <- file.path(path.extract, noext(zidfiles))
 	fileExists <- file.exists(checkdirs) & !file.info(checkdirs)$isdir
 	dirExists  <- file.exists(checkdirs) & file.info(checkdirs)$isdir
 	
-	# If any file not being a dir exist there, stop the process
+	## If any file not being a dir exist there, stop the process
 	if (any(fileExists)) 
         stop("one or several files have same name as uncompressed dirs!")
 	
-	# Should we eliminate files whose corresponding dirs exist?
+	## Should we eliminate files whose corresponding dirs exist?
 	if (skip.existing.dirs && any(dirExists)) {
 		cat(sum(dirExists), "file(s) already uncompressed is/are skipped!\n")
         warning(paste("Skipping already uncompressed file(s):", 
@@ -491,42 +480,42 @@ show.log = TRUE, bell = FALSE)
 	}
 	zidfiles <- zidfiles[!dirExists]
 	
-	# Decompress the files remaining in the list
+	## Decompress the files remaining in the list
 	smax <- length(zidfiles)
 	if (smax == 0) {
 		cat("-- Done! - (nothing to decompress)\n")
 		stop("\n -- Done! -- (nothing to decompress)", show.log = show.log)
 	}
 	
-	# Start decompression
+	## Start decompression
 	cat("Decompression...\n")
 	logProcess("\nDecompression...")
 	for (s in 1:smax) {
 		Progress(s, smax) 
-		uncompress.zid(zidfiles[s], path = path.extract,
+		zidUncompress(zidfiles[s], path = path.extract,
 			delete.source = delete.source, show.log = FALSE)
 	}
-	ClearProgress()
-	finish.loopfunction(TRUE, bell = bell, show.log = show.log)
+	clearProgress()
+	finishLoop(TRUE, bell = bell, show.log = show.log)
 }
 
-"zid.extract" <- function (file, zidfile)
+zidExtract <- function (file, zidfile)
 {
 	tmpd <- tempdir()
 	unzip(zidfile, tmpd)
 	file.path(tmpd, file)
 }
 
-# Read the .Rdata in a .zid file or corresponding directory
-"read.zid" <- function (zidfile)
+## Read the .Rdata in a .zid file or corresponding directory
+zidRead <- function (zidfile)
 {	
-	# Identify the file and stop if it does not exists
+	## Identify the file and stop if it does not exists
 	sample <- noext(basename(zidfile))
-	RdataFile <- paste(sample, "_dat1.RData", sep ="")
+	RdataFile <- paste(sample, "_dat1.RData", sep = "")
 	deletefile <- FALSE
 	checkFileExists(zidfile, message = "%s not found!")
 	
-	# Treat different kind of files
+	## Treat different kind of files
 	if (!hasExtension(zidfile, "zid")) {
 		# Is it a directory?
 		if (file.info(zidfile)$isdir) {
@@ -534,7 +523,7 @@ show.log = TRUE, bell = FALSE)
 			rdata <- file.path(zidfile, RdataFile)
 			if (!file.exists(rdata)) {
 				# Try to create it
-				make.RData(zidfile, show.log = FALSE)
+				makeRData(zidfile, show.log = FALSE)
 				checkFileExists(rdata,
 					message = "Error creating the .RData file")
 			}
@@ -542,17 +531,17 @@ show.log = TRUE, bell = FALSE)
 	} else { 
 		# This is a .zid file
 		rdata <- file.path(sample, RdataFile)
-		rdata <- zid.extract(rdata, zidfile)
+		rdata <- zidExtract(rdata, zidfile)
 		if (rdata == "")
 			stop(sprintf("Error reading .RData file from %s", zidfile))
 		deletefile <- TRUE
 	}
 	
-	# Load that file
+	## Load that file
 	ZI.sample <- NULL
 	load(rdata)
 	
-	# Delete the file
+	## Delete the file
 	if (deletefile) {
 		unlink(rdata)
 		# If the directory is empty, delete it also
@@ -561,7 +550,7 @@ show.log = TRUE, bell = FALSE)
 			unlink(datadir)
 	}
 	
-	# Set the class 
+	## Set the class 
 	if (!inherits(ZI.sample, "ZIDat") && inherits(ZI.sample, "data.frame"))
 		class(ZI.sample) <- c("ZI1Dat", "ZIDat", "data.frame")
 	return(ZI.sample)

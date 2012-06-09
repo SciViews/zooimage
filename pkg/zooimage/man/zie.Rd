@@ -1,9 +1,9 @@
 \name{zie}
 \alias{ZIE}
 \alias{print.ZIE}
-\alias{make.zie}
-\alias{compile.zie}
-\alias{RawConvert}
+\alias{zieMake}
+\alias{zieCompile}
+\alias{rawConvert}
 
 \title{ ZIE (ZooImage Extension) manipulate .zie files to add custom import, export, etc. routines to ZooImage  }
 \description{
@@ -14,17 +14,17 @@
   in ZooImage with imported data.
 }
 \usage{
-make.zie(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
+zieMake(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
 	move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$",show.log = TRUE,
 	bell = FALSE)
-compile.zie(path = ".", Tablefile = "Table.txt", Template = "ImportTemplate.zie",
+zieCompile(path = ".", Tablefile = "Table.txt", Template = "ImportTemplate.zie",
     Filemap = paste("Import_", noext(Tablefile), ".zie", sep = ""),
 	Nrange = c(1, 1000), replace = TRUE, make.it = FALSE, show.log = make.it)
 ZIE(title, filter, description, pattern, command, author, version, date,
     license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
     type = c("import", "export"))
 \method{print}{ZIE}(x, \dots)
-RawConvert(RawFile, OutputFile = "fileconv.pgm",
+rawConvert(RawFile, OutputFile = "fileconv.pgm",
 	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
 	check = TRUE)
 }
@@ -69,7 +69,7 @@ RawConvert(RawFile, OutputFile = "fileconv.pgm",
 }
 
 \value{
-  \code{make.zie()} and \code{compile.zie()} anre invoked for their side-effects of
+  \code{zieMake()} and \code{zieCompile()} anre invoked for their side-effects of
   importing images and metadata into a format that ZooImage can use. The first
   function returns \code{TRUE} or \code{FALSE}, depending if the importation was
   done without errors, or not. More information is written in the log file. The second
@@ -77,14 +77,14 @@ RawConvert(RawFile, OutputFile = "fileconv.pgm",
   returns \code{FALSE} invisibly in case it failed to compile the .zie file.
 
   \code{ZIE()} creates a 'ZIE' object that describes a ZooImage Extension and allows
-  to plug it in transparently inside the ZooImage GUI. \code{prtint.ZIE()} nicely
+  to plug it in transparently inside the ZooImage GUI. \code{print.ZIE()} nicely
   formats the content of this objects when using the generic function \code{print()}.
 
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
 
-\seealso{ \code{\link{logProcess}}, \code{\link{make.zim}} }
+\seealso{ \code{\link{logProcess}}, \code{\link{zimMake}} }
 
 \examples{
 ##TODO...

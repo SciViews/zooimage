@@ -1,34 +1,33 @@
 \name{zim}
-\alias{create.zim}
-\alias{edit.zim}
-\alias{extract.zims}
+\alias{zimCreate}
+\alias{zimEdit}
+\alias{zimExtractAll}
 \alias{is.zim}
-\alias{list.dat1.zim}
-\alias{list.zim}
-\alias{make.zim}
-\alias{refresh.zims}
-\alias{verify.zim}
+\alias{zimDatList}
+\alias{zimList}
+\alias{zimMake}
+\alias{zimRefreshAll}
+\alias{zimVerify}
 
 \title{ Manipulate .zim files (ZooImage Metadata/Measurements) }
 \description{
-  Various fonctions to manipulate ZooImage Metadata in .zim format (either '*.zim', or
-  '*_dat1.zim' files).
+  Various fonctions to manipulate ZooImage Metadata in .zim format
+  (either '*.zim', or '*_dat1.zim' files).
 }
 \usage{
-create.zim(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
+zimCreate(zimfile = NULL, template = NULL, editor = getOption("ZIEditor"),
     edit = TRUE, wait = FALSE)
-edit.zim(name, editor = getOption("ZIEditor"), wait = FALSE, \dots)
-make.zim(dir = ".", pattern = extensionPattern("tif"), images =
+zimEdit(name, editor = getOption("ZIEditor"), wait = FALSE, \dots)
+zimMake(dir = ".", pattern = extensionPattern("tif"), images =
     list.files(dir, pattern), show.log = TRUE, bell = FALSE)
-extract.zims(zipdir = ".", zipfiles = list.zip(zipdir), path = NULL,
+zimExtractAll(zipdir = ".", zipfiles = zipList(zipdir), path = NULL,
     replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
-refresh.zims(zipdir = ".", zipfiles = list.files.ext(zipdir, "zip"),
-    zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE,
-    bell = FALSE)
-list.zim(zidir, \dots)
-list.dat1.zim(zidir, \dots)
+zimRefreshAll(zipdir = ".", zipfiles = zipList(zipdir), zimdir = NULL,
+    check.zip = TRUE, check.zim = TRUE, show.log = TRUE, bell = FALSE)
+zimList(zidir, \dots)
+zimDatList(zidir, \dots)
 is.zim(zimfile, check.ext = FALSE)
-verify.zim(zimfile, check.ext = FALSE,
+zimVerify(zimfile, check.ext = FALSE,
     is.dat1 = hasExtension(zimfile, "_dat1.zim"), check.table = FALSE)
 }
 
@@ -63,20 +62,20 @@ verify.zim(zimfile, check.ext = FALSE,
 }
 
 \value{
-  \code{create.zim()}, \code{edit.zim()}, \code{make.zim()} are invoked for their side-effect
-  of creating and/or editing .zim files on disk. \code{create.zim()} returns \code{TRUE} invisibly,
+  \code{zimCreate()}, \code{zimEdit()}, \code{zimMake()} are invoked for their side-effect
+  of creating and/or editing .zim files on disk. \code{zimCreate()} returns \code{TRUE} invisibly,
   in case of successful creation of all required .zim files, \code{FALSE} otherwise (details
   of problems are logged in the log file using \code{logProcess()}. The same mechanism
   (returning \code{TRUE} or \code{FALSE} invisibly, with detailled description of the problem
-  in the log file) is used by \code{extract.zims()} and \code{refresh.zims()} also called for
+  in the log file) is used by \code{zimExtractAll()} and \code{zimRefreshAll()} also called for
   their side-effects of manipulating .zim/.zip files.
 
-  \code{list.zim()} and \code{list.dat1.zim()} return either a vector of character strings with
+  \code{zimList()} and \code{zimDatList()} return either a vector of character strings with
   the name of .zim files, or \code{NA} if there is no .zim files in 'zidir'.
 
   \code{is.zim()} simply returns \code{TRUE} or \code{FALSE}.
 
-  \code{verify.zim()} returns an integer in case of successful verification of the .zim file. This
+  \code{zimVerify()} returns an integer in case of successful verification of the .zim file. This
   integer represents the number of objects in the measurement table (zero, if there is no
   '[Data]' section in the file, see hereunder). In the case of an error during verification,
   the function returns a character string with explicit description of the problem.
@@ -155,7 +154,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   during your analyses in ZooImage! That way, ZooImage is very flexible and capable to
   process many different kinds of data, even most exotic ones.
 
-  \code{create.zim()} and \code{edit.zim()} call the associated metadata editor
+  \code{zimCreate()} and \code{zimEdit()} call the associated metadata editor
   (by default, the one defined as \code{options(ZIEditor = ....)}. By default, it is a nice
   little text editor with code folding (for sections), syntax coloring and autocompletion
   features to limit keying errors. Of course, you can use any other editor. In particular,
@@ -166,19 +165,19 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   the file is opened as a spreadsheet). Just redefine \code{options(ZIEditor = ...)} to use,
   e.g, Excel automatically with ZooImage (full path of the 'Excel.exe' file).
 
-  \code{make.zim()} creates one or more .zim files corresponding to the selected list
+  \code{zimMake()} creates one or more .zim files corresponding to the selected list
   of images provided in 'images', and allows for editing them one-by-one. It is the
   basic function for creating all .zim files manually for a set of image to be analyzed
-  in ZooImage. See also \code{make.zie()} for an alternative, and automatic way
+  in ZooImage. See also \code{zieMake()} for an alternative, and automatic way
   to create all those .zim files.
 
-  \code{extract.zims()} and \code{refresh.zims()} work in conjonction with zipped
-  TIFF image, as obtained by \code{zip.img()} and \code{zip.img.all()}
-  (also done using \code{compress.zid}). In these .zip files, metadata
+  \code{zimExtractAll()} and \code{zimRefreshAll()} work in conjonction with zipped
+  TIFF image, as obtained by \code{zipImg()} and \code{zipImgAll()}
+  (also done using \code{zidCompress}). In these .zip files, metadata
   is located in the zip archive comment. This comment is extracted into corresponding
-  .zim file by \code{extract.zims()} for one or several zip archives. On the opposite,
+  .zim file by \code{zimExtractAll()} for one or several zip archives. On the opposite,
   these comments are updated in the zip archive with latest information present in
-  .zim files using \code{refresh.zims()}.
+  .zim files using \code{zimRefreshAll()}.
 
   The four last function are auxiliary utilities to deal with .zim files. \code{list.zim()}
   and \code{list.dat1.zim()} are convenient functions to list all '*.zim', or '*_dat1.zim'
@@ -187,14 +186,14 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   version 1 (current one). This routine returns \code{TRUE} or \code{FALSE} according to the
   result (the file extension is also checked if \code{check.ext = TRUE}).
 
-  Finally, \code{verify.zim()} is a very important function. It checks the validity and
+  Finally, \code{zimVerify()} is a very important function. It checks the validity and
   syntax of any .zim file. All required fields are checked. In case of an error, the function
   returns an explicit error message as a character string. On the other hand, if the
   verification process succeeds, the function returns a number corresponding to the number
   of objects whose measurements are recorded in the data table (for a '_dat1.zim'
   file), or '0' (zero, no measurements) for a '.zim' file containing only metadata.
 
-  \code{verify.zim()} checks for the presence of required fields. For .zim files:
+  \code{zimVerify()} checks for the presence of required fields. For .zim files:
   Section '[Image]' with 'Author', 'Hardware', 'Software' and 'ImageType' (for instance,
   "trans_16bits_gray" for a 16bit graylevels picture obtained by transparency, that is, using
   transmitted light) fields, section '[Fraction]' with 'Code' (A, B, C, ...), 'Min' and 'Max'
@@ -219,7 +218,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
 
 \note{
   Developers have the opportunity to add custom fields (both sections and keys in these sections)
-  to be checked by \code{verify.zim()}, in order to match specific uses of ZooImage. Since the
+  to be checked by \code{zimVerify()}, in order to match specific uses of ZooImage. Since the
   verification of metadata is a crucial step in the analysis, they are strongly encouraged to
   add such custom rules: the default checking procedure is very basic!
 
@@ -241,9 +240,9 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   That function should be defined as: \code{function(zimfile, ...) # Your code here} and it
   should return either "" (if no error found), or an explicit message in case of error(s).
 
-  Alternatively, you can completelly redefine \code{verify.zim()} in the "verify.all" component
+  Alternatively, you can completelly redefine \code{zimVerify()} in the "verify.all" component
   of the list. In this case, the other rules are completelly ignored, and you must perform
-  the whole treatment in your function (start from the code of \code{verify.zim()} to make sure
+  the whole treatment in your function (start from the code of \code{zimVerify()} to make sure
   your own function has a similar behaviour!
 
   Look at examples, and you will better understand how this works!
@@ -251,21 +250,23 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
 
-\seealso{ \code{\link{logProcess}}, \code{\link{make.zie}}, \code{\link{zip.img}}, \code{\link{zip.img.all}}, \code{\link{compress.zid}}, }
+\seealso{ \code{\link{logProcess}}, \code{\link{zieMake}}, \code{\link{zipImg}},
+  \code{\link{zipImgAll}}, \code{\link{zidCompress}}, }
+
 \examples{
 # Create a minimalist .zim file from current template
 (zimfile <- paste(tempfile(), "zim", sep = "."))
-create.zim(zimfile, edit = FALSE)
+zimCreate(zimfile, edit = FALSE)
 
 # Display its content
 if (interactive()) file.show(zimfile)
 
 # list zim files in the temporary directory
-list.zim(tempdir())
+zimList(tempdir())
 
 # Is this a correct .zim file?
 is.zim(zimfile)
-verify.zim(zimfile) # Returns 0 => verification OK, with 0 records in [Data]
+zimVerify(zimfile) # Returns 0 => verification OK, with 0 records in [Data]
 
 ## The rest of this example is for programmers
 # Add more required sections and keys for metadata verifications
@@ -274,14 +275,14 @@ options(ZI.zim = list(active = TRUE,
     zim.required = c("[NewSection]", "requiredkey1", "requiredkey2"),
     dat1.zim.required = c("[PostProcess]", "requiredkey3"),
     dat1.data.required = c("Area", "Perim.", "Circ.", "Feret")))
-try(verify.zim(zimfile)) # Of course, these new keys are missing!
+try(zimVerify(zimfile)) # Of course, these new keys are missing!
 
 # Now, inactivate these extra verifications without deleting them
 oZI.zim <- getOption("ZI.zim")
 oZI.zim$active <- FALSE
 options(ZI.zim = oZI.zim)
 rm(oZI.zim) # not needed any more
-verify.zim(zimfile) # This time, extra verifications are not used any more => OK!
+zimVerify(zimfile) # This time, extra verifications are not used any more => OK!
 
 # Add some verification code to the existing verification procedure
 options(ZI.zim = list(active = TRUE,
@@ -291,7 +292,7 @@ options(ZI.zim = list(active = TRUE,
 		    quiet = TRUE, comment.char = "#")
         # Check if 'Code=B' or 'Code=C', using regular expression
         # Extra spaces are allowed before and after '=', and after the value
-        if (length(grep("^Code\\s*=\\s*[B|C]\\s*$", Lines)) == 0) {
+        if (length(grep("^Code\\\\s*=\\\\s*[B|C]\\\\s*$", Lines)) == 0) {
             # The condition is not matched!
             return("[Fraction] Code must be either 'B', or 'C'!")
         } else {
@@ -299,7 +300,7 @@ options(ZI.zim = list(active = TRUE,
             return("")
         }
 }))
-try(verify.zim(zimfile)) # Since Code=A, verification fails!
+try(zimVerify(zimfile)) # Since Code=A, verification fails!
 
 # Reset original verification rules
 options(ZI.zim = NULL)

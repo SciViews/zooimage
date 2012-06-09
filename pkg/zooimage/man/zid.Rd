@@ -1,14 +1,14 @@
 \name{zid}
-\alias{make.RData}
-\alias{clean.after.zid}
-\alias{compress.zid}
-\alias{compress.zid.all}
-\alias{read.zid}
-\alias{uncompress.zid}
-\alias{uncompress.zid.all}
-\alias{verify.zid}
-\alias{verify.zid.all}
-\alias{zid.extract}
+\alias{makeRData}
+\alias{zidClean}
+\alias{zidCompress}
+\alias{zidCompressAll}
+\alias{zidRead}
+\alias{zidUncompress}
+\alias{zidUncompressAll}
+\alias{zidVerify}
+\alias{zidVerifyAll}
+\alias{zidExtract}
 
 
 \title{ Manage .zid files (ZooImage Data) }
@@ -16,22 +16,23 @@
   Compress, uncompress and verify ZooImage Data files.
 }
 \usage{
-compress.zid(zidir, type = "ZI1", check = TRUE, check.vignettes = TRUE,
+zidCompress(zidir, type = "ZI1", check = TRUE, check.vignettes = TRUE,
     replace = FALSE, delete.source = replace, check.zip = TRUE, show.log = TRUE)
-compress.zid.all(path = ".", samples = NULL, type = "ZI1", check = TRUE,
+zidCompressAll(path = ".", samples = NULL, type = "ZI1", check = TRUE,
     check.vignettes = TRUE, replace = FALSE, delete.source = replace,
     show.log = TRUE, bell = FALSE)
-make.RData(zidir, type = "ZI1", replace = FALSE, show.log = TRUE)
-clean.after.zid(path = ".", samples = NULL)
-read.zid(zidfile)
-uncompress.zid(zidfile, path = dirname(zidfile), delete.source = FALSE,
+makeRData(zidir, type = "ZI1", replace = FALSE, show.log = TRUE)
+zidClean(path = ".", samples = NULL)
+zidRead(zidfile)
+zidUncompress(zidfile, path = dirname(zidfile), delete.source = FALSE,
     show.log = TRUE)
-uncompress.zid.all(path = ".", zidfiles = list.zid(path), path.extract = path,
-    skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE, bell = FALSE)
-verify.zid(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE)
-verify.zid.all(path = ".", samples = NULL, type = "ZI1", check.vignettes = TRUE,
+zidUncompressAll(path = ".", zidfiles = zidList(path), path.extract = path,
+    skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE,
+    bell = FALSE)
+zidVerify(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE)
+zidVerifyAll(path = ".", samples = NULL, type = "ZI1", check.vignettes = TRUE,
     show.log = TRUE, bell = FALSE)
-zid.extract(file, zidfile)
+zidExtract(file, zidfile)
 }
 
 \arguments{
@@ -57,7 +58,7 @@ zid.extract(file, zidfile)
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
 
-\seealso{ \code{\link{make.zim}} }
+\seealso{ \code{\link{zimMake}} }
 \examples{
 ##TODO...
 }

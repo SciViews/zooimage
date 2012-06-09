@@ -1,28 +1,27 @@
-# Copyright (c) 2009-2010, Ph. Grosjean <phgrosjean@sciviews.org>
-#
-# This file is part of ZooImage
-# 
-# ZooImage is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# ZooImage is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
+## Copyright (c) 2009-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 ZOOIMAGEENV <- new.env()
 
 checkCapable <- function (cap)
-	if (cap %in% names(capabilities))
-		capabilities[[cap]]()
+	if (cap %in% names(ZIcapabilities)) ZIcapabilities[[cap]]()
 
-# Various check*Capability functions
-# Utility that checks if the zip program is available
+## Various check*Capability functions
+## Utility that checks if the zip program is available
 checkZipAvailable <- function ()
 {
 	checkCapabilityAvailable("zip", 
@@ -75,35 +74,35 @@ checkDcRawAvailable <- function ()
 		"dc_raw: program not found! Please, install it!")
 }
 
-checkAvailable_pnm2biff <- function ()
+checkPnm2biffAvailable <- function ()
 {
 	checkCapabilityAvailable("pnm2biff", 
 		sprintf('"%s" -version ', ZIpgm("pnm2biff", "xite")), 
 		"pnm2biff: program not found! Please, install xite!")
 }
 
-checkAvailable_divide <- function ()
+checkDivideAvailable <- function ()
 {
 	checkCapabilityAvailable("divide", 
 		sprintf('"%s" -version ', ZIpgm("divide", "xite")), 
 		"divide: program not found! Please, install xite!")
 }
 
-checkAvailable_statistics <- function ()
+checkStatisticsAvailable <- function ()
 {
 	checkCapabilityAvailable("statistics", 
 		sprintf('"%s" -version ', ZIpgm("statistics", "xite")), 
 		"statistics: program not found! Please, install xite!")
 }
 
-checkAvailable_biff2tiff <- function ()
+checkBiff2tiffAvailable <- function ()
 {
 	checkCapabilityAvailable("biff2tiff", 
 		sprintf('"%s" -version ', ZIpgm("biff2tiff", "xite")), 
 		"biff2tiff: program not found! Please, install xite!")
 }
 
-checkAvailable_java <- function ()
+checkJavaAvailable <- function ()
 {
 	checkCapabilityAvailable("java", 
 		'java -version ', 
@@ -115,10 +114,10 @@ checkCapabilityAvailable <- function (cap, cmd, msg)
   program <- cap
 	if (program == "dc_raw" && !isWin()) program <- "dcraw"
 	
-	# Function called when zip is not available
+	## Function called when zip is not available
 	stopHere <- function () stop(msg)
 	
-	# Check if we don't already know about that
+	## Check if we don't already know about that
 	zipCap <- getZooImageCapability(cap)
 	if (!is.null(zipCap)) {
 		if (!isTRUE(zipCap)) {
@@ -128,9 +127,9 @@ checkCapabilityAvailable <- function (cap, cmd, msg)
 		}
 	}
 	
-	# [RF,20090219] the invisible flag gives a warning outside of windows
-	#               and we do not want this warning to be captured by our
-	#               error trapping
+	## [RF,20090219] the invisible flag gives a warning outside of windows
+	##               and we do not want this warning to be captured by our
+	##               error trapping
 	ok <- if (isWin()) {
 	  	system(cmd, invisible = TRUE) == 0
 	} else {
@@ -138,7 +137,7 @@ checkCapabilityAvailable <- function (cap, cmd, msg)
 			intern = TRUE)) > 0
 	}
 				
-	# Cache the result for next time, so that we don't have to check again
+	## Cache the result for next time, so that we don't have to check again
 	arguments <- list(cap = ok)
 	names(arguments) <- cap
 	zooImageCapabilities(arguments)
@@ -156,25 +155,25 @@ zooImageCapabilities <- function (...)
 	snapshot <- structure(as.list(ZOOIMAGEENV), class = "zooimagecapabilities")
   
 	if (length(dots)) {
-		# Checking that dots have names
+		## Checking that dots have names
 		if (is.null(names(dots)) || any(names(dots) == ""))
 			stop("capabilities must have names")
   	 
-		# Checking that each capability is a logicial of length one
+		## Checking that each capability is a logicial of length one
 		check <- function (x)
 			is.logical(x) && length(x) == 1
 	
 		if (any(!sapply(dots, check)))
 			stop("capability are logicals of length one")
   	
-		# Store the capability in the ZOOIMAGEENV environment
+		## Store the capability in the ZOOIMAGEENV environment
 		for (cap in names(dots))
 			ZOOIMAGEENV[[cap]] <- dots[[cap]] 
 	}
 	return(snapshot) 
 }
 
-capabilities <- list(
+ZIcapabilities <- list(
 	"zip"        = checkZipAvailable, 
 	"unzip"      = checkUnzipAvailable, 
 	"zipnote"    = checkZipnoteAvailable,
@@ -182,9 +181,9 @@ capabilities <- list(
 	"convert"    = checkConvertAvailable,
 	"ppmtopgm"   = checkPpmtopgmAvailable, 
 	"dc_raw"     = checkDcRawAvailable, 
-	"pnm2biff"   = checkAvailable_pnm2biff, 
-	"divide"     = checkAvailable_divide, 
-	"statistics" = checkAvailable_statistics, 
-	"biff2tiff"  = checkAvailable_biff2tiff, 
-	"java"       = checkAvailable_java
+	"pnm2biff"   = checkPnm2biffAvailable, 
+	"divide"     = checkDivideAvailable, 
+	"statistics" = checkStatisticsAvailable, 
+	"biff2tiff"  = checkBiff2tiffAvailable, 
+	"java"       = checkJavaAvailable
 )

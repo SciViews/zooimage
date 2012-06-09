@@ -1,5 +1,5 @@
-# PhytoImage1 Tk toolbar
-# by Ph. Grosjean, 2006 <phgrosjean@sciviews.org>
+# PhytoImage Tk toolbar
+# by Ph. Grosjean, 2002012 <phgrosjean@sciviews.org>
 
 # Create a Tk toolbar (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin
@@ -19,5 +19,5 @@ $Tk.ZIDlgWin
 ||[butGlasses]View results...			~~ viewResults()
 ||[butExport]Export results...			~~ exportResults()
 ||-
-||[butBlueBook]Help					    ~~ browseURL(findhtmlhelp("phytoimage"))
+#||[butBlueBook]Help					~~ browseURL(findhtmlhelp("phytoimage"))
 ||[butBuoy]Manual						~~ viewManual()

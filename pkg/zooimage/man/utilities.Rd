@@ -1,8 +1,8 @@
 \name{utilities}
-\alias{calc.vars}
-\alias{ClearProgress}
+\alias{calcVars}
+\alias{clearProgress}
 \alias{ecd}
-\alias{get.sampleinfo}
+\alias{sampleInfo}
 \alias{getKey}
 \alias{getList}
 \alias{gettextZI}
@@ -11,18 +11,17 @@
 \alias{list.add}
 \alias{list.merge}
 \alias{list.reduce}
-\alias{list.samples}
-\alias{make.Id}
+\alias{listSamples}
+\alias{makeId}
 \alias{noext}
-\alias{parse.ini}
+\alias{parseIni}
 \alias{Progress}
 \alias{selectFile}
 \alias{setKey}
-\alias{setwd}
 \alias{trimstring}
 \alias{underscore2space}
 \alias{ZIpgm}
-\alias{ZIpgmhelp}
+\alias{ZIpgmHelp}
 
 \title{ Various utility functions used by ZooImage }
 \description{
@@ -35,12 +34,12 @@ list.merge(x, y)
 list.add(\dots, .list = list(\dots))
 list.reduce(\dots, .list = list(\dots), FUN = "+")
 
-calc.vars(x)
+calcVars(x)
 ecd(area)
-make.Id(df)
-get.sampleinfo(filename, type = c("sample", "fraction", "image", "scs",
+makeId(df)
+sampleInfo(filename, type = c("sample", "fraction", "image", "scs",
     "date", "id", "frac", "imgnbr"), ext = "_dat1[.]zim$")
-list.samples(obj)
+listSamples(obj)
 
 getVar(class = "data.frame", default = "", multi = FALSE,
 	title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
@@ -55,11 +54,10 @@ getDec()
 noext(file)
 trimstring(char)
 underscore2space(char)
-parse.ini(data, label = "1")
+parseIni(data, label = "1")
 
 Progress(value, max.value = NULL)
-ClearProgress()
-setwd(dir)
+clearProgress()
 
 getKey(key, default.value = NULL)
 setKey(key, value, type = "sz")
@@ -67,7 +65,7 @@ setKey(key, value, type = "sz")
 gettextZI(\dots)
 
 ZIpgm(pgm, subdir = "misc", ext = "exe")
-ZIpgmhelp(pgm, subdir = "misc")
+ZIpgmHelp(pgm, subdir = "misc")
 }
 
 \arguments{
@@ -89,7 +87,7 @@ ZIpgmhelp(pgm, subdir = "misc")
 	'nn.mmm' when there are 'mmm' pictures taken to cover a bigger area of cell
 	'nn', and 'ext' is the file extension. }
   \item{type}{ The type of data to extract (see examples) for
-    \code{get.sampleinfo()}, the format to use for a key in \code{setKey()}, or
+    \code{sampleInfo()}, the format to use for a key in \code{setKey()}, or
 	the type of file to select in \code{selectFile()} }
   \item{ext}{ The pattern to use (regular expression) to eliminate file
     extension from the 'filename', or (for \code{ZIpgm()}) the extension for the
@@ -114,7 +112,6 @@ ZIpgmhelp(pgm, subdir = "misc")
     place in the key (\code{setKey()}) }
   \item{max.value}{ The maximum value, when task is done. If \code{NULL},
     assumes that value is in percent }
-  \item{dir}{ The directory to switch to }
   \item{key}{ The registry key to manipulate }
   \item{default.value}{ Value to use if the key is absent in the registry }
   \item{pgm}{ The name of an executable located in the zooimage package (under
@@ -130,12 +127,12 @@ ZIpgmhelp(pgm, subdir = "misc")
   \code{list.reduce(FUN = "+")}.
 
   The data.frame with additional columns for calculated variables with
-  \code{calc.vars}
+  \code{calcVars}
 
   A vector of numerical values for \code{ecd}.
 
-  A string or vector of strings for \code{make.Id()}, \code{get.sampleinfo()},
-  \code{list.samples()}, \code{getVar()}, \code{getList()} and
+  A string or vector of strings for \code{makeId()}, \code{sampleInfo()},
+  \code{listSamples()}, \code{getVar()}, \code{getList()} and
   \code{selectFile()}. For those functions that use a dialog box,
   \code{character(0)} is returned to indicate the user clicked 'Cancel', while
   an empty string (\code{""}) is returned in case there is no corresponding
@@ -144,7 +141,7 @@ ZIpgmhelp(pgm, subdir = "misc")
   Transformed strings for \code{noext()}, \code{trimstring()} and
   \code{underscore2space()}
 
-  \code{parse.ini()} reads the data and creates a list of data frames. Each
+  \code{parseIni()} reads the data and creates a list of data frames. Each
   entry in the list maps one section in the ini file (with the same name). For
   'key=value' pairs, a one line data frame containing values and with keys as
   column names. The first column of these data frames is named label and get the
@@ -153,7 +150,7 @@ ZIpgmhelp(pgm, subdir = "misc")
   files are merged together (typically using \code{list.add()} or
   \code{list.merge()}.
 
-  Nothing for \code{Progress()}, \code{ClearProgress()} and \code{setwd()} (they
+  Nothing for \code{Progress()} and \code{clearProgress()} (they
   are used in the GUI for their side-effect there).
 
   For \code{getKey()}, either the content of the key, or the default.value is
@@ -166,7 +163,7 @@ ZIpgmhelp(pgm, subdir = "misc")
   command line (or using \code{system()}). Under Windows, it returns the full
   path, but in short (DOS) form. So, you don't have to worry about putting this
   string between quotes, in case the path would content blank characters. If the
-  program is not found, the function returns "". \code{ZIpgmhelp()} displays the
+  program is not found, the function returns "". \code{ZIpgmHelp()} displays the
   help file (man page) of the corresponding executable.
 }
 
@@ -189,19 +186,19 @@ noext(paste(tempfile(), ".ext", sep = ""))
 
 # Given a correct ZooImage name for a sample, return parts of it
 smp__ <- "MTLG.2010-03-15.H1+A1.03_dat1.zim"
-get.sampleinfo(smp__, "sample")
-get.sampleinfo(smp__, "fraction")
-get.sampleinfo(smp__, "image")
-get.sampleinfo(smp__, "scs")
-get.sampleinfo(smp__, "date")
-get.sampleinfo(smp__, "id")
-get.sampleinfo(smp__, "frac")
-get.sampleinfo(smp__, "imgnbr")
+sampleInfo(smp__, "sample")
+sampleInfo(smp__, "fraction")
+sampleInfo(smp__, "image")
+sampleInfo(smp__, "scs")
+sampleInfo(smp__, "date")
+sampleInfo(smp__, "id")
+sampleInfo(smp__, "frac")
+sampleInfo(smp__, "imgnbr")
 rm(smp__)
 
 # Variables calculation utilities
 df__ <- data.frame(Label = c("Alabel", "AnotherLabel"), Item = c("01", "02"))
-make.Id(df__)
+makeId(df__)
 rm(df__)
 ecd(1:10)
 
@@ -231,9 +228,9 @@ ZIpgm("pgmhist", "netpbm")
 ZIpgm("pnm2biff", "xite")
 
 # ...and their help pages
-ZIpgmhelp("zip")
-ZIpgmhelp("pgmhist", "netpbm")
-ZIpgmhelp("pnm2biff", "xite")
+ZIpgmHelp("zip")
+ZIpgmHelp("pgmhist", "netpbm")
+ZIpgmHelp("pnm2biff", "xite")
 }
 }
 
