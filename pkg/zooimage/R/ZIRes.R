@@ -211,7 +211,7 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 				use.Dil = use.Dil)
 		}, zooImageError = function (e) return(NULL))
 	})
-	list.add(lists)
+	listAdd(lists)
 }
 
 getSpectrum <- function (ZIDat, image,  taxa = NULL, groups = NULL,

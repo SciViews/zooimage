@@ -1,9 +1,9 @@
 \name{zid}
-\alias{makeRData}
 \alias{zidClean}
 \alias{zidCompress}
 \alias{zidCompressAll}
-\alias{zidRead}
+\alias{zidDatMake}
+\alias{zidDatRead}
 \alias{zidUncompress}
 \alias{zidUncompressAll}
 \alias{zidVerify}
@@ -16,28 +16,31 @@
   Compress, uncompress and verify ZooImage Data files.
 }
 \usage{
-zidCompress(zidir, type = "ZI1", check = TRUE, check.vignettes = TRUE,
-    replace = FALSE, delete.source = replace, check.zip = TRUE, show.log = TRUE)
-zidCompressAll(path = ".", samples = NULL, type = "ZI1", check = TRUE,
+zidCompress(zidir, type = c("ZI1", "ZI2", "ZI3"), check = TRUE,
     check.vignettes = TRUE, replace = FALSE, delete.source = replace,
-    show.log = TRUE, bell = FALSE)
-makeRData(zidir, type = "ZI1", replace = FALSE, show.log = TRUE)
+    check.zip = TRUE, show.log = TRUE)
+zidCompressAll(path = ".", samples = NULL, type = c("ZI1", "ZI2", "ZI3"),
+    check = TRUE, check.vignettes = TRUE, replace = FALSE,
+    delete.source = replace, show.log = TRUE, bell = FALSE)
 zidClean(path = ".", samples = NULL)
-zidRead(zidfile)
+zidDatMake(zidir, type = "ZI3", replace = FALSE, show.log = TRUE)
+zidDatRead(zidfile)
 zidUncompress(zidfile, path = dirname(zidfile), delete.source = FALSE,
     show.log = TRUE)
 zidUncompressAll(path = ".", zidfiles = zidList(path), path.extract = path,
     skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE,
     bell = FALSE)
-zidVerify(zidir, type = "ZI1", check.vignettes = TRUE, show.log = TRUE)
-zidVerifyAll(path = ".", samples = NULL, type = "ZI1", check.vignettes = TRUE,
-    show.log = TRUE, bell = FALSE)
+zidVerify(zidir, type = c("ZI1", "ZI2", "ZI3"), check.vignettes = TRUE,
+    show.log = TRUE)
+zidVerifyAll(path = ".", samples = NULL, type = c("ZI1", "ZI2", "ZI3"),
+    check.vignettes = TRUE, show.log = TRUE, bell = FALSE)
 zidExtract(file, zidfile)
 }
 
 \arguments{
   \item{zidir}{ A directory containing data to put in a .zid files }
-  \item{type}{ Currently, only 'ZI1' type is supported (ZooImage1) }
+  \item{type}{ The ZI file format, currently 'ZI1', 'ZI2' or 'ZI3' types are
+    supported (ZooImage1-3) }
   \item{check}{ Do we check the files in this directory before/after compression? }
   \item{check.vignettes}{ Do we check if the future .zid file contains all vignettes? }
   \item{replace}{ Do we replace existingfiles? }

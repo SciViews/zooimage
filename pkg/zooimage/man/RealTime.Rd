@@ -11,7 +11,7 @@
 }
 
 \usage{
-lstRead(x, skip = 2)
+lstRead(lstfile, skip = 2)
 realtimeOptions(lstdir = ".", ZIClass, type = "b", size.threshold = NULL,
     breaks = seq(0.05, 3, by = 0.1), conv.dir = ".", images.per.sec = 7,
 	flow.cell = 600, concentration = "p/mL", collage = NULL, size = 5, lag = 2,
@@ -23,7 +23,7 @@ realtimeLoop(delay = 15000)
 }
 
 \arguments{
-  \item{x}{ a connection or a character string giving the name of the FlowCAM
+  \item{lstfile}{ a connection or a character string giving the name of the FlowCAM
     'list' file to read }
   \item{skip}{ number of row to skip in the 'list' file }
   \item{lstdir}{ The directory where the FlowCAM .lst file is located }

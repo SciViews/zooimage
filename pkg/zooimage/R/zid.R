@@ -517,7 +517,7 @@ zidDatRead <- function (zidfile)
 			rdata <- file.path(zidfile, RdataFile)
 			if (!file.exists(rdata)) {
 				# Try to create it
-				makeRData(zidfile, show.log = FALSE)
+				zidDatMake(zidfile, show.log = FALSE)
 				checkFileExists(rdata,
 					message = "Error creating the .RData file")
 			}

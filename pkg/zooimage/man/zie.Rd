@@ -18,7 +18,7 @@ zieMake(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
 	move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$",show.log = TRUE,
 	bell = FALSE)
 zieCompile(path = ".", Tablefile = "Table.txt", Template = "ImportTemplate.zie",
-    Filemap = paste("Import_", noext(Tablefile), ".zie", sep = ""),
+    Filemap = paste("Import_", noExt(Tablefile), ".zie", sep = ""),
 	Nrange = c(1, 1000), replace = TRUE, make.it = FALSE, show.log = make.it)
 ZIE(title, filter, description, pattern, command, author, version, date,
     license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",

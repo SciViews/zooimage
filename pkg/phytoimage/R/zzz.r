@@ -41,7 +41,8 @@
 	options(ZIredefine = TRUE)
 
 	## Load the initial zooimage package now
-	if (!require(zooimage)) stop("Package 'zooimage' is required!")
+	## No, this is now done in NAMESPACE import!
+	#if (!require(zooimage)) stop("Package 'zooimage' is required!")
 }
 
 ## Unloading PhytoImage

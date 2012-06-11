@@ -5,7 +5,7 @@ Version: 3.0-0
 Date: 2012-05-07
 Author: Ph. Grosjean & K. Denis
 Maintainer: Ph. Grosjean <Philippe.Grosjean@umons.ac.be>
-Depends: R (>= 2.10.0), svMisc, svDialogs
+Depends: R (>= 2.10.0), svMisc, svDialogs, zooimage
 Suggests: zooimage
 Description: PhytoImage is a free (open source) solution for analyzing digital
 	images of phytoplankton. In combination with ImageJ, a free image analysis

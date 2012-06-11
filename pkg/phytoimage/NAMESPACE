@@ -2,6 +2,7 @@
 #import(tcltk2)
 import(svMisc)
 import(svDialogs)
+import(zooimage)
 
 export(exitPgm)
 export(closePhytoImage)

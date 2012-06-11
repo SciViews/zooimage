@@ -8,18 +8,18 @@
 \alias{gettextZI}
 \alias{getVar}
 \alias{getDec}
-\alias{list.add}
-\alias{list.merge}
-\alias{list.reduce}
+\alias{listAdd}
+\alias{listMerge}
+\alias{listReduce}
 \alias{listSamples}
 \alias{makeId}
-\alias{noext}
+\alias{noExt}
 \alias{parseIni}
 \alias{Progress}
 \alias{selectFile}
 \alias{setKey}
-\alias{trimstring}
-\alias{underscore2space}
+\alias{trimString}
+\alias{underscoreToSpace}
 \alias{ZIpgm}
 \alias{ZIpgmHelp}
 
@@ -30,9 +30,9 @@
 }
 
 \usage{
-list.merge(x, y)
-list.add(\dots, .list = list(\dots))
-list.reduce(\dots, .list = list(\dots), FUN = "+")
+listMerge(x, y)
+listAdd(\dots, .list = list(\dots))
+listReduce(\dots, .list = list(\dots), FUN = "+")
 
 calcVars(x)
 ecd(area)
@@ -51,9 +51,9 @@ selectFile(type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid", "Zim", "Zis",
 
 getDec()
 
-noext(file)
-trimstring(char)
-underscore2space(char)
+noExt(file)
+trimString(char)
+underscoreToSpace(char)
 parseIni(data, label = "1")
 
 Progress(value, max.value = NULL)
@@ -180,9 +180,9 @@ ZIpgmHelp(pgm, subdir = "misc")
 
 \examples{
 # Character strings and filenames manipulation functions
-underscore2space("Some_string_to_convert")
-trimstring("    \tString with\textra spaces  \t")
-noext(paste(tempfile(), ".ext", sep = ""))
+underscoreToSpace("Some_string_to_convert")
+trimString("    \tString with\textra spaces  \t")
+noExt(paste(tempfile(), ".ext", sep = ""))
 
 # Given a correct ZooImage name for a sample, return parts of it
 smp__ <- "MTLG.2010-03-15.H1+A1.03_dat1.zim"

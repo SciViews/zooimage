@@ -1377,7 +1377,7 @@ batchFilePlugin <- function ()
 		byrow = TRUE))$res
 	if (!length(ctxFile)) return(invisible(NULL))
 	## Create the table
-	createBatchFile(ctx = ctxFile, fil = FALSE, largest = FALSE,
+	createBatchFile(ctxfile = ctxFile, fil = FALSE, largest = FALSE,
 		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
 		masks = FALSE, verbose = TRUE, txt = FALSE,
 		import.name = "batchExampleParameters")
