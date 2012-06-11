@@ -58,8 +58,7 @@ listFilesExt <- function (dir, extension = "zip",
 pattern = extensionPattern(extension), ... )
 {
 	checkDirExists(dir)
-	out <- list.files(dir, pattern = pattern , ...)
-	return(out)
+	list.files(dir, pattern = pattern , ...)
 }
 
 zimList <- function (zidir, ...)
@@ -73,9 +72,15 @@ zipList <- function (zidir, ...)
 
 zidList <- function (zidir, ...)
 	listFilesExt(zidir, extension = "zid", ...)
+	
+zidbList <- function (zidir, ...)
+	listFilesExt(zidir, extension = "zidb", ...)
 
 jpgList <- function (dir, ...)
 	listFilesExt(dir, extension = "jpg", ...)
+	
+pngList <- function (dir, ...)
+	listFilesExt(dir, extension = "png", ...)
 
 ## Transforms a file extension to a pattern for ignore.case matching of the  
 ## extension: extension (with or without the dot at the beginning)
@@ -159,11 +164,11 @@ forceDirCreate <- function (path, ...)
 }
 
 ## Checks the first line of a file against some expected content
-checkFirstLine <- function (file, expected = "ZI1", 
-message = 'file "%s" is not a valid ZooImage version 1 file', stop = FALSE)
+checkFirstLine <- function (file, expected = c("ZI1", "ZI2", "ZI3"), 
+message = 'file "%s" is not a valid ZooImage version <= 3 file', stop = FALSE)
 {
 	Line1 <- scan(file, character(), nmax = 1, quiet = TRUE)
-	res <- Line1 == expected
+	res <- Line1 %in% expected
 	if (!res && stop) {
 		message <- sprintf(message, file)
 		stop(message)
@@ -171,7 +176,7 @@ message = 'file "%s" is not a valid ZooImage version 1 file', stop = FALSE)
 	return(invisible(res)) 
 }
 
-list.dir <- function (dir, ...)
+listDirs <- function (dir, ...)
 {
 	out <- list.files(dir)
 	out[file.info(file.path(dir, basename(out)))$isdir]
@@ -234,8 +239,8 @@ comment.file = NULL, delete.zipfile.first = TRUE)
 	comment <- !is.null(comment.file) && file.exists(comment.file)
 
 	## Build the list of parameters for zip
-	zippar <- sprintf("-rq9%s%s", if(delete.source) "m" else "",
-		if(comment) "z" else "")
+	zippar <- sprintf("-rq9%s%s", if (delete.source) "m" else "",
+		if (comment) "z" else "")
 
 	## Create the basic command
 	cmd <- sprintf('"%s" %s "%s" "%s"', ZIpgm("zip", "misc"), zippar,

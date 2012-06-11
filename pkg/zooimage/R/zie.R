@@ -279,7 +279,7 @@ show.log = TRUE, bell = FALSE)
 		###       processed!)
 		Progress(i, nLines)
 		if (!grepl("^[-][>]", Lines[i])) {	# This is not a state change command
-			File <- MakeImageName(trimstring(sub("[=].*$", "", Lines[i])))
+			File <- MakeImageName(trimString(sub("[=].*$", "", Lines[i])))
 			checkFileExists(File)
 			if (File %in% allImages) 
 				stop(sprintf("Duplicated use of the same file : '%s' !", File))
@@ -405,7 +405,7 @@ show.log = TRUE, bell = FALSE)
 		Key <- sub("^[-][>]([^ =]+).*$", "\\1", dat)
 		## Special treatment if Key == "Sample"
 		if (Key == "Sample") {
-			attr(zimData, "Sample") <- trimstring(sub("^[^=]+=", "", dat))
+			attr(zimData, "Sample") <- trimString(sub("^[^=]+=", "", dat))
 			## Indicate that we process another sample
 			attr(zimData, "MakeZim") <- TRUE # Tell to make the zim file
 			attr(zimData, "Exif") <- ""
@@ -453,12 +453,12 @@ show.log = TRUE, bell = FALSE)
 		
 		## This is not a state change command
 		if (length(res) == 1 && res == FALSE) {	
-			File <- MakeImageName(trimstring(sub("[=].*$", "", Lines[i])))
+			File <- MakeImageName(trimString(sub("[=].*$", "", Lines[i])))
 			
 			## Determine the name of the converted file
 			if (Convert != "") {
 				if (FileC == "") { # Construct the name of the converted file
-					FileConv <- paste(noext(File), FileExt, sep = ".")
+					FileConv <- paste(noExt(File), FileExt, sep = ".")
 				} else {
 					## Make sure that previous file is deleted
 					unlink(FileC)
@@ -472,11 +472,11 @@ show.log = TRUE, bell = FALSE)
 			## and check if it is a calibration file
 			FileConvExt <- tolower(sub("^.*[.]", "", FileConv))
 			## Calculate the final name we want for the converted file
-			NewFile <- trimstring(sub("^.*[=]", "", Lines[i]))
+			NewFile <- trimString(sub("^.*[=]", "", Lines[i]))
 			## 1) If this is 'key' or 'key=' (NeWFile == ""), then,
 			##    the file is not renamed!
 			if (NewFile == "") {
-				FileConvName <- paste(noext(File), FileExt2, sep = ".")
+				FileConvName <- paste(noExt(File), FileExt2, sep = ".")
 				## 2) If the new name starts with "_Calib", then, never use the
 				##    Sample part and add a CalibXX entry in .zim file
 			} else if (length(grep("^_Calib", NewFile)) > 0) {
@@ -489,7 +489,7 @@ show.log = TRUE, bell = FALSE)
 						## Delete blank-field images (.pgm and .img)
 						## in the root directory
 						unlink(BlankField)
-						unlink(paste(noext(BlankField), "img", sep = "."))
+						unlink(paste(noExt(BlankField), "img", sep = "."))
 					}
 					BlankField <- FileConvName
 				} else {
@@ -537,14 +537,14 @@ show.log = TRUE, bell = FALSE)
 				if (zip.images != "" &&
 					length(grep(zip.images, FileConvName)) != 0 &&
 					length(grep("^_Calib", FileConvName)) == 0) {
-					finalname <- paste(noext(FileConvName), "zip", sep = ".")
+					finalname <- paste(noExt(FileConvName), "zip", sep = ".")
 				} else finalname <- FileConvName
 				logProcess(paste("Converting image '", File, "' into '",
 					finalname, "'", sep = ""))
 				if (replace || !file.exists(FileExt)) { 
 					## Create variables Rawbase and Rawnoext
 					Rawbase <- File
-					Rawnoext <- noext(File)
+					Rawnoext <- noExt(File)
 					## Run the command
 					res <- eval(parse(text = Convert))
 					if (Return != "" && length(grep(Return, res)) == 0) {
@@ -590,7 +590,7 @@ show.log = TRUE, bell = FALSE)
 					unlink(FileConv)
 					
 					## Now, FileConv is the same file, but with a .tif extension
-					FileConv <- paste(noext(FileConv), "tif", sep = ".")
+					FileConv <- paste(noExt(FileConv), "tif", sep = ".")
 					if (!file.exists(FileConv)) {
 						ok <- FALSE
 						logProcess("Error: blank-field corrected file not found!",
@@ -659,7 +659,7 @@ show.log = TRUE, bell = FALSE)
 							zimfile <- paste(attr(zimData, "Sample"), "zim",
 								sep = ".")
 							# file.copy(file.path(curdir, zimfile), zimfile)
-							zipfile <- paste(noext(FileConvName), "zip",
+							zipfile <- paste(noExt(FileConvName), "zip",
 								sep = ".")
 							zip(zipfile, delete.source = TRUE,
 								comment.file = file.path(curdir, zimfile),
@@ -689,7 +689,7 @@ show.log = TRUE, bell = FALSE)
 	if (!is.null(BlankField)) {
 		## Delete blank-field images (.pgm and .img) in the root directory
 		unlink(BlankField)
-		unlink(paste(noext(BlankField), "img", sep = "."))
+		unlink(paste(noExt(BlankField), "img", sep = "."))
 	}
 	
 	if (ok) {
@@ -707,7 +707,7 @@ show.log = TRUE, bell = FALSE)
 ## zieMake(path = ".", Filemap = "Import_Madagascar2Macro.zie")
 
 zieCompile <- function (path = ".", Tablefile = "Table.txt",
-Template = "ImportTemplate.zie", Filemap = paste("Import_", noext(Tablefile),
+Template = "ImportTemplate.zie", Filemap = paste("Import_", noExt(Tablefile),
 ".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE,
 show.log = make.it)
 {		
@@ -1159,11 +1159,10 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 	}
 	
 	## Determine the name of the various files
-	imgFile <- paste(noext(File), "img", sep = ".")
-	imgcorrFile <- paste(noext(File), "coor.img", sep = "")
-	tifFile <- paste(noext(File), "tif", sep = ".")
-	imgBFfile <- paste(noext(basename(BFfile)), "img", sep = ".")
-	if (isWin()) BFfile <- shortPathName(BFfile)
+	imgFile <- paste(noExt(File), "img", sep = ".")
+	imgcorrFile <- paste(noExt(File), "coor.img", sep = "")
+	tifFile <- paste(noExt(File), "tif", sep = ".")
+	imgBFfile <- paste(noExt(basename(BFfile)), "img", sep = ".")
 
     ## Is File a test file?
 	if (isTestFile(File)) {

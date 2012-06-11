@@ -121,7 +121,8 @@ zooImageErrorDrivers <- list(
 	"zidVerifyAll" = "path",
 	"zidClean" = "path",
 	"zidUncompressAll" = "zidfiles",
-	"zidRead" = "zidfile",
+	"zidDatMake" = "zidir",
+	"zidDatRead" = "zidfile",
 
 	## --------------------------------------- utilities.R
 	"sampleInfo" = "filename",
@@ -143,7 +144,6 @@ zooImageErrorDrivers <- list(
 	"get.ZITrain" = "dir",
 	"forceDirCreate" = "path",
 	"checkEmptyDir" = "dir",
-	"makeRData" = "zidir",
 	"processSample" = "Sample",
 	"processSampleAll" = "Samples"
 )

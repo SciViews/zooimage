@@ -125,7 +125,7 @@ na.rm = FALSE)
 	if (!keep_) res <- grep("^[^_]", res, value = TRUE)
 
 	## 'Id' is the name of the vignettes, minus the extension
-	Id <- noext(basename(res))
+	Id <- noExt(basename(res))
 
 	## 'Path' is the directory path
 	Path <- dirname(res)

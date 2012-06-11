@@ -55,15 +55,15 @@ getKey <- function (key, default.value = NULL)
 }
 
 ## Convert underscores into spaces
-underscore2space <- function (char)
+underscoreToSpace <- function (char)
 	return(gsub("_", " ", char))
 
 ## Trim leading and trailing white spaces and tabs
-trimstring <- function (char)
+trimString <- function (char)
 	return(sub("\\s+$", "", sub("^\\s+", "", char)))
 
 ## Get the name of a file, without its extension
-noext <- function (file)
+noExt <- function (file)
 	return(sub("\\.[^.]+$", "", basename(file)))
 
 ## Get information about a sample, given its name
@@ -184,11 +184,11 @@ parseIni <- function (data, label = "1")
 	
 	# Is str a section?
 	is.section <- function (str)
-		as.logical(length(grep("^\\[.+\\]$", trimstring(str)) > 0))
+		as.logical(length(grep("^\\[.+\\]$", trimString(str)) > 0))
 
 	## Get the name of a section
 	get.section.name <- function (str)
-		sub("^\\[", "", sub("\\]$", "", trimstring(str)))
+		sub("^\\[", "", sub("\\]$", "", trimString(str)))
 
 	## Transform a vector of characters into a data frame,
 	## possibly with type conversion
@@ -199,10 +199,10 @@ parseIni <- function (data, label = "1")
 		return(character(0))
 	
 	## Trim leading and trailing white spaces
-	data <- trimstring(data)
+	data <- trimString(data)
 	
 	## Convert underscore to space
-	data <- underscore2space(data)
+	data <- underscoreToSpace(data)
 	
 	## Eliminate empty lines
 	data <- data[data != ""]
@@ -222,8 +222,8 @@ parseIni <- function (data, label = "1")
 	## Make sure we have a section for the first entries (otherwise, use [.])
 	if (!is.section(data[1, 1]))
 		data <- rbind(c("[.]", "[.]"), data)
-	Names <- as.vector(trimstring(data[, 1]))
-	Dat <- as.vector(trimstring(data[, 2]))
+	Names <- as.vector(trimString(data[, 1]))
+	Dat <- as.vector(trimString(data[, 2]))
 	
 	## Determine which is a section header
 	Sec <- grep("\\[.+\\]$", Names)
@@ -258,7 +258,7 @@ parseIni <- function (data, label = "1")
 }
 
 ## Merge two lists of data frames
-list.merge <- function (x, y)
+listMerge <- function (x, y)
 {	
 	if (!inherits(x, "list") || !inherits(y, "list"))
 		stop("'x' and 'y' must both be 'list' objects")
@@ -282,10 +282,10 @@ list.merge <- function (x, y)
 }
 
 ## Add items across two lists (names must be the same)
-list.add <- function (..., .list = list(...))
-	list.reduce(.list= .list, FUN = "+")
+listAdd <- function (..., .list = list(...))
+	listReduce(.list= .list, FUN = "+")
 
-list.reduce <- function (..., .list = list(...), FUN = "+" )
+listReduce <- function (..., .list = list(...), FUN = "+")
 {
 	.list <- Filter(Negate(is.null), .list)
 	if (length(.list) == 1) return(.list[[1]])
@@ -385,7 +385,7 @@ ZIpgm <- function (pgm, subdir = "misc", ext = "exe")
 		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."),
 			package = "zooimage")
 		if (!file.exists(pathpgm)) return("") else
-			return(shortPathName(pathpgm))
+			return(pathpgm)
 	} else {	
 		## Change nothing: should be directly executable
 		if (pgm == "dc_raw") pgm <- "dcraw"
@@ -471,34 +471,34 @@ newRData <- function (path = "D", replace = TRUE)
 		zidUncompress(path.zid[i])
 		## Calculate new Rdata
 		path.sample <- sub("[.][zZ][iI][dD]", "", path.zid[i])
-		makeRData(path.sample, replace = replace)
+		zidDatMake(path.sample, replace = replace)
 		## Compress new zid file
 		zidCompress(path.sample, replace = replace)
     }
 }
 
 ## Function to create a batch file for FlowCAM image analysis
-createBatchFile <- function (ctx, fil = FALSE, largest = FALSE,
+createBatchFile <- function (ctxfile, fil = FALSE, largest = FALSE,
 vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
 masks = FALSE, verbose = TRUE, txt = TRUE,
 import.name = "batchExampleParameters")
 {
 	## Check arguments
-	if (!is.character(ctx)) stop("You must provide a context file")
+	if (!is.character(ctxfile)) stop("You must provide a context file")
 	## Create the table of importation
-	ContextList <- ctxReadAll(ctx = ctx, fil = fil, largest = largest,
+	ContextList <- ctxReadAll(ctxfile = ctxfile, fil = fil, largest = largest,
 		vignettes = vignettes, scalebar = scalebar, enhance = enhance,
 		outline = outline, masks = masks, verbose = verbose)
 	## Write the table of importation in the sample directory
 	if (isTRUE(txt)) { # Export table as txt format
-		write.table(ContextList, file = paste(dirname(dirname(ctx)),
+		write.table(ContextList, file = paste(dirname(dirname(ctxfile)),
 		paste(import.name, ".txt", sep = ""), sep = "/"), quote = TRUE,
 		sep = "\t", dec = ".", row.names = FALSE, col.names = TRUE)
 	} else { # Export table as csv format
-		write.csv(ContextList, file = paste(dirname(dirname(ctx)),
+		write.csv(ContextList, file = paste(dirname(dirname(ctxfile)),
 		paste(import.name, ".csv", sep = ""), sep = "/"), row.names = FALSE)
 	}
-	cat(paste("Your import table has been created in", dirname(dirname(ctx)),
+	cat(paste("Your import table has been created in", dirname(dirname(ctxfile)),
 		" : your samples directory", "\n", sep = " "))
 }
 

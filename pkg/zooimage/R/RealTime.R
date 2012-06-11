@@ -354,7 +354,7 @@ slope = FALSE)
 		if (length(compare.smp) == 1) {
 			if(length(grep(pattern = ".[Zz][Ii][Dd]", x = compare.smp)) >= 1) {
 				## This a zid file
-				Smp <- zidRead(compare.smp)
+				Smp <- zidDatRead(compare.smp)
 			} else {
 				## This is a list file
 				Smp <- lstRead(compare.smp)
@@ -362,14 +362,14 @@ slope = FALSE)
 			Smp <- predict(ZIClass, Smp, calc.vars = FALSE, class.only = FALSE)
 			Smp <- calcBiomass(ZIDat = Smp, conv = conv.dir, realtime = TRUE)
 			List <- list(Smp)
-			names(List) <- noext(basename(compare.smp))
+			names(List) <- noExt(basename(compare.smp))
 		} else {
 			List <- list()
 			if (length(grep(pattern = ".[Zz][Ii][Dd]", x = compare.smp)) >= 1) {
 				## This a zid file
 				for (i in 1 : length(compare.smp))
 					List[[i]] <- calcBiomass(ZIDat = predict(ZIClass,
-						zidRead(compare.smp[i]), calc.vars = FALSE,
+						zidDatRead(compare.smp[i]), calc.vars = FALSE,
 						class.only = FALSE), conv = conv.dir, realtime = TRUE)
 			} else {
 				## This is a list file
@@ -378,7 +378,7 @@ slope = FALSE)
 						lstRead(compare.smp[i]), calc.vars = FALSE,
 						class.only = FALSE), conv = conv.dir, realtime = TRUE)
 			}
-			names(List) <- noext(basename(compare.smp))
+			names(List) <- noExt(basename(compare.smp))
 		}
       	compare.smp <- List
     } else compare.smp <- FALSE

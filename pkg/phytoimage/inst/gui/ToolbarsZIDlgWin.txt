@@ -4,8 +4,8 @@
 # Create a Tk toolbar (intended for a window called 'ZIDlgWin')
 $Tk.ZIDlgWin
 |$MainToolbar
-||[butCam]Acquire images...				~~ acquireImg()
-||[butFilm]Import images...				~~ importImg()
+||[butCam]Acquire images...			~~ acquireImg()
+||[butFilm]Import images...			~~ importImg()
 ||[butTools]Process images...			~~ processImg()
 ||[butBluecase]Make .zid files...		~~ makeZid()
 ||-
@@ -14,10 +14,10 @@ $Tk.ZIDlgWin
 ||[butDirectory]Make classifier...		~~ makeClass()
 ||[butGraph]Analyze classifier...		~~ analyzeClass()
 ||-
-||[butEdit]Edit samples description...	~~ editDescription()
+||[butEdit]Edit samples description...		~~ editDescription()
 ||[butCubist]Process samples...			~~ processSamples()
 ||[butGlasses]View results...			~~ viewResults()
 ||[butExport]Export results...			~~ exportResults()
 ||-
-#||[butBlueBook]Help					~~ browseURL(findhtmlhelp("phytoimage"))
-||[butBuoy]Manual						~~ viewManual()
+#||[butBlueBook]Help				~~ browseURL(findhtmlhelp("phytoimage"))
+||[butBuoy]Manual				~~ viewManual()

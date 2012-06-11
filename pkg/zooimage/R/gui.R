@@ -1315,7 +1315,7 @@ vignettesClass <- function ()
 	if (length(zid) > 1) {
 		classVignettesAll(zidfiles = zid, Dir = "_manuValidation", ZIClass = zicObj)
 	} else {
-		classVignettes(zidfile = zid, Dir = noext(zid), ZIClass = zicObj)
+		classVignettes(zidfile = zid, Dir = noExt(zid), ZIClass = zicObj)
 	}
 }
 
@@ -1327,7 +1327,7 @@ subpartZIDat <- function ()
 	if (!length(zidFile)) return(invisible(NULL))
 
     ## Read the zid file
-    zid <- zidRead(zidFile)
+    zid <- zidDatRead(zidFile)
 
     ## Select a parameter to use for the threshold
     threshold <- createThreshold(ZIDat = zid)    
@@ -1357,7 +1357,7 @@ classifyAfterFilter <- function ()
     if (!length(finalDir)) return(invisible(NULL))
 	
     ## Read the zid file
-    ZIDat <- zidRead(zid)
+    ZIDat <- zidDatRead(zid)
     
     ## Select a parameter to use for the threshold
     threshold <- createThreshold(ZIDat = ZIDat)        

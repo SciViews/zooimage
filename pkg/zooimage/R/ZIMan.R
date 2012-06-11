@@ -21,7 +21,7 @@ ZIClass, log = TRUE, ProbaThreshold = NULL, ProbaBio = NULL, DiffMax = 0.2,
 Filter = NULL)
 {
 	DirName <- dirname(zidfile)
-	ZidName <- noext(zidfile)
+	ZidName <- noExt(zidfile)
 	ZidDir <- file.path(DirName, ZidName)
   
 	## Check if Directory with the same names as ZIdfile
@@ -73,7 +73,7 @@ Filter = NULL)
 	if (isTRUE(ContinueProcess)) {
 		## Do we use a ZIDat object allready recognized?
 		if (is.null(ZIDat)) {
-			Zid <- zidRead(zidfile)
+			Zid <- zidDatRead(zidfile)
 		} else Zid <- ZIDat
     
 		## Code for suspect detection!

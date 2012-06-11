@@ -7,7 +7,7 @@ $ConsoleMain
 ||Assistant...							~~ ZIDlg()
 ||-
 ||Exit PhytoImage						~~ exitPgm()
-||About ...								~~ aboutZI()
+||About ...							~~ aboutZI()
 
 # Add menu to the RGui console popup (Windows only)
 $ConsolePopup

@@ -48,8 +48,9 @@ export(importImg)
 export(increaseTrain)
 export(isTestFile)
 export(is.zim)
-export(list.add)
-export(list.merge)
+export(listAdd)
+export(listMerge)
+export(listReduce)
 export(listObjects)
 export(listSamples)
 export(loadObjects)
@@ -61,12 +62,11 @@ export(logWarning)
 export(lvq)
 export(makeClass)
 export(makeId)
-export(makeRData)
 export(makeTrain)
 export(makeZid)
 export(modalAssistant)
 export(nnet2)
-export(noext)
+export(noExt)
 export(optInOutDecimalSep)
 export(parseIni)
 export(plotAbdBio)
@@ -95,8 +95,8 @@ export(saveObjects)
 export(selectFile)
 export(setKey)
 export(startPgm)
-export(trimstring)
-export(underscore2space)
+export(trimString)
+export(underscoreToSpace)
 export(unzipImg)
 export(unzipImgAll)
 export(unzip.ZITrain)
@@ -110,8 +110,9 @@ export(zicCheck)
 export(zidClean)
 export(zidCompress)
 export(zidCompressAll)
+export(zidDatMake)
+export(zidDatRead)
 export(zidExtract)
-export(zidRead)
 export(zidUncompress)
 export(zidUncompressAll)
 export(zidVerify)
@@ -195,8 +196,9 @@ S3method(merge, ZITable)
 # imagemagick_identify
 # imageViewer
 # jpgList
+# pngList
 # listFilesExt
-# list.dir
+# listDirs
 # misc
 # misc_dcraw
 # netpbm
@@ -217,6 +219,7 @@ S3method(merge, ZITable)
 # xite_pnm2biff
 # xite_statistics
 # zidList
+# zidbList
 # zipList
 # zip
 # zipNoteAdd

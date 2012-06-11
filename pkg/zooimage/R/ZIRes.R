@@ -29,7 +29,7 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 		stop("'ZIClass' must be a 'ZIClass' object")
 	
 	## Get ZIDat from the ZidFile
-	ZIDat <- zidRead(ZidFile)
+	ZIDat <- zidDatRead(ZidFile)
 	
 	## By default, we have to predict ZidFile with a classifier
 	MakePredictions <- TRUE
@@ -44,7 +44,7 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 		AllSamples <- attr(ZIMan, "Samples")
 		
 		## Check if manual validation exists for this zid file
-		if (noext(ZidFile) %in% AllSamples) {
+		if (noExt(ZidFile) %in% AllSamples) {
 			## The ZidFile was manually validated
 			## --> use Class column for identification
 			## Subtable of ZidFile vignettes

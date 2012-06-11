@@ -7,7 +7,7 @@ $ConsoleMain
 ||Assistant...							~~ ZIDlg()
 ||-
 ||Exit ZooImage							~~ exitZI()
-||About ...								~~ aboutZI(graphical = TRUE)
+||About ...							~~ aboutZI(graphical = TRUE)
 
 # Add menu to the RGui console popup (Windows only)
 $ConsolePopup

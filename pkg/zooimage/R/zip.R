@@ -53,7 +53,7 @@ replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 
 	## Zip the image in the '_raw' subdir and add the information from the .zim
 	## file as comment
-	zipfile <- paste(noext(imagefile), ".zip", sep = "")
+	zipfile <- paste(noExt(imagefile), ".zip", sep = "")
 	zipfile <- file.path(".", "_raw", zipfile)
 	## Make sure that "_raw" subdir exists
 	forceDirCreate("_raw")

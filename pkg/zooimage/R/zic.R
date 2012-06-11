@@ -16,16 +16,16 @@
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 ## Check that the file is a zic file
-zicCheck <- function (file)
+zicCheck <- function (zicfile)
 {	
 	## This should be a .zic file directly
-	checkFileExists(file)
+	checkFileExists(zicfile)
 	
-	## First line of the file must be "ZI1"
-	checkFirstLine(file) 
+	## First line of the file must be "ZI1", "ZI2", or "ZI3"
+	checkFirstLine(zicfile) 
 	
 	## Second line must be [path]
-	Line2 <- scan(file, character(), skip = 1, nmax = 1, quiet = TRUE)
+	Line2 <- scan(zicfile, character(), skip = 1, nmax = 1, quiet = TRUE)
 	if (tolower(Line2) != "[path]")
-		stop("not a ZooImage1 .zic file, or corrupted!")
+		stop("not a ZooImage .zic file, or corrupted!")
 }
