@@ -225,48 +225,60 @@ bell = TRUE, show.log = FALSE, show.console = TRUE)
 
 ## Zip the content of the directory into the zipfile
 ## and delete the directory if needed
-zip <- function (zipfile , directory, delete.source = FALSE,
-comment.file = NULL, delete.zipfile.first = TRUE)
-{
-	## We need the system to be capable of zipping
-	checkZipAvailable()
-
-	## Delete old zip file, if it exists
-	if (delete.zipfile.first && file.exists(zipfile))
-		unlink(zipfile)
-
-	## Test if we need and can add the comment file
-	comment <- !is.null(comment.file) && file.exists(comment.file)
-
-	## Build the list of parameters for zip
-	zippar <- sprintf("-rq9%s%s", if (delete.source) "m" else "",
-		if (comment) "z" else "")
-
-	## Create the basic command
-	cmd <- sprintf('"%s" %s "%s" "%s"', ZIpgm("zip", "misc"), zippar,
-		zipfile, directory)
-
-	## Call the command
-	result <- if (isWin()) {
-		## modify the windows command so that the message is piped into the zip command
-		if (comment) {
-			cmd <- sprintf('%s /c type "%s" | %s', Sys.getenv("COMSPEC"),
-				comment.file, cmd)
-		}
-		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
-	} else {
-		## Modify the command if we need and can add the comment file
-		if (comment)
-			cmd <- sprintf('%s < "%s"', cmd, comment.file)
-		## Send the error stream to the null device
-		cmd <- paste(cmd, ' 2> /dev/null')
-		## Call the command
-		system(cmd)
-	}
-
+# Modif Kev zip is now available in R
+### Problem: zip shows all compressed files on R consol --> need invisible method
+zip <- function (zipfile, directory, delete.source = FALSE) {
+	### Zip the zid file
+	utils:::zip(zipfile = zipfile, files = directory)
+	if (delete.source)
+		unlink(x = directory, recursive = TRUE)
 	checkFileExists(zipfile, message = "Error creating zip file '%s'")
-	return(invisible( result == 0))
 }
+
+#zip <- function (zipfile , directory, delete.source = FALSE,
+#comment.file = NULL, delete.zipfile.first = TRUE)
+#{
+#	## We need the system to be capable of zipping
+## bug to check if there is a zip program under windows
+##	checkZipAvailable()
+#
+#	## Delete old zip file, if it exists
+#	if (delete.zipfile.first && file.exists(zipfile))
+#		unlink(zipfile)
+#
+#	## Test if we need and can add the comment file
+#	comment <- !is.null(comment.file) && file.exists(comment.file)
+#
+#	## Build the list of parameters for zip
+#	zippar <- sprintf("-rq9%s%s", if (delete.source) "m" else "",
+#		if (comment) "z" else "")
+#
+#	## Create the basic command
+#	cmd <- sprintf('"%s" %s "%s" "%s"', ZIpgm("zip", "misc"), zippar,
+#		zipfile, directory)
+#
+#	## Call the command
+#	result <- if (isWin()) {
+#		## modify the windows command so that the message is piped into the zip command
+#		if (comment) {
+#			cmd <- sprintf('%s /c type "%s" | %s', Sys.getenv("COMSPEC"),
+#				comment.file, cmd)
+#		}
+#		system(cmd, show.output.on.console = TRUE, invisible = TRUE)
+#	} else {
+#		## Modify the command if we need and can add the comment file
+#		if (comment)
+#			cmd <- sprintf('%s < "%s"', cmd, comment.file)
+#		## Send the error stream to the null device
+#		cmd <- paste(cmd, ' 2> /dev/null')
+#		## Call the command
+#		system(cmd)
+#	}
+#
+#	checkFileExists(zipfile, message = "Error creating zip file '%s'")
+#	return(invisible( result == 0))
+#}
+#
 
 zipNoteAdd <- function (zip, comment.file,
 on.failure = stop(sprintf(on.failure.msg , comment.file, zip)),
