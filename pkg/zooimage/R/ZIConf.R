@@ -171,78 +171,120 @@ Rowv = TRUE, Colv = TRUE)
 		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE)
 }
 
-## New function v 1.2-2 false positive and negative
+# Confusion bar with recall and precision in green bar and not outside as before
+# function modified for publication hclust 
 confusionBar <- function (ZIConf, col = c("PeachPuff2", "green3", "lemonChiffon2"),
-mar = c(1.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, cex.legend = 1.2 * cex,
-main = "Precision (at left) versus recall (at right)")
+    mar = c(1.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, cex.legend =
+        cex, main = "Precision (at left) versus recall (at right)", minPlace = 17)
 {
-	if (!inherits(ZIConf, c("ZIConf")))
-		stop("'ZIConf' must be a 'ZIConf' object")
-	TP <- diag(ZIConf)
-	fn <- rowSums(ZIConf) - TP
-	fp <- colSums(ZIConf) - TP
-	## Express fn and fp in proportions
-	FN <- fn <- fn / (fn + TP)
-	FP <- fp <- fp / (TP + fp)
-	FP[is.na(FP)] <- 1
-	tp <- 1 - fn
-	## Rescale values so that:
-	## fn/tp ratio and tp/fp ratio are kept, using same tp
-	## total fn + tp + fp makes 100
-	fp <- tp / (1 - fp) * fp
-	## Rescale all so that they sum to 1
-	scale <- fn + tp + fp
-	fn <- fn / scale * 100
-	tp <- tp / scale * 100
-	fp <- fp / scale * 100
-	## Just in case we have no tp at all:
-	fn[is.na(tp)] <- 50
-	fp[is.na(tp)] <- 50
-	tp[is.na(tp)] <- 0
-	res <- matrix(c(fp, tp, fn), ncol = 3)
-	colnames(res) <- c( "fp", "tp", "fn")
-	Labels <- names(attr(ZIConf, "nbr.cols"))
-	## Order items from smallest to largest tp
-	pos <- order(res[, 2], decreasing = TRUE)
-	res <- res[pos, ]
-	FN <- FN[pos]
-	FP <- FP[pos]
-	TP <- TP[pos]
-	Labels <- Labels[pos]
-	L <- length(FN)
-	
-	## Plot
-	omar  <- par("mar")
-	on.exit(par(omar)) # mar = margin size c(bottom, left, top, right)
-	par(mar = mar)
-	barplot(t(res), horiz = TRUE, col = col, xaxt = "n", las = 1, space = 0)
-	#lines(rep((1:9) * 10, each = 3), rep(c(0, L, NA), 9), lty = 2)
-	#abline(v = (1:9) * 10, lty = 2)
-	lines(c(50, 50), c(0, L), lwd = 1)
-	#abline(v = 50, lwd = 2)
-
-	## Print the fraction of fp and fn
-	text(rep(1, length(FP)), 1:L - 0.5, paste(round((1 - FP) * 100), "%",
-		sep = ""), adj = c(0, 0.5), cex = cex)
-	text(rep(99, length(FN)), 1:L - 0.5, paste(round((1 - FN) * 100), "%",
-		sep = ""), adj = c(1, 0.5), cex = cex)
-
-	## Print the number of true positives
-	xpos <- res[, 1] + res[, 2] / 2 
-	text(xpos, 1:L - 0.5, round(TP), adj = c(0.5, 0.5), cex = cex)
-
-	## Add a legend
-  	legend(50, L * 1.05, legend = c("false positive (FP)",
-		"true positive (TP)", "false negative (FN)"), cex = cex.legend,
-		xjust = 0.5, yjust = 1, fill = col, bty = "n", horiz = TRUE)
-	axis(2, 1:L - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
-		labels = Labels)
-	title(main = main)
-	text(50, -1, paste("< higher precision TP/(TP+FP) - underestimate <=>",
-		"overestimate - higher recall (TP/(TP+FN)) >  "),
-		cex = cex)
-	return(invisible(res))
+    if (!inherits(ZIConf, c("ZIConf")))
+        stop("'ZIConf' must be a 'ZIConf' object")
+    TP <- diag(ZIConf)
+    fn <- rowSums(ZIConf) - TP
+    fp <- colSums(ZIConf) - TP
+    FN <- fn <- fn/(fn + TP)
+    FP <- fp <- fp/(TP + fp)
+    FP[is.na(FP)] <- 1
+    tp <- 1 - fn
+    fp <- tp/(1 - fp) * fp
+    scale <- fn + tp + fp
+    fn <- fn/scale * 100
+    tp <- tp/scale * 100
+    fp <- fp/scale * 100
+    fn[is.na(tp)] <- 50
+    fp[is.na(tp)] <- 50
+    tp[is.na(tp)] <- 0
+    res <- matrix(c(fp, tp, fn), ncol = 3)
+    colnames(res) <- c("fp", "tp", "fn")
+    Labels <- names(attr(ZIConf, "nbr.cols"))
+    pos <- order(res[, 2], decreasing = TRUE)
+    res <- res[pos, ]
+    FN <- FN[pos]
+    FP <- FP[pos]
+    TP <- TP[pos]
+    Labels <- Labels[pos]
+    L <- length(FN)
+    omar <- par("mar")
+    on.exit(par(omar))
+    par(mar = mar)
+    barplot(t(res), horiz = TRUE, col = col, xaxt = "n", las = 1,
+        space = 0)
+    lines(c(50, 50), c(0, L), lwd = 1)
+    xpos <- res[, 1] + res[, 2]/2
+    text(xpos, 1:L - 0.5, round(TP), adj = c(0.5, 0.5), cex = cex)
+    # Add recall and precision if enough place to print -->
+    NotPlace <- res[,"tp"] <= minPlace
+    if(any(NotPlace)){
+      # Special case if not engough place to print precision and recall
+      # Add Precision
+      PrecTxt <- paste(round((1 - FP) * 100), "%", sep = "")
+      PrecTxt[NotPlace] <- ""
+      text(res[,"fp"] + 1, 1:L - 0.5, PrecTxt, adj = c(0, 0.5), cex = cex)
+      # Add FDR
+      FDTxt <- paste(round((FP) * 100), "%", sep = "")
+      FDTxt[!NotPlace] <- ""
+      text(rep(1, length(FP)), 1:L - 0.5, FDTxt, adj = c(0, 0.5), cex = cex)
+      # Add Recall
+      RecTxt <- paste(round((1 - FN) * 100), "%", sep = "")
+      RecTxt[NotPlace] <- ""
+      text(res[,"fp"] + res[, "tp"] - 5, 1:L - 0.5, RecTxt, adj = c(0, 0.5), cex = cex)
+      # Add FN
+      FNTxt <- paste(round((FN) * 100), "%", sep = "")
+      FNTxt[!NotPlace] <- ""
+      text(rep(99, length(FN)), 1:L - 0.5, FNTxt, adj = c(1, 0.5), cex = cex)
+    } else {
+      # Add Precision
+      text(res[,"fp"] + 1, 1:L - 0.5, paste(round((1 - FP) *
+          100), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+      # Add Recall
+      text(res[,"fp"] + res[, "tp"] - 5, 1:L - 0.5, paste(round((1 - FN) *
+          100), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+    }
+    legend(50, L * 1.05, legend = c("False Discovery : (1 - Prec.)", "True Positive (TP)",
+        "False Negative : (1 - Rec.)"), cex = cex.legend, xjust = 0.5,
+        yjust = 1, fill = col, bty = "n", horiz = TRUE)
+    axis(2, 1:L - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
+        labels = Labels)
+    title(main = main)
+    text(50, -0.5, "< higher precision : TP/(TP+FP) - underestimate <=> overestimate - higher recall : TP/(TP+FN) >  ",
+        cex = cex)
+    return(invisible(res))
 }
+
+# Precision vs Recall basic representation
+PrecVsRec <- function (ZIConf, col = c("PeachPuff2", "green",  "green3", "lemonChiffon2"),
+  mar = c(2.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, main = "Precision Vs Recall")
+{
+  if (!inherits(ZIConf, c("ZIConf")))
+    stop("'ZIConf' must be a 'ZIConf' object")
+  # Calculation of statistics
+  Stats <- ConfMatStats(ZIConf = ZIConf)
+  FDR <- Stats$FDR * 100
+  Precision <- Stats$Precision * 100
+  Recall <- Stats$Recall * 100
+  FNR <- Stats$FNR * 100
+  # Order statistices according Precision + recall
+  pos <- order(Recall + Precision, decreasing = TRUE)
+  # Results to plot
+  res <- cbind(FDR, Precision, Recall, FNR)
+  # plot
+  par(mar = mar)
+  barplot(t(res[pos,]), horiz = TRUE, col = col, xaxt = "n", las = 1, space = 0)
+  # add information
+  Ngp <- nrow(Stats)
+  Labels <- names(attr(ZIConf, "nbr.cols"))
+  axis(2, 1:Ngp - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis, labels = Labels[pos])
+  title(main = main)
+  text(rep(1, Ngp), 1:Ngp - 0.5, paste(round(FDR[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+  text(FDR[pos] + Precision[pos]/2, 1:Ngp - 0.5, paste(round(Precision[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+  text(FDR[pos] + Precision[pos] + Recall[pos]/2, 1:Ngp - 0.5, paste(round(Recall[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+  text(rep(191, Ngp), 1:Ngp - 0.5, paste(round(FNR[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+  legend("top", legend = c("False Discovery ", "Precision", "Recall", "False Negative"), cex = cex, fill = col, bty = "n", horiz = TRUE)
+  text(96, -0.5, "< higher precision - underestimate <=> overestimate - higher recall >  ", cex = cex)
+  return(invisible(res))
+}
+
+
 
 ## Graphical representation of the confusion matrix (modif K. Denis)
 confusionPlot <- function (manual, automatic, label = "manual \\ auto",
