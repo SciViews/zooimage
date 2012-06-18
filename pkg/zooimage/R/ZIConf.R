@@ -332,67 +332,204 @@ ncols = 41, col0 = FALSE, grid.col = "gray", asp = 1, ...)
 }
 
 ## Table with stats per groupe precision, recall, etc
-confusionStat <- function (ZIClass, ZIConf = NULL, sort.by = "FN")
+confusionStat <- function(ZIClass, ZIConf = NULL, sort.by = NULL, decreasing = FALSE, NaN.rm = FALSE)
 {
-    if (is.null(ZIConf)) ZIConf <- ZIConf(ZIClass)
-    ## True positive --> all organism on diagonal!
-    TP <- diag(ZIConf)
-    ## Sum of true positive
-    SumTP <- sum(TP)
+    # Create confusion matrix
+    if(is.null(ZIConf)){
+        Confu <- ZIConf(ZIClass)
+    } else {
+	   Confu <- ZIConf
+    }
+    ##### General parameters
+    # Number of groups
+    Ngp <- ncol(Confu)
     
-    ## Sum rows and columns
-    SumRow <- rowSums(ZIConf) # TP + FN
-    SumCol <- colSums(ZIConf) # TP + FP
+    # Total : TP + TN + FP + FN
+    Tot <- sum(Confu)
     
-    ## Out of diagonal
-    # False negative item
-    FN <- SumRow - TP
-    ## False positive items
-    FP <- SumCol - TP
+    # TP : True positive item : All items on diagonal
+    TP <- diag(Confu)
     
-    ## Total
-    Tot <- sum(ZIConf)
+    # TP + TN : sum of diagonal = All correct identification
+    TP_TN <- sum(TP)
     
-    ## General stats
-    ## Accuracy (TN + TP) / (TP + TN + FP + FN)
-    Accuracy <- SumTP / Tot * 100
-    Error <- 100 - Accuracy
+    # TP + FP : sum of columns : Automatic classification
+    TP_FP <- colSums(Confu)
     
-    ## Stats by group
+    # TP + FN : sum of rows : Manual classification
+    TP_FN <- rowSums(Confu)
+    
+    # FP : False positive items
+    FP <- TP_FP - TP    
 
-    ## Proportion of false negative
-    FalseNeg <- FN / SumRow * 100
+    # FN : False negative item
+    FN <- TP_FN - TP
 
-    ## Proportion of false positive
-    FalsePos <- FP / SumCol * 100
+    # TN : True Negative = Total - TP - FP - FN
+    TN <- rep(Tot, Ngp) - TP - FP - FN
+    
+    ##### General statistics
+    # Accuracy = (TP + TN) / (TP + TN + FP + FN)
+    Accuracy <- TP_TN / Tot
+    
+    # Error = 1 - Accuracy
+    Error <- 1 - Accuracy
+    
+    ##### The 8 basic ratios
+    # Recall = TP / (TP + FN) = 1 - FNR
+    Recall <- TP / (TP_FN)
 
-    ## Recall = True positive rate = Sensitivity
-	## = Probability of detection = TP / (TP + FN)
-    Recall <- TP / (TP + FN)
+    # Specificity = TN / (TN + FP) = 1 - FPR
+    Specificity <- TN / (TN + FP)
 
-    ## Precision = TP / (TP + FP)
-    Precision <- TP / (TP + FP)
+    # Precision = TP / (TP + FP) = 1 - FDR
+    Precision <- TP / (TP_FP)
+    
+    # NPV : Negative predicted value = TN / (TN + FN) = 1 - FOR
+    NPV <- TN / (TN + FN)
+    
+    # FPR : False positive rate = 1 - Specificity = FP / (FP + TN) 
+    FPR <- FP / (FP + TN) #1 - Specificity
+    
+    # FNR : False negative rate = 1 - Recall = FN / (TP + FN)
+    FNR <- FN / (TP + FN) #1 - Recall
 
-    ## Specificity = 1 - FP = TN / (TN + FP)
-    TN <- numeric()
-    for (i in 1:length(TP)) TN[i] <- SumTP - TP[i]
-    Specificity <- TN / (TN + FP) # 100 - FalsePos
+    # FDR : False Discovery Rate = 1 - Precision = FP / (TP + FP)
+    FDR <- FP / (TP_FP) #1 - Precision
+    
+    # FOR : False omission rate = 1 - NPV = FN / (FN + TN)
+    FOR <- FN / (FN + TN) #1 - NPV
 
-    ## Bias
-    Bias <- SumCol - SumRow
+    ##### The 4 ratios of ratios
+    # LRPT = Likelihood Ratio for Positive Tests = Recall / FPR = Recall / (1 - Specificity)
+    LRPT <- Recall / (FPR)
+    
+    # LRNT = Likelihood Ratio for Negative Tests = FNR / Specificity = (1 - Recall) / Specificity
+    LRNT <- FNR / (Specificity)
+    
+    # LRPS : Likelihood Ratio for Positive Subjects = Precision / FOR = Precision / (1 - NPV)
+    LRPS <- Precision / (FOR)
+    
+    # LRNS : Likelihood Ratio Negative Subjects = FDR / NPV = (1 - Precision) / (1 - FOR)
+    LRNS <- FDR / (NPV)
+    
+    ##### Additional statistics
+    # F-measure = F1 score = Harmonic mean of Precision and recall
+    Fmeasure <- 2 * ((Precision * Recall) / (Precision + Recall))
+    
+    # Balanced accuracy = (Sensitivity + Specificity) / 2
+    BalAcc <- (Recall + Specificity) / 2
+
+    # MCC : Matthews correlation coefficient
+    Sum1 <- TP + FP
+    Sum2 <- TP + FN
+    Sum3 <- TN + FP
+    Sum4 <- TN + FN
+    Denominator <- sqrt(Sum1 * Sum2 * Sum3 * Sum4)
+    ZeroIdx <- Sum1 == 0 | Sum2 == 0 | Sum3 == 0 | Sum4 == 0
+    if(any(ZeroIdx)){
+	   Denominator[ZeroIdx] <- 1
+    }
+    MCC <- ((TP * TN) - (FP * FN)) / Denominator
+    
+    # Chisq : Significance
+    Chisq <- (((TP * TN) - (FP * FN))^2 * (TP + TN + FP + FN)) / ((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+
+    # Automatic classification - Manual calssification
+    Auto_Manu <- TP_FP - TP_FN
+    
+    # Dissimilarity Index of Bray Curtis
+    Dissimilarity <- abs(Auto_Manu) / (sum(TP_FP) + sum(TP_FN))
     
     res <- data.frame(
-		FN = round(FalseNeg, digits = 3),
-		FP = round(FalsePos, digits = 3),
-        Recall = round(Recall, digits = 3),
-		Precision = round(Precision, digits = 3),
-		SumTS = SumRow, SumPred = SumCol, Bias = Bias)
+	   Auto = TP_FP, Manu = TP_FN, Auto_Manu = Auto_Manu, Dissimilarity = Dissimilarity,
+	   TP = TP, FP = FP, FN = FN, TN = TN,
+	   Recall = Recall, Precision = Precision,	Specificity = Specificity, NPV = NPV,
+	   FPR = FPR, FNR = FNR, FDR = FDR, FOR = FOR,
+	   LRPT = LRPT, LRNT = LRNT, LRPS = LRPS, LRNS = LRNS,
+	   Fmeasure = Fmeasure, BalAcc = BalAcc, MCC = MCC, Chisq = Chisq
+    )
+
+    rownames(res) <- rownames(Confu)
+    # Sort the table in function of one parameter by default FN
+    if(!is.null(sort.by)){
+	   res <- res[order(res[, sort.by], decreasing = decreasing), ]
+    }
+    attr(res, "Accuracy") <- Accuracy
+    attr(res, "Error") <- Error
     
-    ## Sort the table in function of one parameter by default FN
-    res <- res[order(res[, sort.by]), ]
-    
-    attr(res, "GeneralStats") <- c(Accuracy = Accuracy, Error = Error)
-    cat(paste("Accuracy:", round(Accuracy, digits = 2), "%", "\n", "Error:",
-		round(Error, digits = 2), "%", "\n"))
+    # Remove Nan if any 0/0
+    if(isTRUE(NaN.rm)){
+    	# Cases where it is impossible to calculate some statistics: 0/0 or X/0
+    	# Case 1 : Everything is Correct --> FP = 0, FN = 0
+    	Case1Idx <- FP == 0 & FN == 0 # no any error!
+    	if(any(Case1Idx)){
+    	    Recall[Case1Idx] <- 1
+    	    FNR[Case1Idx] <- 0
+    	    Precision[Case1Idx] <- 1
+    	    FDR[Case1Idx] <- 0
+    	    Specificity[Case1Idx] <- 1
+    	    FPR[Case1Idx] <- 0
+    	    NPV[Case1Idx] <- 1
+    	    FOR[Case1Idx] <- 0
+    	}
+    	# Case 2 : Everything is Wrong and only false positive --> Impossible to calculate Recall and NPV
+    	Case2Idx <- TP == 0 & TN == 0 & FP > 0 & FN == 0
+    	if(any(Case2Idx)){
+    #	    Recall[Case2Idx] <- 0
+    #	    FNR[Case2Idx] <- 1
+    #	    NPV[Case2Idx] <- 0
+    #	    FOR[Case2Idx] <- 1
+    	    Recall[Case2Idx] <- 1
+    	    FNR[Case2Idx] <- 0
+    	    NPV[Case2Idx] <- 1
+    	    FOR[Case2Idx] <- 0
+    	}
+    	# Case 3 : Everything is Wrong and only false negative --> Impossible to calculate Precision and Specificity
+    	Case3Idx <- TP == 0 & TN == 0 & FP == 0 & FN > 0
+    	if(any(Case3Idx)){
+    #	    Precision[Case3Idx] <- 0
+    #	    FDR[Case3Idx] <- 1
+    #	    Specificity[Case3Idx] <- 0
+    #	    FPR[Case3Idx] <- 1
+    	    Precision[Case3Idx] <- 1
+    	    FDR[Case3Idx] <- 0
+    	    Specificity[Case3Idx] <- 1
+    	    FPR[Case3Idx] <- 0
+    	}
+    	# Case 4 : No FP and No TN --> Impossible to calculate Specificity
+    	Case4Idx <- TP > 0 & TN == 0 & FP == 0 & FN > 0
+    	if(any(Case4Idx)){
+    #	    Specificity[Case4Idx] <- 0
+    #	    FPR[Case4Idx] <- 1
+    	    Specificity[Case4Idx] <- 1
+    	    FPR[Case4Idx] <- 0
+    	}
+    	# Case 5 : No TP and No FP --> Impossible to calculate Precision
+    	Case5Idx <- TP == 0 & TN > 0 & FP == 0 & FN > 0
+    	if(any(Case5Idx)){
+    #	    Precision[Case5Idx] <- 0
+    #	    FDR[Case5Idx] <- 1
+    	    Precision[Case5Idx] <- 1
+    	    FDR[Case5Idx] <- 0
+    	}
+    	# Case 6 : No TP and no FN --> Impossible to calculate Recall
+    	Case6Idx <- TP == 0 & TN > 0 & FP > 0 & FN == 0
+    	if(any(Case6Idx)){
+    #	    Recall[Case6Idx] <- 0
+    #	    FNR[Case6Idx] <- 1
+    	    Recall[Case6Idx] <- 1
+    	    FNR[Case6Idx] <- 0
+    	}
+    	# Case 7 : No TN and no FN --> Impossible to calculate Negative predicted value
+    	Case7Idx <- TP > 0 & TN == 0 & FP > 0 & FN == 0
+    	if(any(Case7Idx)){
+    #	    NPV[Case7Idx] <- 0
+    #	    FOR[Case7Idx] <- 1
+    	    NPV[Case7Idx] <- 1
+    	    FOR[Case7Idx] <- 0
+    	}
+    }
+    cat(paste("Accuracy:", round(Accuracy * 100, digits = 2), "%", "\n", "Error:", round(Error * 100, digits = 2), "%", "\n"))
     return(res)
 }
