@@ -579,10 +579,10 @@ type = c("absolute", "log", "relative"), header = "Abd")
 	} else {
 		if (!inherits(groups, "list")) 
 			stop("'groups' must be a 'list' object")
- 		res <- if (length(groups) == 1 && groups == "") {
-			sum(Smp$Coef)
+ 		if (length(groups) == 1 && groups == "") {
+			res <- sum(Smp$Coef)
 		} else {
-			sapply(groups, function (g)
+			res <- sapply(groups, function (g)
 				sum(Smp$Coef[Smp[, Predictions] %in% g]))
         # problem with sapply function: total = 0!!!!!
             if(isTRUE(as.numeric(res["total"]) == 0)) res["total"] <- sum(Smp$Coef)
