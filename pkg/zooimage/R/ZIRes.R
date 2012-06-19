@@ -584,6 +584,8 @@ type = c("absolute", "log", "relative"), header = "Abd")
 		} else {
 			sapply(groups, function (g)
 				sum(Smp$Coef[Smp[, Predictions] %in% g]))
+        # problem with sapply function: total = 0!!!!!
+            if(isTRUE(as.numeric(res["total"]) == 0)) res["total"] <- sum(Smp$Coef)
 		}
 		names(res) <- paste(header, names(groups))
 	}
