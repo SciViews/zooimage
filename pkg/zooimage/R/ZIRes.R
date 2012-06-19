@@ -424,11 +424,13 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, realtime = FALSE)
 		} else {
 			if (!inherits(groups, "list")) 
 				stop("'groups' must be a 'list' object")
- 			res <- if (length(groups) == 1 && groups=="") {
-				sum(Smp$Biomass)
+            if (length(groups) == 1 && groups=="") {
+				res <- sum(Smp$Biomass)
 			} else {
-				sapply(groups, function (g)
+				res <- sapply(groups, function (g)
 					sum(Smp$Biomass[Smp[, Predictions] %in% g]))
+#			# Problem: sapply doesn't calculate the total biomass
+    			if(isTRUE(as.numeric(res["total"]) == 0)) res["total"] <- sum(Smp$Biomass)
 			}
 			names(res) <- paste(header, names(groups))
 		}
@@ -514,11 +516,13 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, realtime = FALSE)
 		} else {
 			if (!inherits(groups, "list")) 
 				stop("'groups' must be a 'list' object")
- 			res <- if (length(groups) == 1 && groups=="") {
-				sum(Smp$Biomass)
+ 			if (length(groups) == 1 && groups=="") {
+				res <- sum(Smp$Biomass)
 			} else {
-				sapply(groups, function (g)
+				res <- sapply(groups, function (g)
 					sum(Smp$Biomass[Smp[, Predictions] %in% g]))
+#			# Problem: sapply doesn't calculate the total biomass
+    			if(isTRUE(as.numeric(res["total"]) == 0)) res["total"] <- sum(Smp$Biomass)
 			}
 			names(res) <- names(groups)
 		}
