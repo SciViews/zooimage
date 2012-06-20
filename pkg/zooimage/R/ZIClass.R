@@ -60,11 +60,15 @@ calc.vars = "calcVars", k.xval = 10, ...)
 
 	## Possibly make a k-fold cross-validation and check results
 	if (!is.null(k.xval)) {
-		mypredict <- if (algorithm == "lda") {
-			function (object, newdata)
+		# Modification to accept classifier from party package : ctree and cforest
+		if (algorithm == "lda") {
+			mypredict <- function (object, newdata)
 				predict(object, newdata = newdata)$class
-		} else {
-			function (object, newdata)
+		} else if(package == "party"){
+            mypredict <- function(object, newdata)
+                predict(object, newdata = newdata, type = "response", OOB = FALSE)        
+        } else {
+			mypredict <- function (object, newdata)
 				predict(object, newdata = newdata, type = "class")
 		}
     	res <- cv(attr(ZI.class, "classes"), Formula, data = df,
