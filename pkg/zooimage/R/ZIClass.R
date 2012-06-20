@@ -136,7 +136,12 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 	if (isTRUE(na.rm)) na.omit(data)
 	
 	if (type != "prob") {
-		Ident <- predict(object, newdata = data, type = type)
+	   # modification to accept algoritms from party package
+	   if (package == "party") {
+            Ident <- predict(object, newdata = data, type = "response", OOB = FALSE)
+		} else {
+            Ident <- predict(object, newdata = data, type = type)
+		}
 	} else {
 		if (inherits(object, "randomForest")) {
 			Ident <- predict(object, newdata = data, type = type)
