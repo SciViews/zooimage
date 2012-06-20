@@ -194,3 +194,13 @@ predict.lvq <- function (object, newdata, type = "class", ...)
     if (missing(newdata)) newdata <- object$data
 	lvqtest(object$codebook, newdata[, object$vars[-1]])
 }
+
+### NaiveBayes from RWeka package
+NaiveBayes <- function(formula, data, ...)
+{
+    # Import algorithm from Weka
+    NB <- make_Weka_classifier("weka/classifiers/bayes/NaiveBayes")
+    # create classifier
+    res <- NB(formula, data, ...)
+    return(res)
+}
