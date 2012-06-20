@@ -258,7 +258,7 @@ PrecVsRec <- function (ZIConf, col = c("PeachPuff2", "green",  "green3", "lemonC
   if (!inherits(ZIConf, c("ZIConf")))
     stop("'ZIConf' must be a 'ZIConf' object")
   # Calculation of statistics
-  Stats <- ConfMatStats(ZIConf = ZIConf)
+  Stats <- confusionStat(ZIConf = ZIConf)
   FDR <- Stats$FDR * 100
   Precision <- Stats$Precision * 100
   Recall <- Stats$Recall * 100
