@@ -23,8 +23,9 @@ groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"),
 ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 { 	                       
 	## Make sure unzip is available
-	checkCapable("unzip")
-	
+# bug: Erreur dans stop(msg) : unzip - program from Info-Zip not found!
+	#checkCapable("unzip")
+    	
 	## First, check that dir is valid
 	checkDirExists(dir)
 	
