@@ -171,6 +171,34 @@ Rowv = TRUE, Colv = TRUE)
 		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE)
 }
 
+# New graphical representation of the confusion based on the hclust strucute
+confusionHclust <- function (ZIClass, ZIConf = NULL, method = "ward")
+{
+    # Create confusion matrix
+    if(is.null(ZIConf)){
+        Confu <- ZIConf(ZIClass)
+    } else {
+	   Confu <- ZIConf
+    }
+    # Transform it in symetric confusion matrix
+    ConfuSim <- Confu + t(Confu)
+    ConfuSim <- max(ConfuSim) - ConfuSim
+    # Create the structure of a "dist" object
+    confuDist <- structure(confuSim[lower.tri(confuSim)],
+        Size = nrow(confu),
+        Diag = FALSE,
+        Upper = FALSE,
+        method = "confusion",
+        call = "",
+        class = "dist"
+    )
+    # method :"ward", "single", "complete", "average", "mcquitty", "median" or "centroid"
+    HC <- hclust(confuDist, method = "ward")
+    plot(HC, labels = rownames(confu))
+    return(invisible(HC))
+}
+
+
 # Confusion bar with recall and precision in green bar and not outside as before
 # function modified for publication hclust 
 confusionBar <- function (ZIConf, col = c("PeachPuff2", "green3", "lemonChiffon2"),
