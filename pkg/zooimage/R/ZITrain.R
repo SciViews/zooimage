@@ -18,24 +18,30 @@
 ## Prepare 'dir\subdir' for a manual classification by expanding all vignettes
 ## from a given number of zidfiles to the '_' subdir, and making
 ## a template for subdirs
-prepare.ZITrain <- function (dir, subdir = "_train", zidfiles, 
-groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"), 
+prepare.ZITrain <- function (dir, subdir = "_train", zidfiles, zidbfiles = NULL,
+groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"),
 ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
-{ 	                       
+{
 	## Make sure unzip is available
 # bug: Erreur dans stop(msg) : unzip - program from Info-Zip not found!
 	#checkCapable("unzip")
-    	
+
 	## First, check that dir is valid
 	checkDirExists(dir)
-	
+
 	## New dir is dir + subdir
 	dir <- file.path(dir, subdir)
-	
+
 	checkEmptyDir(dir, message = "must be empty. Clean it first!")
-	
+
 	## Then, check that all zidfiles exist
-	checkFileExistAll(zidfiles, "zid")
+	if(is.null(zidbfiles)){
+        checkFileExistAll(zidfiles, "zid")
+        zmax <- length(zidfiles)
+    } else {
+        checkFileExistAll(zidbfiles, "zidb")
+        zmax <- length(zidbfiles)
+    }
 
 	## Finally, look for the groups.template
 	groups.template <- groups.template[1]
@@ -44,38 +50,53 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 		## This should be a template file in the default directory
 		groups.template <- paste(sub(rx, "\\1", groups.template), ".zic",
 			sep = "")
-		groups.template <- file.path(getTemp("ZIetc"), groups.template) 
+		groups.template <- file.path(getTemp("ZIetc"), groups.template)
 	}
-	
+
 	## Check that this is a zic file
 	zicCheck(groups.template)
 
 	## Do the job...
 	cat("Extracting data and vignettes ...\n")
 	logProcess("\nExtracting data and vignettes ...")
-	zmax <- length(zidfiles)
-	
+
 	## Create '_' subdir and unzip all vignettes there
 	dir_ <- file.path(dir, "_")
 	forceDirCreate(dir_)
-	
+
 	for (i in 1:zmax) {
-		logProcess("data", zidfiles[i])
 		Progress(i, zmax)
-		## Using a temporary directory to unzip all files and then copy
-		## the RData files to the train directory
-		td <- tempfile()
-		unzip(zipfile = zidfiles[i], path = td, delete.source = FALSE)
-		datafiles <- file.path(td, list.files(td,
-			pattern = extensionPattern(".RData"), recursive = TRUE))
-		if (length(datafiles)) file.copy(datafiles, dir)
-		vignettes <- file.path(td, list.files(td,
-			pattern = extensionPattern(".jpg"), recursive = TRUE))
-		if (length(vignettes)) file.copy(vignettes, dir_)
-		unlink(td, recursive = TRUE)
+        if(is.null(zidbfiles)){
+    		logProcess("data", zidfiles[i])
+            ## Using a temporary directory to unzip all files and then copy
+    		## the RData files to the train directory
+    		td <- tempfile()
+    		unzip(zipfile = zidfiles[i], path = td, delete.source = FALSE)
+    		datafiles <- file.path(td, list.files(td,
+    			pattern = extensionPattern(".RData"), recursive = TRUE))
+    		if (length(datafiles)) file.copy(datafiles, dir)
+    		vignettes <- file.path(td, list.files(td,
+    			pattern = extensionPattern(".jpg"), recursive = TRUE))
+    		if (length(vignettes)) file.copy(vignettes, dir_)
+    		unlink(td, recursive = TRUE)
+		} else {
+            # Load zidb files
+            Zidb <- zidbLoad(zidbfiles[i])
+            AllFiles <- ls(Zidb)
+            Vigns <- AllFiles[-c(grep(".zis", AllFiles), grep("_dat1", AllFiles))]
+            # copy all vignettes in the "_" directory
+            for(j in 1 : length(Vigns)){
+                From <- Vigns[j]
+                To <- file.path(dir_, paste(From, ".jpg", sep = ""))
+                writeBin(Zidb[[From]], To)
+            }
+            # save vignettes
+            ZI.sample <- Zidb$.DATA
+            save(ZI.sample, file = file.path(dir, paste(sub(".zidb", "", basename(zidbfiles[i])), "_dat1.RData", sep = "")))
+		}
 	}
 	clearProgress()
-	
+
 	## Create the other directories
     Lines <- scan(groups.template, character(), sep = "\n", skip = 2,
 		quiet = TRUE)
@@ -89,10 +110,10 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 		dir.create(Lines[i], recursive = TRUE)
 	}
 	### TODO: relocate vignettes in subdirectories, if ident is not NULL
-	
-	finishLoop(ok = TRUE, bell = bell, show.log = show.log, 
+
+	finishLoop(ok = TRUE, bell = bell, show.log = show.log,
 	  ok.console.msg = " -- Done! --\n", ok.log.msg = "\n-- Done! --")
-	
+
 	if (start.viewer) imageViewer(dir_)
 	return(invisible(TRUE))
 }
