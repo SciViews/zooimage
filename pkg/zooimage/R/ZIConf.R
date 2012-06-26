@@ -178,14 +178,14 @@ confusionHclust <- function (ZIClass, ZIConf = NULL, method = "ward")
     if(is.null(ZIConf)){
         Confu <- ZIConf(ZIClass)
     } else {
-	   Confu <- ZIConf
+        Confu <- ZIConf
     }
     # Transform it in symetric confusion matrix
     ConfuSim <- Confu + t(Confu)
     ConfuSim <- max(ConfuSim) - ConfuSim
     # Create the structure of a "dist" object
-    confuDist <- structure(confuSim[lower.tri(confuSim)],
-        Size = nrow(confu),
+    ConfuDist <- structure(ConfuSim[lower.tri(ConfuSim)],
+        Size = nrow(Confu),
         Diag = FALSE,
         Upper = FALSE,
         method = "confusion",
@@ -193,8 +193,8 @@ confusionHclust <- function (ZIClass, ZIConf = NULL, method = "ward")
         class = "dist"
     )
     # method :"ward", "single", "complete", "average", "mcquitty", "median" or "centroid"
-    HC <- hclust(confuDist, method = "ward")
-    plot(HC, labels = rownames(confu))
+    HC <- hclust(ConfuDist, method = "ward")
+    plot(HC, labels = rownames(Confu))
     return(invisible(HC))
 }
 
