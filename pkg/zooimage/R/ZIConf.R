@@ -603,3 +603,58 @@ confusionStat <- function(ZIClass, ZIConf = NULL, sort.by = NULL, decreasing = F
     cat(paste("Accuracy:", round(Accuracy * 100, digits = 2), "%", "\n", "Error:", round(Error * 100, digits = 2), "%", "\n"))
     return(res)
 }
+
+# Comparison of recall and precision between two classifier
+# compare recall and precison for two classifiers
+compaPrecVsRec <- function(ZIClass1, ZIClass2, type = "barplot"){
+    Stats1 <- confusionStat(ZIClass1)
+    Stats2 <- confusionStat(ZIClass2)
+    Ngp <- nrow(Stats1) 
+    if(type != "barplot"){
+        plot(Stats1$Recall, ylim = c(-1, 1.1), ylab = "<== Precision / Recall ==>", xlab = "Groups", axes = FALSE, col = "red", main = "Classifiers comparison", lwd = 2, cex = 1.5, pch = 3)
+        points(Stats2$Recall, pch = 4, col = "blue", lwd = 2, cex = 1.5)
+        points(-Stats1$Precision, pch = 3, col = "red", lwd = 2, cex = 1.5)
+        points(-Stats2$Precision, pch = 4, col = "blue", lwd = 2, cex = 1.5)
+        # add lines for more comprehensive interpretation
+        for(i in 1 : Ngp){
+            abline(v = i, lty = 3, col = "lightgray")
+        }
+        abline(h = 0, lty = 1)
+        abline(h = 0.25, lty = 2)
+        abline(h = 0.5, lty = 2)
+        abline(h = 0.75, lty = 2)
+        abline(h = -0.25, lty = 2)
+        abline(h = -0.5, lty = 2)
+        abline(h = -0.75, lty = 2)                    
+        # add axes
+        axis(1, at = 1:Ngp , labels = 1:Ngp)
+        axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25, 0.5, 0.75, 1))
+        # add legend
+        legend("topright", legend = c("Classifier 1", "Classifier 2"), pch = c(3, 4), col = c("red", "blue"), horiz = TRUE, bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)    
+    } else {
+        # with barplot
+        barplot(Stats1$Recall, ylim = c(-1.05, 1.15), axes = FALSE, ylab = "<== Precision / Recall ==>", xlab = "Groups", main = "Classifiers comparison")
+        barplot(-Stats1$Precision, add = TRUE, axes = FALSE)
+        # add lines for more comprehensive interpretation
+        for(i in 1 : Ngp){
+            abline(v = i + i*0.2 - 0.5, lty = 3, col = "lightgray")
+        }
+        abline(h = 0, lty = 1)
+        abline(h = 0.25, lty = 2)
+        abline(h = 0.5, lty = 2)
+        abline(h = 0.75, lty = 2)
+        abline(h = 1, lty = 3)
+        abline(h = -0.25, lty = 2)
+        abline(h = -0.5, lty = 2)
+        abline(h = -0.75, lty = 2)                    
+        abline(h = -1, lty = 3)
+        X <- 1:Ngp + 1:Ngp * 0.2 - 0.5
+        # add arrows
+        arrows(x0 = X, y0 = Stats1$Recall, x1 = X, y1 = Stats2$Recall, length = 0.1)
+        arrows(x0 = X, y0 = -Stats1$Precision, x1 = X, y1 = -Stats2$Precision, length = 0.1)
+        # add axes
+        axis(1, at = X, labels = 1:Ngp)
+        axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25, 0.5, 0.75, 1))
+        legend("topright", legend = c("Classifier 1", "Classifier 2"), pch = c(15, 4), col = c("darkgray", "black"), horiz = TRUE, bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)
+    }
+}
