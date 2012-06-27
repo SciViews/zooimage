@@ -315,7 +315,7 @@ PrecVsRec <- function (ZIConf, col = c("PeachPuff2", "green",  "green3", "lemonC
 
 
 ## Graphical representation of the confusion matrix (modif K. Denis)
-confusionPlot <- function (manual, automatic, label = "manual \\ auto",
+confusionPlot <- function (manual, automatic, ZIConf = NULL, label = "manual \\ auto",
 sort = "complete", cex = 1, left.mar = 10, colfun = NULL,
 ncols = 41, col0 = FALSE, grid.col = "gray", asp = 1, ...)
 {
@@ -333,20 +333,28 @@ ncols = 41, col0 = FALSE, grid.col = "gray", asp = 1, ...)
 	
 	## Calculate margins
 	mar <- c(3, left.mar, 3, 3) + 0.1
-	## Check manual and automatic
-	if (missing(automatic) || is.null(automatic)) {
-		## This must be a ZIClass object, or something equivalent
-		automatic <- attr(manual, "kfold.predict")
-		manual <- attr(manual, "classes")
-	}	
-	## Get levels
-	manuLev <- levels(manual)
-	autoLev <- levels(automatic)
-	if (!identical(manuLev, autoLev))
-		stop("Factor levels for 'manu' and 'auto' must be the same!")
-	l <- length(manuLev)
-	## Calculate confusion matrix
-	confu <- table(manual, automatic)
+	
+    if(is.null(ZIConf)){
+        ## Check manual and automatic
+    	if (missing(automatic) || is.null(automatic)) {
+    		## This must be a ZIClass object, or something equivalent
+    		automatic <- attr(manual, "kfold.predict")
+    		manual <- attr(manual, "classes")
+    	}	
+    	## Get levels
+    	manuLev <- levels(manual)
+    	autoLev <- levels(automatic)
+    	if (!identical(manuLev, autoLev))
+    		stop("Factor levels for 'manu' and 'auto' must be the same!")
+    	l <- length(manuLev)
+	   ## Calculate confusion matrix
+	   confu <- ZIConf(x = manual, y = automatic)
+	} else {
+        confu <- ZIConf
+    	manuLev <- sub("...", "", rownames(confu))
+    	autoLev <- manuLev
+    	l <- ncol(confu)
+	}
 	## Do we sort items?
 	if (!is.null(sort) && !is.na(sort) && sort != FALSE && sort != "") {
 		## Grouping of items
