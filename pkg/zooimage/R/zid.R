@@ -177,6 +177,7 @@ check.zip = TRUE, show.log = TRUE)
 	## Do compress the directory in the .zip file
 	## Copy or move all corresponding files to a .zid zip-compressed file
 	invisible(zip(zidfile, zidir, delete.source = delete.source))
+	## TODO: log results...
 }
 
 ## Compress all data in the corresponding directory
@@ -206,7 +207,7 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		
 	## Start the process
 	logClear()
-	if (check) {
+	if (isTRUE(check)) {
 		zidVerifyAll(path = path, samples = samples, 
 			check.vignettes = check.vignettes, show.log = FALSE, bell = FALSE)
 		## COMMENT: the previous version did log this message instead of the one

@@ -120,9 +120,15 @@ zooImageErrorDrivers <- list(
 	"zidVerify" = "zidir",
 	"zidVerifyAll" = "path",
 	"zidClean" = "path",
+	"zidCompress" = "zidir",
+	"zidCompressAll" = "path",
 	"zidUncompressAll" = "zidfiles",
 	"zidDatMake" = "zidir",
 	"zidDatRead" = "zidfile",
+
+	## --------------------------------------- zidb.R
+	"zidbMake" = "zidir",
+	"zidbMakeAll" = "path",
 
 	## --------------------------------------- utilities.R
 	"sampleInfo" = "filename",

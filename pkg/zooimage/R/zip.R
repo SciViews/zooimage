@@ -59,8 +59,10 @@ replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 	forceDirCreate("_raw")
 
 	## Copy or move the image to a .zip compressed file
-	zip(zipfile, imagefile, comment.file = zimfile,
-		delete.zipfile.first = replace)
+	## TODO: how to include the comment in the zip file with the standard R zip() function?
+	#zip(zipfile, imagefile, comment.file = zimfile,
+	#	delete.zipfile.first = replace)
+	zip(zipfile, imagefile)
 
 	## Invisibly indicate success
 	## Note: the .zim file is never deleted, because it can be used for other

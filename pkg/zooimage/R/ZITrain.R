@@ -80,8 +80,8 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
     		if (length(vignettes)) file.copy(vignettes, dir_)
     		unlink(td, recursive = TRUE)
 		} else {
-            # Load zidb files
-            Zidb <- zidbLoad(zidbfiles[i])
+            # Link zidb database to R objects in memory
+            Zidb <- zidbLink(zidbfiles[i])
             AllFiles <- ls(Zidb)
             Vigns <- AllFiles[-c(grep(".zis", AllFiles), grep("_dat1", AllFiles))]
             # copy all vignettes in the "_" directory

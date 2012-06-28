@@ -661,9 +661,12 @@ show.log = TRUE, bell = FALSE)
 							# file.copy(file.path(curdir, zimfile), zimfile)
 							zipfile <- paste(noExt(FileConvName), "zip",
 								sep = ".")
-							zip(zipfile, delete.source = TRUE,
-								comment.file = file.path(curdir, zimfile),
-								FileConvName)
+							## TODO: how to include the comment in the zip file
+							## using the R standard zip() function?
+							#zip(zipfile, delete.source = TRUE,
+							#	comment.file = file.path(curdir, zimfile),
+							#	FileConvName)
+							zip(zipfile, FileConvName, delete.source = TRUE)
 							setwd(curdir)
 							## Verify that the .zip file is created
 							if (!file.exists(zipfile)) {
