@@ -612,17 +612,30 @@ confusionStat <- function(ZIClass, ZIConf = NULL, sort.by = NULL, decreasing = F
     return(res)
 }
 
-# Comparison of recall and precision between two classifier
-# compare recall and precison for two classifiers
-compaPrecVsRec <- function(ZIClass1, ZIClass2, type = "barplot"){
+# compare two statistics between two classifiers for all groups
+compaTwoStats <- function(ZIClass1, ZIClass2, stat1 = "Recall", stat2 = "Precision", type = "barplot"){
     Stats1 <- confusionStat(ZIClass1)
     Stats2 <- confusionStat(ZIClass2)
-    Ngp <- nrow(Stats1) 
+    SupportedStats <- c("Recall", "Precision", "Specificity", "NPV", "FPR", "FNR", "FDR", "FOR")
+    if(!isTRUE(stat1 %in% SupportedStats)){
+        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+    }
+    if(!isTRUE(stat2 %in% SupportedStats)){
+        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+    }
+    Ngp <- nrow(Stats1)
+    # Select columns
+    Stats1.stat1 <- Stats1[, stat1]#Stats1$Recall
+    Stats1.stat2 <- Stats1[, stat2]#Stats1$Precision
+    Stats2.stat1 <- Stats2[, stat1]#Stats2$Recall
+    Stats2.stat2 <- Stats2[, stat2]#Stats2$Precision
+     
     if(type != "barplot"){
-        plot(Stats1$Recall, ylim = c(-1, 1.1), ylab = "<== Precision / Recall ==>", xlab = "Groups", axes = FALSE, col = "red", main = "Classifiers comparison", lwd = 2, cex = 1.5, pch = 3)
-        points(Stats2$Recall, pch = 4, col = "blue", lwd = 2, cex = 1.5)
-        points(-Stats1$Precision, pch = 3, col = "red", lwd = 2, cex = 1.5)
-        points(-Stats2$Precision, pch = 4, col = "blue", lwd = 2, cex = 1.5)
+        plot(Stats1.stat1, ylim = c(-1, 1.1), ylab = paste("<==", stat2, "/", stat1, "==>", sep = " "),
+            xlab = "Groups", axes = FALSE, col = "red", main = "Comparison of two statistics for two classifiers", lwd = 2, cex = 1.5, pch = 3)
+        points(Stats2.stat1, pch = 4, col = "blue", lwd = 2, cex = 1.5)
+        points(-Stats1.stat2, pch = 3, col = "red", lwd = 2, cex = 1.5)
+        points(-Stats2.stat2, pch = 4, col = "blue", lwd = 2, cex = 1.5)
         # add lines for more comprehensive interpretation
         for(i in 1 : Ngp){
             abline(v = i, lty = 3, col = "lightgray")
@@ -641,8 +654,9 @@ compaPrecVsRec <- function(ZIClass1, ZIClass2, type = "barplot"){
         legend("topright", legend = c("Classifier 1", "Classifier 2"), pch = c(3, 4), col = c("red", "blue"), horiz = TRUE, bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)    
     } else {
         # with barplot
-        barplot(Stats1$Recall, ylim = c(-1.05, 1.15), axes = FALSE, ylab = "<== Precision / Recall ==>", xlab = "Groups", main = "Classifiers comparison")
-        barplot(-Stats1$Precision, add = TRUE, axes = FALSE)
+        barplot(Stats1.stat1, ylim = c(-1.05, 1.15), axes = FALSE, ylab = paste("<==", stat2, "/", stat1, "==>", sep = " "),
+            xlab = "Groups", main = "Comparison of two statistics for two classifiers")
+        barplot(-Stats1.stat2, add = TRUE, axes = FALSE)
         # add lines for more comprehensive interpretation
         for(i in 1 : Ngp){
             abline(v = i + i*0.2 - 0.5, lty = 3, col = "lightgray")
@@ -658,8 +672,8 @@ compaPrecVsRec <- function(ZIClass1, ZIClass2, type = "barplot"){
         abline(h = -1, lty = 3)
         X <- 1:Ngp + 1:Ngp * 0.2 - 0.5
         # add arrows
-        arrows(x0 = X, y0 = Stats1$Recall, x1 = X, y1 = Stats2$Recall, length = 0.1)
-        arrows(x0 = X, y0 = -Stats1$Precision, x1 = X, y1 = -Stats2$Precision, length = 0.1)
+        arrows(x0 = X, y0 = Stats1.stat1, x1 = X, y1 = Stats2.stat1, length = 0.1)
+        arrows(x0 = X, y0 = -Stats1.stat2, x1 = X, y1 = -Stats2.stat2, length = 0.1)
         # add axes
         axis(1, at = X, labels = 1:Ngp)
         axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25, 0.5, 0.75, 1))
