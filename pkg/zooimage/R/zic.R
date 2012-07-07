@@ -19,10 +19,10 @@
 zicCheck <- function (zicfile)
 {	
 	## This should be a .zic file directly
-	checkFileExists(zicfile)
+	if (!checkFileExists(zicfile)) return(NULL)
 	
 	## First line of the file must be "ZI1", "ZI2", or "ZI3"
-	checkFirstLine(zicfile) 
+	if (!checkFirstLine(zicfile)) return(NULL) 
 	
 	## Second line must be [path]
 	Line2 <- scan(zicfile, character(), skip = 1, nmax = 1, quiet = TRUE)

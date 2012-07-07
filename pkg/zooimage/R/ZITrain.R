@@ -32,14 +32,15 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 	## New dir is dir + subdir
 	dir <- file.path(dir, subdir)
 
-	checkEmptyDir(dir, message = "must be empty. Clean it first!")
+	if (!checkEmptyDir(dir, message = 'dir "%s" must be empty. Clean it first!'))
+		return(NULL)
 
 	## Then, check that all zidfiles exist
-	if(is.null(zidbfiles)){
-        checkFileExistAll(zidfiles, "zid")
+	if (is.null(zidbfiles)){
+        if (!checkFileExists(zidfiles, "zid")) return(invisible(FALSE))
         zmax <- length(zidfiles)
     } else {
-        checkFileExistAll(zidbfiles, "zidb")
+        if (!checkFileExists(zidbfiles, "zidb")) return(invisible(FALSE))
         zmax <- length(zidbfiles)
     }
 
@@ -62,7 +63,7 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 
 	## Create '_' subdir and unzip all vignettes there
 	dir_ <- file.path(dir, "_")
-	forceDirCreate(dir_)
+	if (!forceDirCreate(dir_)) return(invisible(FALSE))
 
 	for (i in 1:zmax) {
 		Progress(i, zmax)
@@ -147,7 +148,7 @@ na.rm = FALSE)
 	if (!keep_) res <- grep("^[^_]", res, value = TRUE)
 
 	## 'Id' is the name of the vignettes, minus the extension
-	Id <- noExt(basename(res))
+	Id <- noExtension(res)
 
 	## 'Path' is the directory path
 	Path <- dirname(res)
@@ -218,9 +219,41 @@ na.rm = FALSE)
 	if (!is.null(desc)) attr(df, "desc") <- desc
 	Classes <- c("ZI1Train", "ZITrain", Classes)
 	class(df) <- Classes
-	## Be sure that variables are in numeric
-	df <- as.numeric.Vars(df)
-	return(df)
+	## Be sure that variables are numeric (sometimes not, because of wrong importation)
+
+	as.numeric.Vars <- function (ZIDat, Vars = NULL) {
+	    ## Default values
+	    if (is.null(Vars)) {
+	        Vars <- c("ECD",
+	            "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD",
+				"FIT_Diameter_ESD", "FIT_Volume_ESD", "FIT_Length", "FIT_Width",
+				"FIT_Aspect_Ratio", "FIT_Transparency", "FIT_Intensity",
+				"FIT_Sigma_Intensity", "FIT_Sum_Intensity", "FIT_Compactness",
+				"FIT_Elongation", "FIT_Perimeter", "FIT_Convex_Perimeter",
+				"FIT_Roughness", "FIT_Feret_Max_Angle", "FIT_PPC", "FIT_Ch1_Peak",
+				"FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
+				"FIT_Ch3_TOF", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue",
+				"FIT_Red_Green_Ratio", "FIT_Blue_Green", "FIT_Red_Blue_Ratio",
+				"FIT_CaptureX", "FIT_CaptureY", "FIT_SaveX", "FIT_SaveY",
+				"FIT_PixelW", "FIT_PixelH", "FIT_Cal_Const",
+	            "Area", "Mean", "StdDev", "Mode", "Min", "Max", "X", "Y", "XM",
+	            "YM", "Perim.", "BX", "BY", "Width", "Height", "Major", "Minor",
+				"Angle", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt",
+				"XStart", "YStart", "Dil"
+	        )
+	    }
+
+	    ## Names of ZIDat
+	    Names <- names(ZIDat)
+
+	    ## Transform variables in numeric values
+	    for (i in 1:length(Vars)) {
+	        if (isTRUE(Vars[i] %in% Names) && !is.numeric(ZIDat[, Vars[i]]))
+	            ZIDat[, Vars[i]] <- as.numeric(ZIDat[, Vars[i]])
+	    }
+	    return(ZIDat)
+	}
+	return(as.numeric.Vars(df))
 }
 
 recode.ZITrain <- function (ZITrain, ZIRecode, warn.only = FALSE)
@@ -333,7 +366,8 @@ increase.ZITrain <- function (zidfiles, train)
 	
 	## Check if NewDir exist
 	ToPath <- file.path(dir, NewDir)
-	if (!file.exists(ToPath)) forceDirCreate(ToPath)
+	if (!file.exists(ToPath))
+		if (!forceDirCreate(ToPath)) return(invisible(FALSE))
 	
 	zmax <- length(zidfiles)
 	## Extract RData in the root directory

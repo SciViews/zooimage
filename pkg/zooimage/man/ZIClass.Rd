@@ -15,7 +15,7 @@ ZIClass(df, algorithm = c("lda", "randomForest"), package = c("MASS",
     "randomForest"), Formula = Class ~ logArea + Mean + StdDev + Mode + Min +
     Max + logPerim. + logMajor + logMinor + Circ. + logFeret + IntDen +
     Elongation + CentBoxD + GrayCentBoxD + CentroidsD + Range + MeanPos +
-    SDNorm + CV, calc.vars = "calcVars", k.xval = 10, \dots)
+    SDNorm + CV, calc.vars = getOption("ZI.calcVars", "calcVars"), k.xval = 10, \dots)
 \method{predict}{ZIClass}(object, ZIDat, calc.vars = TRUE, class.only = FALSE,
     type = "class", na.rm = FALSE, \dots)
 }

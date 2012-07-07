@@ -18,7 +18,7 @@
 \usage{
 zidCompress(zidir, type = c("ZI1", "ZI2", "ZI3"), check = TRUE,
     check.vignettes = TRUE, replace = FALSE, delete.source = replace,
-    check.zip = TRUE, show.log = TRUE)
+    check.zip = TRUE)
 zidCompressAll(path = ".", samples = NULL, type = c("ZI1", "ZI2", "ZI3"),
     check = TRUE, check.vignettes = TRUE, replace = FALSE,
     delete.source = replace, show.log = TRUE, bell = FALSE)
@@ -30,8 +30,7 @@ zidUncompress(zidfile, path = dirname(zidfile), delete.source = FALSE,
 zidUncompressAll(path = ".", zidfiles = zidList(path), path.extract = path,
     skip.existing.dirs = TRUE, delete.source = FALSE, show.log = TRUE,
     bell = FALSE)
-zidVerify(zidir, type = c("ZI1", "ZI2", "ZI3"), check.vignettes = TRUE,
-    show.log = TRUE)
+zidVerify(zidir, type = c("ZI1", "ZI2", "ZI3"), check.vignettes = TRUE)
 zidVerifyAll(path = ".", samples = NULL, type = c("ZI1", "ZI2", "ZI3"),
     check.vignettes = TRUE, show.log = TRUE, bell = FALSE)
 zidExtract(file, zidfile)

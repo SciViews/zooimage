@@ -67,13 +67,13 @@ ZIDlg <- function ()
 	menuAdd("Utilities")
 	menuAddItem("Utilities", "Calibrate grayscale (16bit)", "calib()")
 	menuAddItem("Utilities", "Biomass conversion specification",
-		"startPgm('ZIEditor', cmdline = file.path(getTemp('ZIetc'), 'Conversion.txt'))")
+		"fileEdit(file.path(getTemp('ZIetc'), 'Conversion.txt'))")
 	menuAddItem("Utilities", "-", "")
 	menuAddItem("Utilities", "Image viewer( XnView)", 'startPgm("ImageViewer")')
 	menuAddItem("Utilities", "Image analyzer (ImageJ)",
 		'startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)')
-	menuAddItem("Utilities", "Metadata editor (Sc1)",
-		'startPgm("ZIEditor", cmdline = selectFile("ZimZis"))')
+	menuAddItem("Utilities", "Metadata editor",
+		'fileEdit(selectFile("ZimZis"))')
 	menuAddItem("Utilities", "Simple acquisition (Vuescan)",
 		'startPgm("VueScan", switchdir = TRUE)')
 	menuAddItem("Utilities", "--", "")
@@ -142,8 +142,8 @@ ZIDlg <- function ()
 #
 #	# For each of the six external programs, look if they are accessible,
 #	# otherwise, inactivate
-#	if (is.null(getOption("ZIEditor")))
-#         MenuStateItem("$Tk.ZIDlgWin/Apps", "&Metadata editor (Sc1)", FALSE)
+#	if (is.null(getOption("fileEditor")))
+#         MenuStateItem("$Tk.ZIDlgWin/Apps", "&Metadata editor", FALSE)
 #    if (is.null(getOption("ImageEditor")))
 #         MenuStateItem("$Tk.ZIDlgWin/Apps", "Image &analyzer (ImageJ)", FALSE)
 #    if (is.null(getOption("ImageViewer")))
@@ -467,7 +467,7 @@ importImg <- function ()
 
 	## If there is no special treatment, just make all required .zim files
 	## for currently selected images
-	zimMake(dir = dir, pattern = pattern, images = Images, show.log = TRUE)
+	zimMake(dir = dir, pattern = pattern, images = Images)
 }
 
 ## TODO: the text appears only on one line on the Mac???
@@ -997,7 +997,7 @@ processSamples <- function()
 	} 
 	
 	## Get a list of samples from the description file
-	smpdesc <- readDescription(zisfile)
+	smpdesc <- zisRead(zisfile)
 	smplist <- listSamples(smpdesc)
 	
 	## Are there samples in it?
@@ -1056,7 +1056,7 @@ processSamples <- function()
 	## Add Kevin for manual validation
 	if (!isTRUE(ManValid)) ZIManTable <- NULL 
 	res <- processSampleAll(path = dirname(zisfile), ZidFiles = NULL, ZICobj,
-		ZIDesc = readDescription(zisfile), abd.taxa = NULL, abd.groups = NULL,
+		ZIDesc = zisRead(zisfile), abd.taxa = NULL, abd.groups = NULL,
 		abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL,
 		bio.conv = conv, headers = c("Abd", "Bio"), spec.taxa = NULL,
 		spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
@@ -1315,7 +1315,7 @@ vignettesClass <- function ()
 	if (length(zid) > 1) {
 		classVignettesAll(zidfiles = zid, Dir = "_manuValidation", ZIClass = zicObj)
 	} else {
-		classVignettes(zidfile = zid, Dir = noExt(zid), ZIClass = zicObj)
+		classVignettes(zidfile = zid, Dir = noExtension(zid), ZIClass = zicObj)
 	}
 }
 
@@ -1384,19 +1384,17 @@ batchFilePlugin <- function ()
 }
 
 ## Select one or several files of a given type
-selectFile <- function (type = c("ZipZid", "ZimZis", "LstZid", "Zip", "Zid",
+selectFile <- function (type = c("ZipZid", "ZimZis", "LstZid", "ZidZidb", "Zip", "Zid", "Zidb",
 "Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData"),
 multi = FALSE, quote = TRUE, title = NULL)
 {	
-	type <- tryCatch(match.arg(type), error = function (e) {
-		stop("unrecognized type")
-	})
-	
+	type <- match.arg(type)
 	Type <- switch(type,
 		ZipZis = "Zip/Zis",
 		ZimZis = "Zim/Zis",
 		LstZis = "Lst/Zis",
 		TifPgm = "Tiff/Pgm",
+		ZidZidb = "Zid/Zidb",
 		type)
 	
 	## Adapt title according to 'multi'
@@ -1411,8 +1409,11 @@ multi = FALSE, quote = TRUE, title = NULL)
 					"ZooImage metadata files" , ".zis"),
 		LstZid  = c("FlowCAM list files"      , ".lst",
 					"ZooImage files"          , ".zid"),
+		ZidZidb = c("ZooImage files"          , ".zid",
+					"ZooImage databases"      , ".zidb"),
 		Zip		= c("ZooImage picture files"  , ".zip"),
 		Zid		= c("ZooImage data files"     , ".zid"),
+		Zidb    = c("ZooImage databases"      , ".zidb"),
 		Zim		= c("ZooImage metadata files" , ".zim"),
 		Zis		= c("ZooImage sample files"   , ".zis"),
 		Zie		= c("ZooImage extension files", ".zie"),
@@ -1504,14 +1505,16 @@ createThreshold <- function (ZIDat)
 }
 
 ## Formula calculation by variables selection for the classifier creation v1.2-2
-formulaVarSel <- function (ZITrain)
+formulaVarSel <- function (ZITrain,
+calc.vars = getOption("ZI.calcVars", "calcVars"))
 {
 	## ZITrain must be a ZItrain object
 	if (!inherits(ZITrain, "ZITrain"))
 		stop("'ZITrain' must be a 'ZITrain' object")
 
+	calcfun <- match.fun(as.character(calc.vars)[1])
 	## Parameters measured on particles and new variables calculated
-	mes <- as.vector(colnames(calcVars(ZITrain)))
+	mes <- as.vector(colnames(calcfun(ZITrain)))
 	presel <- c("Id", "FIT_Cal_Const", "Item", "FIT_Raw_Area",
 		"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
 		"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Feret_Max_Angle",

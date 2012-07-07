@@ -38,6 +38,18 @@
 ## An environment where the current catcher is stored
 catch.env <- new.env()
 
+## Get the current call stack
+callStack <- function ()
+{
+	calls <- sys.calls()
+	out <- lapply(calls, function(.) {
+		out <- try( as.character(.[[1]] ), silent = TRUE)
+		if (inherits(out, "try-error")) NULL else out
+	})
+	out <- unlist(out[!sapply(out, is.null)])
+	return(out)
+}
+
 ## Evaluates the call calling the catcher associated with the function calling
 ##
 ## call: the call to surround with the catcher

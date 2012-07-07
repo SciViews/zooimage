@@ -44,7 +44,6 @@ export(formulaVarSel)
 export(getDec)
 export(getKey)
 export(getList)
-export(gettextZI)
 export(getSpectrum)
 export(getVar)
 export(get.ZITrain)
@@ -52,10 +51,7 @@ export(histSpectrum)
 export(importImg)
 export(increaseTrain)
 export(isTestFile)
-export(is.zim)
-export(listAdd)
-export(listMerge)
-export(listReduce)
+export(isZim)
 export(listObjects)
 export(listSamples)
 export(loadObjects)
@@ -71,7 +67,6 @@ export(makeTrain)
 export(makeZid)
 export(modalAssistant)
 export(nnet2)
-export(noExt)
 export(optInOutDecimalSep)
 export(parseIni)
 export(plotAbdBio)
@@ -82,7 +77,6 @@ export(processSampleAll)
 export(processSamples)
 export(Progress)
 export(rawConvert)
-export(readDescription)
 export(readExifRaw)
 export(readTrain)
 export(read.ZITrain)
@@ -154,8 +148,38 @@ export(zipImg)
 export(zipImgAll)
 export(zip.ZITrain)
 export(ZIRecodeLevels)
+
+# Zis
 export(zisCreate)
 export(zisEdit)
+export(zisRead)
+
+# Utilities
+
+
+# File-utilities
+export(extensionPattern)
+export(hasExtension)
+export(noExtension)
+export(listFilesExt)
+export(jpgList)
+export(pngList)
+export(zidList)
+export(zidbList)
+export(zipList)
+export(zimList)
+export(zimDatList)
+export(checkDirExists)
+export(checkEmptyDir)
+export(checkFileExists)
+export(checkFirstLine)
+export(forceDirCreate)
+
+
+# TODO...
+
+
+
 
 S3method(predict, nnet2)
 S3method(predict, lvq)
@@ -173,7 +197,6 @@ S3method(merge, ZITable)
 # callstack
 # catch
 # catch.env
-# checkFileExistAll
 # checkJavaAvailable
 # checkBiff2tiffAvailable # Eliminate Xite programs
 # checkDivideAvailable # Eliminate Xite programs
@@ -184,36 +207,22 @@ S3method(merge, ZITable)
 # checkCapabilityAvailable
 # checkConvertAvailable # Eliminate?
 # checkDcRawAvailable # Eliminate?
-# checkDirExists
-# checkEmptyDir
-# checkFileExists
-# checkFirstLine
 # checkIdentifyAvailable # Eliminate?
 # checkPpmtopgmAvailable # Eliminate?
 # checkUnzipAvailable
 # checkZipAvailable
 # checkZipnoteAvailable
 # dummyCatcher
-# editor
-# extensionPattern
-# extractMessage
 # finishLoop
-# forceDirCreate
 # getCatcher
-# getSample
 # getZooImageCapability
 # getZooImageConditionFunction
 # getZooImageErrorFunction
 # getZooImageWarningFunction
-# hasExtension
 # imagemagick
 # imagemagick_convert
 # imagemagick_identify
 # imageViewer
-# jpgList
-# pngList
-# listFilesExt
-# listDirs
 # misc
 # misc_dcraw
 # netpbm
@@ -225,7 +234,6 @@ S3method(merge, ZITable)
 # resetCatcher
 # setCatcher
 # stop
-# template
 # unzip
 # warning
 # xite
@@ -233,9 +241,6 @@ S3method(merge, ZITable)
 # xite_divide
 # xite_pnm2biff
 # xite_statistics
-# zidList
-# zidbList
-# zipList
 # zip
 # zipNoteAdd
 # zipNote

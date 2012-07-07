@@ -20,7 +20,7 @@ ZIClass <- function (df, algorithm = c("lda", "randomForest"),
 package = c("MASS", "randomForest"), Formula = Class ~ logArea + Mean + StdDev +
 Mode + Min + Max + logPerim. + logMajor + logMinor + Circ. + logFeret + IntDen +
 Elongation + CentBoxD + GrayCentBoxD + CentroidsD + Range + MeanPos + SDNorm + CV,
-calc.vars = "calcVars", k.xval = 10, ...)
+calc.vars = getOption("ZI.calcVars", "calcVars"), k.xval = 10, ...)
 {
 	## Check package availability
 	## Note: this is supposed to be managed in the NAMESPACE
@@ -28,7 +28,7 @@ calc.vars = "calcVars", k.xval = 10, ...)
 	## if (!is.null(package)) require( package, character.only = TRUE)
 
 	## Check calc.vars
-	calc.vars <- calc.vars[1]
+	calc.vars <- as.character(calc.vars)[1]
 	if (!is.null(calc.vars)) {
 		CV <- match.fun(calc.vars)
 		df <- CV(df)

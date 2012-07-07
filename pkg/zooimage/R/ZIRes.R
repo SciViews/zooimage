@@ -22,7 +22,8 @@ spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE,
 exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 {    
 	## Check if the ZidFile exists
-	checkFileExists(ZidFile)
+	if (!checkFileExists(ZidFile, message = "'ZidFile' not found"))
+		return(invisible(FALSE))
 	
 	## Check if ZIClass is of the right class
 	if (!inherits(ZIClass, "ZIClass"))
@@ -44,7 +45,7 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 		AllSamples <- attr(ZIMan, "Samples")
 		
 		## Check if manual validation exists for this zid file
-		if (noExt(ZidFile) %in% AllSamples) {
+		if (noExtension(ZidFile) %in% AllSamples) {
 			## The ZidFile was manually validated
 			## --> use Class column for identification
 			## Subtable of ZidFile vignettes
@@ -125,7 +126,7 @@ exportdir = NULL, show.log = TRUE, SemiTab = NULL, Semi = FALSE)
 }
 
 processSampleAll <- function (path = ".", ZidFiles = NULL, ZIClass, ZIMan = NULL,
-ZIDesc = readDescription("Description.zis"), abd.taxa = NULL, abd.groups = NULL,
+ZIDesc = zisRead("Description.zis"), abd.taxa = NULL, abd.groups = NULL,
 abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1),
 headers = c("Abd", "Bio"), spec.taxa = NULL, spec.groups = NULL,
 spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE, exportdir = NULL,
@@ -199,8 +200,8 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 		stop("'sample' must be a single character string")
 	
 	## Extract only data for a given sample
-	## Sample is everything before a '+' sign
-	Smps <- getSample(ZIDat$Label, unique = TRUE, must.have = sample)
+	Smps <- unique(sampleInfo(ZIDat$Label, type = "sample", ext = ""))
+	if (!sample %in% Smps) stop("Sample not found in ZIDat object")
 	Smp <- ZIDat[Smps == sample, ]
 	
 	## Determine the number of images in this sample
@@ -211,6 +212,18 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 				use.Dil = use.Dil)
 		}, zooImageError = function (e) return(NULL))
 	})
+	
+	## Add items across two lists (names must be the same)
+	listAdd <- function (..., .list = list(...)) {
+		.list <- Filter(Negate(is.null), .list)
+		if (length(.list) == 1) return(.list[[1]])
+		n <- length(.list[[1]])
+		out <- lapply(1:n, function (i) {
+			Reduce("+", lapply(.list , "[[", i))
+		})
+		attributes(out) <- attributes(.list[[1]])
+		return(out)
+	}	
 	listAdd(lists)
 }
 
@@ -340,7 +353,8 @@ conv = c(1, 0, 1), header = "Bio", exportdir = NULL, realtime = FALSE)
 			stop("'sample' must be a single character string")
 
 		## Extract only data for a given sample
-		Smps <- getSample(ZIDat$Label, unique = TRUE, must.have = sample)
+		Smps <- unique(sampleInfo(ZIDat$Label, type = "sample", ext = ""))
+		if (!sample %in% Smps) stop("Sample not found in ZIDat object")
 		Smp <- ZIDat[Smps == sample, ]
 
 		## Subsample, depending on taxa we keep
@@ -552,7 +566,8 @@ type = c("absolute", "log", "relative"), header = "Abd")
 	}
 	
 	## Extract only data for a given sample
-	Smps <- getSample(ZIDat$Label, unique = TRUE, must.have = sample)
+	Smps <- unique(sampleInfo(ZIDat$Label, type = "sample", ext = ""))
+	if (!sample %in% Smps) stop("Sample not found in ZIDat object")
 	Smp <- ZIDat[Smps == sample, ]
 	
 	## Subsample, depending on taxa we keep

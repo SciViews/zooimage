@@ -1,39 +1,47 @@
 \name{zis}
 \alias{zisCreate}
 \alias{zisEdit}
-\alias{readDescription}
+\alias{zisRead}
 
-\title{ Manipulate .zis files (ZooImage Samples data) }
+\title{ Manipulate .zis files (ZooImage Samples description) }
 \description{
-  Additional data concerning the samples are collected together in .zis files. These functions
-  manipulate such .zis files.
+  Additional data concerning the samples are collected together in .zis files.
+  These functions manipulate such .zis files.
 }
 \usage{
-zisCreate(zisfile = NULL, template = NULL, editor = getOption("ZIEditor"),
-    wait = FALSE)
-zisEdit(zisfile, editor = getOption("ZIEditor"), wait = FALSE)
-readDescription(zisfile = "Description.zis" , expected.sections =
+zisCreate(zisfile, template = NULL, edit = TRUE, editor =
+    getOption("fileEditor"), wait = FALSE)
+zisEdit(zisfile, editor = getOption("fileEditor"), wait = FALSE, ...)
+zisRead(zisfile = "Description.zis", expected.sections =
     c("Description", "Series", "Cruises", "Stations", "Samples"))
 }
 
 \arguments{
-  \item{zisfile}{ The name of the .zis file to manipulate (usually, "Description.zis") }
-  \item{template}{ A .zis template to start with, if the .zis file does not exist yet }
-  \item{editor}{ The program to use to edit the .zis file }
-  \item{wait}{ Do we wait that the file is edited? }
-  \item{expected.sections}{ The list of the sections that must be present in the
-    .zis file }
+  \item{zisfile}{ the name of the .zis file to manipulate (usually,
+    "Description.zis"). }
+  \item{template}{ a .zis template to start with, if the .zis file does not
+    exist yet. }
+  \item{edit}{ do we edit the .zis file after its creation? }
+  \item{editor}{ the program to use to edit the .zis file. }
+  \item{wait}{ do we wait that edition of file is done? }
+  \item{expected.sections}{ list of the sections that must be present in the
+    .zis file. }
+  \item{\dots}{ further arguments to pass to \code{fileEdit()}. }
 }
 
 \value{
-  \code{readDescription()} returns 'ZIDesc' object containing all the data in the .zis file.
+  \code{zisRead()} returns a 'ZIDesc' object containing all the data in the .zis
+  file, or, in case of fealure (detailed in a warning), it returns \code{NULL}.
+  The two other functions return \code{TRUE} or \code{FALSE} invisibly,
+  depending if the .zis file could be created/edited or not.
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
 
-\seealso{ \code{\link{zidCompress}} }
+\seealso{ \code{\link{zidCompress}}, \code{\link[svMisc]{fileEdit}} }
+
 \examples{
 ##TODO...
 }
-\keyword{ utilities }
 
+\keyword{ utilities }

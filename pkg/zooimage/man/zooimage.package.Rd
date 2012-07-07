@@ -8,7 +8,7 @@
   ZooImage is a free (open source) solution for analyzing digital
   images of plankton. In combination with ImageJ, a free image analysis
   system, it processes digital images, measures individuals, trains for
-  automatic identification of taxa, and finally, measures plankton samples
+  automatic classification of taxa, and finally, measures plankton samples
   (abundances, total and partial size spectra or biomasses, etc.)
 }
 
@@ -17,7 +17,7 @@
     Package: \tab zooimage\cr
     Type: \tab Package\cr
     Version: \tab 3.0-0\cr
-    Date: \tab 2012-05-05\cr
+    Date: \tab 2012-07-05\cr
     License: \tab GPL 2 or above at your convenience.\cr
   }
   Everytime you publish results that use ZooImage, you must place a reference

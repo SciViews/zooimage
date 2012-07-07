@@ -15,21 +15,27 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-readDescription <- function (zisfile = "Description.zis", 
+## Read data from a .zis file
+zisRead <- function (zisfile = "Description.zis", 
 expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples"))
 {
-    checkFileExists(zisfile, extension = "zis", force.file = TRUE)
-	checkFirstLine(zisfile)
+    if (!checkFileExists(zisfile, extension = "zis", force.file = TRUE))
+		return(NULL)
+	if (!checkFirstLine(zisfile)) return(NULL)
 	rl <- readLines(zisfile)
-	if (!length(rl) > 1)
-		stop("The file is empty or corrupted!")
+	if (!length(rl) > 1) {
+		warning("The file is empty or corrupted!")
+		return(NULL)
+	}
 	positions <- grep("^[[].*[]]", rl)
 	names <- sub("^[[](.*)[]]", "\\1", rl[positions])
-	if (!all(expected.sections %in% names))
-		stop("Incorrect zis file, does not have all expected sections")
+	if (!all(expected.sections %in% names)) {
+		warning("Incorrect zis file, does not have all expected sections")
+		return(NULL)
+	}
 	start <- positions + 1
 	end <- c(tail(positions, -1) - 2, length(rl))
-	data <- lapply(1:length(start), function (i) {
+	readData <- lapply(1:length(start), function (i) {
 		if (names[i] == "Description") {
 			rx <- "^(.*?)=(.*)$"
 			txt <- rl[start[i] : end[i]] 
@@ -39,77 +45,73 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 			names(out) <- variables
 		} else {
 			con <- textConnection(rl[start[i] : end[i]])
-			out <- read.table(con, 
-				sep = "\t", header = TRUE,
-				dec = getDec(), blank.lines.skip = FALSE)
-			close(con)
-			
+			on.exit(close(con))
+			out <- read.table(con, sep = "\t", header = TRUE, dec = getDec(),
+				blank.lines.skip = FALSE)
 			names(out)[1] <- sub("^X\\.", "", names(out)[1])
 			out <- out[, !grepl("^X\\.[0-9]+", names(out))]
 		}
 		return(out)
 	})
 	names(data) <- names
-	Samples <- data[["Samples"]]
+	Samples <- readData[["Samples"]]
 	Samples$Date <- as.Date(Samples$Date)
-	Series <- data[["Series"]]
-	Cruises <- data[["Cruises"]]
+	Series <- readData[["Series"]]
+	Cruises <- readData[["Cruises"]]
 	Cruises$Start <- as.Date(Cruises$Start)
 	Cruises$End <- as.Date(Cruises$End)
-	Stations <- data[["Stations"]]
+	Stations <- readData[["Stations"]]
 	Stations$Start <- as.Date(Stations$Start)
 	Stations$End <- as.Date(Stations$End)
-	Description <- data[["Description"]]
+	Description <- readData[["Description"]]
 	
 	## Combine all this in a data frame + metadata
 	structure(Samples, 
 		metadata =  list(Desc = Description, Series = Series, Cruises = Cruises,
-			Stations = Stations),
-		class = c("ZIDesc", "data.frame"))
+		Stations = Stations), class = c("ZIDesc", "data.frame"))
 }
 
-## Create a .zis file from a template and edit it
-zisCreate <- function (zisfile = NULL, template = NULL,
-editor = getOption("ZIEditor"), wait = FALSE)
+## Create a .zis file
+zisCreate <- function (zisfile, template = NULL,
+edit = TRUE, editor = getOption("fileEditor"), wait = FALSE)
 {	
 	## Use a ui to get the file name
-	if (is.null(zisfile) || zisfile == "") {
+	if (missing(zisfile) || !length(zisfile) || zisfile == "") {
 		zisfile <- dlgInput("Give a name for the new .zis file:",
 			title = "ZIS file creation", default = "Description.zis")$res
-		if (!length(zisfile)) return(invisible())
+		if (!length(zisfile)) return(invisible(FALSE))
 		if (!hasExtension(zisfile, "zis"))
 			zisfile <- paste(zisfile, ".zis", sep = "")
 	}
 	
     ## If the file already exists, edit current version
 	if (file.exists(zisfile))
-		return(zisEdit(zisfile, wait = wait))
+		if (isTRUE(edit)) {
+			return(zisEdit(zisfile, editor = editor, wait = wait))
+		} else return(invisible(TRUE))
 	
 	## Look for the template
-	if (is.null(template)) {
-		template <- template("Description.zis")
-	} else {
-		checkFileExists(template, "template '%s' not found", extension = "zis")
-	}
-	
+	if (is.null(template))
+		template <- file.path(getOption("ZITemplates"), "Description.zis")
+	if (!checkFileExists(template, "template '%s' not found", extension = "zis"))
+		return(invisible(FALSE))
 	## Copy the template into the new file
 	file.copy(template, zisfile)
-	
-	## Edit this new file
-	editor(zisfile, editor = editor)
+
+	## Possibly edit this new file
+	if (isTRUE(edit)) {
+		return(zisEdit(zisfile, editor = editor, wait = wait))
+	} else return(invisible(TRUE))
 }
 
-zisEdit <- function (zisfile, editor = getOption("ZIEditor"), wait = FALSE)
+## Edit a .zis file
+zisEdit <- function (zisfile, editor = getOption("fileEditor"), wait = FALSE, ...)
 {
-	## Edit a .zis file
-    if (is.null(zisfile) || zisfile == "") {
+    if (missing(zisfile) || !length(zisfile) || zisfile == "") {
 		zisfile <- selectFile("Zis")
-		if (zisfile == "")
-			return(invisible())
-	} else {
-		checkFileExists(zisfile, message = "the file '%s' is not found!",
-			extension = "zis")
-	}
-	editor(zisfile, editor = editor)
-	return(zisfile)
+		if (zisfile == "") return(invisible(FALSE))
+	} else if (!checkFileExists(zisfile,
+		message = "the file '%s' is not found!", extension = "zis"))
+		return(invisible(FALSE))
+	fileEdit(zisfile, editor = editor, wait = wait, ...)
 }

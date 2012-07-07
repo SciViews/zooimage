@@ -21,7 +21,7 @@ ZIClass, log = TRUE, ProbaThreshold = NULL, ProbaBio = NULL, DiffMax = 0.2,
 Filter = NULL)
 {
 	DirName <- dirname(zidfile)
-	ZidName <- noExt(zidfile)
+	ZidName <- noExtension(zidfile)
 	ZidDir <- file.path(DirName, ZidName)
   
 	## Check if Directory with the same names as ZIdfile

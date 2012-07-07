@@ -41,7 +41,7 @@ $Tk.ZIDlgWin
 ||-
 ||Image &viewer (XnView)			~~ startPgm("ImageViewer")
 ||Image &analyzer (ImageJ)			~~ startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)
-||&Metadata editor (Sc1)			~~ startPgm("ZIEditor", cmdline = selectFile("ZimZis"))
+||&Metadata editor      			~~ fileEdit(selectFile("ZimZis"))
 ||--
 ||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
 |$Functions
@@ -77,7 +77,7 @@ $Tk.ZIDlgWin
 |||zisCreate()                          	~~ guiDlgFunction("zisCreate")
 |||zisEdit()                            	~~ guiDlgFunction("zisEdit")
 |||-
-|||readDescription()                    	~~ guiDlgFunction("readDescription")
+|||zisRead()                    	        ~~ guiDlgFunction("zisRead")
 ||--
 ||$ZooImage &Training set
 |||prepare.ZITrain()				~~ guiDlgFunction("prepare.ZITrain")
@@ -106,7 +106,7 @@ $Tk.ZIDlgWin
 |||sampleSpectrum()	    			~~ guiDlgFunction("sampleSpectrum")
 |$Utilities
 ||Calibrate grayscale (16bit)			~~ calib()
-||Biomass conversion specification      	~~ startPgm("ZIEditor", cmdline = file.path(getTemp("ZIetc"), "Conversion.txt"))
+||Biomass conversion specification      	~~ fileEdit(file.path(getTemp("ZIetc"), "Conversion.txt"))
 ||-
 ||$R Graphs
 |||&New						~~ dev.new()

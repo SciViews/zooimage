@@ -18,7 +18,7 @@
 ## Make a ZooImage database file for one sample
 zidbMake <- function (zidir, zidbfile = paste0(zidir, ".zidb"), type = "ZI3",
 check = TRUE, check.vignettes = TRUE, replace = FALSE,
-delete.source = replace, show.log = TRUE)
+delete.source = replace)
 {		
 	## Check the format
 	if (type != "ZI3")
@@ -33,34 +33,35 @@ delete.source = replace, show.log = TRUE)
 	
 	## Make sure everything is fine for this directory
 	if (isTRUE(check))
-		zidVerify(zidir, type = type, check.vignettes = check.vignettes,
-			show.log = FALSE)
+		zidVerify(zidir, type = type, check.vignettes = check.vignettes)
 	
 	## Make sure the .RData file is created (or refreshed)
-	zidDatMake(zidir, type = type, replace = replace, show.log = FALSE)
+	zidDatMake(zidir, type = type, replace = replace)
 	
     ## List all vignettes
     Vigs <- dir(zidir, pattern = "\\.jpg$", full.names = TRUE)
-	## May be the vignettes are in .png format...
+	## Maybe the vignettes are in .png format...
 	if (!length(Vigs)) {
 		Vigs <- dir(zidir, pattern = "\\.png$", full.names = TRUE)
 		VigType <- "png"
 	} else VigType <- "jpg"
 	if (!length(Vigs)) {
-		## TODO: log the error!
+		warning("No vignettes found (.jpg or .png files)")
 		return(invisible(FALSE))
 	}
     ## List all .zim files
     Zims <- dir(zidir, pattern = "\\.zim$", full.names = TRUE)
-	if (!length(Zims))
-# log!	stop("No .zim files found!")
+	if (!length(Zims)) {
+		warning("No .zim files found!")
+		return(invisible(FALSE))
+	}
     
 ## TODO: read this from the root dir!	
 #	## list zis file
 #    Zis <- dir(zidir, pattern = ".zis$", full.names = TRUE)
     
     ## Create the .zidb file: put all vignettes there, plus the .RData file
-# log    cat("Creating the ZIDB file...\n")
+	message("Creating the ZIDB file...")
     filehashOption(defaultType = "DB1")
     unlink(zidbfile)
     dbCreate(zidbfile)
@@ -71,50 +72,64 @@ delete.source = replace, show.log = TRUE)
     dbInsert(db, ".ImageType", VigType)
 
     ## Read each vignette in turn and add it to the database
-# log!    cat("Adding vignettes to ZIDB file...\n")
+	message("Adding vignettes to ZIDB file...")
     VigExt <- paste0("\\.", VigType, "$")
 	for (i in 1:length(Vigs)) {
     	Vig <- Vigs[i]
     	VigName <- sub(VigExt, "", basename(Vig))
     	VigSize <- file.info(Vig)$size
-# log!    	if (is.na(VigSize)) stop("File '", Vig, "' not found, or of null length")
+		if (is.na(VigSize)) {
+			warning("File '", Vig, "' not found, or of null length")
+			return(invisible(FALSE))
+		}
     	dbInsert(db, VigName, readBin(Vig, "raw", VigSize + 100))
     }
     
     ## Add .zim files to db
-# log!    cat("Adding zim files to ZIDB file...\n")
+	message("Adding .zim files to ZIDB file...")
     for (i in 1:length(Zims)) {
     	Zim <- Zims[i]
     	ZimName <- sub("\\.zim$", "", basename(Zim))
     	ZimSize <- file.info(Zim)$size
-# log!    	if (is.na(ZimSize)) stop("File '", Zim, "' not found or of null length")
+		if (is.na(ZimSize)) {
+			warning("File '", Zim, "' not found or of null length")
+			return(invisible(FALSE))	
+		}
     	dbInsert(db, ZimName, readBin(Zim, "raw", ZimSize + 100))
     }
 
     ## Add zis file to db
 #    if (length(Zis) != 0) {
-#log!        cat("Adding sample data to .zidb file...\n")
+#		message("Adding sample data to .zidb file...")
 #        zisname <- basename(Zis)
 #       	zisSize <- file.info(Zis)$size
-#       	if (is.na(zisSize)) stop("File ", zis, " not found")
+#       	if (is.na(zisSize)) {
+#				warning("File ", zis, " not found")
+#				return(invisible(FALSE))
+#			}
 #       	dbInsert(db, zisname, readBin(Zis, "raw", zisSize + 100))
 #   	}
 
     ## Add the data frame with all data and metadata to the file
-# log!    cat("Adding data to ZIDB file...\n")
+	message("Adding data to ZIDB file...")
     zidat <- file.path(zidir, paste0(basename(zidir), "_dat1.RData"))
     obj <- load(zidat)
-# log!    if (length(obj) != 1) stop("Error loading ", zidat)
+	if (length(obj) != 1) {
+		warning("Error loading ", zidat)
+		return(invisible(FALSE))
+	}
     dbInsert(db, ".Data", get(obj))
 
 	## Do we delete sources?
     if (isTRUE(delete.source))
         unlink(zidir, recursive = TRUE)
 		
+	## Indicate success...
 	return(invisible(TRUE))
 }
 
 ## Make all .zidb files for data in the corresponding directory
+## TODO: eliminate this... use batch() instead!
 zidbMakeAll <- function (path = ".", samples = NULL,
 type = "ZI3", check = TRUE, check.vignettes = TRUE,
 replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
@@ -163,7 +178,7 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		tryCatch({  
 			zidbMake(samples[s], type = type, check = FALSE, 
 				check.vignettes = check.vignettes, replace = replace,
-				delete.source = delete.source, show.log = FALSE)
+				delete.source = delete.source)
 			}, zooImageError = function (e) {
 				logError (e)
 				ok <<- FALSE
@@ -183,18 +198,21 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 }
 
 ## Convert .zid file to .zidb file
-## TODO: add replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE
-zidToZidb <- function (zidfile)
+zidToZidb <- function (zidfile, type = "ZI3", check = TRUE,
+check.vignettes = TRUE, replace = FALSE, delete.source = replace)
 {
     ZidDir <- sub("\\.zid$", "", zidfile)
     IniDir <- dirname(zidfile)
     ## Unzip the file...
-# log!    cat("Unzipping ZID file '", basename(zidfile), "' ...\n", sep = "")
+	message("Unzipping ZID file '", basename(zidfile), "' ...")
     zooimage:::unzip(zidfile, path = IniDir)
-    zidbMake(zidir = ZidDir, delete.source = TRUE)
+    zidbMake(zidir = ZidDir, type = type, check = check,
+		check.vignettes = check.vignettes, replace = replace,
+		delete.source = delete.source)
 }
 
 ## Convert all .zid files to .zidb files
+## TODO: eliminate this, use batch() instead!
 ## TODO: add replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE
 zidToZidbAll <- function (zidfiles)
 {
@@ -205,7 +223,7 @@ zidToZidbAll <- function (zidfiles)
 }
 
 ## Convert a .zidb file to a .zid file
-## TODO: add replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE
+## TODO: which other arguments do we need to add here?
 zidbToZid <- function (zidbfile)
 {
     ZidbDir <- sub("\\.zidb$", "", zidbfile)
@@ -214,8 +232,8 @@ zidbToZid <- function (zidbfile)
     ## Link database to objects in memory
     Zidb <- zidbLink(zidbfile)
     ## All files in Zidb
-    AllFiles <- ls(Zidb) # List only variables not starting with . => zim + vignettes
-#    ## zis file
+    AllFiles <- ls(Zidb) # List vars not starting with . => zims + vignettes
+#    ## zis fil
 #    ZisFile <- grep(".zis", AllFiles)
 #    if (length(ZisFile)) {
 #        Zisname <- AllFiles[ZisFile]
@@ -225,26 +243,30 @@ zidbToZid <- function (zidbfile)
     # .zim files
     isZimFile <- grep("_dat1$", AllFiles)
     ZimNames <- AllFiles[isZimFile]
-# log!    cat("Extracting Zim files\n")
+	message("Extracting Zim files...")
     for (ZimName in ZimNames)
-        writeBin(Zidb[[ZimName]], con = file.path(ZidbDir, paste0(ZimName, ".zim")))
+        writeBin(Zidb[[ZimName]],
+			con = file.path(ZidbDir, paste0(ZimName, ".zim")))
     
 	## Vignettes
     VignNames <- AllFiles[!isZimFile]
-    cat("Extracting vignettes\n")
+    message("Extracting vignettes...")
     for(i in 1 : length(VignNames)){
-        writeBin(Zidb[[VignNames[i]]], con = file.path(ZidbDir, paste(VignNames[i], ".jpg", sep = "")))
+        writeBin(Zidb[[VignNames[i]]],
+			con = file.path(ZidbDir, paste(VignNames[i], ".jpg", sep = "")))
     }
     # Rdata
-    ZI.sample <- Zidb$.DATA
-    cat("Extracting Rdata file\n")
-    save(ZI.sample, file = file.path(ZidbDir, paste(sub(".zidb", "", basename(zidbfile)), "_dat1.RData", sep = "")))    
+    ZI.sample <- Zidb$.Data
+    message("Extracting Rdata file...")
+    save(ZI.sample, file = file.path(ZidbDir, paste(sub(".zidb", "",
+		basename(zidbfile)), "_dat1.RData", sep = "")))    
     # Create zid file
-    cat("Compressing zid file\n")
+    message("Compressing zid file...")
     zidCompress(zidir = ZidbDir, delete.source = TRUE)
 }
 
 # Convert .zidb files to .zid files
+## TODO: use batch() instead!
 ## TODO: use path!
 ## TODO: add replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE
 zidbToZidAll <- function (zidbfiles)
@@ -266,11 +288,7 @@ zidbLink <- function (zidbfile)
 
 ## Read only Rdata file from a .zidb database
 zidbDatRead <- function (zidbfile)
-{	
-    Zidb <- zidbLink(zidbfile)
-    ZI.sample <- Zidb$.Data
-	return(ZI.sample)
-}
+	zidbLink(zidbfile)$.Data
 
 ## Functions to plot a collage
 zidbPlot <- function (main = "ZooImage collage", ...)

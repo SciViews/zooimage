@@ -362,7 +362,7 @@ slope = FALSE)
 			Smp <- predict(ZIClass, Smp, calc.vars = FALSE, class.only = FALSE)
 			Smp <- calcBiomass(ZIDat = Smp, conv = conv.dir, realtime = TRUE)
 			List <- list(Smp)
-			names(List) <- noExt(basename(compare.smp))
+			names(List) <- noExtension(compare.smp)
 		} else {
 			List <- list()
 			if (length(grep(pattern = ".[Zz][Ii][Dd]", x = compare.smp)) >= 1) {
@@ -378,7 +378,7 @@ slope = FALSE)
 						lstRead(compare.smp[i]), calc.vars = FALSE,
 						class.only = FALSE), conv = conv.dir, realtime = TRUE)
 			}
-			names(List) <- noExt(basename(compare.smp))
+			names(List) <- noExtension(compare.smp)
 		}
       	compare.smp <- List
     } else compare.smp <- FALSE

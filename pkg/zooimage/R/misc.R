@@ -15,181 +15,14 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-getSample <- function (x, unique = FALSE, must.have, msg)
-{
-	res <- sub("[+].*", "", as.character(x))
-	if (isTRUE(unique)) res <- unique(res)
-	if (!missing(must.have)) {
-		if (!all(must.have %in% res)) {
-			if (missing(msg))
-				msg <- sprintf("sample '%s' not in ZIDat",
-					paste(must.have, sep = ","))
-			stop(msg)
-		}
-	}
-	return(res)
-}
-
-backspaces <- function (n = getOption("width"))
-	paste(rep("\b", n), collapse = "")
-
-## Get the current call stack
-callStack <- function ()
-{
-	calls <- sys.calls()
-	out <- lapply(calls, function(.) {
-		out <- try( as.character(.[[1]] ), silent = TRUE)
-		if (inherits(out, "try-error")) NULL else out
-	})
-	out <- unlist(out[!sapply(out, is.null)])
-	return(out)
-}
-
-## Checks if the file has the extension
-hasExtension <- function (file, extension = "zip",
-pattern = extensionPattern(extension))
-	grepl(pattern, file)
-
-## List files with given extension
-## dir: directory to list files
-## extension: file extension to accept. This will be 
-## modified by extensionPattern so that the test is case independent
-listFilesExt <- function (dir, extension = "zip",
-pattern = extensionPattern(extension), ... )
-{
-	checkDirExists(dir)
-	list.files(dir, pattern = pattern , ...)
-}
-
-zimList <- function (zidir, ...)
-	listFilesExt(zidir, extension = "zim", ...)
-
-zimDatList <- function (zidir, ...)
-	listFilesExt(zidir, extension = "_dat1.zim", ...)
-
-zipList <- function (zidir, ...)
-	listFilesExt(zidir, extension = "zip", ...)
-
-zidList <- function (zidir, ...)
-	listFilesExt(zidir, extension = "zid", ...)
-	
-zidbList <- function (zidir, ...)
-	listFilesExt(zidir, extension = "zidb", ...)
-
-jpgList <- function (dir, ...)
-	listFilesExt(dir, extension = "jpg", ...)
-	
-pngList <- function (dir, ...)
-	listFilesExt(dir, extension = "png", ...)
-
+#### OK #### (used in many places...)
 ## Transforms a file extension to a pattern for ignore.case matching of the  
 ## extension: extension (with or without the dot at the beginning)
 ## returns a regular expression pattern that can be used
 ##          to match files with this extension
 ## example: extensionPattern("tif")
-extensionPattern <- function (extension = "tif",
-add.dot = !grepl("[.]", extension))
-{
-	extensionLetters <- substring(extension, 1:nchar(extension),
-		1:nchar(extension))
-	parts <- ifelse(extensionLetters %in% c(letters, LETTERS), 
-		paste("[", extensionLetters, casefold(extensionLetters, upper = TRUE),
-		"]", sep = ""), extensionLetters)
-	pattern <- paste(parts, collapse = "") 
-	if (add.dot) pattern <- paste(".", pattern, sep = "")
-	pattern <- gsub( "[.]", "[.]", pattern)
-	return(paste(pattern, "$", sep = ""))
-}
 
-## Check if a file exists
-## file: file to check
-## extension: if given the file should have this extension
-## message: message to give when the file is not found
-checkFileExists <- function (file, extension, message = "file not found: %s",
-force.file = FALSE)
-{
-	message <- sprintf(message, file)
-	if (!file.exists(file)) stop(message) 
-	if (force.file && file.info(file)$isdir)
-		stop(sprintf('file "%s" is a directory', file))
-	if (!missing(extension) && !grepl(extensionPattern(extension), file)) {
-		message <- sprintf("'%s' is not a '%s' file", file, extension)
-		stop(message)
-	}
-	return(invisible(NULL))
-}
-
-checkFileExistAll <- function (files, extension)
-{
-	if (!all( file.exists(files)))
-		stop("one or more file does not exist")
-	if (!missing(extension) && ! all(hasExtension(files, extension)))
-		stop("one or more files have wrong extension")
-}
-
-## Checks if a directory exists
-## dir: the directory to check
-## message: the message to throw into stop if the directory does
-##  not exists or is not a directory
-checkDirExists <- function (dir,
-message = 'Path "%s" does not exist or is not a directory')
-{
-	message <- sprintf(message, dir)
-	if (!file.exists(dir) || !file.info(dir)$isdir)
-		stop(message)
-}
-
-checkEmptyDir <- function (dir, message = "not empty")
-{	
-	if (file.exists(dir)) {
-		if (length(list.files(dir, all.files = TRUE) > 0))
-			stop(message)
-	} else {
-		forceDirCreate(dir)
-	}	
-}
-
-## Force creation of a directory
-## First, if the path exists but is not a directory, this stops.
-## Then, if it did not exist, it calls dir.create to attempt to create it
-## If the creation was not sucessful, it stops 
-## path: the path of the directory to create
-forceDirCreate <- function (path, ...)
-{	
-	if (file.exists(path) && !file.info(path)$isdir)
-		stop ("not a directory")
-	out <- dir.create(path, ...)
-	if (!out) stop("could not create directory")
-	return(out)
-}
-
-## Checks the first line of a file against some expected content
-checkFirstLine <- function (file, expected = c("ZI1", "ZI2", "ZI3"), 
-message = 'file "%s" is not a valid ZooImage version <= 3 file', stop = FALSE)
-{
-	Line1 <- scan(file, character(), nmax = 1, quiet = TRUE)
-	res <- Line1 %in% expected
-	if (!res && stop) {
-		message <- sprintf(message, file)
-		stop(message)
-	}
-	return(invisible(res)) 
-}
-
-listDirs <- function (dir, ...)
-{
-	out <- list.files(dir)
-	out[file.info(file.path(dir, basename(out)))$isdir]
-}
-
-## Get a template file from the "ZITemplate" option
-template <- function (file = "default.zim", dir = getOption("ZITemplates"))
-{
-	f <- file.path(dir, file)
-	checkFileExists(f, message = "template file '%s' does not exist")
-	return(f)
-}
-
+## TODO: eliminate this function!
 ## Called at the looping function (*.all) 
 ## ok: logical; TRUE if there was a problem
 ## ok.console.msg: the message to write to the console if ok is TRUE
@@ -223,6 +56,7 @@ bell = TRUE, show.log = FALSE, show.console = TRUE)
 	return(invisible(ok))
 }
 
+## TODO: use the original zip() function in R + eliminate all the rest!
 ## Zip the content of the directory into the zipfile
 ## and delete the directory if needed
 # Modif Kev zip is now available in R

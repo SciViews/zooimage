@@ -175,11 +175,12 @@ show.log = TRUE, bell = FALSE)
 	
 	## Read the Filemap
 	cat("Reading Filemap...\n")
-	checkFileExists(Filemap, extension = "zie", force.file = TRUE)
+	if (!checkFileExists(Filemap, extension = "zie", force.file = TRUE))
+		return(NULL)
 	
-	## Check first line for ZI1
-	checkFirstLine(Filemap, 
-		message = 'File does not appear to be a ZooImage version 1 file, or it is corrupted!')
+	## Check first line for ZI1-3
+	if (!checkFirstLine(Filemap))
+		return(NULL)
 	
 	## Read the file and check it is not empty
 	## Note: we don't use comment.char = '#' because we want to read and rewrite
@@ -249,8 +250,9 @@ show.log = TRUE, bell = FALSE)
 	logProcess("Reading Filemap... OK!")
 	
 	## Make sure _raw, and _work subdirectories exists and have write access
-	forceDirCreate("_raw")
-	if (Convert != "" || MoveToWork) forceDirCreate("_work")
+	if (!forceDirCreate("_raw")) return(NULL)
+	if (Convert != "" || MoveToWork)
+		if (!forceDirCreate("_work")) return(NULL)
 	
 	## This function constructs image filename using possibly a FilenamePattern
 	MakeImageName <- function(x, pattern = FilePat) {
@@ -458,7 +460,7 @@ show.log = TRUE, bell = FALSE)
 			## Determine the name of the converted file
 			if (Convert != "") {
 				if (FileC == "") { # Construct the name of the converted file
-					FileConv <- paste(noExt(File), FileExt, sep = ".")
+					FileConv <- paste(noExtension(File), FileExt, sep = ".")
 				} else {
 					## Make sure that previous file is deleted
 					unlink(FileC)
@@ -476,7 +478,7 @@ show.log = TRUE, bell = FALSE)
 			## 1) If this is 'key' or 'key=' (NeWFile == ""), then,
 			##    the file is not renamed!
 			if (NewFile == "") {
-				FileConvName <- paste(noExt(File), FileExt2, sep = ".")
+				FileConvName <- paste(noExtension(File), FileExt2, sep = ".")
 				## 2) If the new name starts with "_Calib", then, never use the
 				##    Sample part and add a CalibXX entry in .zim file
 			} else if (length(grep("^_Calib", NewFile)) > 0) {
@@ -489,7 +491,7 @@ show.log = TRUE, bell = FALSE)
 						## Delete blank-field images (.pgm and .img)
 						## in the root directory
 						unlink(BlankField)
-						unlink(paste(noExt(BlankField), "img", sep = "."))
+						unlink(paste(noExtension(BlankField), "img", sep = "."))
 					}
 					BlankField <- FileConvName
 				} else {
@@ -537,14 +539,14 @@ show.log = TRUE, bell = FALSE)
 				if (zip.images != "" &&
 					length(grep(zip.images, FileConvName)) != 0 &&
 					length(grep("^_Calib", FileConvName)) == 0) {
-					finalname <- paste(noExt(FileConvName), "zip", sep = ".")
+					finalname <- paste(noExtension(FileConvName), "zip", sep = ".")
 				} else finalname <- FileConvName
 				logProcess(paste("Converting image '", File, "' into '",
 					finalname, "'", sep = ""))
 				if (replace || !file.exists(FileExt)) { 
 					## Create variables Rawbase and Rawnoext
 					Rawbase <- File
-					Rawnoext <- noExt(File)
+					Rawnoext <- noExtension(File)
 					## Run the command
 					res <- eval(parse(text = Convert))
 					if (Return != "" && length(grep(Return, res)) == 0) {
@@ -583,14 +585,14 @@ show.log = TRUE, bell = FALSE)
 					tryCatch({
 						BFcorrection(FileConv, BlankField, deleteBF = FALSE)
 						}, error = function (e) {
-							logProcess(extractMessage(e), File)
+							logProcess(e, File)
 						})
 					
 					## Delete the uncorrected file
 					unlink(FileConv)
 					
 					## Now, FileConv is the same file, but with a .tif extension
-					FileConv <- paste(noExt(FileConv), "tif", sep = ".")
+					FileConv <- paste(noExtension(FileConv), "tif", sep = ".")
 					if (!file.exists(FileConv)) {
 						ok <- FALSE
 						logProcess("Error: blank-field corrected file not found!",
@@ -659,7 +661,7 @@ show.log = TRUE, bell = FALSE)
 							zimfile <- paste(attr(zimData, "Sample"), "zim",
 								sep = ".")
 							# file.copy(file.path(curdir, zimfile), zimfile)
-							zipfile <- paste(noExt(FileConvName), "zip",
+							zipfile <- paste(noExtension(FileConvName), "zip",
 								sep = ".")
 							## TODO: how to include the comment in the zip file
 							## using the R standard zip() function?
@@ -692,7 +694,7 @@ show.log = TRUE, bell = FALSE)
 	if (!is.null(BlankField)) {
 		## Delete blank-field images (.pgm and .img) in the root directory
 		unlink(BlankField)
-		unlink(paste(noExt(BlankField), "img", sep = "."))
+		unlink(paste(noExtension(BlankField), "img", sep = "."))
 	}
 	
 	if (ok) {
@@ -710,7 +712,7 @@ show.log = TRUE, bell = FALSE)
 ## zieMake(path = ".", Filemap = "Import_Madagascar2Macro.zie")
 
 zieCompile <- function (path = ".", Tablefile = "Table.txt",
-Template = "ImportTemplate.zie", Filemap = paste("Import_", noExt(Tablefile),
+Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefile),
 ".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE,
 show.log = make.it)
 {		
@@ -724,8 +726,8 @@ show.log = make.it)
 	path = getwd() # Indicate we are now in the right path
 	
     ## Check if needed files exist
-    checkFileExists(Tablefile)
-	checkFileExists(Template)
+    if (!checkFileExists(Tablefile)) return(NULL)
+	if (!checkFileExists(Template)) return(NULL)
 	
 	## Check if the zie file already exists
     if (!replace && file.exists(Filemap))
@@ -836,7 +838,7 @@ show.log = make.it)
 readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
 {	
 	## Make sure dc_raw is available and rawfile exists
-	checkFileExists(rawfile)
+	if (!checkFileExists(rawfile)) return(NULL)
 	
 	## Temporary change directory to the one where the file is located
 	filedir <- dirname(rawfile)
@@ -849,7 +851,8 @@ readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
 	
 	temp <- "exifdata.txt"
 	misc_dcraw(rawfile, '-i -v ', temp) 
-	checkFileExists(temp, message = "Error while reading exif data for '%s'")
+	if (!checkFileExists(temp, message = "Error while reading exif data for '%s'"))
+		return(NULL)
 	
 	res <- scan(temp, character(), sep = "\n", quiet = TRUE)
 	if (length(res) < 6)
@@ -902,13 +905,14 @@ isTestFile <- function (File)
 	## Determine if a given file is a test file (a file with first line being
 	## 'ZI1est' and with size < 1000)
 	if (file.info(File)$size > 1000) return(FALSE)
-	checkFirstLine(File, "ZItest", stop = FALSE)
+	checkFirstLine(File, "ZItest")
 }
 
 ## Check a blank-field image, either in .pgm or in .tif format	
 checkBF <- function (BFfile)
 {	
-	checkFileExists(BFfile, message = "Blank-field file '%s' not found!")
+	if (!checkFileExists(BFfile, message = "Blank-field file '%s' not found!"))
+		return(NULL)
 
 	## Is it a test file?
 	if (isTestFile(BFfile))
@@ -1142,8 +1146,9 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 		unlink(imgFile)
 		if (deleteBF) unlink(imgBFfile)
 	})
-	checkFileExists(File, "pgm")
-	checkFileExists(BFfile, "pgm", message = "Blank-field file '%s' not found")
+	if (!checkFileExists(File, "pgm")) return(NULL)
+	if (!checkFileExists(BFfile, "pgm", message = "Blank-field file '%s' not found"))
+		return(NULL)
 	
 	## Check that the various scripts are available
 	checkCapable("pnm2biff")
@@ -1162,10 +1167,11 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 	}
 	
 	## Determine the name of the various files
-	imgFile <- paste(noExt(File), "img", sep = ".")
-	imgcorrFile <- paste(noExt(File), "coor.img", sep = "")
-	tifFile <- paste(noExt(File), "tif", sep = ".")
-	imgBFfile <- paste(noExt(basename(BFfile)), "img", sep = ".")
+	fileNoExt <- noExtension(File)
+	imgFile <- paste(fileNoExt, "img", sep = ".")
+	imgcorrFile <- paste(fileNoExt, "coor.img", sep = "")
+	tifFile <- paste(fileNoExt, "tif", sep = ".")
+	imgBFfile <- paste(noExtension(BFfile), "img", sep = ".")
 
     ## Is File a test file?
 	if (isTestFile(File)) {
@@ -1210,7 +1216,7 @@ check = TRUE)
 	}
 	
 	## Check if RawFile exists
-	checkFileExists(RawFile)
+	if (!checkFileExists(RawFile)) return(FALSE)
 	
 	## Do a fake convert
 	if (fake) { # Create a test file with just ZItest in it
@@ -1237,7 +1243,8 @@ check = TRUE)
 		cmd <- sprintf('dcraw %s %s | ppmtopgm > "%s"' , 
 			DcRawArgs, RawFile, OutputFile)
 		res <- try(system(cmd), silent = TRUE)
-		checkFileExists(OutputFile, message = "Error while converting")
+		if (!checkFileExists(OutputFile, message = "Error while converting"))
+			return(FALSE)
 	}
 	
 	## Everything was fine

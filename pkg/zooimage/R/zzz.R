@@ -77,21 +77,6 @@
 		ZIguiPackage <- "zooimage"
 	assignTemp("ZIguiPackage", ZIguiPackage)
 
-	## Determine where to find the metadata editor
-	if (interactive()) {
-		if (isWin()) {
-			ZIEditorExe <- system.file("MetaEditor", "Sc1.exe",
-				package = "zooimage")
-		} else if (isMac()) {
-			ZIEditorExe <- "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
-		} else {
-			### TODO: define a better editor here!
-			#options(ZIEditor = getOption("editor"))
-			ZIEditorExe <- "gedit"
-		}
-		if (file.exists(ZIEditorExe)) options(ZIEditor = ZIEditorExe)
-	} else options(ZIEditor = "")
-
 	## The directory that contains binary executables
 	bindir <- system.file("bin", package = "zooimage")
 

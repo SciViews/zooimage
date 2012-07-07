@@ -143,13 +143,6 @@ netpbm_ppmtopgm <- function (ppm, pgm)
 	return(res)
 }
 
-editor <- function (file, editor = getOption("ZIEditor"))
-{
-	if (!file.exists(editor)) editor <- getOption("editor")
-	edit(file = file, editor = editor)
-	return(invisible(file))
-}
- 
 imageViewer <- function (dir = getwd())
 {
 	if (isWin()) {

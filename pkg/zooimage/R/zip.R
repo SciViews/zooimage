@@ -29,8 +29,9 @@ replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 	imagefile <- basename(imagefile)
 
 	## Check if imagefile exists
-	checkFileExists(imagefile, message = "%s doesn't exist, or is a directory!",
-		force.file = TRUE)
+	if (!checkFileExists(imagefile, message = "%s doesn't exist, or is a directory!",
+		force.file = TRUE))
+		return(invisible(FALSE))
 
 	## Is there an associated .zim file?
 	if (is.null(zimfile)) {
@@ -45,7 +46,8 @@ replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 		stop("creation of .zim file not implemented yet!")
 
 	## Recheck .zim file
-	checkFileExists(zimfile, message = "%s - doesn't exist or is corrupted!")
+	if (!checkFileExists(zimfile, message = "%s - doesn't exist or is corrupted!"))
+		return(invisible(FALSE))
 
 	## Verify the content of the .zim file
 	if (verify.zimfile && zimVerify(zimfile) != 0)
@@ -53,10 +55,10 @@ replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 
 	## Zip the image in the '_raw' subdir and add the information from the .zim
 	## file as comment
-	zipfile <- paste(noExt(imagefile), ".zip", sep = "")
+	zipfile <- paste(noExtension(imagefile), ".zip", sep = "")
 	zipfile <- file.path(".", "_raw", zipfile)
 	## Make sure that "_raw" subdir exists
-	forceDirCreate("_raw")
+	if (!forceDirCreate("_raw")) return(invisible(FALSE))
 
 	## Copy or move the image to a .zip compressed file
 	## TODO: how to include the comment in the zip file with the standard R zip() function?
