@@ -38,7 +38,7 @@
 	assignTemp("ZIguiPackage", ZIguiPackage)
 
 	## Make sure that ZooImage will not overwrite these entries
-	options(ZIredefine = TRUE)
+	options(ZI.redefine = TRUE)
 
 	## Load the initial zooimage package now
 	## No, this is now done in NAMESPACE import!

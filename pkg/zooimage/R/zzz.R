@@ -24,9 +24,9 @@
 	options(guiStyle = "SciViews")
 
 	## Did we redefined the ZooImage config?
-	redef <- getOption("ZIredefine")
+	redef <- getOption("ZI.redefine")
 	if (is.null(redef)) redef <- FALSE else redef <- TRUE
-	options(ZIredefine = NULL)
+	options(ZI.redefine = NULL)
 
 	## Create some strings in TempEnv
 	ZIversion <- packageDescription("zooimage", fields = "Version")
@@ -133,7 +133,7 @@
 		options(ZITemplates = system.file("templates", package = "zooimage"))
 
 	## Switch to the default directory, if defined
-	defdir <- getKey("DefaultDirectory", "")
+	defdir <- getOption("ZI.DefaultDirectory", "")
     if (defdir != "" && file.exists(defdir) && file.info(defdir)$isdir)
         setwd(defdir)
 }
@@ -147,4 +147,10 @@
 		try(menuDel("$ConsolePopup/ZooImage"), silent = TRUE)
 	}
 	closeAssistant()
+}
+
+## R version < 2.15.0 does not have paste0 => create it here
+if (compareRVersion("2.15.0") < 0) {
+	paste0 <- function (..., collapse = NULL)
+		paste(..., sep = "", collapse = collapse)
 }

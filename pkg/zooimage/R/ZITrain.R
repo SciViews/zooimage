@@ -18,25 +18,21 @@
 ## Prepare 'dir\subdir' for a manual classification by expanding all vignettes
 ## from a given number of zidfiles to the '_' subdir, and making
 ## a template for subdirs
-prepare.ZITrain <- function (dir, subdir = "_train", zidfiles, zidbfiles = NULL,
+prepareTrain <- function (rootdir, subdir = "_train", zidfiles, zidbfiles = NULL,
 groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"),
-ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
+ident = NULL, start.viewer = FALSE)
 {
-	## Make sure unzip is available
-# bug: Erreur dans stop(msg) : unzip - program from Info-Zip not found!
-	#checkCapable("unzip")
+	## First, check that rootdir is valid
+	if (!checkDirExists(rootdir)) return(invisible(FALSE))
 
-	## First, check that dir is valid
-	checkDirExists(dir)
+	## New dir is rootdir + subdir
+	dir <- file.path(rootdir, as.character(subdir)[1])
+	if (!checkEmptyDir(dir,
+		message = 'dir "%s" must be empty. Clean it first!'))
+		return(invisible(FALSE))
 
-	## New dir is dir + subdir
-	dir <- file.path(dir, subdir)
-
-	if (!checkEmptyDir(dir, message = 'dir "%s" must be empty. Clean it first!'))
-		return(NULL)
-
-	## Then, check that all zidfiles exist
-	if (is.null(zidbfiles)){
+	## Then, check that all zidfiles or zidbfiles exist
+	if (is.null(zidbfiles)) {
         if (!checkFileExists(zidfiles, "zid")) return(invisible(FALSE))
         zmax <- length(zidfiles)
     } else {
@@ -45,21 +41,23 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
     }
 
 	## Finally, look for the groups.template
-	groups.template <- groups.template[1]
+	groups.template <- as.character(groups.template)[1]
 	rx <- "^[[](.+)[]]$"
 	if (grepl(rx, groups.template)) {
 		## This should be a template file in the default directory
 		groups.template <- paste(sub(rx, "\\1", groups.template), ".zic",
 			sep = "")
 		groups.template <- file.path(getTemp("ZIetc"), groups.template)
+		if (!file.exists(groups.template)) {
+			warning("The file '", groups.template, "' is not found")
+			return(invisible(FALSE))
+		}
 	}
-
-	## Check that this is a zic file
-	zicCheck(groups.template)
+	## Check that this is a .zic file
+	if (!zicCheck(groups.template)) return(invisible(FALSE))
 
 	## Do the job...
-	cat("Extracting data and vignettes ...\n")
-	logProcess("\nExtracting data and vignettes ...")
+	message("Extracting data and vignettes ...")
 
 	## Create '_' subdir and unzip all vignettes there
 	dir_ <- file.path(dir, "_")
@@ -67,7 +65,7 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 
 	for (i in 1:zmax) {
 		Progress(i, zmax)
-        if(is.null(zidbfiles)){
+        if (is.null(zidbfiles)) {
     		logProcess("data", zidfiles[i])
             ## Using a temporary directory to unzip all files and then copy
     		## the RData files to the train directory
@@ -80,19 +78,20 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
     			pattern = extensionPattern(".jpg"), recursive = TRUE))
     		if (length(vignettes)) file.copy(vignettes, dir_)
     		unlink(td, recursive = TRUE)
-		} else {
-            # Link zidb database to R objects in memory
+		} else {  # Use .zidb files
+            ## Link .zidb database to R objects in memory
             Zidb <- zidbLink(zidbfiles[i])
-            AllFiles <- ls(Zidb)
-            Vigns <- AllFiles[-c(grep(".zis", AllFiles), grep("_dat1", AllFiles))]
-            # copy all vignettes in the "_" directory
-            for(j in 1 : length(Vigns)){
+            AllItems <- ls(Zidb)
+            Vigns <- AllItems[-grep("_dat1", AllItems)]
+            ## Copy all vignettes in the "_" directory
+            ext <- Zidb[[".ImageType"]]
+			for (j in 1:length(Vigns)){
                 From <- Vigns[j]
-                To <- file.path(dir_, paste(From, ".jpg", sep = ""))
+                To <- file.path(dir_, paste(From, ext, sep = "."))
                 writeBin(Zidb[[From]], To)
             }
-            # save vignettes
-            ZI.sample <- Zidb$.DATA
+            ## Save vignettes
+            ZI.sample <- Zidb$.Data
             save(ZI.sample, file = file.path(dir, paste(sub(".zidb", "", basename(zidbfiles[i])), "_dat1.RData", sep = "")))
 		}
 	}
@@ -101,51 +100,119 @@ ident = NULL, show.log = TRUE, bell = FALSE, start.viewer = FALSE)
 	## Create the other directories
     Lines <- scan(groups.template, character(), sep = "\n", skip = 2,
 		quiet = TRUE)
-	if (length(Lines) < 1)
- 		stop(sprintf("'%s' is empty or corrupted!", groups.template))
+	if (!length(Lines)) {
+ 		warning(sprintf("'%s' is empty or corrupted!", groups.template))
+		return(invisible(FALSE))	
+	}
 	Lines <- file.path(dir, Lines)
-	cat("Making directories...\n")
-	logProcess("\nMaking directories...")
+	message("Making directories...")
 	for (i in 1:length(Lines)) {
-		logProcess(Lines[i])
+		message(Lines[i])
 		dir.create(Lines[i], recursive = TRUE)
 	}
 	### TODO: relocate vignettes in subdirectories, if ident is not NULL
 
-	finishLoop(ok = TRUE, bell = bell, show.log = show.log,
-	  ok.console.msg = " -- Done! --\n", ok.log.msg = "\n-- Done! --")
-
-	if (start.viewer) imageViewer(dir_)
+	## Finish and possibly start the image viewer
+	message(" -- Done! --")
+	if (isTRUE(as.logical(start.viewer))) imageViewer(dir_)
 	return(invisible(TRUE))
 }
 
-## Retrieve information from a manual training set
-## and store it in a 'ZITrain' object	
-get.ZITrain <- function (dir, creator = NULL, desc = NULL, keep_ = FALSE,
-na.rm = FALSE)
+## Function to add new vignettes in a training set
+increaseTrain <- function (traindir, zidbfiles)
 {
-	## 'dir' must be the base directory of the manual classification
-	checkDirExists(dir)
+	## Check if selected zid(b) files are already classified in the training set
+	Rdata <- list.files(traindir, pattern = "[.]RData$")
+	RdataNew <- paste0(sub("[.]zidb?$", "", basename(zidbfiles)), "_dat1.RData")
+	NewZidb <- !RdataNew %in% Rdata
+	
+	if (!any(NewZidb)) { # All zidbs are already in the training set
+		warning("All selected zid(b) files already in the training set")
+		return(invisible(FALSE))
+	} else { # Keep only new zid(b) files
+		zidbfiles <- zidbfiles[NewZidb]
+		warning("You have selected ", length(zidbfiles), " new zid(b) files.\n",
+			"The others files are already included in the training set")
+	}
+	
+	## Extract vignettes to a new subdir in '_' and .RData to parent directory
+	NewDir <- "_/_NewVignettes1"
+	## Check if the new directory name already exists
+	if (file.exists(file.path(traindir, NewDir))) {
+		DirLst <- dir(file.path(traindir, "_"), pattern = "_NewVignettes")
+		NewDir <- paste("_/_NewVignettes", (length(DirLst) + 1), sep = "")
+	}
+	
+	## Check if NewDir exist
+	ToPath <- file.path(traindir, NewDir)
+	if (!file.exists(ToPath))
+		if (!forceDirCreate(ToPath)) return(invisible(FALSE))
+	
+	## Extract RData in the root directory
+	zmax <- length(zidbfiles)
+	message("Adding data and vignettes to the training set...")
+	for (i in 1:zmax) {
+		Progress(i, zmax)
+		## treatment depends if it is a .zid or .zidb file
+		zidbfile <- zidbfiles[i]
+		if (grepl("[.]zidb$", zidbfile)) { # .zidb file
+			
+		} else { # .zid file
+			## Using a temporary directory to unzip all files and then copy
+			## the RData files to the train directory
+			td <- tempfile()
+			unzip(zipfile = zidbfiles[i], path = td, delete.source = FALSE)
+			datafiles <- file.path(td, list.files(td,
+				pattern = extensionPattern(".RData"), recursive = TRUE))
+			if (length(datafiles))
+				file.copy(datafiles, file.path(traindir, basename(datafiles)))
+			vignettes <- file.path(td, list.files(td,
+				pattern = extensionPattern(".jpg"), recursive = TRUE))
+			if (!length(vignettes))
+				vignettes <- file.path(td, list.files(td,
+					pattern = extensionPattern(".png"), recursive = TRUE))
+			if (length(vignettes))
+				file.copy(vignettes, file.path(ToPath, basename(vignettes)))
+			unlink(td, recursive = TRUE)	
+		}
+	}
+	clearProgress()
+	message("-- Done --\n")
+	return(invisible(TRUE))
+}
 
-	## Make sure we have .RData files in this dir (otherwise it is perhaps not a
-	## training set root dir!
-	Dats <- list.files(dir, pattern = "_dat1[.]RData$", full.names = TRUE)
-	if (length(Dats) == 0)
-		stop("does not appear to be a ", getTemp("ZIname"),
+## Retrieve information from a manual training set in a 'ZITrain' object	
+getTrain <- function (traindir, creator = NULL, desc = NULL, keep_ = FALSE,
+na.rm = FALSE, numvars = NULL)
+{
+	## 'traindir' must be the base directory of the manual classification
+	if (!checkDirExists(traindir)) return(invisible(FALSE))
+
+	## Make sure we have .RData files in this traindir (otherwise it is
+	## perhaps not a training set root dir!
+	Dats <- list.files(traindir, pattern = "_dat1[.]RData$", full.names = TRUE)
+	if (!length(Dats)) {
+		warning("'traindir' does not appear to be a ", getTemp("ZIname"),
 			" training set root dir!")
+		return(invisible(FALSE))
+	}
 
-	## list the jpg files (recursively) in the dir
-	res <- jpgList(dir, recursive = TRUE)
+	## List the .jpg or .png files (recursively) in the dir
+	res <- jpgList(traindir, recursive = TRUE)
+	if (!length(res)) res <- pngList(traindir, recursive = TRUE)
 
 	## Check the result...
-	if (length(res) < 1)
-		stop("Error while getting data")
+	if (!length(res)) {
+		warning("no .png or .jpg vignettes found in this tree")
+		return(invisible(FALSE))
+	}
 
 	## Replace "\\" by "/"
 	res <- gsub("[\\]", "/", res)
 
 	## Do we eliminate the '_' directory?
-	if (!keep_) res <- grep("^[^_]", res, value = TRUE)
+	if (!isTRUE(as.logical(keep_)))
+		res <- grep("^[^_]", res, value = TRUE)
 
 	## 'Id' is the name of the vignettes, minus the extension
 	Id <- noExtension(res)
@@ -153,10 +220,10 @@ na.rm = FALSE)
 	## 'Path' is the directory path
 	Path <- dirname(res)
 
-	## 'Class' is the last directory where the files are located
+	## 'Class' is the last directory where the vignettes are located
 	Class <- basename(Path)
 
-	## Create a directory (a data frame with: Id, Class)
+	## Create a  data frame with Id and Class
 	df <- data.frame(Id = Id, Class = Class)
 	df$Id <- as.character(df$Id)
 	nitems <- nrow(df)
@@ -194,37 +261,37 @@ na.rm = FALSE)
 #	df <- merge(Dat, df, by = "Id")
 	## Rename Dat in df
 	df <- Dat
-	## Issue an error if there is no remaing row in the data frame
-	if (nrow(df) == 0)
-		stop("No valid item found (both with a vignette and with valid measurement data!")
-
-	## Check that all items have associated measurements
-	if (nrow(df) < nitems) {
-    	nmiss <- nrow(df) - nitems
-		warning(nmiss, " vignettes do not have associated measurement data. They are eliminated (",
-			nrow(df), " items remain in the object)")
+	## Problem if there is no remaining row in the data frame
+	if (nrow(df) == 0) {
+		warning("No valid item found (no vignettes with valid measurement data)")
+		return(invisible(FALSE))
 	}
 
+	## Check that all items have associated measurements
+	if (nrow(df) < nitems)
+		warning(nitems - nrow(df),
+			" vignettes without measurement data are eliminated (",
+			nrow(df), " items remain in the object)")
+
 	## Delete lines which contain NA values v1.2-2
-	if (any(is.na(df))) {
-		cat("NAs found in the table of measurements")
-		if (na.rm) {
-  	  		cat("... deleted\n")
+	if (any(is.na(df)))
+		if (isTRUE(as.logical(na.rm))) {
+  	  		message("NAs found in the table of measurements and deleted")
   	  		df <- na.omit(df)
-		} else cat("... left there\n")
-  	}
+		} else message("NAs found in the table of measurements and left there")
+	
+	## Add attributes
 	attr(df, "basedir") <- dir
 	attr(df, "path") <- sort(unique(Path))
-	if (!is.null(creator)) attr(df, "creator") <- creator
-	if (!is.null(desc)) attr(df, "desc") <- desc
-	Classes <- c("ZI1Train", "ZITrain", Classes)
+	if (length(creator)) attr(df, "creator") <- creator
+	if (length(desc)) attr(df, "desc") <- desc
+	Classes <- c("ZI3Train", "ZITrain", Classes)
 	class(df) <- Classes
-	## Be sure that variables are numeric (sometimes not, because of wrong importation)
-
-	as.numeric.Vars <- function (ZIDat, Vars = NULL) {
-	    ## Default values
-	    if (is.null(Vars)) {
-	        Vars <- c("ECD",
+	
+	## Be sure that variables are numeric (sometimes, wrong importation)
+	as.numeric.Vars <- function (ZIDat, numvars) {
+	    if (is.null(numvars)) # Default values
+	        numvars <- c("ECD",
 	            "FIT_Area_ABD", "FIT_Diameter_ABD", "FIT_Volume_ABD",
 				"FIT_Diameter_ESD", "FIT_Volume_ESD", "FIT_Length", "FIT_Width",
 				"FIT_Aspect_Ratio", "FIT_Transparency", "FIT_Intensity",
@@ -239,26 +306,21 @@ na.rm = FALSE)
 	            "Area", "Mean", "StdDev", "Mode", "Min", "Max", "X", "Y", "XM",
 	            "YM", "Perim.", "BX", "BY", "Width", "Height", "Major", "Minor",
 				"Angle", "Circ.", "Feret", "IntDen", "Median", "Skew", "Kurt",
-				"XStart", "YStart", "Dil"
-	        )
-	    }
+				"XStart", "YStart", "Dil")
 
-	    ## Names of ZIDat
-	    Names <- names(ZIDat)
-
-	    ## Transform variables in numeric values
-	    for (i in 1:length(Vars)) {
-	        if (isTRUE(Vars[i] %in% Names) && !is.numeric(ZIDat[, Vars[i]]))
-	            ZIDat[, Vars[i]] <- as.numeric(ZIDat[, Vars[i]])
+	    ## Make sure numvars are numeric
+		Names <- names(ZIDat)
+	    for (numvar in numvars) {
+	        if (numvar %in% Names && !is.numeric(ZIDat[, numvar]))
+	            ZIDat[, numvar] <- as.numeric(ZIDat[, numvar])
 	    }
-	    return(ZIDat)
+	    ZIDat
 	}
-	return(as.numeric.Vars(df))
+	as.numeric.Vars(df, numvars = numvars)
 }
 
 recode.ZITrain <- function (ZITrain, ZIRecode, warn.only = FALSE)
 {	
-	## Check classes
 	if (!inherits(ZITrain, "ZITrain"))
 		stop("'ZITrain' must be a 'ZITrain' object")
 	if (!inherits(ZIRecode, "ZIRecode"))
@@ -282,12 +344,12 @@ recode.ZITrain <- function (ZITrain, ZIRecode, warn.only = FALSE)
 	path <- attr(ZIRecode, "path")
 	### TODO: check its validity here
 	if (!is.null(path)) attr(ZITrain, "path") <- path
-	return(ZITrain)
+	ZITrain
 }
 
+## Merge with previous one!
 ZIRecodeLevels <- function (ZITrain, level = 1)
 {
-	## Check class
 	if (!inherits(ZITrain, "ZITrain"))
 		stop("'ZITrain' must be a 'ZITrain' object")
 	
@@ -306,87 +368,5 @@ ZIRecodeLevels <- function (ZITrain, level = 1)
 	class(res) <- c("ZIRecode", "data.frame")
 	attr(res, "call") <- match.call()
 	## We do not need to change the path here: it is still the same one
-	return(res)
-}
-
-expand.ZITrain <- function (ZITrain, ZIDdir, destination)
-{
-	### TODO: make directories and extract vignettes for a classification
-	stop("Not implemented yet!")
-}
-
-read.ZITrain <- function (file)
-{
-    ### TODO: read data from a text file
-	stop("Not implemented yet!")
-}
-
-write.ZITrain <- function (ZITrain, file)
-{
-    ### TODO: write data to a text file
-	stop("Not implemented yet!")
-}
-
-zip.ZITrain <- function (dir, zipfile, overwrite = FALSE)
-{
-    ### TODO: compress a classification tree
-	stop("Not implemented yet!")
-}
-
-unzip.ZITrain <- function (zipfile, dir, overwrite = FALSE)
-{
-    ### TODO: uncompress a classification tree
-	stop("Not implemented yet!")
-}
-
-## Function to add new vignettes in a training set
-increase.ZITrain <- function (zidfiles, train)
-{
-	## Check if selected zid files are already classified in the training set
-	Rdata <- list.files(train, pattern = ".RData")
-	Rdata_New <- paste(sub("[.]zid$", "", basename(zidfiles)), "_dat1.RData",
-		sep = "")
-	NewZid <- !Rdata_New %in% Rdata
-	
-	if (!any(NewZid)) { # All zids are already in the training set
-		stop("All selected zid files are already included in the training set")
-	} else { # Keep only new zid files
-		zidfiles <- zidfiles[NewZid]
-		warning("You have selected ", length(zidfiles), " new zid files. ",
-		"The others files are already included in the training set")
-	}
-	
-	## Extract vignettes to a new subdir in '_' and RData to parent directory
-	NewDir <- "_/_NewVignettes1"
-	## Check if the new directory name already exists
-	if (file.exists(file.path(train, NewDir))) {
-		DirLst <- dir(file.path(train, "_"), pattern = "_NewVignettes")
-		NewDir <- paste("_/_NewVignettes", (length(DirLst) + 1), sep = "")
-	}
-	
-	## Check if NewDir exist
-	ToPath <- file.path(dir, NewDir)
-	if (!file.exists(ToPath))
-		if (!forceDirCreate(ToPath)) return(invisible(FALSE))
-	
-	zmax <- length(zidfiles)
-	## Extract RData in the root directory
-	for (i in 1:zmax) {
-		logProcess("data", zidfiles[i])
-		Progress(i, zmax)
-		## Using a temporary directory to unzip all files and then copy
-		## the RData files to the train directory
-		td <- tempfile()
-		unzip(zipfile = zidfiles[i], path = td, delete.source = FALSE)
-		datafiles <- file.path(td, list.files(td,
-			pattern = extensionPattern(".RData"), recursive = TRUE))
-		if (length(datafiles)) file.copy(datafiles, dir)
-		vignettes <- file.path(td, list.files(td,
-			pattern = extensionPattern(".jpg"), recursive = TRUE))
-		if (length(vignettes))
-			file.copy(vignettes, file.path(ToPath, basename(vignettes)))
-		unlink(td, recursive = TRUE)
-	}
-	clearProgress()
-	cat("-- Done --\n")
+	res
 }

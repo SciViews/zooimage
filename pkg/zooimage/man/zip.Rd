@@ -36,7 +36,7 @@ unzipImgAll(path = ".", zipfiles = NULL)
   \item{zipfiles}{ A list of zipfiles to unzip }
 }
 
-\author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
+\author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
 \examples{
 ##TODO...

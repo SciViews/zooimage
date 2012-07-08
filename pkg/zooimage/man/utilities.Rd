@@ -10,14 +10,11 @@
 
 
 \alias{clearProgress}
-\alias{getKey}
 \alias{getList}
 \alias{getVar}
 \alias{getDec}
-
 \alias{Progress}
 \alias{selectFile}
-\alias{setKey}
 
 
 \alias{ZIpgm}
@@ -58,10 +55,6 @@ getDec()
 Progress(value, max.value = NULL)
 clearProgress()
 
-getKey(key, default.value = NULL)
-setKey(key, value, type = "sz")
-
-
 ZIpgm(pgm, subdir = "misc", ext = "exe")
 ZIpgmHelp(pgm, subdir = "misc")
 }
@@ -75,8 +68,7 @@ ZIpgmHelp(pgm, subdir = "misc")
     'nn.mmm' when there are 'mmm' pictures taken to cover a bigger area of cell
     'nn', and 'ext' is the file extension. }
   \item{type}{ the type of data to extract (see examples) for
-    \code{sampleInfo()}, the format to use for a key in \code{setKey()}, or
-    the type of file to select in \code{selectFile()} }
+    \code{sampleInfo()}, or the type of file to select in \code{selectFile()} }
   \item{ext}{ the pattern to use (regular expression) to eliminate file
     extension from the 'filename' }
   \item{string}{ a character string to rework, or a vector of character strings }
@@ -99,12 +91,9 @@ ZIpgmHelp(pgm, subdir = "misc")
   \item{quote}{ do we add quotes (\") around file names? }
   \item{data}{ a vector containing the data to parse }
   \item{label}{ a label to include for the parsed data }
-  \item{value}{ a value for the progression (\code{Progress()}), or data to
-    place in the key (\code{setKey()}) }
+  \item{value}{ a value for the progression }
   \item{max.value}{ the maximum value, when task is done. If \code{NULL},
     assumes that value is in percent }
-  \item{key}{ the registry key to manipulate }
-  \item{default.value}{ value to use if the key is absent in the registry }
   \item{pgm}{ the name of an executable located in the zooimage package (under
     Windows), or on the system (elsewhere) }
   \item{subdir}{ the subdirectory (to the zooimage install directory) where the
@@ -143,12 +132,6 @@ ZIpgmHelp(pgm, subdir = "misc")
 
   Nothing for \code{Progress()} and \code{clearProgress()} (they
   are used in the GUI for their side-effect there).
-
-  For \code{getKey()}, either the content of the key, or the default.value is
-  returned. \code{setKey()} returns \code{TRUE} or \code{FALSE}, depending if
-  the key=value was successfully entered in the registry or not.
-
-  The translated string is returned for \code{gettextZI()}.
 
   \code{ZIpgm()} returns a string usable to start the given program at the
   command line (or using \code{system()}). Under Windows, it returns the full

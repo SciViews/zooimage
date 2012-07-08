@@ -41,7 +41,7 @@ ZIClass(df, algorithm = c("lda", "randomForest"), package = c("MASS",
   using one 'ZIClass' object.
 }
 
-\author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
+\author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 \note{
     Always analyze carefully the properties, performances and limitations of a
     'ZIClass' object before using it to classify objects of one series. For instance,
@@ -53,7 +53,7 @@ ZIClass(df, algorithm = c("lda", "randomForest"), package = c("MASS",
     with the comments of taxonomists that made the reference training set, and with
     details on the analysis of the performances of the classifier.
 }
-\seealso{ \code{\link{get.ZITrain}} }
+\seealso{ \code{\link{getTrain}} }
 \examples{
 ##TODO...
 }

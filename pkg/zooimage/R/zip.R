@@ -77,10 +77,6 @@ replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
 zipImgAll <- function (path = ".", images = NULL, check = TRUE,
 replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 {
-	## This requires the 'zip' program!
-	## Make sure it is available
-	checkCapable("zip")
-
 	## First, switch to that directory
 	inidir <- getwd()
 	checkDirExists(path)
@@ -124,13 +120,7 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		zmax <- length(zfiles)
 		oks <- sapply( 1:zmax, function (z) {
 			Progress(z, zmax)
-			tryCatch({
-				zimVerify(zfiles[z])
-				return(TRUE)
-			}, zooImageError = function (e) {
-				logError(e)
-				return(FALSE)
-			})
+			return(zimVerify(zfiles[z]))
 		})
 		ok <- all(oks)
 		clearProgress()
@@ -149,16 +139,8 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 
 	oks <- sapply(1:imax, function (i) {
 		Progress(i, imax)
-		tryCatch({
-			zipImg(images[i], verify.zimfile = FALSE, replace = replace,
-				delete.source = delete.source, check.zip = FALSE,
-				show.log = FALSE)
-			logProcess("OK", images[i])
-			return(TRUE)
-		}, zooImageError = function (e) {
-			logError(e)
-			return(FALSE)
-		})
+		return(zipImg(images[i], verify.zimfile = FALSE, replace = replace,
+			delete.source = delete.source, check.zip = FALSE))
 	})
 
 	clearProgress()
@@ -177,7 +159,7 @@ unzipImg <- function (zipfile)
 unzipImgAll <- function (path = ".", zipfiles = NULL)
 {
 	## Check that unzip is available
-	checkUnzipAvailable()
+	##checkUnzipAvailable()
 
 	## Extract all .zim, .tif or both from .zip files
 	stop("Not implemented yet!")

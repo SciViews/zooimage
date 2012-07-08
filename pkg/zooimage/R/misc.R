@@ -118,7 +118,7 @@ zipNoteAdd <- function (zip, comment.file,
 on.failure = stop(sprintf(on.failure.msg , comment.file, zip)),
 on.failure.msg = "problem adding comment from '%s' to file '%s' ", on.success)
 {
-	checkZipAvailable()
+	##checkZipAvailable()
 
 	cmd <- if (isWin()) {
 		sprintf('%s /c type "%s" | "%s" -z "%s" ',
@@ -157,7 +157,7 @@ unzip <- function (zipfile, path, delete.source = FALSE) {
 zipNote <- function (zipfile, outfile = NULL)
 {
 	## Check that the system is zipnote capable
-	checkZipnoteAvailable()
+#	checkZipnoteAvailable()
 
 	## Build the command
 	cmd <- sprintf('"%s" "%s" ' , ZIpgm("zipnote", "misc"), zipfile)
@@ -181,3 +181,18 @@ zipNote <- function (zipfile, outfile = NULL)
 		return(out)
 	}
 }
+
+#checkZipnoteAvailable <- function ()
+#{
+#	checkCapabilityAvailable("zipnote", 
+#		sprintf('"%s" -h %s', ZIpgm("zipnote", "misc"),
+#		if(!isWin()) " > /dev/null" else ""), 
+#		"zipnote - program from Info-Zip not found!")
+#}
+
+#checkJavaAvailable <- function ()
+#{
+#	checkCapabilityAvailable("java", 
+#		'java -version ', 
+#		"java: program not found! Please, install it!")
+#}

@@ -157,11 +157,11 @@ show.log = TRUE, bell = FALSE)
 	## We need 'identify' and 'convert' from ImageMagick 16 bits!
 	## Make sure they are available
 	if (isTRUE(check)) {
-		checkCapable("identify")
-		checkCapable("convert")
-		checkCapable("dc_raw")
-		checkCapable("ppmtopgm")
-		checkCapable("zip")
+		#checkCapable("identify")
+		#checkCapable("convert")
+		#checkCapable("dc_raw")
+		#checkCapable("ppmtopgm")
+		#checkCapable("zip")
 	}
 	
 	## First, switch to the root directory
@@ -1151,10 +1151,10 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 		return(NULL)
 	
 	## Check that the various scripts are available
-	checkCapable("pnm2biff")
-	checkCapable("statistics")
-	checkCapable("divide")
-	checkCapable("biff2tiff")
+	#checkCapable("pnm2biff")
+	#checkCapable("statistics")
+	#checkCapable("divide")
+	#checkCapable("biff2tiff")
 	
 	## Switch to the directory of File
 	filedir <- dirname(File)
@@ -1227,8 +1227,8 @@ check = TRUE)
 	## Do the conversion using dc_raw
 	## Check that the system is capable of doing the conversion
 	if (check) {
-		checkCapable("dc_raw")
-		checkCapable("ppmtopgm")
+		#checkCapable("dc_raw")
+		#checkCapable("ppmtopgm")
 	}
 	
 	if (isWin()) {

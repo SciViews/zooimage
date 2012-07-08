@@ -21,91 +21,43 @@ import(RColorBrewer)
 import(RWeka)
 import(RWekajars)
 
-export(aboutZI)
-export(acquireImg)
-export(analyzeClass)
+
 export(BFcorrection)
-export(calcVars)
-export(calib)
 export(calibrate)
 export(checkBF)
 export(clearProgress)
-export(closeAssistant)
-export(closeZooImage)
 export(compareExif)
-export(ecd)
-export(editDescription)
-export(exitZI)
-export(expand.ZITrain)
-export(exportResults)
-export(focusGraph)
-export(focusR)
-export(formulaVarSel)
-export(getDec)
-export(getKey)
-export(getList)
 export(getSpectrum)
-export(getVar)
-export(get.ZITrain)
 export(histSpectrum)
-export(importImg)
-export(increaseTrain)
 export(isTestFile)
 export(isZim)
-export(listObjects)
-export(listSamples)
-export(loadObjects)
 export(logClear)
 export(logError)
 export(logProcess)
 export(logView)
 export(logWarning)
 export(lvq)
-export(makeClass)
-export(makeId)
-export(makeTrain)
-export(makeZid)
 export(modalAssistant)
 export(nnet2)
-export(optInOutDecimalSep)
-export(parseIni)
 export(plotAbdBio)
-export(prepare.ZITrain)
-export(processImg)
 export(processSample)
 export(processSampleAll)
-export(processSamples)
 export(Progress)
 export(rawConvert)
 export(readExifRaw)
-export(readTrain)
-export(read.ZITrain)
 export(realtimeReset)
 export(realtimeSave)
 export(realtimeStart)
 export(realtimeStop)
-export(recode.ZITrain)
-export(removeObjects)
 export(sampleAbd)
 export(sampleBio)
-export(sampleInfo)
 export(sampleSpectrum)
-export(saveObjects)
-export(selectFile)
-export(setKey)
 export(startPgm)
-export(trimString)
-export(underscoreToSpace)
 export(unzipImg)
 export(unzipImgAll)
-export(unzip.ZITrain)
-export(viewManual)
-export(viewResults)
 export(vignettesClass)
-export(write.ZITrain)
 export(ZIClass)
 export(ZIConf)
-export(zicCheck)
 export(zidClean)
 export(zidCompress)
 export(zidCompressAll)
@@ -126,7 +78,6 @@ export(zidbLink)
 export(zidbDatRead)
 export(zidbPlot)
 export(zidbDrawVignette)
-export(ZIDlg)
 export(ZIE)
 export(ZIEimportJpg)
 export(ZIEimportTable)
@@ -146,18 +97,35 @@ export(ZIpgm)
 export(ZIpgmHelp)
 export(zipImg)
 export(zipImgAll)
-export(zip.ZITrain)
-export(ZIRecodeLevels)
+
+
+# Zic
+export(zicCheck)
 
 # Zis
 export(zisCreate)
 export(zisEdit)
 export(zisRead)
 
+# ZITrain
+export(prepareTrain)
+export(increaseTrain)
+export(getTrain)
+export(recode.ZITrain)
+export(ZIRecodeLevels)
+
 # Utilities
+export(calcVars)
+export(ecd)
+export(getDec)
+export(listSamples)
+export(makeId)
+export(parseIni)
+export(sampleInfo)
+export(trimString)
+export(underscoreToSpace)
 
-
-# File-utilities
+# File-Utilities
 export(extensionPattern)
 export(hasExtension)
 export(noExtension)
@@ -175,12 +143,44 @@ export(checkFileExists)
 export(checkFirstLine)
 export(forceDirCreate)
 
+# GUI
+export(aboutZI)
+export(acquireImg)
+export(addToTrain)
+export(analyzeClass)
+export(calib)
+export(closeAssistant)
+export(closeZooImage)
+export(collectTrain)
+export(editDescription)
+export(exitZI)
+export(exportResults)
+export(focusGraph)
+export(focusR)
+export(importImg)
+export(listObjects)
+export(loadObjects)
+export(makeClass)
+export(makeZid)
+export(makeTrain)
+export(optInOutDecimalSep)
+export(processImg)
+export(processSamples)
+export(removeObjects)
+export(saveObjects)
+export(viewManual)
+export(viewResults)
+export(ZIDlg)
 
-# TODO...
+# GUI-Utilities
+export(getList)
+export(getVar)
+export(formulaVarSel)
+export(selectGroups)
+export(selectFile)
+export(selectSamples)
 
-
-
-
+# S3 methods
 S3method(predict, nnet2)
 S3method(predict, lvq)
 S3method(print, ZIClass)
@@ -191,34 +191,9 @@ S3method(print, ZIE)
 S3method(plot, ZITable)
 S3method(merge, ZITable)
 
-# The following objects are NOT exported
-# ZOOIMAGEENV (environment holding ZooImage data)
+# The following objects are NOT exported (and should be eliminated too!)
 # backspaces
-# callstack
-# catch
-# catch.env
-# checkJavaAvailable
-# checkBiff2tiffAvailable # Eliminate Xite programs
-# checkDivideAvailable # Eliminate Xite programs
-# checkPnm2biffAvailable # Eliminate Xite programs
-# checkStatisticsAvailable # Eliminate Xite programs
-# checkCapabilityAvailable
-# checkCapable
-# checkCapabilityAvailable
-# checkConvertAvailable # Eliminate?
-# checkDcRawAvailable # Eliminate?
-# checkIdentifyAvailable # Eliminate?
-# checkPpmtopgmAvailable # Eliminate?
-# checkUnzipAvailable
-# checkZipAvailable
-# checkZipnoteAvailable
-# dummyCatcher
 # finishLoop
-# getCatcher
-# getZooImageCapability
-# getZooImageConditionFunction
-# getZooImageErrorFunction
-# getZooImageWarningFunction
 # imagemagick
 # imagemagick_convert
 # imagemagick_identify
@@ -230,12 +205,7 @@ S3method(merge, ZITable)
 # netpbm_ppmtopgm
 # netpbm_tifftopnm
 # program
-# recallWithCatcher
-# resetCatcher
-# setCatcher
-# stop
 # unzip
-# warning
 # xite
 # xite_biff2tiff
 # xite_divide
@@ -244,12 +214,3 @@ S3method(merge, ZITable)
 # zip
 # zipNoteAdd
 # zipNote
-# zooImageCapabilities
-# zooImageError
-# [[.zooImageError
-# zooImageErrorContext
-# zooImageErrorDrivers
-# zooImageWarning
-# [[.zooImageWarning
-# zooImageWarningContext
-# zooImageWarningDrivers

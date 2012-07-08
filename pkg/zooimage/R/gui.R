@@ -42,8 +42,8 @@ ZIDlg <- function ()
 	menuAddItem("Analyze", "Make .zid files...", "makeZid()")
 	menuAddItem("Analyze", "-", "")
 	menuAddItem("Analyze", "Make training set...", "makeTrain()")
-	menuAddItem("Analyze", "Add vignettes to training set", "increaseTrain()")
-	menuAddItem("Analyze", "Read training set...", "readTrain()")
+	menuAddItem("Analyze", "Add vignettes to training set", "addToTrain()")
+	menuAddItem("Analyze", "Read training set...", "collectTrain()")
 	menuAddItem("Analyze", "Make classifier...", "makeClass()")
 	menuAddItem("Analyze", "Analyze classifier...", "analyzeClass()")
 	menuAddItem("Analyze", "Automatic classification of vignettes...",
@@ -173,7 +173,7 @@ exitZI <- function ()
 {
 	## This is useful to allow updating the package!
 	detach("package:zooimage", unload = TRUE)
-	cat("zooimage package unloaded; To restart it, issue:\n> library(zooimage)\n")
+	message("zooimage package unloaded; To restart it, issue:\n> library(zooimage)")
 }
 
 ## Functions for the assistant menu
@@ -229,125 +229,12 @@ focusGraph <- function ()
 	}
 }
 
-startPgm <- function (program, cmdline = "", switchdir = FALSE,
-iconize = FALSE, wait = FALSE)
-{
-	## Look if the program path is recorded in the options
-	pgmPath <- getOption(program)
-	if (!is.null(pgmPath) && file.exists(pgmPath)) {
-		## Do we need to switch directory?
-		if (switchdir) {
-			curdir <- getwd()
-			on.exit(setwd(curdir))
-			setwd(dirname(pgmPath))
-		}
-		## Start it
-		system(paste(pgmPath, cmdline), wait = wait, ignore.stdout = TRUE,
-			ignore.stderr = TRUE)
-	} else stop("Program '", program, "' not found!")
-	## Do we need to iconize the assistant?
-#	if (iconize && !is.null(WinGet("ZIDlgWin")))
-#		tkwm.iconify(WinGet("ZIDlgWin"))
-}
-
-modalAssistant <- function (title, text, init, options = NULL, check = NULL,
-select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
-{
-	## TODO!!!!
-	cat("Modal assistant temporarily disabled!\n")
-	return(returnValOnCancel)
-	
-#	## Create an assistant dialog box which behaves as a modal dialog box
-#	text <- paste(text, collapse = "\n")
-#	try(tkWinAdd("ZIAssist", title = title, bind.delete = FALSE))
-#	ZIAssist <- WinGet("ZIAssist")
-#    tkbind(ZIAssist, "<Destroy>", function () {
-#		tkgrab.release(ZIAssist)
-#		tkWinDel("ZIAssist")
-#		#tkfocus(WinGet("ZIDlgWin"))
-#	})
-#	## Assign cancel by default to the return value
-#    assignTemp("ZIret", returnValOnCancel)
-#    ## Do not show it until it is completelly constructed!
-#	tkwm.withdraw(ZIAssist)
-#	## Change the icon of that window (if under Windows)
-#    if (isWin()) tk2ico.set(ZIAssist, getTemp("ZIico"))
-#	## This is the variable holding the result
-#	resVar <- tclVar(init)
-#	## Draw the dialog area
-#	dlgarea <- tk2frame(ZIAssist)
-#	## Place the logo to the left
-#    Logo <- tklabel(dlgarea,image = ImgGet("$Tk.logo"), bg = "white")
-#	## Place dialog box data
-#	txtarea <- tk2frame(ZIAssist)
-#	Text <- tk2label(txtarea, text = text, width = 50)
-#	#### TODO: this causes a problem in Tile 0.7.2?! , justify = "left")
-#	tkgrid(Text, stick = "w")
-#	## Do we put options?
-#	if (!is.null(options)) {
-#		for (i in 1:length(options)) {
-#			rb <- tk2radiobutton(txtarea)
-#			tkconfigure(rb, variable = resVar, value = options[i],
-#				text = options[i])
-#			#### TODO: this causes a problem in Tile 0.7.2?! , justify = "left")
-#			tkgrid(rb, sticky = "w")
-#		}
-#	}
-#	## Do we have to place a checkbox?
-#	if (!is.null(check)) {
-#		cb <- tk2checkbutton(txtarea)
-#		tkconfigure(cb, variable = resVar, text = check)
-#		#### TODO: this causes a problem in Tile 0.7.2?! , justify = "left")
-#		tkgrid(cb, sticky = "w")
-#	}
-#	## Place everything in the dialog box
-#	tkgrid(Logo, txtarea)
-#	tkpack(dlgarea, anchor = "nw")
-#	## Place buttons
-#
-#    "onOK" <- function () {
-#        assignTemp("ZIret", tclvalue(resVar))
-#        tkgrab.release(ZIAssist)
-#        tkWinDel("ZIAssist")
-#		#tkfocus(WinGet("ZIDlgWin"))
-#    }
-#    "onCancel" <- function () {
-#        tkgrab.release(ZIAssist)
-#        tkWinDel("ZIAssist")
-#		#tkfocus(WinGet("ZIDlgWin"))
-#    }
-#    butbar <- tk2frame(ZIAssist)
-#    OK.but <- tk2button(butbar, text = "   OK   ", command = onOK)
-#    Cancel.but <- tk2button(butbar, text = " Cancel ", command = onCancel)
-#	if (is.null(help.topic)) {
-#    	tkgrid(OK.but, Cancel.but, sticky = "e")
-#	} else {    # Create also a help button
-#		"onHelp" <- function () {
-#			eval(browseURL(help(help.topic , htmlhelp=TRUE)[1] ),
-#				envir = .GlobalEnv )
-#		}
-#        Help.but <- tk2button(butbar, text = "  Help  ", command = onHelp)
-#        tkgrid(OK.but, Cancel.but, Help.but, sticky = "e")
-#	}
-#	tkpack(butbar, side = "bottom", fill = "x")
-#	tkpack(tk2separator(ZIAssist), side = "bottom", fill = "x")
-#    tkbind(ZIAssist, "<Return>", onOK)
-#	if (isWin()) tcl("wm", "attributes", ZIAssist, toolwindow = 1, topmost = 1)
-#	tkwm.resizable(ZIAssist, 0, 0)
-#	## Focus on that window
-#	tkfocus(ZIAssist)	# Doesn't work with Rgui.exe, but tkwm.deiconify does
-#    tkwm.deiconify(ZIAssist)
-#    tkgrab.set(ZIAssist)
-#    tkwait.window(ZIAssist)
-#    return(getTemp("ZIret"))
-}
-
 ## Show an assitant dialog box allowing to choose between VueScan and a different
 ## acquisition program... remember that setting in the registry under Windows
 acquireImg <- function ()
 {
 	## First read the registry to determine which software in recorded there...
- 	Asoft <- getKey("AcquisitionSoftware", "VueScan")
+ 	Asoft <- getOption("ZI.AcquisitionSoftware", "VueScan")
 	if (Asoft == "VueScan") {
 		opts <- c("VueScan", "Another software...")
 		othersoft <- ""
@@ -384,7 +271,7 @@ acquireImg <- function ()
 	## Did we selected "VueScan"
 	if (res == "VueScan") {
 		startPgm("VueScan", switchdir = TRUE)
-		setKey("AcquisitionSoftware", "VueScan")
+		options(ZI.AcquisitionSoftware = "VueScan")
 		return(invisible())
 	}
 	## We should have selected a custom software...
@@ -393,7 +280,7 @@ acquireImg <- function ()
 	## Start the program
 	system(paste('"', Asoft, '"', sep = ""), wait = FALSE)
 	## Record it in the registry key
-    setKey("AcquisitionSoftware", Asoft)
+    options(ZI.AcquisitionSoftware = Asoft)
 }
 
 importImg <- function ()
@@ -418,7 +305,6 @@ importImg <- function ()
 
 	## Determine which kind of data it is
 	if (has(pattern = "^Import_.*[.]zie$")) {
-		setKey("ImageIndex", "3")
 		return(zieMake(path = dir, Filemap = Images[1], check = TRUE,
 			show.log = TRUE))
     } else if (has("txt")) {
@@ -437,7 +323,6 @@ importImg <- function ()
 			return(invisible(res))
 		}
 		pattern <- extensionPattern(".txt")
-		setKey("ImageIndex", "4")
 		logProcess("Creating .zie file...")
 		cat("Creating .zie file...\n")
 		ziefile <- zieCompile(path = dir, Tablefile = Images[1])
@@ -459,10 +344,8 @@ importImg <- function ()
 		return(res)
 	} else if (has(".tif")) {
 		pattern <- extensionPattern(".tif")
-        setKey("ImageIndex", "1")
 	} else if (has("jpg")) {
         pattern <- extensionPattern("jpg")
-        setKey("ImageIndex", "2")
 	} else stop("Unrecognized data type!")
 
 	## If there is no special treatment, just make all required .zim files
@@ -566,7 +449,7 @@ makeTrain <- function ()
 	## Select samples, and a grouping template... and prepare
 	## for making a training set
     ## First read the registry to determine which grouping in recorded there...
- 	Grp <- getKey("DefaultGrouping", "[Basic]")
+ 	Grp <- getOption("ZI.DefaultGrouping", "[Basic]")
 	## Does this point to an actual file?
 	if (file.exists(Grp)) {
 		defval <- basename(Grp)
@@ -612,7 +495,7 @@ makeTrain <- function ()
 	} else res <- Grp  # We should have selected the previously recorded scheme...
 
 	## Save this config for later use
-    setKey("DefaultGrouping", res)
+    options(ZI.DefaultGrouping = res)
 
 	## Ask for the base directory
     dir <- dlgDir()$res
@@ -631,7 +514,7 @@ makeTrain <- function ()
 	if (!length(zidfiles)) return(invisible(NULL))
 
 	## Prepare the training set
-	prepare.ZITrain(dir, subdir, zidfiles, groups.template = res,
+	prepareTrain(dir, subdir, zidfiles, groups.template = res,
 		start.viewer = TRUE)
 
 	## Remember the directory...
@@ -639,7 +522,7 @@ makeTrain <- function ()
 }
 
 ## Read a training set and create a ZITrain object
-readTrain <- function ()
+collectTrain <- function ()
 {
 	## Get a possibly saved directory as default one
 	dir <- getTemp("ZI.TrainDir")
@@ -649,16 +532,21 @@ readTrain <- function ()
 	dir <- dlgDir(default = dir, title = paste("Select a", getTemp("ZIname"),
 		"training set base dir"))$res
 	if (!length(dir) || !file.exists(dir) || !file.info(dir)$isdir)
-		return(invisible())
+		return(invisible(FALSE))
+	
 	## Ask for a name for this ZITrain object
 	name <- dlgInput("Name for the ZITrain object:", default = "ZItrain")$res
-	if (!length(name)) return(invisible())
+	if (!length(name)) return(invisible(FALSE))
 	name <- make.names(name)	# Make sure it is a valid name!
-	## Get ZITrain and save it in .GlobalEnv under the given name
-	res <- get.ZITrain(dir, creator = NULL, desc = NULL, keep_ = FALSE)
+	
+	## Get the training set and save it in .GlobalEnv under the given name
+	res <- getTrain(dir, creator = NULL, desc = NULL, keep_ = FALSE)
 	assign(name, res, envir = .GlobalEnv)
+	
 	## Remember the object name
 	assignTemp("ZI.TrainName", name)
+	
+	## Print informations about this training set
 	cat("Manual training set data collected in '", name, "'\n", sep = "")
 	cat("\nClassification stats:\n")
 	print(table(res$Class))
@@ -668,16 +556,25 @@ readTrain <- function ()
 }
 
 ## Add data to an existing training set
-increaseTrain <- function ()
+addToTrain <- function ()
 {
-	## Select zid files to add in the training set
-	zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
-	if (!length(zid)) return(invisible(NULL))
+	## Select zid or zidb files to add in the training set
+	zidb <- selectFile(type = "ZidZidb", multi = TRUE, quote = FALSE)
+	if (!length(zidb)) return(invisible(FALSE))
+	
 	## Select the training set in which we add new vignettes
-	dir <- dlgDir(title = "Select training set root dir")$res
-	if (!length(dir)) return(invisible(NULL))
+	dir <- getTemp("ZI.TrainDir")
+	if (is.null(dir) || !file.exists(dir) || !file.info(dir)$isdir)
+		dir <- getwd()
+	## Ask for a base directory of a training set...
+	dir <- dlgDir(default = dir, title = paste("Select a", getTemp("ZIname"),
+		"training set base dir"))$res
+	if (!length(dir) || !file.exists(dir) || !file.info(dir)$isdir)
+		return(invisible(FALSE))
+	
 	## Extract vignettes in the training set in a _NewVignettesX directory
-	increase.ZITrain(zidfiles = zid, train = dir)  
+	cat("Adding vignettes from these files to _ subdir...\n")
+	increaseTrain(traindir = dir, zidbfiles = zidb)
 }
 
 ## New version to accept variables selection and/or new formula 1.2-2
@@ -1023,8 +920,8 @@ processSamples <- function()
 	
 	## Read a conversion table from disk (from /etc/Conversion.txt)
 	## or an other position
-	## First read the registry to determine which file to use...
-	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"),
+	## First read the options to determine which file to use...
+	ConvFile <- getOption("ZI.ConversionFile", file.path(getTemp("ZIetc"),
 		"Conversion.txt"))
 	## Does this file exists?
 	if (!file.exists(ConvFile) || ConvFile == "")
@@ -1040,7 +937,7 @@ processSamples <- function()
 	conv <- read.table(ConvFile2, header = TRUE, sep = "\t")
 	
 	## Save this config for later use
-	setKey("ConversionFile", ConvFile2)
+	options(ZI.ConversionFile = ConvFile2)
 	
 	## Get class breaks for size spectra
 	brks <- dlgInput("Breaks for size spectrum classes (empty for no spectrum):",
@@ -1256,24 +1153,21 @@ calib <- function ()
 optInOutDecimalSep <- function ()
 {
 	## Define the default numeric decimal separator for input and output
-
-	## First read the registry to determine current value...
 	Dec <- getDec()
 	## Possibly ask for another one
 	DecList <- c(".", ",")
-	DecSel <- dlgList(DecList, preselect = ".", multiple = FALSE,
+	DecSel <- dlgList(DecList, preselect = Dec, multiple = FALSE,
 		title = "In/Out decimal separator")$res
 	## Is the cancel button pressed, or is it still the same decimal separator
 	if (!length(DecSel) || DecSel == Dec) return(invisible(Dec))
-	## Record it in the registry key
-    setKey("OptionInOutDecimalSep", DecSel)
+	## Record it in options
+    options(OutDec = DecSel)
     ## Indicate change
     cat("In/Out decimal separator changed to '", DecSel, "'\n", sep = "")
  	return(invisible(DecSel))
 }
 
 ## Utility functions ###########################################################
-## Little function to help the user
 ## Function to select groups to keep for the comparison
 selectGroups <- function (ZIC, multiple = TRUE,
 title = "Select taxa you want to plot")
@@ -1296,91 +1190,6 @@ selectSamples <- function (Samples = NULL)
 	if (!length(Sel)) return(character(0))
 	res <- Samples[Names %in% Sel]
 	return(res)
-}
-
-vignettesClass <- function ()
-{
-	## Extract on zid to respective directories
-	## Select zid files to be classified
-	zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
-	if (!length(zid)) return(invisible(NULL))
-	## Look if we have a classifier object defined
-	zic <- getTemp("ZI.ClassName", default = "")
-	zic <- getVar("ZIClass", multi = FALSE, default = zic,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-	if (!length(zic)) return(invisible())
-	zicObj <- get(zic, envir = .GlobalEnv)
-
-	## Classify vignettes  
-	if (length(zid) > 1) {
-		classVignettesAll(zidfiles = zid, Dir = "_manuValidation", ZIClass = zicObj)
-	} else {
-		classVignettes(zidfile = zid, Dir = noExtension(zid), ZIClass = zicObj)
-	}
-}
-
-## Subpart of zid file and return a subtable corresponding to the threshold
-subpartZIDat <- function ()
-{
-    ## Select files to use
-    zidFile <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
-	if (!length(zidFile)) return(invisible(NULL))
-
-    ## Read the zid file
-    zid <- zidDatRead(zidFile)
-
-    ## Select a parameter to use for the threshold
-    threshold <- createThreshold(ZIDat = zid)    
-
-    ## Apply the thresold
-    res <- subpartThreshold(ZIDat = zid, Filter = threshold)
-    return(res)
-}
-
-## Classify vignettes after Filter
-classifyAfterFilter <- function ()
-{
-    ## Extract on zid to respective directories
-    zid <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
-    if (!length(zid)) return(invisible(NULL))
-	
-    ## Look if we have a classifier object defined
-    zic <- getTemp("ZI.ClassName", default = "")
-    zic <- getVar("ZIClass", multi = FALSE, default = zic,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-    if (!length(zic)) return(invisible())
-    zicObj <- get(zic, envir = .GlobalEnv)
-
-    ## Give a name for the final directory
-    finalDir <- dlgInput("Name for the automatic classification directory:",
-		default = "filterClassification", title = "Parameter filter")$res
-    if (!length(finalDir)) return(invisible(NULL))
-	
-    ## Read the zid file
-    ZIDat <- zidDatRead(zid)
-    
-    ## Select a parameter to use for the threshold
-    threshold <- createThreshold(ZIDat = ZIDat)        
-    
-    ## Classify vignettes
-    classVignettes(zidfile = zid, ZIDat = ZIDat, ZIClass = zicObj, Dir = finalDir,
-		Filter = threshold)
-}
-
-## Create a batch file for FlowCAM image analysis
-## TODO: make a menu entry + an entry in NAMESPACE for this function!
-batchFilePlugin <- function ()
-{
-	## Select a FlowCAM context file
-	ctxFile <- dlgOpen(multiple = FALSE, title = "Select a context file...",
-		filters = matrix(c("FlowCAM Context file", ".ctx"), ncol = 2,
-		byrow = TRUE))$res
-	if (!length(ctxFile)) return(invisible(NULL))
-	## Create the table
-	createBatchFile(ctxfile = ctxFile, fil = FALSE, largest = FALSE,
-		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
-		masks = FALSE, verbose = TRUE, txt = FALSE,
-		import.name = "batchExampleParameters")
 }
 
 ## Select one or several files of a given type
@@ -1467,8 +1276,6 @@ title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
 }
 
 ## Get the name of one or more lists with their components of a given class
-## Note: this is used as a collection in other languages
-## (there is no such collection in R, so, we use a list here!)
 getList <- function (class = "data.frame", default = "", multi = FALSE,
 title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
 {	
@@ -1490,19 +1297,6 @@ title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
 	return(varsel)		
 }
 
-## Create a threshold formula
-createThreshold <- function (ZIDat)
-{
-    ## Select the parameter to use
-    Param <- dlgList(names(ZIDat), multiple = FALSE,
-		title = "Parameter to use")$res
-    ## Select the threshold
-    Message <- paste("Range:", "From", round(range(ZIDat[, Param])[1],
-		digits = 1), "To", round(range(ZIDat[, Param])[2], digits = 1),
-		";", "Select the threshold:")
-    Threshold <- dlgInput(Message, default = paste(Param, "< 50"))$res
-    if (!length(Threshold)) return(invisible(NULL)) else return(Threshold)
-}
 
 ## Formula calculation by variables selection for the classifier creation v1.2-2
 formulaVarSel <- function (ZITrain,
@@ -1549,4 +1343,224 @@ calc.vars = getOption("ZI.calcVars", "calcVars"))
 	keep <- mes[!mes %in% DontKeep]
 	res <- as.formula(paste("Class ~ ", paste(keep, collapse = "+")))
 	return(res)
+}
+
+
+
+###### TODO: check this! ##################
+## Create a threshold formula
+createThreshold <- function (ZIDat)
+{
+    ## Select the parameter to use
+    Param <- dlgList(names(ZIDat), multiple = FALSE,
+		title = "Parameter to use")$res
+    ## Select the threshold
+    Message <- paste("Range:", "From", round(range(ZIDat[, Param])[1],
+		digits = 1), "To", round(range(ZIDat[, Param])[2], digits = 1),
+		";", "Select the threshold:")
+    Threshold <- dlgInput(Message, default = paste(Param, "< 50"))$res
+    if (!length(Threshold)) return(invisible(NULL)) else return(Threshold)
+}
+
+
+
+vignettesClass <- function ()
+{
+	## Extract on zid to respective directories
+	## Select zid files to be classified
+	zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
+	if (!length(zid)) return(invisible(NULL))
+	## Look if we have a classifier object defined
+	zic <- getTemp("ZI.ClassName", default = "")
+	zic <- getVar("ZIClass", multi = FALSE, default = zic,
+		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+	if (!length(zic)) return(invisible())
+	zicObj <- get(zic, envir = .GlobalEnv)
+
+	## Classify vignettes  
+	if (length(zid) > 1) {
+		classVignettesAll(zidfiles = zid, Dir = "_manuValidation", ZIClass = zicObj)
+	} else {
+		classVignettes(zidfile = zid, Dir = noExtension(zid), ZIClass = zicObj)
+	}
+}
+
+## Subpart of zid file and return a subtable corresponding to the threshold
+subpartZIDat <- function ()
+{
+    ## Select files to use
+    zidFile <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
+	if (!length(zidFile)) return(invisible(NULL))
+
+    ## Read the zid file
+    zid <- zidDatRead(zidFile)
+
+    ## Select a parameter to use for the threshold
+    threshold <- createThreshold(ZIDat = zid)    
+
+    ## Apply the thresold
+    res <- subpartThreshold(ZIDat = zid, Filter = threshold)
+    return(res)
+}
+
+## Classify vignettes after Filter
+classifyAfterFilter <- function ()
+{
+    ## Extract on zid to respective directories
+    zid <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
+    if (!length(zid)) return(invisible(NULL))
+	
+    ## Look if we have a classifier object defined
+    zic <- getTemp("ZI.ClassName", default = "")
+    zic <- getVar("ZIClass", multi = FALSE, default = zic,
+		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
+    if (!length(zic)) return(invisible())
+    zicObj <- get(zic, envir = .GlobalEnv)
+
+    ## Give a name for the final directory
+    finalDir <- dlgInput("Name for the automatic classification directory:",
+		default = "filterClassification", title = "Parameter filter")$res
+    if (!length(finalDir)) return(invisible(NULL))
+	
+    ## Read the zid file
+    ZIDat <- zidDatRead(zid)
+    
+    ## Select a parameter to use for the threshold
+    threshold <- createThreshold(ZIDat = ZIDat)        
+    
+    ## Classify vignettes
+    classVignettes(zidfile = zid, ZIDat = ZIDat, ZIClass = zicObj, Dir = finalDir,
+		Filter = threshold)
+}
+
+## Create a batch file for FlowCAM image analysis
+## TODO: make a menu entry + an entry in NAMESPACE for this function!
+batchFilePlugin <- function ()
+{
+	## Select a FlowCAM context file
+	ctxFile <- dlgOpen(multiple = FALSE, title = "Select a context file...",
+		filters = matrix(c("FlowCAM Context file", ".ctx"), ncol = 2,
+		byrow = TRUE))$res
+	if (!length(ctxFile)) return(invisible(NULL))
+	## Create the table
+	createBatchFile(ctxfile = ctxFile, fil = FALSE, largest = FALSE,
+		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
+		masks = FALSE, verbose = TRUE, txt = FALSE,
+		import.name = "batchExampleParameters")
+}
+
+
+
+######## TO REWORK! ############################################################
+startPgm <- function (program, cmdline = "", switchdir = FALSE,
+iconize = FALSE, wait = FALSE)
+{
+	## Look if the program path is recorded in the options
+	pgmPath <- getOption(program)
+	if (!is.null(pgmPath) && file.exists(pgmPath)) {
+		## Do we need to switch directory?
+		if (switchdir) {
+			curdir <- getwd()
+			on.exit(setwd(curdir))
+			setwd(dirname(pgmPath))
+		}
+		## Start it
+		system(paste(pgmPath, cmdline), wait = wait, ignore.stdout = TRUE,
+			ignore.stderr = TRUE)
+	} else stop("Program '", program, "' not found!")
+	## Do we need to iconize the assistant?
+#	if (iconize && !is.null(WinGet("ZIDlgWin")))
+#		tkwm.iconify(WinGet("ZIDlgWin"))
+}
+
+modalAssistant <- function (title, text, init, options = NULL, check = NULL,
+select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
+{
+	## TODO!!!!
+	cat("Modal assistant temporarily disabled!\n")
+	return(returnValOnCancel)
+	
+#	## Create an assistant dialog box which behaves as a modal dialog box
+#	text <- paste(text, collapse = "\n")
+#	try(tkWinAdd("ZIAssist", title = title, bind.delete = FALSE))
+#	ZIAssist <- WinGet("ZIAssist")
+#    tkbind(ZIAssist, "<Destroy>", function () {
+#		tkgrab.release(ZIAssist)
+#		tkWinDel("ZIAssist")
+#		#tkfocus(WinGet("ZIDlgWin"))
+#	})
+#	## Assign cancel by default to the return value
+#    assignTemp("ZIret", returnValOnCancel)
+#    ## Do not show it until it is completelly constructed!
+#	tkwm.withdraw(ZIAssist)
+#	## Change the icon of that window (if under Windows)
+#    if (isWin()) tk2ico.set(ZIAssist, getTemp("ZIico"))
+#	## This is the variable holding the result
+#	resVar <- tclVar(init)
+#	## Draw the dialog area
+#	dlgarea <- tk2frame(ZIAssist)
+#	## Place the logo to the left
+#    Logo <- tklabel(dlgarea,image = ImgGet("$Tk.logo"), bg = "white")
+#	## Place dialog box data
+#	txtarea <- tk2frame(ZIAssist)
+#	Text <- tk2label(txtarea, text = text, width = 50)
+#	#### TODO: this causes a problem in Tile 0.7.2?! , justify = "left")
+#	tkgrid(Text, stick = "w")
+#	## Do we put options?
+#	if (!is.null(options)) {
+#		for (i in 1:length(options)) {
+#			rb <- tk2radiobutton(txtarea)
+#			tkconfigure(rb, variable = resVar, value = options[i],
+#				text = options[i])
+#			#### TODO: this causes a problem in Tile 0.7.2?! , justify = "left")
+#			tkgrid(rb, sticky = "w")
+#		}
+#	}
+#	## Do we have to place a checkbox?
+#	if (!is.null(check)) {
+#		cb <- tk2checkbutton(txtarea)
+#		tkconfigure(cb, variable = resVar, text = check)
+#		#### TODO: this causes a problem in Tile 0.7.2?! , justify = "left")
+#		tkgrid(cb, sticky = "w")
+#	}
+#	## Place everything in the dialog box
+#	tkgrid(Logo, txtarea)
+#	tkpack(dlgarea, anchor = "nw")
+#	## Place buttons
+#
+#    "onOK" <- function () {
+#        assignTemp("ZIret", tclvalue(resVar))
+#        tkgrab.release(ZIAssist)
+#        tkWinDel("ZIAssist")
+#		#tkfocus(WinGet("ZIDlgWin"))
+#    }
+#    "onCancel" <- function () {
+#        tkgrab.release(ZIAssist)
+#        tkWinDel("ZIAssist")
+#		#tkfocus(WinGet("ZIDlgWin"))
+#    }
+#    butbar <- tk2frame(ZIAssist)
+#    OK.but <- tk2button(butbar, text = "   OK   ", command = onOK)
+#    Cancel.but <- tk2button(butbar, text = " Cancel ", command = onCancel)
+#	if (is.null(help.topic)) {
+#    	tkgrid(OK.but, Cancel.but, sticky = "e")
+#	} else {    # Create also a help button
+#		"onHelp" <- function () {
+#			eval(browseURL(help(help.topic , htmlhelp=TRUE)[1] ),
+#				envir = .GlobalEnv )
+#		}
+#        Help.but <- tk2button(butbar, text = "  Help  ", command = onHelp)
+#        tkgrid(OK.but, Cancel.but, Help.but, sticky = "e")
+#	}
+#	tkpack(butbar, side = "bottom", fill = "x")
+#	tkpack(tk2separator(ZIAssist), side = "bottom", fill = "x")
+#    tkbind(ZIAssist, "<Return>", onOK)
+#	if (isWin()) tcl("wm", "attributes", ZIAssist, toolwindow = 1, topmost = 1)
+#	tkwm.resizable(ZIAssist, 0, 0)
+#	## Focus on that window
+#	tkfocus(ZIAssist)	# Doesn't work with Rgui.exe, but tkwm.deiconify does
+#    tkwm.deiconify(ZIAssist)
+#    tkgrab.set(ZIAssist)
+#    tkwait.window(ZIAssist)
+#    return(getTemp("ZIret"))
 }

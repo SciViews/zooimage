@@ -10,7 +10,7 @@ $Tk.ZIDlgWin
 ||[butBluecase]Make .zid files...		~~ makeZid()
 ||-
 ||[butHand1]Make training set...		~~ makeTrain()
-||[butHand2]Read training set..			~~ readTrain()
+||[butHand2]Read training set..			~~ collectTrain()
 ||[butDirectory]Make classifier...		~~ makeClass()
 ||[butGraph]Analyze classifier...		~~ analyzeClass()
 ||-

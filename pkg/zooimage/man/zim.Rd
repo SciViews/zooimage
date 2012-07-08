@@ -268,7 +268,7 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   Look at examples, and you will better understand how this works!
 }
 
-\author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
+\author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
 \seealso{ \code{\link{zieMake}}, \code{\link{zipImg}},
   \code{\link{zidCompress}}, , \code{\link[svMisc]{fileEdit}} }

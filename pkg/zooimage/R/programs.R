@@ -85,7 +85,8 @@ misc <- function (prog, args, ...)
 
 misc_dcraw <- function (file, arguments, output)
 {
-	checkCapable("dc_raw")
+	## TODO: look for dc_raw differently!
+	#checkCapable("dc_raw")
 	out <- try(misc("dc_raw", '"%s" %s > "%s" ', file, args, output),
 		silent = TRUE)
 	if (inherits(out, "try-error"))

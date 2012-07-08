@@ -10,8 +10,8 @@ $Tk.ZIDlgWin
 ||Make .&zid files...	Ctrl+Z			~~ makeZid()
 ||-
 ||&Make training set...	Ctrl+M			~~ makeTrain()
-||Add vignettes to training set         	~~ increaseTrain()
-||&Read training set..	Ctrl+T			~~ readTrain()
+||Add vignettes to training set         	~~ addToTrain()
+||&Read training set..	Ctrl+T			~~ collectTrain()
 ||Make &classifier...	Ctrl+C			~~ makeClass()
 ||A&nalyze classifier...	Ctrl+N		~~ analyzeClass()
 ||Automatic classification of vignettes 	~~ vignettesClass()
@@ -80,15 +80,10 @@ $Tk.ZIDlgWin
 |||zisRead()                    	        ~~ guiDlgFunction("zisRead")
 ||--
 ||$ZooImage &Training set
-|||prepare.ZITrain()				~~ guiDlgFunction("prepare.ZITrain")
-|||get.ZITrain()				~~ guiDlgFunction("get.ZITrain")
+|||prepareTrain()				~~ guiDlgFunction("prepareTrain")
+|||getTrain()				        ~~ guiDlgFunction("getTrain")
+|||increaseTrain()                              ~~ guiDlgFunction("increaseTrain")
 |||-
-|||read.ZITrain()				~~ guiDlgFunction("read.ZITrain")
-|||write.ZITrain()				~~ guiDlgFunction("write.ZITrain")
-|||--
-|||zip.ZITrain()				~~ guiDlgFunction("zip.ZITrain")
-|||unzip.ZITrain()				~~ guiDlgFunction("unzip.ZITrain")
-|||---
 |||re&code.ZITrain()				~~ guiDlgFunction("recode.ZITrain")
 |||ZIRecodeLevels()			        ~~ guiDlgFunction("ZIRecodeLevels")
 ||$ZooImage &Classifier

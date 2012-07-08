@@ -80,7 +80,7 @@ realtimeStart <- function ()
 	} else Prev <- NULL
 	
 	## Select a conversion table
-	ConvFile <- getKey("ConversionFile", file.path(getTemp("ZIetc"),
+	ConvFile <- getOption("ZI.ConversionFile", file.path(getTemp("ZIetc"),
 		"Conversion.txt"))
 	## Ask for selecting a Conversion file
 	ConvFile <- dlgOpen(title = "Select a conversion file",

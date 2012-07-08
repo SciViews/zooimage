@@ -24,19 +24,19 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	if (!checkFirstLine(zisfile)) return(NULL)
 	rl <- readLines(zisfile)
 	if (!length(rl) > 1) {
-		warning("The file is empty or corrupted!")
+		warning("the file is empty or corrupted!")
 		return(NULL)
 	}
 	positions <- grep("^[[].*[]]", rl)
-	names <- sub("^[[](.*)[]]", "\\1", rl[positions])
-	if (!all(expected.sections %in% names)) {
-		warning("Incorrect zis file, does not have all expected sections")
+	sections <- sub("^[[](.*)[]]", "\\1", rl[positions])
+	if (!all(expected.sections %in% sections)) {
+		warning("incorrect zis file; it does not contain all expected sections")
 		return(NULL)
 	}
 	start <- positions + 1
 	end <- c(tail(positions, -1) - 2, length(rl))
 	readData <- lapply(1:length(start), function (i) {
-		if (names[i] == "Description") {
+		if (sections[i] == "Description") {
 			rx <- "^(.*?)=(.*)$"
 			txt <- rl[start[i] : end[i]] 
 			variables <- sub(rx, "\\1", txt)
@@ -53,7 +53,7 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 		}
 		return(out)
 	})
-	names(data) <- names
+	names(readData) <- sections
 	Samples <- readData[["Samples"]]
 	Samples$Date <- as.Date(Samples$Date)
 	Series <- readData[["Series"]]

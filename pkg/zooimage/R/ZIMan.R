@@ -190,8 +190,8 @@ addIdent <- function (RdataFile, Auto)
 ZIManRead <- function (dir, creator = NULL, desc = NULL, keep_ = FALSE,
 na.rm = FALSE)
 {
-	## Use get.ZITrain function to read vignette
-	ManValidation <- get.ZITrain(dir = dir, creator = creator, desc = desc,
+	## Use getTrain() function to read vignette
+	ManValidation <- getTrain(traindir = dir, creator = creator, desc = desc,
 		keep_ = keep_, na.rm = na.rm)
   
 	## Add attributes with names of samples already manually validated

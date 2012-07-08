@@ -25,7 +25,7 @@ License: \tab GPL 2 or above at your convenience.\cr
 }
 Everytime you publish results that use PhytoImage, you must place a reference
 to the Zoo/PhytoImage web site (http://www.sciviews.org/zooimage) in your publication.
-For papers, send also a reprint to Philippe.Grosjean@umh.ac.be, preferrably
+For papers, send also a reprint to Philippe.Grosjean@umons.ac.be, preferrably
 as a PDF file.
 }
 \author{

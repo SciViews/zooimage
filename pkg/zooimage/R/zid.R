@@ -22,8 +22,10 @@ check.vignettes = TRUE)
 	## Check the format of the file
 	## This should be a directory containing XXX+YY_dat1.zim files
 	## + .jpg or .png files (vignettes)
-	if (any(!type %in% c("ZI1", "ZI2", "ZI3")))
-		stop("only 'ZI1', 'ZI2' or 'ZI3' are currently supported for 'type'")
+	if (any(!type %in% c("ZI1", "ZI2", "ZI3"))) {
+		warning("only 'ZI1', 'ZI2' or 'ZI3' are currently supported for 'type'")
+		return(invisible(FALSE))
+	}
 	
 	## Check the list of _dat1.zim
 	dat1files <- zimDatList(zidir)
@@ -37,16 +39,12 @@ check.vignettes = TRUE)
 	dat1files <- sort(dat1files)
 	## Default to -1 for corrupted dat1 files
 	nitems <- sapply(dat1files, function(x) {
-		tryCatch(zimVerify(file.path(zidir, x), is.dat1 = TRUE ), 
-			zooImageError = function (e) {
-				logError(e)
-				return(-1)
-		})
+		zimVerify(file.path(zidir, x), is.dat1 = TRUE )
 	})
 	ok <- all(nitems != -1)
 	
 	## Check the vignettes
-	if (check.vignettes) {
+	if (isTRUE(as.logical(check.vignettes))) {
         ## Check that we have corresponding vignettes (XXX+YY_ZZZ.jpg/png files)
     	samples <- sub("_dat1[.]zim$", "", dat1files)
 		
@@ -72,11 +70,11 @@ check.vignettes = TRUE)
 			## Construct a vector with names of vignettes as they should be
     		chkvigs <- paste(samples[i], "_", 1:n, ".", vigstype, sep = "")
     		if (length(vigs) == 0 && length(chkvigs) > 0) {
-				warning(paste(" no vignettes for", samples[i]))
+				warning("no vignettes for ", samples[i])
 				ok <- FALSE
             } else if (length(chkvigs) != length(vigs) ||
 				!all(sort(chkvigs) == sort(vigs))) {
-				warning(paste(" mismatch vignettes for", samples[i]))
+				warning("mismatch vignettes for ", samples[i])
 				ok <- FALSE 
 			}
         }
@@ -118,9 +116,8 @@ bell = FALSE)
 	logProcess("\nVerification...")
 	
 	ok <- sapply(samples, function(s) {
-		tryCatch(zidVerify(s, type = type,
-			check.vignettes = check.vignettes), 
-			zooImageError = function (e) return(-1))
+		zidVerify(s, type = type,
+		check.vignettes = check.vignettes)
 	})
 	
 	## Clean up
@@ -215,18 +212,9 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		## to the function's job, instead we could throw a condition 
 		## from zidCompress when it starts to indicates it has started
 		Progress(s, smax)  
-		
-		tryCatch({  
-			zidCompress(samples[s], type = type, check = FALSE, 
-				check.vignettes = check.vignettes, replace = replace,
-				delete.source = delete.source, check.zip = FALSE)
-			}, zooImageError = function (e) {
-				logError (e)
-				ok <<- FALSE
-			}, zooImageWarning = function (w) {
-				logWarning(w)
-				ok <<- FALSE
-			})
+		zidCompress(samples[s], type = type, check = FALSE, 
+			check.vignettes = check.vignettes, replace = replace,
+			delete.source = delete.source, check.zip = FALSE)
 	}
 	clearProgress()
 	

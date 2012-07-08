@@ -58,7 +58,7 @@ zidExtract(file, zidfile)
     for instance "mysample/mysample+A1\_dat1.zim") }
 }
 
-\author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
+\author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
 \seealso{ \code{\link{zimMake}} }
 \examples{

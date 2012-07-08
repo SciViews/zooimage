@@ -35,7 +35,7 @@ optInOutDecimalSep()
   \code{exitZI()} unloads the zooimage package (for instance, to allow updating it).
 }
 
-\author{ Philippe Grosjean <Philippe.Grosjean@umh.ac.be> }
+\author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
 \seealso{ \code{\link{zidCompress}} }
 \examples{

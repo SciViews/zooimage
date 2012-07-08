@@ -110,7 +110,7 @@ message = 'Path "%s" does not exist or is not a directory')
 	return(TRUE)
 }
 
-#### OK #### batcheable! (used in prepare.ZITrain())
+#### OK #### batcheable! (used in prepareTrain())
 checkEmptyDir <- function (dir, message = 'dir "%s" is not empty')
 {	
 	## Works only on a single dir (not vectorized code)

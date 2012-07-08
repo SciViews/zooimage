@@ -21,18 +21,21 @@ check = TRUE, check.vignettes = TRUE, replace = FALSE,
 delete.source = replace)
 {		
 	## Check the format
-	if (type != "ZI3")
-		stop("only 'ZI3' is currently supported for 'type'")
+	if (type != "ZI3") {
+		warning("only 'ZI3' is currently supported for 'type'")
+		return(invisible(FALSE))	
+	}
 	
 	if (!isTRUE(replace) && file.exists(zidbfile)) {
 		## Nothing to do... the file already exists
-		if (isTRUE(delete.source) && file.exists(zidir) && file.info(zidir)$isdir)
+		if (isTRUE(as.logical(delete.source)) &&
+			file.exists(zidir) && file.info(zidir)$isdir)
 			unlink(zidir, recursive = TRUE)
 		return(invisible(TRUE))	# Nothing else to do
 	}
 	
 	## Make sure everything is fine for this directory
-	if (isTRUE(check))
+	if (isTRUE(as.logical(check)))
 		zidVerify(zidir, type = type, check.vignettes = check.vignettes)
 	
 	## Make sure the .RData file is created (or refreshed)
@@ -173,19 +176,10 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		## Progress should be taken out of here since it is not really related 
 		## to the function's job, instead we could throw a condition 
 		## from zidbMakeAll when it starts to indicates it has started
-		Progress(s, smax)  
-		
-		tryCatch({  
-			zidbMake(samples[s], type = type, check = FALSE, 
-				check.vignettes = check.vignettes, replace = replace,
-				delete.source = delete.source)
-			}, zooImageError = function (e) {
-				logError (e)
-				ok <<- FALSE
-			}, zooImageWarning = function (w) {
-				logWarning(w)
-				ok <<- FALSE
-			})
+		Progress(s, smax)	
+		zidbMake(samples[s], type = type, check = FALSE, 
+			check.vignettes = check.vignettes, replace = replace,
+			delete.source = delete.source)
 	}
 	clearProgress()
 	

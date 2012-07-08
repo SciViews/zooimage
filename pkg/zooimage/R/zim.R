@@ -205,9 +205,6 @@ check.table = FALSE)
 zimExtractAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
 path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 {
-	## This requires the 'unzip' program! Make sure it is available
-	checkCapable("unzip")
-
 	## Make sure all zipfiles are in the same directory
 	zipdirs <- dirname(zipfiles)
 	if (length(unique(zipdirs)) > 1)
@@ -269,17 +266,14 @@ path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 	zmax <- length(zimfiles)
 
 	ok <- sapply(1:zmax, function (i) {
-		tryCatch({
-			## Extract the .zim file from zip comment
-			zipNote(zipfiles[i], zimfiles[i])
+		## Extract the .zim file from zip comment
+		zipNote(zipfiles[i], zimfiles[i])
 
-			## Check that the .zim file is created
-			if (zimVerify(zimfiles[i]) == 0) stop("problem")
-			return(TRUE)
-		}, zooImageError = function (e) {
-			logError(e)
+		## Check that the .zim file is created
+		if (zimVerify(zimfiles[i]) == 0) {
+			warning("wrong zim file '", zimfiles[i], "'")
 			return(FALSE)
-		})
+		} else return(TRUE)
 	})
 
 	## Clean up
@@ -296,9 +290,6 @@ zimRefreshAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
 zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE,
 bell = FALSE)
 {
-	## Make sure 'zip' is available
-	checkCapable("zip")
-
     ## Make sure we have full path for zip files
 	if (zipdir == ".") zipdir <- getwd()
 	zipfiles <- file.path(zipdir, zipfiles)
@@ -356,13 +347,7 @@ bell = FALSE)
 
 		oks <- sapply(1:zmax, function (z) {
 			Progress(z, zmax)
-			tryCatch({
-				zimVerify(zfiles[z])
-				return(TRUE)
-			}, zooImageError = function (e) {
-				logError(e)
-				return(FALSE)
-			})
+			return(zimVerify(zfiles[z]))
 		})
 		ok <- all(oks)
 		clearProgress()

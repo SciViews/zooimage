@@ -18,14 +18,30 @@
 ## Check that the file is a zic file
 zicCheck <- function (zicfile)
 {	
+	zicfile <- as.character(zicfile)
+	if (!length(zicfile)) {
+		warning("No zicfile provided")
+		return(FALSE)
+	}
+	if (length(zicfile) > 1) {
+		warning("testing only first zicfile")
+		zicfile <- zicfile[1]
+	}
+	
 	## This should be a .zic file directly
-	if (!checkFileExists(zicfile)) return(NULL)
+	if (!checkFileExists(zicfile)) return(FALSE)
 	
 	## First line of the file must be "ZI1", "ZI2", or "ZI3"
-	if (!checkFirstLine(zicfile)) return(NULL) 
+	if (!checkFirstLine(zicfile)) return(FALSE) 
 	
 	## Second line must be [path]
-	Line2 <- scan(zicfile, character(), skip = 1, nmax = 1, quiet = TRUE)
-	if (tolower(Line2) != "[path]")
-		stop("not a ZooImage .zic file, or corrupted!")
+	Line2 <- scan(zicfile, character(), skip = 1, nmax = 2, quiet = TRUE)
+	if (tolower(Line2[1]) != "[path]") {
+		warning("not a .zic file, or corrupted at line #2!")
+		return(FALSE)
+	}
+	if (length(Line2) < 2) {
+		warning("empty .zic file is not correct")
+		return(FALSE)
+	} else return(TRUE)
 }

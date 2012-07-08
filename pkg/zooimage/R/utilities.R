@@ -210,40 +210,18 @@ parseIni <- function (data, label = "1")
 	return(DatSec)
 }
 
-
+## Decimal separator to use in import/export ZooImage files
+getDec <- function ()
+{
+	Dec <- getOption("OutDec", ".")
+	## It must be either "." or ","!
+	if (!Dec %in% c(".", ",")) Dec <- "."
+	Dec
+}
 
 
 ########## ALL THE REST STILL MUST BE CHECKED!!! ###############################
 ########## + code in misc.R!!!
-
-## Set a key permanently (in the registry, if under Windows)
-setKey <- function (key, value, type = "sz")
-{
-#	if(!isWin()) {
-		assignTemp(sprintf("zooimage-%s", key), value, TRUE )
-#	} else {
-#		tk2reg.set(getTemp("ZIkey"), key, value, type = "sz")
-#	}
-	return(invisible(TRUE))
-}
-
-## Get a key (permanent configuration data, from the registry if under Windows)
-getKey <- function (key, default.value = NULL)
-{ 	
-	## Retrieve a ZooImage key in the registry
-	## TODO: should we use this also for windows ?
-#	if (!isWin()) {
-		return(getTemp(sprintf("zooimage-%s", key), default.value))
-#	}
-	
-	## Look if the key is defined
-#	ZIkey <- getTemp("ZIkey")
-#	if (key %in% tk2reg.values(ZIkey)) {
-#    	## Get the content of that key
-#		return(tk2reg.get(ZIkey, key))
-#	} else return(default.value)	
-}
-
 
 ## Used only in Progress() and clearProgress() that I want to eliminate (use svMisc functions instead!)
 backspaces <- function (n = getOption("width"))
@@ -318,7 +296,7 @@ clearProgress <- function ()
 #	}
 #	
 #	## Save the current default directory for future use
-#	setKey("DefaultDirectory", getwd())
+#	options(ZI.DefaultDirectory = getwd())
 #}
 
 ## Get the path of an executable, giving its name and subdirectory
@@ -354,17 +332,6 @@ ZIpgmHelp <- function (pgm, subdir = "misc")
 		system(paste("man", pgm), wait = FALSE)
 	}	
 }
-
-getDec <- function ()
-{
-	Dec <- getKey("OptionInOutDecimalSep", ".")
-	DecList <- c(".", ",")
-	## It must be either "." or ","!
-	if (!Dec %in% DecList) Dec <- "."
-	return(Dec)
-}
-
-
 
 ## Function to reprocess a .RData file in a zid file
 ## TODO: place this is .zid file management instead!

@@ -156,24 +156,19 @@ show.log = TRUE, bell = FALSE)
 	
 	results <- lapply(1:imax, function (i) {
 		Progress(i, imax)
-		
 		## Modif. by Kevin Denis for manual validation --> Add ZIMan argument
-		tryCatch({
-			res <- processSample(ZidFiles[i], ZIClass = ZIClass, ZIMan = ZIMan,
-				ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
-				abd.type = abd.type, bio.taxa = bio.taxa,
-				bio.groups = bio.groups, bio.conv = bio.conv,
-				headers = headers, spec.taxa = spec.taxa,
-				spec.groups = spec.groups, spec.breaks = spec.breaks, 
-				spec.use.Dil = spec.use.Dil, exportdir = exportdir,
-				show.log = FALSE)
-			
-			logProcess("OK", ZidFiles[i])
-			return(res)
-		}, zooImageError = function (e) {
-			logError(e)
-			return(NULL)
-		})
+		res <- try(processSample(ZidFiles[i], ZIClass = ZIClass, ZIMan = ZIMan,
+			ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
+			abd.type = abd.type, bio.taxa = bio.taxa,
+			bio.groups = bio.groups, bio.conv = bio.conv,
+			headers = headers, spec.taxa = spec.taxa,
+			spec.groups = spec.groups, spec.breaks = spec.breaks, 
+			spec.use.Dil = spec.use.Dil, exportdir = exportdir,
+			show.log = FALSE), silent = TRUE)
+		if (inherits(res, "try-error")) {
+			warning(as.character(res)) # Turn the error into a warning
+			return(FALSE)
+		} else return(TRUE)
 	})
 	
 	clearProgress()
@@ -207,10 +202,12 @@ breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)
 	## Determine the number of images in this sample
 	imgs <- as.character(unique(ZIDat$Label))
 	lists <- lapply( imgs, function(im) {
-		tryCatch({
-			getSpectrum(Smp, im, taxa = taxa, groups = groups, breaks = breaks,
-				use.Dil = use.Dil)
-		}, zooImageError = function (e) return(NULL))
+		res <- try(getSpectrum(Smp, im, taxa = taxa, groups = groups,
+			breaks = breaks, use.Dil = use.Dil), silent = TRUE)
+		if (inherits(res, "try-error")) {
+			warning(as.character(res))
+			return(NULL)
+		} else return(res)
 	})
 	
 	## Add items across two lists (names must be the same)
