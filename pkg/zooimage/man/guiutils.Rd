@@ -3,7 +3,10 @@
 \alias{selectList}
 \alias{selectFile}
 \alias{selectGroups}
+\alias{createThreshold}
 \alias{imageViewer}
+\alias{startPgm}
+\alias{modalAssistant}
 
 \title{ Various GUI utility functions used by ZooImage }
 \description{
@@ -21,7 +24,12 @@ selectFile(type = c("ZipZid", "ZimZis", "LstZid", "ZidZidb", "Zip", "Zid", "Zidb
     quote = TRUE, title = NULL)
 selectGroups(groups, multiple = TRUE, title = "Select taxa you want to plot")
 
+createThreshold(ZIDat)
+
 imageViewer(dir = getwd(), pgm = getOption("ZI.ImageViewer"))
+startPgm(program, cmdline = "", switchdir = FALSE, iconize = FALSE, wait = FALSE)
+modalAssistant(title, text, init, options = NULL, check = NULL,
+    select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 }
 
 \arguments{
@@ -33,10 +41,27 @@ imageViewer(dir = getwd(), pgm = getOption("ZI.ImageViewer"))
   \item{type}{ the type of file to list in selection dialog box. }
   \item{quote}{ do we add quotes (\") around file names? }
   \item{groups}{ a list of groups to select from. }
+  \item{ZIDat}{ a ZIDat object. }
   \item{dir}{ directory to open in the image viewer. }
   \item{pgm}{ program to use as image viewer. If not provided and not defined
     in the \code{option(ZI.ImageViewer = ...)}, then, a reasonable default
     program is used (the file explorer is no better program found). }
+  \item{program}{ name of the program to start. It must match an entry in R
+    options giving the actual executable that correspond to that program. }
+  \item{cmdline}{ the command line to run to start this program. }
+  \item{switchdir}{ do we switch R current directory to the directory where
+    the program is located? }
+  \item{iconize}{ in case the ZooImage assistant is open, do we iconize it? }
+  \item{wait}{ do we wait that the external program is closed? }
+  \item{text}{ textual explanations to show in the modal assistant. }
+  \item{init}{ initial values for the modal assistant. }
+  \item{options}{ options to select in the modal assistant. }
+  \item{check}{ checkbox to add in the modal assistant. }
+  \item{select.file}{ prompt for a file to select in the modal assistant. }
+  \item{returnValOnCancel}{ what to return if the user clicks the Cancel
+    button in the modal assistant dialog box? }
+  \item{help.topic}{ help topic to associate with the Help button of the modal
+    assistant dialog box.}
 }
 
 \value{
@@ -44,9 +69,20 @@ imageViewer(dir = getwd(), pgm = getOption("ZI.ImageViewer"))
   returned to indicate the user clicked 'Cancel', while an empty string
   (\code{""}) is returned in case there is no corresponding element found.
   
+  \code{createThreshold()} prposes a dialog box to create a threshold on one
+  variable in a ZIDat object (indicate minimum and maximum value allowed for
+  that variable).
+  
   For \code{imageViewer()}, \code{TRUE} or \code{FALSE} is returned invisibly,
   depending if the program could be lauched or not. The problem is reported in
   a warning.
+  
+  \code{startPgm()} is mostly invoked for its side effect of starting an
+  external program. Status code returned by the program is returned if
+  \code{wait = TRUE}.
+  
+  \code{modalAssistant()} is currently disabled, and it will thus display no
+  dialog box and return \code{returnValOnCancel} directly.
 }
 
 \details{
@@ -86,6 +122,8 @@ selectGroups(c("Copepods", "Appendicularians", "Medusae"))
 
 ## Start default image viewer on the current working directory
 imageViewer()
+
+## TODO: examples for createThreshold(), startPgm() and modalAssistant()
 }
 }
 

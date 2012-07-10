@@ -162,7 +162,7 @@ check.zip = TRUE)
 	
 	## Do compress the directory in the .zip file
 	## Copy or move all corresponding files to a .zid zip-compressed file
-	res <- zip(zidfile, zidir)
+	res <- zip(zidfile, zidir, flags = "-rq9X")
 	
 	## Do we delete sources?
 	if (isTRUE(as.logical(delete.source)))

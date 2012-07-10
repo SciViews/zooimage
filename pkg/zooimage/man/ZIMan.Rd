@@ -7,7 +7,6 @@
 \alias{confusionCompa}
 \alias{ZIManCompa}
 \alias{SelectParam}
-\alias{createThreshold}
 \alias{subpartThreshold}
 
 \title{ Manipulate 'ZIMan' objects (containing manual validation of predictions) }
@@ -26,7 +25,6 @@ ZIManRead(dir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE)
 reclass(ZIMan)
 confusionCompa(ZIMan)
 ZIManCompa(ZIMan)
-createThreshold(ZIDat)
 subpartThreshold(ZIDat, Filter = NULL)
 }
 
@@ -56,8 +54,9 @@ subpartThreshold(ZIDat, Filter = NULL)
 \author{ Kevin Denis <Kevin.Denis@umons.ac.be> }
 
 \seealso{ \code{\link{ZIClass}} }
+
 \examples{
 ##TODO...
 }
-\keyword{ utilities }
 
+\keyword{ utilities }

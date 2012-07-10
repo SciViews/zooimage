@@ -659,7 +659,7 @@ show.log = TRUE, bell = FALSE)
 							# file.copy(file.path(curdir, zimfile), zimfile)
 							zipfile <- paste(noExtension(FileConvName), "zip",
 								sep = ".")
-							zip(zipfile, FileConvName)
+							zip(zipfile, FileConvName, flags = "-rq9X")
 							unlink(FileConvName, recursive = TRUE)
 							## Add .zim data as comment to the .zip file
 							## Note: except for a warning,

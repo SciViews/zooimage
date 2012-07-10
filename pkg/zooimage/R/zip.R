@@ -32,7 +32,7 @@ replace = FALSE, delete.source = FALSE)
 		return(invisible(FALSE))
 		
 	## Switch directory to the one of the image
-	initdir <- setwd(dirname(imagefile))
+	initdir <- setwd(dirname(normalizePath(imagefile)))
 	on.exit(setwd(initdir))
 	## Simplify image file path, since we are now in the right dir
 	imagefile <- basename(imagefile)
@@ -56,12 +56,13 @@ replace = FALSE, delete.source = FALSE)
 		message = "%s doesn't exist; cannot process the corresponding image"))
 		return(invisible(FALSE))
 
-	## Verify the content of the .zim file
-	if (isTRUE(as.logical(verify.zimfile)) && !zimVerify(zimfile))
+	## Verify the content of the .zim file (returns -1 in case of error)
+	if (isTRUE(as.logical(verify.zimfile)) && zimVerify(zimfile) < 0)
 		return(invisible(FALSE))
 
 	## Zip the image in the '_raw' subdir and add the information from the .zim
 	## file as comment
+	message("Zipping image '", imagefile, "' ...")
 	zipfile <- paste(noExtension(imagefile), "zip", sep = ".")
 	zipfile <- file.path(".", "_raw", zipfile)
 	## Make sure that "_raw" subdir exists
@@ -72,7 +73,7 @@ replace = FALSE, delete.source = FALSE)
 		unlink(zipfile)
 	
 	## zip() function returns status zero if everything is fine
-	if (zip(zipfile, imagefile) != 0) {
+	if (zip(zipfile, imagefile, flags = "-rq9X") != 0) {
 		warning("error while zipping '", basename(imagefile), "'")
 		return(invisible(FALSE))
 	}
@@ -96,30 +97,35 @@ zipImgAll <- function (path = ".", images = NULL, check = TRUE,
 replace = FALSE, delete.source = FALSE)
 {
 	## First, switch to that directory
-	inidir <- getwd()
-	checkDirExists(path)
-	setwd(path)
-	on.exit(setwd(inidir))
-	path <- getwd()	# Indicate we are now in the right path
+	if (!checkDirExists(path)) return(invisible(FALSE))
+	initdir <- setwd(path)
+	on.exit(setwd(initdir))
+	path <- "."	# Indicate we are now in the right path
 
 	## Get the list of images to process
-	if (is.null(images))	# Compute them from path
+	if (!length(images))	# Compute them from path
 		images <- dir(path, pattern = extensionPattern("tif")) # All .tif files
 
-	## Make sure there is no path associated
-	if (!all(images == basename(images)))
-		stop("You cannot provide paths for 'images', just file names")
-
 	## If there is no images in this dir, exit now
-	if (is.null(images) || length(images) == 0)
-		stop("There is no images to process in ", getwd())
+	if (!length(images)) {
+		warning("There is no images to process in ", getwd())
+		return(invisible(FALSE))	
+	}
+
+	## Make sure there is no path associated
+	if (!all(images == basename(images))) {
+		warning("You cannot provide paths for 'images', just file names")
+		return(invisible(FALSE))
+	}
 
 	## Look at associated .zim files
 	zimfiles <- paste(sampleInfo(images, "fraction",
 		ext = extensionPattern("tif") ), ".zim", sep = "")
 	keep <- file.exists(zimfiles)
-	if (!any(keep))
-		stop("You must create .zim files first (ZooImage Metadata)!")
+	if (!any(keep)) {
+		warning("You must create .zim files first (ZooImage Metadata)!")
+		return(invisible(FALSE))	
+	}
 	if (!all(keep)) {
     	warning(sum(!keep), " on ", length(keep),
 			" images have no .zim file associated and will not be processed!")
@@ -129,17 +135,15 @@ replace = FALSE, delete.source = FALSE)
 
 	## Check the zim files
 	ok <- TRUE
-	if (check) {
+	if (isTRUE(as.logical(check))) {
 		message("Verification of .zim files...")
-		ok <- TRUE
+		flush.console()
 		zfiles <- unique(zimfiles)
-		zmax <- length(zfiles)
-		oks <- sapply( 1:zmax, function (z) {
-			progress(z, zmax)
-			return(zimVerify(zfiles[z]))
-		})
-		ok <- all(oks)
-		progress(101) # Clear progression indicator
+		zimCheck <- function (zim) {
+			message("Verifying '", basename(zim), "' ...")
+			zimVerify(zim) >= 0
+		}
+		ok <- batch(zfiles, zimCheck, verbose = FALSE)
 	}
 	if (ok) {
 		message("-- Done! --")
@@ -149,18 +153,19 @@ replace = FALSE, delete.source = FALSE)
 	}
 
 	## If everything is ok compress these files
-	imax <- length(images)
 	message("Compression of images...")
-
-	oks <- sapply(1:imax, function (i) {
-		progress(i, imax)
-		zipImg(images[i], verify.zimfile = FALSE, replace = replace,
-			delete.source = delete.source)
-	})
-	
-	progress(101) # Clear progression indicator
-	message("--- Done! --")
-	return(invisible(TRUE))
+	flush.console()
+	ok <- batch(images, zipImg, verify.zimfile = FALSE,
+		replace = replace, delete.source = delete.source, verbose = FALSE)
+	if (!ok) {
+		warning(sum(attr(ok, "ok")), "/", length(images),
+			" images were compressed")
+		## Note: we don't detail here, because one can see created files!
+		invisible(FALSE)
+	} else {
+		message("-- Done! --")
+		invisible(TRUE)
+	}
 }
 
 ## Uncompress .tif image and .zim file from a .zip archive file
@@ -178,10 +183,22 @@ unzipImg <- function (zipfile, replace = FALSE, delete.source = FALSE)
 		message = "%s doesn't exist, or is a directory!"))
 		return(invisible(FALSE))
 	
+	## Special case: if dir is _raw, then extract into parent dir (..)
+	isRawDir <- basename(dirname(normalizePath(zipfile))) == "_raw"
+	
+	## Switch directory to the one of the zip archive
+	initdir <- setwd(dirname(normalizePath(zipfile)))
+	on.exit(setwd(initdir))
+	## Simplify zip file path, since we are now in the right dir
+	zipfile <- basename(zipfile)
+	
 	## Determine the name of the corresponding .zim file
 	fraction <- sampleInfo(zipfile, "fraction",
 		ext = extensionPattern("zip"))
 	zimfile <- paste(fraction, "zim", sep = ".")
+	if (isRawDir) zimfile <- file.path("..", zimfile)
+	
+	message("Unzipping '", zipfile, "' ...")
 	
 	## Do we replace existing .zim files?
 	replace <- isTRUE(as.logical(replace))
@@ -192,8 +209,13 @@ unzipImg <- function (zipfile, replace = FALSE, delete.source = FALSE)
 	}
 	
 	## Unzip the .tif image
-	if (!length(unzip(zipfile, overwrite = replace)))
+	if (isRawDir) exdir <- ".." else exdir <- "."
+	if (!length(tryCatch(unzip(zipfile, overwrite = replace, junkpaths = TRUE,
+		exdir = exdir), error = function (e) warning(e),
+			warning = function (w) return()))) {
+		message("    ... not done!")
 		return(invisible(FALSE))
+	}
 
 	## Do we delete zip archive? (not much a problem if it fails here)
 	if (isTRUE(as.logical(delete.source))) unlink(zipfile)
@@ -202,9 +224,44 @@ unzipImg <- function (zipfile, replace = FALSE, delete.source = FALSE)
 	invisible(TRUE)
 }
 
+## Extract all .zim, .tif or both from .zip files
 unzipImgAll <- function (path = ".", zipfiles = NULL, replace = FALSE,
 delete.source = FALSE)
 {
-	## Extract all .zim, .tif or both from .zip files
-	stop("Not implemented yet!")
+	## First, switch to that directory
+	if (!checkDirExists(path)) return(invisible(FALSE))
+	initdir <- setwd(path)
+	on.exit(setwd(initdir))
+	path <- "."	# Indicate we are now in the right path
+
+	## Get the list of zip archives to process
+	if (!length(zipfiles))	# Compute them from path
+		zipfiles <- dir(path, pattern = extensionPattern("zip")) # All .zip
+
+	## If there is no .zip files in this dir, exit now
+	if (!length(zipfiles)) {
+		warning("There is no zip archives to process in ", getwd())
+		return(invisible(FALSE))	
+	}
+
+	## Make sure there is no path associated
+	if (!all(zipfiles == basename(zipfiles))) {
+		warning("You cannot provide paths for 'zipfiles', just file names")
+		return(invisible(FALSE))
+	}
+
+	## Uncompress these files
+	message("Uncompression of zip archives...")
+	flush.console()
+	ok <- batch(zipfiles, unzipImg, replace = replace,
+		delete.source = delete.source, verbose = FALSE)
+	if (!ok) {
+		warning(sum(attr(ok, "ok")), "/", length(zipfiles),
+			" archives were uncompressed")
+		## Note: we don't detail here, because one can see created image files!
+		invisible(FALSE)
+	} else {
+		message("-- Done! --")
+		invisible(TRUE)
+	}
 }

@@ -253,7 +253,7 @@ ZIManCompa <- function (ZIMan)
 ## Substract a ZIDat table according a threshold formula
 subpartThreshold  <- function (ZIDat, Filter = NULL)
 {    
-    ## Do we use a Filter directly?
+	## Do we use a Filter directly?
     if (is.null(Filter)) {
 		Threshold <- createThreshold(ZIDat = ZIDat)
     } else {

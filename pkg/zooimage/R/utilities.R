@@ -234,7 +234,7 @@ getDec <- function ()
 zipNoteAdd <- function (zipfile, zimfile)
 {
 	zipfile <- as.character(zipfile)
-	if (length(zipfile != 1)) {
+	if (length(zipfile) != 1) {
 		warning("exactly one 'zipfile' must be provided")
 		return(FALSE)
 	}
@@ -244,7 +244,7 @@ zipNoteAdd <- function (zipfile, zimfile)
 	}
 	
 	zimfile <- as.character(zimfile)
-	if (length(zimfile != 1)) {
+	if (length(zimfile) != 1) {
 		warning("exactly one 'zimfile' must be provided")
 		return(FALSE)
 	}
@@ -254,12 +254,12 @@ zipNoteAdd <- function (zipfile, zimfile)
 	}
 	
 	if (isWin()) {
-		cmd <- sprintf('%s /c type "%s" | "%s" -z "%s" ', Sys.getenv("COMSPEC"),
+		cmd <- sprintf('%s /c type "%s" | "%s" -zq "%s" ', Sys.getenv("COMSPEC"),
 			zimfile, Sys.getenv("R_ZIPCMD", "zip"), zipfile)
 		res <- try(system(cmd, show.output.on.console = FALSE, invisible = TRUE,
 			intern = FALSE), silent = TRUE)
 	} else {
-		cmd <- sprintf('zip -z "%s" < "%s" ', zipfile, zimfile)
+		cmd <- sprintf('zip -zq "%s" < "%s" ', zipfile, zimfile)
 		res <- try(system(cmd, ignore.stdout = TRUE, ignore.stderr = TRUE,
 			intern = FALSE), silent = TRUE)		
 	}
@@ -278,7 +278,7 @@ zipNoteAdd <- function (zipfile, zimfile)
 zipNoteGet <- function (zipfile, zimfile = NULL)
 {
 	zipfile <- as.character(zipfile)
-	if (length(zipfile != 1)) {
+	if (length(zipfile) != 1) {
 		warning("exactly one 'zipfile' must be provided")
 		return(FALSE)
 	}
@@ -289,7 +289,7 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 	
 	if (length(zimfile)) {
 		zimfile <- as.character(zimfile)
-		if (length(zimfile != 1)) {
+		if (length(zimfile) != 1) {
 			warning("exactly one 'zimfile' must be provided")
 			return(FALSE)
 		}
@@ -306,10 +306,10 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 			warning("'unzip' program is required, but not found")
 			return(character(0))
 		}
-		cmd <- sprintf('"%s" -z "%s"', unzippgm, zipfile)
+		cmd <- sprintf('"%s" -zq "%s"', unzippgm, zipfile)
 		res <- try(system(cmd, invisible = TRUE, intern = TRUE), silent = TRUE)
 	} else { # Linux or Mac OS X
-		cmd <- sprintf('unzip -z "%s"', zipfile)
+		cmd <- sprintf('unzip -zq "%s"', zipfile)
 		res <- try(system(cmd, intern = TRUE), silent = TRUE)
 	}
 	if (inherits(res, "try-error")) {
@@ -321,8 +321,6 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 		warning("no comment data found in '", basename(zipfile), "'")
 		return(character(0))
 	}
-	## Filter output to collect only zip comment (first line is archive name)
-	res <- res[-1]
 
 	## Write the output to the file if needed and return the result
 	if (length(zimfile)) {

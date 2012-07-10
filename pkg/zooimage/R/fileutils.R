@@ -130,19 +130,15 @@ checkEmptyDir <- function (dir, message = 'dir "%s" is not empty')
 forceDirCreate <- function (dir)
 {	
 	## If it exists, make sure it is a directory
-	if (file.exists(dir) && !file.info(dir)$isdir) {
-		warning(sprintf('"%s" is not a directory', dir))
-		return(FALSE)
-	}
-	
-	## Try (re)create it
-	if (!dir.create(dir)) {
+	if (file.exists(dir)) {
+		if (!file.info(dir)$isdir) {
+			warning(sprintf('"%s" is not a directory', dir))
+			FALSE
+		} else TRUE
+	} else if (!dir.create(dir, showWarnings = FALSE)) {
 		warning(sprintf('could not create directory "%s"', dir))
-		return(FALSE)
-	}
-	
-	## Everything is fine, return TRUE
-	return(TRUE)
+		FALSE
+	} else TRUE
 }
 
 #### OK #### batcheable! (used in various places)
