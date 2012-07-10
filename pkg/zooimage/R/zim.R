@@ -267,7 +267,7 @@ path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 
 	ok <- sapply(1:zmax, function (i) {
 		## Extract the .zim file from zip comment
-		zipNote(zipfiles[i], zimfiles[i])
+		zipNoteGet(zipfiles[i], zimfiles[i])
 
 		## Check that the .zim file is created
 		if (zimVerify(zimfiles[i]) == 0) {
@@ -277,10 +277,10 @@ path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 	})
 
 	## Clean up
-	finishLoop(ok = all(as.logical(ok)), ok.console.msg = "",
-		nok.console.msg = "", bell = bell, show.log = show.log,
-		ok.log.msg = paste(zmax, ".zim files correctly extracted"),
-		nok.log.msg = paste(sum(!ok), "files not correctly extracted on", zmax))
+##	finishLoop(ok = all(as.logical(ok)), ok.console.msg = "",
+##		nok.console.msg = "", bell = bell, show.log = show.log,
+##		ok.log.msg = paste(zmax, ".zim files correctly extracted"),
+##		nok.log.msg = paste(sum(!ok), "files not correctly extracted on", zmax))
 }
 
 ## TODO: use batch() instead!
@@ -337,47 +337,43 @@ bell = FALSE)
 		stop("Done, no file to update!")
 
 	## Check the zim files using zimVerify() if necessary
-	logClear()
+##	logClear()
 	ok <- TRUE
 	if (check.zim) {
-		cat("Verification of .zim files...\n")
-		logProcess("Verification of .zim files...")
+		message("Verification of .zim files...")
 		zfiles <- unique(zimfiles)
 		zmax <- length(zfiles)
 
 		oks <- sapply(1:zmax, function (z) {
-			Progress(z, zmax)
+			progress(z, zmax)
 			return(zimVerify(zfiles[z]))
 		})
 		ok <- all(oks)
-		clearProgress()
+		progress(101) # Clear progression indicator
 	}
 
 	if (ok) {
-		logProcess("\n-- OK, no error found. --")
-		cat("-- Done! --\n")
+		message("-- Done! --")
 	} else {
-		logProcess("contains corrupted .zim files, compression not started!",
-			zimdir, stop = TRUE, show.log = show.log)
+		warning(zimdir,
+			" contains corrupted .zim files, compression not started!")
 		return(invisible(FALSE))
 	}
 
 	## If everything is OK, update comments in the zip files with the content
 	## of the .zim files
 	imax <- length(zipfiles)
-	cat("Update of .zip comments...\n")
-	logProcess("\nUpdate of .zip comments...")
+	message("Update of .zip comments...")
 	for (i in 1:imax) {
-		Progress(i, imax)
+		progress(i, imax)
 
 		## Replace the zip comment with content of the corresponding .zim file
-		zipNoteAdd(zipfiles[i] , zimfiles[i],
-			on.success = logProcess("OK", zipfiles[i]))
+		zipNoteAdd(zipfiles[i] , zimfiles[i])
 	}
-	clearProgress()
+	progress(101) # Clear progression indicator
 
 	## Clean up
-	finishLoop(ok, bell = bell, show.log = show.log)
+##	finishLoop(ok, bell = bell, show.log = show.log)
 }
 
 ## Create a .zim file

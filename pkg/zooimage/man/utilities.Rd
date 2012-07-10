@@ -7,18 +7,9 @@
 \alias{calcVars}
 \alias{ecd}
 \alias{parseIni}
-
-
-\alias{clearProgress}
-\alias{getList}
-\alias{getVar}
 \alias{getDec}
-\alias{Progress}
-\alias{selectFile}
-
-
-\alias{ZIpgm}
-\alias{ZIpgmHelp}
+\alias{zipNoteAdd}
+\alias{zipNoteGet}
 
 \title{ Various utility functions used by ZooImage }
 \description{
@@ -35,28 +26,16 @@ trimString(string)
 
 listSamples(ZIobj)
 makeId(ZIDat)
-calcVars(ZIDat)
+calcVars(ZIDat, keep.vars = getOption("ZI.keep.vars"))
 
 ecd(area)
 
 parseIni(data, label = "1")
 
-
-getVar(class = "data.frame", default = "", multi = FALSE,
-    title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
-getList(class = "data.frame", default = "", multi = FALSE,
-    title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
-selectFile(type = c("ZipZid", "ZimZis", "LstZid", "ZidZidb", "Zip", "Zid", "Zidb",
-    "Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData"), multi = FALSE,
-    quote = TRUE, title = NULL)
-
 getDec()
 
-Progress(value, max.value = NULL)
-clearProgress()
-
-ZIpgm(pgm, subdir = "misc", ext = "exe")
-ZIpgmHelp(pgm, subdir = "misc")
+zipNoteAdd(zipfile, zimfile)
+zipNoteGet(zipfile, zimfile = NULL)
 }
 
 \arguments{
@@ -68,58 +47,37 @@ ZIpgmHelp(pgm, subdir = "misc")
     'nn.mmm' when there are 'mmm' pictures taken to cover a bigger area of cell
     'nn', and 'ext' is the file extension. }
   \item{type}{ the type of data to extract (see examples) for
-    \code{sampleInfo()}, or the type of file to select in \code{selectFile()} }
+    \code{sampleInfo()}, or the type of file to select in \code{selectFile()}. }
   \item{ext}{ the pattern to use (regular expression) to eliminate file
-    extension from the 'filename' }
-  \item{string}{ a character string to rework, or a vector of character strings }
-  \item{ZIobj}{ a ZooImage object (here, a 'ZIDat', 'ZIDesc' or 'ZITrain' object) }
-  \item{ZIDat}{ a 'ZIDat' object, or a data frame with correct column labels }
+    extension from the 'filename'. }
+  \item{string}{ a character string to rework, or a vector of character strings. }
+  \item{ZIobj}{ a ZooImage object (here, a 'ZIDat', 'ZIDesc' or 'ZITrain' object). }
+  \item{ZIDat}{ a 'ZIDat' object, or a data frame with correct column labels. }
+  \item{keep.vars}{ a list of the variables to keep in the classification, if
+    the argument is not of length 0 (or \code{NULL}). }
   \item{area}{ a numerical vector with areas from which ECDs are calculated
     (Equivalent Circular Diameter, a more suitable term for 2D images than ESD,
-	Equivalent Spherical Diameter) }
-  
-  
-  \item{class}{ the class of objects to retrieve (or class of list components
-    for \code{getList()}) }
-  \item{default}{ the default item selected in the list }
-  \item{multi}{ are multiple selections allowed? }
-  \item{title}{ the title of the dialog box }
-  \item{warn.only}{ issue a warning if there is a problem, otherwise, the
-    function stops execution. This is used in the ZooImage GUI, in order to
-	avoid interrupting abruptly code execution and to report the error in a more
-	"civilized" way to the user }
-  \item{quote}{ do we add quotes (\") around file names? }
-  \item{data}{ a vector containing the data to parse }
-  \item{label}{ a label to include for the parsed data }
-  \item{value}{ a value for the progression }
-  \item{max.value}{ the maximum value, when task is done. If \code{NULL},
-    assumes that value is in percent }
-  \item{pgm}{ the name of an executable located in the zooimage package (under
-    Windows), or on the system (elsewhere) }
-  \item{subdir}{ the subdirectory (to the zooimage install directory) where the
-    executable should be located under Windows (this has no effect on other
-	platforms) }
+	Equivalent Spherical Diameter). }
+  \item{data}{ a vector containing the data to parse. }
+  \item{label}{ a label to include for the parsed data. }
+  \item{zipfile}{ a zip archive. }
+  \item{zimfile}{ a .zim file to use, or to create. If \code{NULL} (default)
+    in \code{zipNoteGet()}, the data are not written in a file, but returned. }
 }
 
 \value{
-  A string or vector of strings for \code{sampleInfo()}, \code{makeId()}, 
-  \code{listSamples()}, \code{getVar()}, \code{getList()} and
-  \code{selectFile()}. For those functions that use a dialog box,
-  \code{character(0)} is returned to indicate the user clicked 'Cancel', while
+  A string or vector of strings for \code{sampleInfo()}, \code{listSamples()}
+  and \code{makeId()}. For those functions, \code{character(0)} is returned to
+  indicate a problem (usually with a warning issued to explain it), while
   an empty string (\code{""}) is returned in case there is no corresponding
   element found.
-  
-  The combined object is returned for \code{list.add()}, \code{list.reduce()}
-  and \code{list.merge}. \code{list.add()} is just a shortcut for
-  \code{list.reduce(FUN = "+")}.
 
   The data.frame with additional columns for calculated variables with
-  \code{calcVars}
+  \code{calcVars()}.
 
-  A vector of numerical values for \code{ecd}.
+  A vector of numerical values for \code{ecd()}.
 
-  Transformed strings for \code{noext()}, \code{trimstring()} and
-  \code{underscore2space()}
+  Transformed strings for \code{trimstring()} and \code{underscoreToSpace()}
 
   \code{parseIni()} reads the data and creates a list of data frames. Each
   entry in the list maps one section in the ini file (with the same name). For
@@ -127,18 +85,14 @@ ZIpgmHelp(pgm, subdir = "misc")
   column names. The first column of these data frames is named label and get the
   corresponding value passed by the 'label' argument. That way, one can easily
   keep track of entries when data frames originated from various different ini
-  files are merged together (typically using \code{list.add()} or
-  \code{list.merge()}.
-
-  Nothing for \code{Progress()} and \code{clearProgress()} (they
-  are used in the GUI for their side-effect there).
-
-  \code{ZIpgm()} returns a string usable to start the given program at the
-  command line (or using \code{system()}). Under Windows, it returns the full
-  path, but in short (DOS) form. So, you don't have to worry about putting this
-  string between quotes, in case the path would content blank characters. If the
-  program is not found, the function returns "". \code{ZIpgmHelp()} displays the
-  help file (man page) of the corresponding executable.
+  files are merged together.
+  
+  \code{zipNoteAdd()} returns \code{TRUE} or \code{FALSE} depending if the data
+  from the zimfile was successfully added to the zip archive or not. Problem is
+  returned in a warning.
+  \code{zipNoteGet()} returns the comment included in the zip archive
+  (invisibly if 'zimfile' is not \code{NULL}), or \code{character(0)} in case
+  of a problem. The problem is detailled in a warning.
 }
 
 \details{
@@ -149,7 +103,7 @@ ZIpgmHelp(pgm, subdir = "misc")
 
 \author{Philippe Grosjean <Philippe.Grosjean@umons.ac.be>}
 
-\seealso{\code{\link{noExtension}}}
+\seealso{\code{\link{noExtension}}, \code{\link{selectObject}}}
 
 \examples{
 # Given a correct ZooImage name for a sample, return parts of it
@@ -170,46 +124,13 @@ sampleInfo(c("ScanG16.2004-10-20+A1.tif", "ScanG16.2004-10-20+B1.tif"),
 underscoreToSpace("Some_string_to_convert")
 trimString("    \tString with\textra spaces  \t")
 
-### TODO: a listSamples() example
-
 # Variables calculation utilities
 df__ <- data.frame(Label = c("Alabel", "AnotherLabel"), Item = c("01", "02"))
 makeId(df__)
 rm(df__)
 ecd(1:10)
 
-### TODO: a calcVars() and parseIni() examples
-
-\dontrun{
-# Create two datasets in R and ask for selecting one:
-df1__ <- data.frame(x = 1:3, y = 4:6)
-df2__ <- data.frame(z = 1:10)
-getVar() # Try also to click 'Cancel'
-getVar(multi = TRUE) # Can select both too
-getVar("nonexistingclass") # Returns an empty string!
-getVar("nonexistingclass", warn.only = FALSE)
-
-# Create lists containing only data frames as components
-lst1__ <- list(A = df1__, B = df2__)
-lst2__ <- list(C = df1__)
-getList() # Try also to click 'Cancel'
-getList(multi = TRUE) # Can select both
-getList("nonexistingclass")
-rm(df1__, df2__, lst1__, lst2__)
-
-# Select one or more ZooImage files
-selectFile() # One Zip or Zid file
-
-# A couple of command line executables used by zooimage
-ZIpgm("zip")
-ZIpgm("pgmhist", "netpbm")
-ZIpgm("pnm2biff", "xite")
-
-# ...and their help pages
-ZIpgmHelp("zip")
-ZIpgmHelp("pgmhist", "netpbm")
-ZIpgmHelp("pnm2biff", "xite")
-}
+### TODO: calcVars(), parseIni(), zipNoteAdd() and zipNoteGet() examples
 }
 
 \keyword{ utilities }

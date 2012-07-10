@@ -37,38 +37,41 @@ sampleInfo <- function (filename,  type = c("sample", "fraction", "image",
 		id = sub("^.*\\..*\\.(.*)\\+.*$", "\\1", base),
 		frac = sub("^.*\\+([a-zA-Z]).*$", "\\1",base),
 		imgnbr = as.numeric(sub("^.*\\+[a-zA-Z]([0-9.]*)$", "\\1", base)),
-		stop("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'")
+		{
+			warning("'type' must be 'sample', 'fraction', 'image', 'scs', 'date', 'id', 'frac' or 'imgnbr'")
+			character(0)
+		}
 	)
 }
 
 ## Convert underscores into spaces
 underscoreToSpace <- function (string)
-	return(gsub("_", " ", string))
+	gsub("_", " ", string)
 
 ## Trim leading and trailing white spaces and tabs
 trimString <- function (string)
-	return(sub("\\s+$", "", sub("^\\s+", "", string)))
+	sub("\\s+$", "", sub("^\\s+", "", string))
 
 ## All sample with at least one entry in a given object
 listSamples <- function (ZIobj)
 { 	
-	if (!inherits(ZIobj, c("ZIDat", "ZIDesc","ZITrain")))
-		stop("'ZIobj' must be a 'ZIDat', 'ZIDesc', or 'ZITrain' object")
+	if (!inherits(ZIobj, c("ZIDat", "ZIDesc","ZITrain"))) {
+		warning("'ZIobj' must be a 'ZIDat', 'ZIDesc', or 'ZITrain' object")
+		return(character(0))
+	}
 	
 	## List all samples represented in a given object
 	if (inherits(ZIobj, "ZIDat")) {
     	res <- sort(unique(sampleInfo(as.character(ZIobj$Label),
 			type = "sample", ext = "")))
-		return(res)
 	} else if (inherits(ZIobj, "ZIDesc")) {
 		res <- sort(unique(as.character(ZIobj$Label)))
-		return(res)
 	} else if (inherits(ZIobj, "ZITrain")) {
     	res <- as.character(ZIobj$Id)
 		res <- sub("_[0-9]*$", "", res)
 		res <- sort(unique(sampleInfo(res, type = "sample", ext = "")))
-		return(res)
 	}
+	res
 }
 
 ## Unique identifiers (Ids) are a combination of Label and Item
@@ -76,7 +79,7 @@ makeId <- function (ZIDat)
 	paste(ZIDat$Label, ZIDat$Item, sep = "_")
 
 ## Calculate derived variables... default function
-calcVars <- function (ZIDat)
+calcVars <- function (ZIDat, keep.vars = getOption("ZI.keep.vars"))
 {	
 	## This is the calculation of derived variables
 	## Note that you can make your own version of this function for more
@@ -120,13 +123,19 @@ calcVars <- function (ZIDat)
 	x$Elongation <- ifelse(PA <= 0, 1, x$Area / (x$Perim./4 - PA^.5)^2)
 	x$Compactness <-  x$Perim.^2/4/pi/x$Area  # env. 1/Circ.
 	x$Roundness <- 4 * x$Area / (pi * sqrt(x$Major))
+	
+	## Select variables to keep
+	if (length(keep.vars))
+		x <- x[, keep.vars[keep.vars %in% names(x)]]
+
+	## Return the recalculated data frame
 	return(x)
 }
 
 ## Calculate equivalent circular diameter (similar to equivalent spherical
 ## diameter, but for 2D images)
 ecd <- function (area)
-	return(2 * sqrt(area / pi))
+	2 * sqrt(area / pi)
 
 ## Parse an ini file (.zim, .zie, etc. are .ini files!)
 ### TODO: manage the case where there is no '=' in the data!
@@ -148,7 +157,7 @@ parseIni <- function (data, label = "1")
 	vector.convert <- function (vec)
 		as.data.frame(lapply(as.list(vec), type.convert))
 
-	if (is.null(data) || !inherits(data, "character") || length(data) < 1)
+	if (!length(data) || !inherits(data, "character"))
 		return(character(0))
 	
 	## Trim leading and trailing white spaces
@@ -160,7 +169,7 @@ parseIni <- function (data, label = "1")
 	## Eliminate empty lines
 	data <- data[data != ""]
 	data <- paste(data, " ", sep = "")
-	if (length(data) < 1) return(character(0))
+	if (!length(data)) return(character(0))
 	## Substitute the first '=' sign by another separator unlikely to appear in
 	## the argument
 	data <- sub("=", "&&&&&", data)
@@ -206,8 +215,10 @@ parseIni <- function (data, label = "1")
 	DatSec <- lapply(DatSec, vector.convert)
 	
 	## Eliminate "Label" if it is ""
-	if (label == "") DatSec <- lapply(DatSec, function(x) x[-1])
-	return(DatSec)
+	if (label == "")
+		DatSec <- lapply(DatSec, function(x) x[-1])
+	
+	DatSec	
 }
 
 ## Decimal separator to use in import/export ZooImage files
@@ -219,186 +230,103 @@ getDec <- function ()
 	Dec
 }
 
-
-########## ALL THE REST STILL MUST BE CHECKED!!! ###############################
-########## + code in misc.R!!!
-
-## Used only in Progress() and clearProgress() that I want to eliminate (use svMisc functions instead!)
-backspaces <- function (n = getOption("width"))
-	paste(rep("\b", n), collapse = "")
-
-## Display progression of long-running tasks, both on the R console
-## and in the ZooImage assistant status bar
-Progress <- function (value, max.value = NULL)
+## Add a comment (from a zimfile) into a zip archive
+zipNoteAdd <- function (zipfile, zimfile)
 {
-	## My own version of progress() that also uses the Tk window statusbar
-    if (!is.numeric(value))
-        stop("'value' must be numeric!")
-    if (is.null(max.value)) {
-        max.value <- 100
-        percent <- TRUE
-    } else percent <- FALSE
-
-    if (!is.numeric(max.value))
-        stop("'max.value' must be numeric or NULL!")
-	if (value > max.value)
-		stop( "use clearProgress instead")
-    
-	Max.Value <- as.character(round(max.value))
-    l <- nchar(Max.Value)
-    Value <- formatC(round(value), width = l)
-    if (percent) {
-        backspaces <- backspaces(l + 14)
-		message <- paste("Progress: ", Value, "%  ", sep = "")
-		cat(backspaces, message, sep = "")
-    } else {
-        backspaces <- backspaces(2 * l + 16)
-        message <- paste("Progress: ", Value, " on ", Max.Value, "  ", sep = "")
-		cat(backspaces, message, sep = "")
-    }
-	flush.console()
-	
-	## Do we need to update the Tk window statusbar also?
-#    if ("ZIDlgWin" %in% WinNames()) {
-#    	assignTemp("statusBusy", TRUE)
-#		## Calculate fraction and show it in the progress bar
-#		if (!percent) value <- value / max.value * 100
-#		tkconfigure(getTemp("statusProg"), value = value)
-#		## Display the progress text also in the statusbar
-#		tkconfigure(getTemp("statusText"), text = message)
-#		.Tcl("update idletasks")
-#	}
-    invisible(NULL)
-}
-
-clearProgress <- function ()
-{
-	cat(backspaces(), "", sep = "")
-#	if ("ZIDlgWin" %in% WinNames()) {
-#		rmTemp("statusBusy")
-#		tkconfigure(getTemp("statusProg") , value = 0)
-#		tkconfigure(getTemp("statusText") , text = paste("Ready -", getwd()))
-#	}
-	return(invisible(NULL))
-}
-
-## Change the working directory and update the ZooImage assistant status bar
-#setwd <- function (dir)
-#{
-#	## My own setwd() function that also updates the Tk window statusbar
-#	if (!is.character(dir)) return(invisible(NULL))
-#	base::setwd(dir)
-#	
-#	## Possibly update the statusbar
-#	if ("ZIDlgWin" %in% WinNames() && is.null(getTemp("statusBusy"))) {
-#		tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
-#		.Tcl("update idletasks")
-#	}
-#	
-#	## Save the current default directory for future use
-#	options(ZI.DefaultDirectory = getwd())
-#}
-
-## Get the path of an executable, giving its name and subdirectory
-## ex.: ZIpgm("zip"), ZIpgm("pgmhist", "netpbm"), ZIpgm("pnm2biff", "xite")
-ZIpgm <- function (pgm, subdir = "misc", ext = "exe")
-{	
-	if (isWin()) {
-		pathpgm <- system.file(subdir, "bin", paste(pgm, ext, sep = "."),
-			package = "zooimage")
-		if (!file.exists(pathpgm)) return("") else
-			return(pathpgm)
-	} else {	
-		## Change nothing: should be directly executable
-		if (pgm == "dc_raw") pgm <- "dcraw"
-		return(pgm)
-	}	
-}
-
-## Show textual help for executables
-## ex.: ZIpgmHelp("zip"), ZIpgmHelp("pgmhist", "netpbm")
-ZIpgmHelp <- function (pgm, subdir = "misc")
-{
-	## TODO: would it not be better to use the same thing on all platforms
-	##       (the doc directory)
-	if (isWin()) {
-		helpfile <- file.path(system.file(subdir, "doc", package = "zooimage"),
-			paste(pgm, "txt", sep = "."))
-		if (!file.exists(helpfile))
-			stop("No help found for ", pgm)
-		file.show(helpfile, title = paste("Help for ", pgm, " [", subdir, "]",
-			sep = ""))		
-	} else {
-		system(paste("man", pgm), wait = FALSE)
-	}	
-}
-
-## Function to reprocess a .RData file in a zid file
-## TODO: place this is .zid file management instead!
-## TODO: does not seem to be used yet!
-newRData <- function (path = "D", replace = TRUE)
-{
-	## List of zid files to reporcess
-	zid <- list.files(path = path, pattern = "^.*[.][zZ][iI][dD]")
-    if (is.null(zid)) stop("no zid files in the directory")
-	## Path of zid files
-	path.zid <- paste(path, zid, sep = "/")
-	## Loop to analyze zid files one by one
-	for (i in 1 : length(zid)) {
-		## Extract zid in 'path' directory
-		zidUncompress(path.zid[i])
-		## Calculate new Rdata
-		path.sample <- sub("[.][zZ][iI][dD]", "", path.zid[i])
-		zidDatMake(path.sample, replace = replace)
-		## Compress new zid file
-		zidCompress(path.sample, replace = replace)
-    }
-}
-
-## Function to create a batch file for FlowCAM image analysis
-createBatchFile <- function (ctxfile, fil = FALSE, largest = FALSE,
-vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
-masks = FALSE, verbose = TRUE, txt = TRUE,
-import.name = "batchExampleParameters")
-{
-	## Check arguments
-	if (!is.character(ctxfile)) stop("You must provide a context file")
-	## Create the table of importation
-	ContextList <- ctxReadAll(ctxfile = ctxfile, fil = fil, largest = largest,
-		vignettes = vignettes, scalebar = scalebar, enhance = enhance,
-		outline = outline, masks = masks, verbose = verbose)
-	## Write the table of importation in the sample directory
-	if (isTRUE(txt)) { # Export table as txt format
-		write.table(ContextList, file = paste(dirname(dirname(ctxfile)),
-		paste(import.name, ".txt", sep = ""), sep = "/"), quote = TRUE,
-		sep = "\t", dec = ".", row.names = FALSE, col.names = TRUE)
-	} else { # Export table as csv format
-		write.csv(ContextList, file = paste(dirname(dirname(ctxfile)),
-		paste(import.name, ".csv", sep = ""), sep = "/"), row.names = FALSE)
+	zipfile <- as.character(zipfile)
+	if (length(zipfile != 1)) {
+		warning("exactly one 'zipfile' must be provided")
+		return(FALSE)
 	}
-	cat(paste("Your import table has been created in", dirname(dirname(ctxfile)),
-		" : your samples directory", "\n", sep = " "))
+	if (!file.exists(zipfile)) {
+		warning("'zipfile' not found: '", basename(zipfile), "'")
+		return(FALSE)
+	}
+	
+	zimfile <- as.character(zimfile)
+	if (length(zimfile != 1)) {
+		warning("exactly one 'zimfile' must be provided")
+		return(FALSE)
+	}
+	if (!file.exists(zimfile)) {
+		warning("'zimfile' not found: '", basename(zimfile), "'")
+		return(FALSE)
+	}
+	
+	if (isWin()) {
+		cmd <- sprintf('%s /c type "%s" | "%s" -z "%s" ', Sys.getenv("COMSPEC"),
+			zimfile, Sys.getenv("R_ZIPCMD", "zip"), zipfile)
+		res <- try(system(cmd, show.output.on.console = FALSE, invisible = TRUE,
+			intern = FALSE), silent = TRUE)
+	} else {
+		cmd <- sprintf('zip -z "%s" < "%s" ', zipfile, zimfile)
+		res <- try(system(cmd, ignore.stdout = TRUE, ignore.stderr = TRUE,
+			intern = FALSE), silent = TRUE)		
+	}
+	if (inherits(res, "try-error")) {
+		warning(as.character(res)) # Turn error into warning
+		return(FALSE)
+	}
+	
+	if (res != 0) {
+		warning("error while adding .zim data to '", basename(zipfile), "'")
+		FALSE
+	} else TRUE
 }
 
-ijplugin <- function (zimfile, ij.plugin = c("Scanner_Gray16",
-"MacroPhoto_Gray16", "Scanner_Color", "Microscope_Color"))
+## Extract the comment from the zipfile
+zipNoteGet <- function (zipfile, zimfile = NULL)
 {
-	ij.plugin <- match.arg(ij.plugin)
-	cmd <- sprintf('java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"',
-		system.file("imagej", "ij.jar", package = "zooimage"),
-		system.file("imagej", "plugins", "_zooimage.jar", package = "zooimage"),
-		ij.plugin, tools:::file_path_as_absolute(zimfile))
-	return(invisible(system(cmd, intern = TRUE)))
-}
+	zipfile <- as.character(zipfile)
+	if (length(zipfile != 1)) {
+		warning("exactly one 'zipfile' must be provided")
+		return(FALSE)
+	}
+	if (!file.exists(zipfile)) {
+		warning("'zipfile' not found: '", basename(zipfile), "'")
+		return(FALSE)
+	}
+	
+	if (length(zimfile)) {
+		zimfile <- as.character(zimfile)
+		if (length(zimfile != 1)) {
+			warning("exactly one 'zimfile' must be provided")
+			return(FALSE)
+		}
+	}
+	## Make sure old data do not remain in zimfile
+	unlink(zimfile)
+	
+	## We use unzip... and assume it is located at the same place as zip!
+	if (isWin()) {
+		zippgm <- Sys.getenv("R_ZIPCMD", "zip")
+		unzippgm <- sub("zip$", "unzip", zippgm)
+		if (unzippgm == zippgm || inherits(try(system("unzip", intern = TRUE),
+			silent = TRUE), "try-error")) {
+			warning("'unzip' program is required, but not found")
+			return(character(0))
+		}
+		cmd <- sprintf('"%s" -z "%s"', unzippgm, zipfile)
+		res <- try(system(cmd, invisible = TRUE, intern = TRUE), silent = TRUE)
+	} else { # Linux or Mac OS X
+		cmd <- sprintf('unzip -z "%s"', zipfile)
+		res <- try(system(cmd, intern = TRUE), silent = TRUE)
+	}
+	if (inherits(res, "try-error")) {
+		warning(as.character(res))
+		return(character(0))
+	}
+	
+	if (length(res) < 2) {
+		warning("no comment data found in '", basename(zipfile), "'")
+		return(character(0))
+	}
+	## Filter output to collect only zip comment (first line is archive name)
+	res <- res[-1]
 
-## Calls the class org.sciviews.zooimage.ZooImageProcessList to get 
-## the list of available processes
-getProcessList <- function ()
-{
-	cmd <- sprintf('java -cp .:"%s":"%s" org.sciviews.zooimage.ZooImageProcessList', 
-		system.file("imagej", "ij.jar", package = "zooimage"),
-		system.file("imagej", "plugins", "_zooimage.jar", package = "zooimage")
-	)
-	res <- system(cmd , intern = TRUE)
-	return(res)
+	## Write the output to the file if needed and return the result
+	if (length(zimfile)) {
+		cat(res, file = zimfile, sep = "\n")
+		invisible(res)
+	} else res	
 }

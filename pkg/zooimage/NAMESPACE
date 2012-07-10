@@ -25,36 +25,23 @@ import(RWekajars)
 export(BFcorrection)
 export(calibrate)
 export(checkBF)
-export(clearProgress)
 export(compareExif)
 export(getSpectrum)
 export(histSpectrum)
 export(isTestFile)
 export(isZim)
-export(logClear)
-export(logError)
-export(logProcess)
-export(logView)
-export(logWarning)
 export(lvq)
 export(modalAssistant)
 export(nnet2)
 export(plotAbdBio)
 export(processSample)
 export(processSampleAll)
-export(Progress)
 export(rawConvert)
 export(readExifRaw)
-export(realtimeReset)
-export(realtimeSave)
-export(realtimeStart)
-export(realtimeStop)
 export(sampleAbd)
 export(sampleBio)
 export(sampleSpectrum)
 export(startPgm)
-export(unzipImg)
-export(unzipImgAll)
 export(vignettesClass)
 export(ZIClass)
 export(ZIConf)
@@ -93,14 +80,17 @@ export(zimList)
 export(zimMake)
 export(zimRefreshAll)
 export(zimVerify)
-export(ZIpgm)
-export(ZIpgmHelp)
-export(zipImg)
-export(zipImgAll)
+
 
 
 # Zic
 export(zicCheck)
+
+# Zip
+export(zipImg)
+export(zipImgAll)
+export(unzipImg)
+export(unzipImgAll)
 
 # Zis
 export(zisCreate)
@@ -124,6 +114,8 @@ export(parseIni)
 export(sampleInfo)
 export(trimString)
 export(underscoreToSpace)
+export(zipNoteAdd)
+export(zipNoteGet)
 
 # File-Utilities
 export(extensionPattern)
@@ -173,12 +165,11 @@ export(viewResults)
 export(ZIDlg)
 
 # GUI-Utilities
-export(getList)
-export(getVar)
-export(formulaVarSel)
 export(selectGroups)
 export(selectFile)
-export(selectSamples)
+export(selectList)
+export(selectObject)
+export(imageViewer)
 
 # S3 methods
 S3method(predict, nnet2)
@@ -190,27 +181,3 @@ S3method(plot, ZIConf)
 S3method(print, ZIE)
 S3method(plot, ZITable)
 S3method(merge, ZITable)
-
-# The following objects are NOT exported (and should be eliminated too!)
-# backspaces
-# finishLoop
-# imagemagick
-# imagemagick_convert
-# imagemagick_identify
-# imageViewer
-# misc
-# misc_dcraw
-# netpbm
-# netpbm_pgmhist
-# netpbm_ppmtopgm
-# netpbm_tifftopnm
-# program
-# unzip
-# xite
-# xite_biff2tiff
-# xite_divide
-# xite_pnm2biff
-# xite_statistics
-# zip
-# zipNoteAdd
-# zipNote

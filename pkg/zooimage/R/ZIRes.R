@@ -147,15 +147,14 @@ show.log = TRUE, bell = FALSE)
 	}
 	
 	## Start the process
-	logClear()
+##	logClear()
 	ok <- TRUE
 	restot <- NULL
 	imax <- length(ZidFiles)
 	cat("Processing",  imax, "samples...\n")
-	logProcess(paste("Processing",  imax, "samples..."))
 	
 	results <- lapply(1:imax, function (i) {
-		Progress(i, imax)
+		progress(i, imax)
 		## Modif. by Kevin Denis for manual validation --> Add ZIMan argument
 		res <- try(processSample(ZidFiles[i], ZIClass = ZIClass, ZIMan = ZIMan,
 			ZIDesc = ZIDesc, abd.taxa = abd.taxa, abd.groups = abd.groups,
@@ -170,8 +169,7 @@ show.log = TRUE, bell = FALSE)
 			return(FALSE)
 		} else return(TRUE)
 	})
-	
-	clearProgress()
+	progress(101) # Clear progression indicator
 	
 	results <- Filter(Negate(is.null), results)
 	restot <- do.call(rbind, results)
@@ -180,7 +178,7 @@ show.log = TRUE, bell = FALSE)
 	class(restot) <- c("ZI1Res", "ZIRes", "data.frame")
 	
 	## Final report
-	finishLoop(ok = ok, show.log = show.log, bell = bell)
+###	finishLoop(ok = ok, show.log = show.log, bell = bell)
 	return(restot)
 }
 

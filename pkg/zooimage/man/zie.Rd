@@ -84,7 +84,7 @@ rawConvert(RawFile, OutputFile = "fileconv.pgm",
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
-\seealso{ \code{\link{logProcess}}, \code{\link{zimMake}} }
+\seealso{ \code{\link{zimMake}} }
 
 \examples{
 ##TODO...

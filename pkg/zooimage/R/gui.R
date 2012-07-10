@@ -54,13 +54,6 @@ ZIDlg <- function ()
 	menuAddItem("Analyze", "View results...", "viewResults()")
 	menuAddItem("Analyze", "Export results...", "exportResults()")
 	
-	#menuDel("Real-Time")
-	#menuAdd("Real-Time")
-	#menuAddItem("Real-Time", "Start process...", "realtimeStart()")
-	#menuAddItem("Real-Time", "Stop process...", "realtimeStop()")
-	#menuAddItem("Real-Time", "Export results...", "realtimeSave()")
-	#menuAddItem("Real-Time", "Remove data...", "realtimeReset()")
-	
 	## Menu 'Functions' not added yet!
 	
 	menuDel("Utilities")
@@ -133,6 +126,30 @@ ZIDlg <- function ()
 #	#tkconfigure(getTemp("statusProg"), value = 50)
 #	## Change text of the statusbar
 #	#tkconfigure(getTemp("statusText"), text = paste("Ready -", getwd()))
+
+#	## Add a function for progress() to update the progressbar in this window
+#	assignTemp(".progress", list(progressZIGUI = function (value, max.value) {
+#		if (!"ZIDlgWin" %in% WinNames()) return()
+#	
+#		if (is.null(max.value)) {
+#		    max.value <- 100
+#		    percent <- TRUE
+#		} else percent <- FALSE
+#	
+#		if (value > max.value) { # Erase progressmeter
+#			rmTemp("statusBusy")
+#			tkconfigure(getTemp("statusProg") , value = 0)
+#			tkconfigure(getTemp("statusText") , text = paste("Ready -", getwd()))		
+#		} else { # Show progress
+#			assignTemp("statusBusy", TRUE)
+#			## Calculate fraction and show it in the progress bar
+#			if (!percent) value <- value / max.value * 100
+#			tkconfigure(getTemp("statusProg"), value = value)
+#			## Display the progress text also in the statusbar
+#			tkconfigure(getTemp("statusText"), text = message)
+#		}
+#		.Tcl("update idletasks")
+#	}))
 #
 #	if (!isWin()) {
 #		# The activate R console & R graph do not work elsewhere
@@ -185,6 +202,8 @@ closeAssistant <- function ()
 	try(menuDel("Utilities"), silent = TRUE)
 	## Destroy the ZooImage Tk window, if it is currently displayed
 	#tkWinDel("ZIDlgWin")
+	## Eliminate the function to update the progressmeter in that window
+	#assignTemp(".progress", list())
 }
 
 closeZooImage <- function ()
@@ -292,7 +311,7 @@ importImg <- function ()
 	# separate 'ZIEimport' objects (see FlowCAM import routine for an example)
 	# Get a list of 'ZIEimport' objects currently loaded in memory
 
-	Images <- selectFile("Img", multi = TRUE, quote = FALSE,
+	Images <- selectFile("Img", multiple = TRUE, quote = FALSE,
 		title = "Select data to import...")
 
 	## Look if there is at least one image selected
@@ -323,8 +342,7 @@ importImg <- function ()
 			return(invisible(res))
 		}
 		pattern <- extensionPattern(".txt")
-		logProcess("Creating .zie file...")
-		cat("Creating .zie file...\n")
+		message("Creating .zie file...")
 		ziefile <- zieCompile(path = dir, Tablefile = Images[1])
 		cat("...OK!\n")
 		res <- zieMake(path = dirname(ziefile), Filemap = basename(ziefile),
@@ -390,6 +408,16 @@ makeZid <- function ()
 	## TODO: get the list of all available processes
 	## and select it automatically from the ZIM file
 	defval <- "Scanner_Gray16"
+	
+	## Calls the class org.sciviews.zooimage.ZooImageProcessList to get 
+	## the list of available processes
+	getProcessList <- function () {
+		cmd <- sprintf('java -cp .:"%s":"%s" org.sciviews.zooimage.ZooImageProcessList', 
+			system.file("imagej", "ij.jar", package = "zooimage"),
+			system.file("imagej", "plugins", "_zooimage.jar",
+			package = "zooimage"))
+		system(cmd , intern = TRUE)
+	}	
 	processes <- getProcessList()
 	opts <- c( processes, "-- None --")
 	## Then, show the dialog box
@@ -408,6 +436,16 @@ makeZid <- function ()
 	if (!length(dir)) return(invisible())
 	## Do we need to process the images with ImageJ?
 	if (plugin != "-- None --") {
+		ijplugin <- function (zimfile, ij.plugin = c("Scanner_Gray16",
+			"MacroPhoto_Gray16", "Scanner_Color", "Microscope_Color")){
+			ij.plugin <- match.arg(ij.plugin)
+			cmd <- sprintf('java -Xmx900m -cp .:"%s":"%s" org.sciviews.zooimage.ZooImage %s "%s"',
+				system.file("imagej", "ij.jar", package = "zooimage"),
+				system.file("imagej", "plugins", "_zooimage.jar",
+					package = "zooimage"), ij.plugin,
+					tools:::file_path_as_absolute(zimfile))
+			return(invisible(system(cmd, intern = TRUE)))
+		}		
 		## TODO: update a progress bar from ImageJ (using sockets ?)
 		ijplugin(dir, ij.plugin = plugin) 
 	}
@@ -484,7 +522,7 @@ makeTrain <- function ()
 	## Did we selected "Another config..."?
 	if (res == "Another config...") {
 		## Ask for selecting a .zic file containing the config
-        otherGrp <- selectFile("Zic", multi = FALSE, quote = FALSE,
+        otherGrp <- selectFile("Zic", multiple = FALSE, quote = FALSE,
 			title = "Select a .zic file...")
 		if (!length(otherGrp)) return(invisible())
 		## Cancelled dialog box
@@ -510,7 +548,7 @@ makeTrain <- function ()
 	}
 
 	## Ask for the .zid files
-    zidfiles <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
+    zidfiles <- selectFile(type = "Zid", multiple = TRUE, quote = FALSE)
 	if (!length(zidfiles)) return(invisible(NULL))
 
 	## Prepare the training set
@@ -559,7 +597,7 @@ collectTrain <- function ()
 addToTrain <- function ()
 {
 	## Select zid or zidb files to add in the training set
-	zidb <- selectFile(type = "ZidZidb", multi = TRUE, quote = FALSE)
+	zidb <- selectFile(type = "ZidZidb", multiple = TRUE, quote = FALSE)
 	if (!length(zidb)) return(invisible(FALSE))
 	
 	## Select the training set in which we add new vignettes
@@ -638,10 +676,10 @@ makeClass <- function ()
 		ZIT <- getTemp("ZI.TrainName")
 		if (is.null(ZIT)) ZIT <- ""
 		## Ask for a ZITrain object
-		ZIT <- getVar("ZITrain", multi = FALSE, default = ZIT,
-			title = "Choose one ZITrain objects:", warn.only = FALSE)
-		if (length(ZIT) == 0 || (length(ZIT) == 1 && ZIT == ""))
-			return(invisible())
+		ZIT <- selectObject("ZITrain", multiple = FALSE, default = ZIT,
+			title = "Choose one ZITrain objects:")
+		if (!length(ZIT) || (length(ZIT) == 1 && ZIT == ""))
+			return(invisible(FALSE))
 		## Ask for a name for this ZIClass object
 		name <- dlgInput("Name for the ZIClass object to create:",
 			default = "ZIclass")$res
@@ -698,17 +736,67 @@ makeClass <- function ()
 		ZIT <- getTemp("ZI.TrainName")
 		if (is.null(ZIT)) ZIT <- ""
 		## Ask for a ZITrain object
-		ZIT <- getVar("ZITrain", multi = FALSE, default = ZIT,
-			title = "Choose one ZITrain objects:", warn.only = FALSE)
+		ZIT <- selectObject("ZITrain", multiple = FALSE, default = ZIT,
+			title = "Choose one ZITrain objects:")
 		if (length(ZIT) == 0 || (length(ZIT) == 1 && ZIT == ""))
-			return(invisible())
+			return(invisible(FALSE))
 		## Ask for a name for this ZIClass object
 		name <- dlgInput("Name for the ZIClass object to create:",
 			title = "Creating a classifier", default = "ZIclass")$res
 		if (!length(name)) return(invisible())
 		name <- make.names(name)	# Make sure it is a valid name!
 		## Calculate formula using variables of the training set
-		form <- formulaVarSel(get(ZIT, envir = .GlobalEnv))
+
+### TODO: change this: do not return a formula, but a list of variables to select + "Class"!
+		## variables selection for the classifier
+		## TODO: select variables to use for classification instead of returning a formula!
+		selectVars <- function (ZITrain,
+		calc.vars = getOption("ZI.calcVars", "calcVars")) {
+			## ZITrain must be a ZItrain object
+			if (!inherits(ZITrain, "ZITrain")) {
+				warning("'ZITrain' must be a 'ZITrain' object")
+				return(character(0))
+			}
+		
+			calcfun <- match.fun(as.character(calc.vars)[1])
+			## Parameters measured on particles and new variables calculated
+			mes <- as.vector(colnames(calcfun(ZITrain)))
+			presel <- c("Id", "FIT_Cal_Const", "Item", "FIT_Raw_Area",
+				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
+				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Feret_Max_Angle",
+				"FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue",
+				"FIT_PPC", "FIT_Ch3_Peak", "FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF",
+				"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
+				"FIT_CaptureY", "FIT_Edge_Gradient", "FIT_Timestamp1", "FIT_Timestamp2",
+				"FIT_Source_Image", "FIT_Calibration_Image", "FIT_High_U32",
+				"FIT_Low_U32", "FIT_Total", "FIT_Red_Green_Ratio",
+				"FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio", "FIT_Ch2_Ch1_Ratio",
+				"X.Item.1", "X", "Y", "XM", "YM", "BX", "BY", "Width", "Height",
+				"Angle", "XStart", "YStart", "Count",  "Label", "Dil", "Class")
+			DontKeep <-  dlgList(mes, preselect = presel, multiple = TRUE,
+				title = "Select variable you don't want to use in the classification")$res
+			
+			## Selection of features for the creation of the classifier
+		#	keep <- dlgList(mes, preselect = c("ECD", "FIT_Area_ABD",
+		#		"FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
+		#		"FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio",
+		#		"FIT_Transparency", "FIT_Intensity", "FIT_Sigma_Intensity",
+		#		"FIT_Sum_Intensity", "FIT_Compactness", "FIT_Elongation",
+		#		"FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
+		#		"FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
+		#		"Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width",
+		#		"Height", "Major", "Minor", "Circ.", "Feret", "IntDen", "Median",
+		#		"Skew", "Kurt", "Elongation", "CentBoxD", "GrayCentBoxD", "CentroidsD",
+		#		"Range", "MeanPos", "SDNorm", "CV", "logArea", "logPerim.", "logMajor",
+		#		"logMinor", "logFeret"),
+		#		multiple = TRUE, title = "Select variables to use for classification")$res
+			
+			## Creation of one formula for classifier calculation
+			keep <- mes[!mes %in% DontKeep]
+			res <- as.formula(paste("Class ~ ", paste(keep, collapse = "+")))
+			return(res)
+		}
+		form <- selectVars(get(ZIT, envir = .GlobalEnv, inherits = FALSE))
 		## Calculate results using formula created by variables selection
 		res <- ZIClass(get(ZIT, envir = .GlobalEnv), algorithm = algorithm,
 			package = package, Formula = form)
@@ -745,9 +833,12 @@ analyzeClass <- function ()
 		
  	## Analyze a classifier... currently, only calculate the confusion matrix
 	## and edit it
-	ZIC <- getVar("ZIClass", multi = FALSE, title = "Choose one ZIClass object:",
-		warn.only = FALSE)
-	if (is.null(ZIC)) stop("No current classifier. Please, make one first!")
+	ZIC <- selectObject("ZIClass", multiple = FALSE,
+		title = "Choose one ZIClass object:")
+	if (!length(ZIC)) {
+		warning("No classifier. Please, create one first!")
+		return(invisible(FALSE))
+	}
 	ZIC <- get(ZIC, envir = .GlobalEnv)
 	conf <- ZIConf(ZIC)
 	switch(res,
@@ -896,10 +987,10 @@ processSamples <- function()
 	## Get a list of samples from the description file
 	smpdesc <- zisRead(zisfile)
 	smplist <- listSamples(smpdesc)
-	
-	## Are there samples in it?
-	if (length(smplist) == 0)
-		stop("No sample found in the description file!")	
+	if (!length(smplist) || smplist == "") {
+		warning("No sample found in the description file!")
+		return(invisible(FALSE))	
+	}
 	
 	## Are there corresponding .zid files for all samples?
 	zisdir <- dirname(zisfile)
@@ -912,10 +1003,10 @@ processSamples <- function()
 	## Get a classifier
 	ZIC <- getTemp("ZI.ClassName")
 	if (is.null(ZIC)) ZIC <- ""
-	ZIC <- getVar("ZIClass", multi = FALSE, default = ZIC,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-	if (length(ZIC) == 0 || (length(ZIC) == 1 && ZIC == ""))
-		return(invisible())
+	ZIC <- selectObject("ZIClass", multiple = FALSE, default = ZIC,
+		title = "Choose a classifier (ZIClass object):")
+	if (!length(ZIC) || (length(ZIC) == 1 && ZIC == ""))
+		return(invisible(FALSE))
 	ZICobj <- get(ZIC, envir = .GlobalEnv)	
 	
 	## Read a conversion table from disk (from /etc/Conversion.txt)
@@ -970,10 +1061,10 @@ viewResults <- function ()
  	## Make graphic representations of results...
 	ZIR <- getTemp("ZI.LastRES")
 	if (is.null(ZIR)) ZIR <- ""
-	ZIR <- getVar("ZIRes", multi = FALSE, default = ZIR,
-		title = "Choose one ZIRes object:", warn.only = FALSE)
-	if (length(ZIR) == 0 || (length(ZIR) == 1 && ZIR == ""))
-		return(invisible())
+	ZIR <- selectObject("ZIRes", multiple = FALSE, default = ZIR,
+		title = "Choose one ZIRes object:")
+	if (!length(ZIR) || (length(ZIR) == 1 && ZIR == ""))
+		return(invisible(FALSE))
 	## Get the object
 	ZIR <- get(ZIR, envir = .GlobalEnv)
 	## Ask for selecting items in the list and make these graphs
@@ -1041,9 +1132,10 @@ viewResults <- function ()
 exportResults <- function ()
 {
  	## Export one or more ZIRes objects to text files...
-    res <- getVar("ZIRes", multi = TRUE,
-		title = "Choose one or more ZIRes objects:", warn.only = FALSE)
-	if (length(res) == 0 || (length(res) == 1 && res == "")) return(invisible())
+    res <- selectObject("ZIRes", multiple = TRUE,
+		title = "Choose one or more ZIRes objects:")
+	if (!length(res) || (length(res) == 1 && res == ""))
+		return(invisible(FALSE))
 	## Select a directory where to place these files
 	dir <- dlgDir()$res
 	if (!length(dir)) return(invisible())
@@ -1083,7 +1175,7 @@ exportResults <- function ()
 
 loadObjects <- function ()
 {
-	file <- selectFile("RData", multi = FALSE, quote = FALSE,
+	file <- selectFile("RData", multiple = FALSE, quote = FALSE,
 		title = "Select a RData file...")
 	if (!length(file)) return(invisible()) # Cancelled dialog box
 	if (file.exists(file)) load(file, envir = .GlobalEnv)
@@ -1091,11 +1183,11 @@ loadObjects <- function ()
 
 saveObjects <- function ()
 {
-	Objects <- getVar(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes",
-		"ZIRecode"), multi = TRUE, title = paste("Choose", getTemp("ZIname"),
-		"object(s):"), warn.only = FALSE)
-	if (length(Objects) == 0 || (length(Objects) == 1 && Objects == ""))
-		return(invisible())
+	Objects <- selectObject(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes",
+		"ZIRecode"), multiple = TRUE,
+		title = paste("Choose", getTemp("ZIname"), "object(s):"))
+	if (!length(Objects) || (length(Objects) == 1 && Objects == ""))
+		return(invisible(FALSE))
 	file <- dlgSave(default = paste(getTemp("ZIname"), ".RData", sep = ""),
 		title = paste("Save", getTemp("ZIname"), "data under..."),
 		multiple = FALSE, filters = matrix(c("R data", ".RData"),
@@ -1124,18 +1216,18 @@ listObjects <- function ()
 
 removeObjects <- function ()
 {
-	Objects <- getVar(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes",
-		"ZIRecode"), multi = TRUE, title = paste(getTemp("ZIname"),
-		"object(s) to remove:"), warn.only = FALSE)
-	if (length(Objects) == 0 || (length(Objects) == 1 && Objects == ""))
-		return(invisible())
+	Objects <- selectObject(c("ZIDat", "ZIDesc", "ZITrain", "ZIClass", "ZIRes",
+		"ZIRecode"), multiple = TRUE,
+		title = paste(getTemp("ZIname"), "object(s) to remove:"))
+	if (!length(Objects) || (length(Objects) == 1 && Objects == ""))
+		return(invisible(FALSE))
 	rm(list = Objects, envir = .GlobalEnv)
 }
 
 calib <- function ()
 {
 	## Select calibration file (*.tif or *.pgm) and calculate White/Black point
-	file <- selectFile("TifPgm", multi = FALSE, quote = FALSE,
+	file <- selectFile("TifPgm", multiple = FALSE, quote = FALSE,
 		title = "Select a calibration image...")
 	if (!length(file)) return(invisible()) # Cancelled
 	if (file.exists(file)) {
@@ -1167,185 +1259,6 @@ optInOutDecimalSep <- function ()
  	return(invisible(DecSel))
 }
 
-## Utility functions ###########################################################
-## Function to select groups to keep for the comparison
-selectGroups <- function (ZIC, multiple = TRUE,
-title = "Select taxa you want to plot")
-	dlgList(levels(attr(ZIC, "classes")), multiple = multiple, title = title)
-
-selectSamples <- function (Samples = NULL)
-{
-	if (is.null(Samples)) {
-		Files <- selectFile(type = "LstZid", multi = TRUE, quote = FALSE)
-		if (length(Files) == 1 &&
-			length(grep(pattern = ".[Ll][Ss][Tt]", x = Files)) >= 1) {
-			## List files
-			Samples <- list.files(dirname(dirname(Files)), recursive = TRUE,
-				pattern = "\\.lst$", full.names = TRUE)
-		} else Samples <- Files	
-	}
-	Names <- sub(".lst$", "", basename(Samples)) # Names of the list
-	Sel <- dlgList(Names, multiple = TRUE,
-		title = "Select samples to compare")$res
-	if (!length(Sel)) return(character(0))
-	res <- Samples[Names %in% Sel]
-	return(res)
-}
-
-## Select one or several files of a given type
-selectFile <- function (type = c("ZipZid", "ZimZis", "LstZid", "ZidZidb", "Zip", "Zid", "Zidb",
-"Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData"),
-multi = FALSE, quote = TRUE, title = NULL)
-{	
-	type <- match.arg(type)
-	Type <- switch(type,
-		ZipZis = "Zip/Zis",
-		ZimZis = "Zim/Zis",
-		LstZis = "Lst/Zis",
-		TifPgm = "Tiff/Pgm",
-		ZidZidb = "Zid/Zidb",
-		type)
-	
-	## Adapt title according to 'multi'
-	if (isTRUE(multi) && !is.null(title)) {
-		title <- paste("Select one or several", Type, "files...")
-	} else title <- paste("Select one", Type, "file...")
-	
-	filters <- switch(type,
-		ZipZid 	= c("ZooImage files"          , ".zip",
-					"ZooImage files"          , ".zid"),
-		ZimZis 	= c("ZooImage metadata files" , ".zim",
-					"ZooImage metadata files" , ".zis"),
-		LstZid  = c("FlowCAM list files"      , ".lst",
-					"ZooImage files"          , ".zid"),
-		ZidZidb = c("ZooImage files"          , ".zid",
-					"ZooImage databases"      , ".zidb"),
-		Zip		= c("ZooImage picture files"  , ".zip"),
-		Zid		= c("ZooImage data files"     , ".zid"),
-		Zidb    = c("ZooImage databases"      , ".zidb"),
-		Zim		= c("ZooImage metadata files" , ".zim"),
-		Zis		= c("ZooImage sample files"   , ".zis"),
-		Zie		= c("ZooImage extension files", ".zie"),
-		Zic     = c("ZooImage Classification Scheme",".zic" ),
-		Img     = c("Tiff image files"        , ".tif",
-					"Jpeg image files"        , ".jpg",
-					"Zooimage import extensions",".zie",
-					"Table and ImportTemplate.zie",".txt",
-					"FlowCAM Table and ImportTemplate.zie",".txt"),
-		TifPgm  = c("Tiff image files"        , ".tif",
-					"Pgm image files"         , ".pgm"),
-		RData   = c("R data"                  , ".RData"))
-	filters <- matrix(filters, ncol = 2, byrow = TRUE)
-	
-	res <- dlgOpen(title = title, multiple = multi, filters = filters)$res	
-	if (length(res) && res != "" && quote)
-		res <- paste('"', res, '"', sep = "")
-	return(res)
-}
-
-## Get the name of one or several variables of a given class
-getVar <- function (class = "data.frame", default = "", multi = FALSE,
-title = paste("Choose a ", class, ":", sep = ""), warn.only = TRUE)
-{	
-	## Get one or several variables of a given object class
-	varlist <- objects(pos = 1)	# Get objects in .GlobalEnv
-	if (length(varlist) == 0) {
-		msg <- paste("There is no object of class '",
-			paste(class, collapse = " "), "' in the user workspace!", sep = "")
-		if (isTRUE(warn.only)) warning(msg) else stop(msg)
-		return("")
-	}
-	## Filter this list to keep only object inheriting a giving class...
-	Filter <- NULL
-	for (i in 1:length(varlist))
-		Filter[i] <- inherits(get(varlist[i]), class)
-	
-	## Keep only those objects
-	varlist <- varlist[Filter]	
-	if (length(varlist) == 0) {	# No such objects in .GlobalEnv
-		msg <- paste("There is no object of class '",
-			paste(class, collapse = " "), "' in the user workspace!", sep = "")
-		if (isTRUE(warn.only)) warning(msg) else stop(msg)
-		varsel <- "" 
-	} else {
-		if (default == "") default <- varlist[1]
-		varsel <- dlgList(varlist, preselect = default, multiple = multi,
-			title = title)$res
-	}
-    return(varsel)		
-}
-
-## Get the name of one or more lists with their components of a given class
-getList <- function (class = "data.frame", default = "", multi = FALSE,
-title = paste("Choose a list (of ", class, "s):", sep = ""), warn.only = TRUE)
-{	
-	## Get objects in .GlobalEnv
-	filter <- function(x) {
-		item <- get(x)
-		is.list(item) && all(sapply(item, function (y) inherits(y, class)))
-	}
-	varlist <- Filter(filter, objects(pos = 1))	
-	if (length(varlist) == 0) {
-		msg <- paste("There is no list of '", class,
-			"' objects in the user workspace", sep = "")
-		if (isTRUE(warn.only)) warning(msg) else stop(msg)
-		return("")
-	}
-	if (default == "") default <- varlist[1]
-	varsel <- dlgList(varlist, preselect = default, multiple = multi,
-		title = title)
-	return(varsel)		
-}
-
-
-## Formula calculation by variables selection for the classifier creation v1.2-2
-formulaVarSel <- function (ZITrain,
-calc.vars = getOption("ZI.calcVars", "calcVars"))
-{
-	## ZITrain must be a ZItrain object
-	if (!inherits(ZITrain, "ZITrain"))
-		stop("'ZITrain' must be a 'ZITrain' object")
-
-	calcfun <- match.fun(as.character(calc.vars)[1])
-	## Parameters measured on particles and new variables calculated
-	mes <- as.vector(colnames(calcfun(ZITrain)))
-	presel <- c("Id", "FIT_Cal_Const", "Item", "FIT_Raw_Area",
-		"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
-		"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Feret_Max_Angle",
-		"FIT_Feret_Min_Angle", "FIT_Avg_Red", "FIT_Avg_Green", "FIT_Avg_Blue",
-		"FIT_PPC", "FIT_Ch3_Peak", "FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF",
-		"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
-		"FIT_CaptureY", "FIT_Edge_Gradient", "FIT_Timestamp1", "FIT_Timestamp2",
-		"FIT_Source_Image", "FIT_Calibration_Image", "FIT_High_U32",
-		"FIT_Low_U32", "FIT_Total", "FIT_Red_Green_Ratio",
-		"FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio", "FIT_Ch2_Ch1_Ratio",
-		"X.Item.1", "X", "Y", "XM", "YM", "BX", "BY", "Width", "Height",
-		"Angle", "XStart", "YStart", "Count",  "Label", "Dil", "Class")
-	DontKeep <-  dlgList(mes, preselect = presel, multiple = TRUE,
-		title = "Select variable you don't want to use in the classification")$res
-	
-	## Selection of features for the creation of the classifier
-#	keep <- dlgList(mes, preselect = c("ECD", "FIT_Area_ABD",
-#		"FIT_Diameter_ABD", "FIT_Volume_ABD", "FIT_Diameter_ESD",
-#		"FIT_Volume_ESD", "FIT_Length", "FIT_Width", "FIT_Aspect_Ratio",
-#		"FIT_Transparency", "FIT_Intensity", "FIT_Sigma_Intensity",
-#		"FIT_Sum_Intensity", "FIT_Compactness", "FIT_Elongation",
-#		"FIT_Perimeter", "FIT_Convex_Perimeter", "FIT_Roughness",
-#		"FIT_Ch1_Peak", "FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF",
-#		"Area", "Mean", "StdDev", "Mode", "Min", "Max", "Perim.", "Width",
-#		"Height", "Major", "Minor", "Circ.", "Feret", "IntDen", "Median",
-#		"Skew", "Kurt", "Elongation", "CentBoxD", "GrayCentBoxD", "CentroidsD",
-#		"Range", "MeanPos", "SDNorm", "CV", "logArea", "logPerim.", "logMajor",
-#		"logMinor", "logFeret"),
-#		multiple = TRUE, title = "Select variables to use for classification")$res
-	
-	## Creation of one formula for classifier calculation
-	keep <- mes[!mes %in% DontKeep]
-	res <- as.formula(paste("Class ~ ", paste(keep, collapse = "+")))
-	return(res)
-}
-
-
 
 ###### TODO: check this! ##################
 ## Create a threshold formula
@@ -1368,13 +1281,13 @@ vignettesClass <- function ()
 {
 	## Extract on zid to respective directories
 	## Select zid files to be classified
-	zid <- selectFile(type = "Zid", multi = TRUE, quote = FALSE)
+	zid <- selectFile(type = "Zid", multiple = TRUE, quote = FALSE)
 	if (!length(zid)) return(invisible(NULL))
 	## Look if we have a classifier object defined
 	zic <- getTemp("ZI.ClassName", default = "")
-	zic <- getVar("ZIClass", multi = FALSE, default = zic,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-	if (!length(zic)) return(invisible())
+	zic <- selectObject("ZIClass", multiple = FALSE, default = zic,
+		title = "Choose a classifier (ZIClass object):")
+	if (!length(zic)) return(invisible(FALSE))
 	zicObj <- get(zic, envir = .GlobalEnv)
 
 	## Classify vignettes  
@@ -1389,7 +1302,7 @@ vignettesClass <- function ()
 subpartZIDat <- function ()
 {
     ## Select files to use
-    zidFile <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
+    zidFile <- selectFile(type = "Zid", multiple = FALSE, quote = FALSE)
 	if (!length(zidFile)) return(invisible(NULL))
 
     ## Read the zid file
@@ -1407,14 +1320,14 @@ subpartZIDat <- function ()
 classifyAfterFilter <- function ()
 {
     ## Extract on zid to respective directories
-    zid <- selectFile(type = "Zid", multi = FALSE, quote = FALSE)
+    zid <- selectFile(type = "Zid", multiple = FALSE, quote = FALSE)
     if (!length(zid)) return(invisible(NULL))
 	
     ## Look if we have a classifier object defined
     zic <- getTemp("ZI.ClassName", default = "")
-    zic <- getVar("ZIClass", multi = FALSE, default = zic,
-		title = "Choose a classifier (ZIClass object):", warn.only = FALSE)
-    if (!length(zic)) return(invisible())
+    zic <- selectObject("ZIClass", multiple = FALSE, default = zic,
+		title = "Choose a classifier (ZIClass object):")
+    if (!length(zic)) return(invisible(FALSE))
     zicObj <- get(zic, envir = .GlobalEnv)
 
     ## Give a name for the final directory
@@ -1442,11 +1355,20 @@ batchFilePlugin <- function ()
 		filters = matrix(c("FlowCAM Context file", ".ctx"), ncol = 2,
 		byrow = TRUE))$res
 	if (!length(ctxFile)) return(invisible(NULL))
-	## Create the table
-	createBatchFile(ctxfile = ctxFile, fil = FALSE, largest = FALSE,
+	ctxSampleDir <- dirname(dirname(ctxFile))
+
+	## Create the table of importation
+	ContextList <- ctxReadAll(ctxfile = ctxFile, fil = FALSE, largest = FALSE,
 		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
-		masks = FALSE, verbose = TRUE, txt = FALSE,
-		import.name = "batchExampleParameters")
+		masks = FALSE, verbose = TRUE)
+	
+	## Write the table of importation in the sample directory
+	write.table(ContextList, sep = "\t", dec = ".", row.names = FALSE, 
+		file = file.path(ctxSampleDir, "batchExampleParameters.txt"),
+		quote = TRUE, col.names = TRUE)
+	
+	message("Your import table has been created in your sample directory ",
+			ctxSampleDir)
 }
 
 

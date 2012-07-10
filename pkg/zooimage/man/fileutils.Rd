@@ -38,7 +38,8 @@ zidbList(dir, ...)
 jpgList(dir, ...)
 pngList(dir, ...)
 
-checkFileExists(file, extension, message = "file not found: \%s", force.file = FALSE)
+checkFileExists(file, extension, message = "file not found: \%s",
+    force.file = FALSE)
 checkDirExists(dir, message = 'Path "\%s" does not exist or is not a directory')
 checkEmptyDir(dir, message = 'dir "\%s" is not empty')
 forceDirCreate(dir)

@@ -247,7 +247,7 @@ show.log = TRUE, bell = FALSE)
 	
 	## Get the [Map] section
 	Lines <- getSection("Map", to = "end", "The [Map] section is empty!")
-	logProcess("Reading Filemap... OK!")
+	message("Reading Filemap... OK!")
 	
 	## Make sure _raw, and _work subdirectories exists and have write access
 	if (!forceDirCreate("_raw")) return(NULL)
@@ -272,14 +272,14 @@ show.log = TRUE, bell = FALSE)
 	## of the same image
 	### TODO: indicate progression with exact line number in the zie file!
 	### TODO: allow restarting from a given point!
-	cat("Checking all lines in the .zie file for raw images...\n")
+	message("Checking all lines in the .zie file for raw images...\n")
 	allImages <- character(0)
 	nLines <- length(Lines)
 	for (i in 1:nLines) {
 		### TODO: allow restarting from a given point and eliminate previous 
 		###       lines for which there are no images (considered as already
 		###       processed!)
-		Progress(i, nLines)
+		progress(i, nLines)
 		if (!grepl("^[-][>]", Lines[i])) {	# This is not a state change command
 			File <- MakeImageName(trimString(sub("[=].*$", "", Lines[i])))
 			checkFileExists(File)
@@ -288,14 +288,12 @@ show.log = TRUE, bell = FALSE)
 			allImages <- c(allImages, File)		
 		}
 	}
-	clearProgress()
-	logProcess("Checking all lines in the .zie file for raw images... OK!")
-	cat("...OK!\n")
+	progress(101) # Clear progression indicator
+	message("...OK!")
 	
 	## Now that we know all image files are there, process the [Map] section
 	## line-by-line	
-	logProcess("Processing all lines in the .zie file (import images and make .zim files)...")
-	cat("Processing all lines in the .zie file (import images and make .zim files)...\n")
+	message("Processing all lines in the .zie file (import images and make .zim files)...")
 	ok <- TRUE
 	
 	## BuildZim : This function builds the zim file and check it
@@ -306,8 +304,7 @@ show.log = TRUE, bell = FALSE)
 		
 		## If the zim file already exists, skip this
 		if (!replace && file.exists(zimFile)) {
-			logProcess(paste(".zim file already exists for '", Smp, "'",
-				sep = ""))
+			warning(".zim file already exists for '", Smp, "'")
 			return(TRUE)
 		}
 		
@@ -343,14 +340,11 @@ show.log = TRUE, bell = FALSE)
 				sep = "")
 			posFrac <- grep(Frac, zimD)
 			if (length(posFrac) < 1) {
-				logProcess(paste("[Fraction] section not found (", Frac, ")!",
-					sep = ""), Smp, stop = TRUE, show.log = show.log)
+				warning("[Fraction] section not found (", Frac, ")!")
 				return(invisible(FALSE)) 
 			}			
 			if (length(posFrac) > 1) {
-				logProcess(paste("multiple", Frac,
-					"sections found for this sample!"), Smp, stop = TRUE,
-					show.log = show.log)
+				warning("multiple", Frac, "sections for sample '", Smp, "'")
 				return(invisible(FALSE))
 			}
 			zimD[posFrac] <- "[Fraction]"
@@ -392,7 +386,7 @@ show.log = TRUE, bell = FALSE)
 		}
 				
 		## Write the zim file
-		logProcess(paste("Writing .zim file for sample '", Smp, "'", sep = ""))
+		message("Writing .zim file for sample '", Smp, "'")
 		cat(paste(c("ZI1", zimD), collapse = "\n"), file = zimFile)
 		return(TRUE)
 	}
@@ -450,7 +444,7 @@ show.log = TRUE, bell = FALSE)
 	## Main Loop
 	BlankField <- NULL  # The name of the blank-field image to use
 	for (i in 1:nLines) {
-		Progress(i, nLines)
+		progress(i, nLines)
 		res <- UpdateZim(Lines[i], zimData)
 		
 		## This is not a state change command
@@ -517,8 +511,8 @@ show.log = TRUE, bell = FALSE)
 					ExifData != "") { # Do a comparison of Exif data
 				    compa <- compareExif(ExifData, ExifData2)
 				    if (length(compa) > 0)
-						logProcess("Exif seems to be different from the rest!",
-							File)
+						warning("Exif seems to be different from the rest in '",
+							File, "'")
 				} else { # Just set Exif data
 				    attr(zimData, "Exif") <- ExifData2
 				}
@@ -539,10 +533,10 @@ show.log = TRUE, bell = FALSE)
 				if (zip.images != "" &&
 					length(grep(zip.images, FileConvName)) != 0 &&
 					length(grep("^_Calib", FileConvName)) == 0) {
-					finalname <- paste(noExtension(FileConvName), "zip", sep = ".")
+					finalname <- paste(noExtension(FileConvName), "zip",
+						sep = ".")
 				} else finalname <- FileConvName
-				logProcess(paste("Converting image '", File, "' into '",
-					finalname, "'", sep = ""))
+				message("Converting image '", File, "' into '", finalname, "'")
 				if (replace || !file.exists(FileExt)) { 
 					## Create variables Rawbase and Rawnoext
 					Rawbase <- File
@@ -552,40 +546,42 @@ show.log = TRUE, bell = FALSE)
 					if (Return != "" && length(grep(Return, res)) == 0) {
 						## Check that result matches
 						ok <- FALSE
-						logProcess("Error: result after conversion does not match!",
-							File)
+						warning("result after conversion does not match for '",
+							File, "'")
 					}
 					## Look if the converted file is created
 					if (!file.exists(FileConv)) {
 						ok <- FALSE
-						logProcess("Error: converted file not found!", File)
+						warning("problem: converted file not found '", File, "'")
 					}
 				}
 			} else {
 				if (Return != "")
-					logProcess(paste("Processing image '", File, sep = ""))
+					message("Processing image '", File, "'")
 			}
 
 			## If this is a blank-field, then test it
             if (length(grep("^_CalibBF", NewFile)) > 0) {
 				msg <- checkBF(FileConv)
 				if (!is.null(msg) && length(msg) > 0 && msg != "") {
-					logProcess(paste(c("Warning! Problem(s) detected with blank-field image:",
+					warning(paste(c(
+						"Warning! Problem(s) detected with blank-field image:",
 						msg), collapse = "\n\t"))  # Report the problem
 				}
 				## Eliminate dusts and smooth the image with a median filter
 				## on a 10 times reduced version of the image
 				## We need identify and convert form ImageMagick...16
-				Size <- imagemagick_identify(FileConv)
+####				Size <- imagemagick_identify(FileConv)
+				Size <- 0  ### TODO: calculate this differently!
 				Size2 <- round(Size / 10) # size of the resized image
-				imagemagick_convert(FileConv, Size, Size2)
+####				imagemagick_convert(FileConv, Size, Size2)
 				
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
 					tryCatch({
 						BFcorrection(FileConv, BlankField, deleteBF = FALSE)
 						}, error = function (e) {
-							logProcess(e, File)
+							warning(as.character(e))
 						})
 					
 					## Delete the uncorrected file
@@ -595,8 +591,8 @@ show.log = TRUE, bell = FALSE)
 					FileConv <- paste(noExtension(FileConv), "tif", sep = ".")
 					if (!file.exists(FileConv)) {
 						ok <- FALSE
-						logProcess("Error: blank-field corrected file not found!",
-							File)
+						warning("problem: blank-field corrected file not found: '",
+							File, "'")
 					}
 			    }
 			}
@@ -607,7 +603,7 @@ show.log = TRUE, bell = FALSE)
 				Msg <- attr(Cal, "msg")
 				## Report the problem
 				if (!is.null(Msg) && length(Msg) > 0 && Msg != "") {
-					logProcess(paste(c("Warning! Problem(s) detected with O.D. calibration image:",
+					warning(paste(c("problem(s) detected with O.D. calibration image:",
 						attr(Cal, "msg")), collapse = "\n\t"))  
 				}
 				## Put calibration data in the .zim file
@@ -646,8 +642,8 @@ show.log = TRUE, bell = FALSE)
 					file.copy(FileConv, WorkFileConv)
 				}
 				if (!file.exists(WorkFileConv)) {
-					logProcess("Error moving the converted file into '_work' subdirectory!",
-						File, stop = TRUE, show.log = show.log)
+					warning("problem moving the converted file into '_work' subdirectory for '",
+						File,"'")
 					return(invisible(FALSE))
 				} else {
 					## Do we zip the resulting images, using the zim file
@@ -663,20 +659,21 @@ show.log = TRUE, bell = FALSE)
 							# file.copy(file.path(curdir, zimfile), zimfile)
 							zipfile <- paste(noExtension(FileConvName), "zip",
 								sep = ".")
-							## TODO: how to include the comment in the zip file
-							## using the R standard zip() function?
-							#zip(zipfile, delete.source = TRUE,
-							#	comment.file = file.path(curdir, zimfile),
-							#	FileConvName)
-							zip(zipfile, FileConvName, delete.source = TRUE)
+							zip(zipfile, FileConvName)
+							unlink(FileConvName, recursive = TRUE)
+							## Add .zim data as comment to the .zip file
+							## Note: except for a warning,
+							## we don't care about not adding .zim data
+							if (!zipNoteAdd(zipfile,
+								file.path(curdir, zimfile))) {}
+	
 							setwd(curdir)
 							## Verify that the .zip file is created
 							if (!file.exists(zipfile)) {
-								stop(sprintf("Error creating the file : '%s' !",
+								warning(sprintf(
+									"problem creating the file : '%s' !",
 									zipfile))
-								#< logProcess("Error creating the file!", zipfile,
-								#<     stop = TRUE, show.log = show.log)
-								#< return(invisible(FALSE)) 
+								return(invisible(FALSE)) 
 							}
 						} else {
 							### TODO: what do we have to do here???? 
@@ -687,9 +684,8 @@ show.log = TRUE, bell = FALSE)
 		} else zimData <- res
 		## Update zimData with value returned by UpdateZim()
 	} 
+	progress(101) # Clear progression indicator
 	
-	## Clean up
-	clearProgress()
 	## Possibly remove latest blank-field from root directory (not needed any more!)
 	if (!is.null(BlankField)) {
 		## Delete blank-field images (.pgm and .img) in the root directory
@@ -705,7 +701,7 @@ show.log = TRUE, bell = FALSE)
 		unlink("fileconv.tif")
 	}
 	
-	finishLoop(ok, bell = bell, show.log = show.log)
+##	finishLoop(ok, bell = bell, show.log = show.log)
 }
 ## example:
 ## setwd("g:/zooplankton/Madagascar2Macro")	# My example directory
@@ -716,7 +712,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 ".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE,
 show.log = make.it)
 {		
-	logProcess("Creating .zie file...")
+	message("Creating .zie file...")
 	
 	## First, switch to the root directory
 	inidir <- getwd()
@@ -850,7 +846,7 @@ readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
 	}
 	
 	temp <- "exifdata.txt"
-	misc_dcraw(rawfile, '-i -v ', temp) 
+####	misc_dcraw(rawfile, '-i -v ', temp) 
 	if (!checkFileExists(temp, message = "Error while reading exif data for '%s'"))
 		return(NULL)
 	
@@ -935,7 +931,7 @@ checkBF <- function (BFfile)
 	if (ext == "tif") {
 		## First, convert into a .pgm file
 		pgmfile <- paste(BFfile, "pgm", sep = ".")
-		netpbm_tifftopnm( BFfile, pgmfile )
+####		netpbm_tifftopnm( BFfile, pgmfile )
 		delfile <- TRUE
 		ext <- "pgm"
 	} else delfile <- FALSE
@@ -943,7 +939,7 @@ checkBF <- function (BFfile)
 	if (ext != "pgm")
 		return(paste("Unrecognized image format for '", BFfile, "'", sep = ""))
 	
-	BF <- netpbm_pgmhist(pgmfile, delete = delfile)
+####	BF <- netpbm_pgmhist(pgmfile, delete = delfile)
 	
 	## Make sure we work with 16bit images
 	if (max(BF$Gray) < 256) {
@@ -1015,13 +1011,13 @@ calibrate <- function (ODfile)
 	if (ext == "tif") {
 		## First, convert into a .pgm file
 		pgmfile <- paste(ODfile, "pgm", sep = ".")
-		netpbm_tifftopnm( ODfile, pgmfile )
+####		netpbm_tifftopnm( ODfile, pgmfile )
 		delfile <- TRUE
 		ext <- "pgm"
 	} else delfile <- FALSE
 	if (ext != "pgm")
 		return(paste("Unrecognized image format for '", ODfile, "'", sep = ""))
-	OD <- netpbm_pgmhist(pgmfile, delete = delfile)
+####	OD <- netpbm_pgmhist(pgmfile, delete = delfile)
 	
 	## Make sure we work with 16bit images
 	if (max(OD$Gray) < 256) {
@@ -1185,17 +1181,17 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 	}
 
 	## Convert PGM files into BIFF
-	xite_pnm2biff(File, imgFile)
-	xite_pnm2biff(BFfile, imgBFfile)
+####	xite_pnm2biff(File, imgFile)
+####	xite_pnm2biff(BFfile, imgBFfile)
 	
 	## Get the mean gray level of the blank-field
-	meangray <- xite_statistics(imgBFfile)
+####	meangray <- xite_statistics(imgBFfile)
 	
 	## Eliminate the blank field
-	res <- xite_divide(meangray, imgFile, imgBFfile, imgcorrFile)
+####	res <- xite_divide(meangray, imgFile, imgBFfile, imgcorrFile)
 	
 	## Make the tiff file
-	xite_biff2tiff(imgcorrFile, tifFile)
+####	xite_biff2tiff(imgcorrFile, tifFile)
 	
 	return(TRUE) # Everything is fine!
 }
@@ -1234,10 +1230,10 @@ check = TRUE)
 	if (isWin()) {
 		## Convert the RAW file into PPM file (48bit color)
 		## We have to do it in two steps because windows lack of proper piping
-		misc_dcraw(RawFile, DcRawArgs , "RAWTEMP.PPM")
+####		misc_dcraw(RawFile, DcRawArgs , "RAWTEMP.PPM")
 
 		## Convert from 48bit color to 16bit grayscale
-		netpbm_ppmtopgm("RAWTEMP.PPM", OutputFile)
+####		netpbm_ppmtopgm("RAWTEMP.PPM", OutputFile)
 	} else {
 		## One step conversion (no tempfile)
 		cmd <- sprintf('dcraw %s %s | ppmtopgm > "%s"' , 

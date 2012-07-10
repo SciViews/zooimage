@@ -28,9 +28,10 @@ add.dot = !grepl("[.]", extension))
 		paste("[", extensionLetters, casefold(extensionLetters, upper = TRUE),
 		"]", sep = ""), extensionLetters)
 	pattern <- paste(parts, collapse = "") 
-	if (add.dot) pattern <- paste(".", pattern, sep = "")
+	if (isTRUE(as.logical(add.dot)))
+		pattern <- paste(".", pattern, sep = "")
 	pattern <- gsub( "[.]", "[.]", pattern)
-	return(paste(pattern, "$", sep = ""))
+	paste(pattern, "$", sep = "")
 }
 
 ## Checks if the file has the given extension (used at different places...)
@@ -40,13 +41,13 @@ pattern = extensionPattern(extension))
 
 ## Get the name of a file, without its extension
 noExtension <- function (file)
-	return(sub("\\.[^.]+$", "", basename(file)))
+	sub("\\.[^.]+$", "", basename(file))
 
 ## List files with given extension
 listFilesExt <- function (dir, extension = "r",
 pattern = extensionPattern(extension), ... )
 {
-	checkDirExists(dir)
+	if (!checkDirExists(dir)) return(character(0))
 	list.files(dir, pattern = pattern , ...)
 }
 

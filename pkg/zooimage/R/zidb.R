@@ -158,7 +158,7 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		stop("There is no directories to process in ", getwd())
 		
 	## Start the process
-	logClear()
+##	logClear()
 	if (isTRUE(check)) {
 		zidVerifyAll(path = path, samples = samples, 
 			check.vignettes = check.vignettes, show.log = FALSE, bell = FALSE)
@@ -169,26 +169,25 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		
 	## Compress these files
 	smax <- length(samples)
-	cat("Compression...\n")
-	logProcess("\nCompression...")
+	message("Compression...")
 	ok <- TRUE
 	for (s in 1:smax) {
 		## Progress should be taken out of here since it is not really related 
 		## to the function's job, instead we could throw a condition 
 		## from zidbMakeAll when it starts to indicates it has started
-		Progress(s, smax)	
+		progress(s, smax)	
 		zidbMake(samples[s], type = type, check = FALSE, 
 			check.vignettes = check.vignettes, replace = replace,
 			delete.source = delete.source)
 	}
-	clearProgress()
+	progress(101) # Clear progression indicator
 	
 	## Possibly clean the whole directory (move .zim files to \_raw
 	## and delete the \_work subdir if everything is fine
 	if (ok) zidClean(path = path, samples = samples)
 	
 	## Clean up
-	finishLoop(ok = ok, bell = bell, show.log = show.log)
+##	finishLoop(ok = ok, bell = bell, show.log = show.log)
 }
 
 ## Convert .zid file to .zidb file
@@ -199,7 +198,7 @@ check.vignettes = TRUE, replace = FALSE, delete.source = replace)
     IniDir <- dirname(zidfile)
     ## Unzip the file...
 	message("Unzipping ZID file '", basename(zidfile), "' ...")
-    zooimage:::unzip(zidfile, path = IniDir)
+    unzip(zidfile, exdir = IniDir)
     zidbMake(zidir = ZidDir, type = type, check = check,
 		check.vignettes = check.vignettes, replace = replace,
 		delete.source = delete.source)

@@ -18,64 +18,82 @@
 ## Zip a .tif image and embed the corresponding .zim file as comment
 ## This requires the 'zip' program!
 zipImg <- function (imagefile, zimfile = NULL, verify.zimfile = TRUE,
-replace = FALSE, delete.source = TRUE, check.zip = TRUE, show.log = TRUE)
+replace = FALSE, delete.source = FALSE)
 {
-	## We need to switch to the root of sample dir for correct path in the zip file
-	imagefile <- imagefile[1]
-	inidir <- getwd()
-	setwd(dirname(imagefile))
-	on.exit(setwd(inidir))
-	rootdir <- getwd()
+	## We need to switch to the image dir for correct path in the zip file
+	imagefile <- as.character(imagefile)
+	if (length(imagefile) != 1) {
+		warning("you must provide exactly one image file name")
+		return(invisible(FALSE))
+	}
+	## Check if imagefile exists
+	if (!checkFileExists(imagefile, force.file = TRUE,
+		message = "%s doesn't exist, or is a directory!"))
+		return(invisible(FALSE))
+		
+	## Switch directory to the one of the image
+	initdir <- setwd(dirname(imagefile))
+	on.exit(setwd(initdir))
+	## Simplify image file path, since we are now in the right dir
 	imagefile <- basename(imagefile)
 
-	## Check if imagefile exists
-	if (!checkFileExists(imagefile, message = "%s doesn't exist, or is a directory!",
-		force.file = TRUE))
-		return(invisible(FALSE))
-
 	## Is there an associated .zim file?
-	if (is.null(zimfile)) {
-		sample.info <- sampleInfo(imagefile, "fraction",
+	if (!length(zimfile)) {
+		fraction <- sampleInfo(imagefile, "fraction",
 			ext = extensionPattern("tif"))
-		zimfile <- paste(sample.info, ".zim", sep = "")
+		zimfile <- paste(fraction, "zim", sep = ".")
+	} else {
+		zimfile <- as.character(zimfile)
+		if (length(zimfile) > 1) {
+			warning("you cannot provide more than one .zim file")
+			return(invisible(FALSE))
+		}
 	}
 
 	### TODO: the zim file can be other parts of it , like Sample+A1.zim,
 	###       instead of Sample+A.zim!
-	if (!file.exists(zimfile))
-		stop("creation of .zim file not implemented yet!")
-
-	## Recheck .zim file
-	if (!checkFileExists(zimfile, message = "%s - doesn't exist or is corrupted!"))
+	if (!checkFileExists(zimfile, force.file = TRUE,
+		message = "%s doesn't exist; cannot process the corresponding image"))
 		return(invisible(FALSE))
 
 	## Verify the content of the .zim file
-	if (verify.zimfile && zimVerify(zimfile) != 0)
-		stop(sprintf("%s appears to be corrupted!", zimfile))
+	if (isTRUE(as.logical(verify.zimfile)) && !zimVerify(zimfile))
+		return(invisible(FALSE))
 
 	## Zip the image in the '_raw' subdir and add the information from the .zim
 	## file as comment
-	zipfile <- paste(noExtension(imagefile), ".zip", sep = "")
+	zipfile <- paste(noExtension(imagefile), "zip", sep = ".")
 	zipfile <- file.path(".", "_raw", zipfile)
 	## Make sure that "_raw" subdir exists
 	if (!forceDirCreate("_raw")) return(invisible(FALSE))
 
 	## Copy or move the image to a .zip compressed file
-	## TODO: how to include the comment in the zip file with the standard R zip() function?
-	#zip(zipfile, imagefile, comment.file = zimfile,
-	#	delete.zipfile.first = replace)
-	zip(zipfile, imagefile)
+	if (isTRUE(as.logical(replace)) && file.exists(zipfile))
+		unlink(zipfile)
+	
+	## zip() function returns status zero if everything is fine
+	if (zip(zipfile, imagefile) != 0) {
+		warning("error while zipping '", basename(imagefile), "'")
+		return(invisible(FALSE))
+	}
 
-	## Invisibly indicate success
+	## Add comment to the zip file
 	## Note: the .zim file is never deleted, because it can be used for other
 	## purposes!
-	return(invisible(TRUE))
+	## Note2: except for a warning, we don't care about not adding .zim data
+	if (!zipNoteAdd(zipfile, zimfile)) {}
+
+	## Do we delete source image? (not much a problem if it fails too)
+	if (isTRUE(as.logical(delete.source))) unlink(imagefile)
+
+	## Invisibly indicate success
+	invisible(TRUE)
 }
 
 ## Compress all .tif images in the corresponding directory
 ## (at least those with an associated .zim file)
 zipImgAll <- function (path = ".", images = NULL, check = TRUE,
-replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
+replace = FALSE, delete.source = FALSE)
 {
 	## First, switch to that directory
 	inidir <- getwd()
@@ -110,57 +128,83 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 	}
 
 	## Check the zim files
-	logClear()
 	ok <- TRUE
 	if (check) {
-		cat("Verification of .zim files...\n")
-		logProcess("Verification of .zim files...")
+		message("Verification of .zim files...")
 		ok <- TRUE
 		zfiles <- unique(zimfiles)
 		zmax <- length(zfiles)
 		oks <- sapply( 1:zmax, function (z) {
-			Progress(z, zmax)
+			progress(z, zmax)
 			return(zimVerify(zfiles[z]))
 		})
 		ok <- all(oks)
-		clearProgress()
+		progress(101) # Clear progression indicator
 	}
 	if (ok) {
-		logProcess("\n-- OK, no error found. --")
-		cat("-- Done! --\n")
+		message("-- Done! --")
 	} else {
-		stop("contains corrupted .zim files, compression not started!")
+		warning("corrupted .zim file(s) found, compression not started!")
+		return(invisible(FALSE))
 	}
 
 	## If everything is ok compress these files
 	imax <- length(images)
-	cat("Compression of images...\n")
-	logProcess("\nCompression of images...")
+	message("Compression of images...")
 
 	oks <- sapply(1:imax, function (i) {
-		Progress(i, imax)
-		return(zipImg(images[i], verify.zimfile = FALSE, replace = replace,
-			delete.source = delete.source, check.zip = FALSE))
+		progress(i, imax)
+		zipImg(images[i], verify.zimfile = FALSE, replace = replace,
+			delete.source = delete.source)
 	})
-
-	clearProgress()
-
-	## Final report
-	finishLoop(ok, bell = bell, show.log = show.log)
+	
+	progress(101) # Clear progression indicator
+	message("--- Done! --")
+	return(invisible(TRUE))
 }
 
-## Use zipnote to extract the comment
-unzipImg <- function (zipfile)
+## Uncompress .tif image and .zim file from a .zip archive file
+unzipImg <- function (zipfile, replace = FALSE, delete.source = FALSE)
 {
 	# Extract .zim file, .tif file or both from a .zip archive
-	zipNote(zipfile)
+	zipfile <- as.character(zipfile)
+	if (length(zipfile) != 1) {
+		warning("you must provide one file path in 'zipfile'")
+		return(invisible(FALSE))
+	}
+	
+	## Check if zipfile exists
+	if (!checkFileExists(zipfile, force.file = TRUE,
+		message = "%s doesn't exist, or is a directory!"))
+		return(invisible(FALSE))
+	
+	## Determine the name of the corresponding .zim file
+	fraction <- sampleInfo(zipfile, "fraction",
+		ext = extensionPattern("zip"))
+	zimfile <- paste(fraction, "zim", sep = ".")
+	
+	## Do we replace existing .zim files?
+	replace <- isTRUE(as.logical(replace))
+	if (replace || !file.exists(zimfile)) {
+		## Extract data from the zimfile
+		if (!length(zipNoteGet(zipfile, zimfile)))
+			return(invisible(FALSE))
+	}
+	
+	## Unzip the .tif image
+	if (!length(unzip(zipfile, overwrite = replace)))
+		return(invisible(FALSE))
+
+	## Do we delete zip archive? (not much a problem if it fails here)
+	if (isTRUE(as.logical(delete.source))) unlink(zipfile)
+
+	## Invisibly indicate success
+	invisible(TRUE)
 }
 
-unzipImgAll <- function (path = ".", zipfiles = NULL)
+unzipImgAll <- function (path = ".", zipfiles = NULL, replace = FALSE,
+delete.source = FALSE)
 {
-	## Check that unzip is available
-	##checkUnzipAvailable()
-
 	## Extract all .zim, .tif or both from .zip files
 	stop("Not implemented yet!")
 }

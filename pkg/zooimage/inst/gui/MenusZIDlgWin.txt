@@ -24,11 +24,6 @@ $Tk.ZIDlgWin
 ||$E&xit
 |||From the &assistant	Ctrl+X			~~ closeAssistant()
 |||From &ZooImage				~~ closeZooImage()
-|$Real-time
-||&Start process...                		~~ realtimeStart()
-||&Stop process...                 		~~ realtimeStop()
-||&Export results...               		~~ realtimeSave()
-||&Remove data...                  		~~ realtimeReset()
 |$Objects
 ||&Load						~~ loadObjects()
 ||&Save						~~ saveObjects()

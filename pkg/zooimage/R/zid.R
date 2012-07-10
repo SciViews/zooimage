@@ -111,9 +111,8 @@ bell = FALSE)
 	
 	## Start the process
 	smax <- length(samples)
-	logClear()
-	cat("Verification...\n")
-	logProcess("\nVerification...")
+##	logClear()
+	message("Verification...")
 	
 	ok <- sapply(samples, function(s) {
 		zidVerify(s, type = type,
@@ -121,7 +120,7 @@ bell = FALSE)
 	})
 	
 	## Clean up
-	finishLoop(all(ok), bell = bell, show.log = show.log)
+##	finishLoop(all(ok), bell = bell, show.log = show.log)
 }
 
 ## Compress one sample as a single .zid zipped file	
@@ -163,7 +162,13 @@ check.zip = TRUE)
 	
 	## Do compress the directory in the .zip file
 	## Copy or move all corresponding files to a .zid zip-compressed file
-	invisible(zip(zidfile, zidir, delete.source = delete.source))
+	res <- zip(zidfile, zidir)
+	
+	## Do we delete sources?
+	if (isTRUE(as.logical(delete.source)))
+		unlink(zidir, recursive = TRUE)
+	
+	invisible(res != 0)
 }
 
 ## Compress all data in the corresponding directory
@@ -193,7 +198,7 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		stop("There is no directories to process in ", getwd())
 		
 	## Start the process
-	logClear()
+##	logClear()
 	if (isTRUE(check)) {
 		zidVerifyAll(path = path, samples = samples, 
 			check.vignettes = check.vignettes, show.log = FALSE, bell = FALSE)
@@ -204,26 +209,25 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 		
 	## Compress these files
 	smax <- length(samples)
-	cat("Compression...\n")
-	logProcess("\nCompression...")
+	message("Compression...")
 	ok <- TRUE
 	for (s in 1:smax) {
 		## Progress should be taken out of here since it is not really related 
 		## to the function's job, instead we could throw a condition 
 		## from zidCompress when it starts to indicates it has started
-		Progress(s, smax)  
+		progress(s, smax)  
 		zidCompress(samples[s], type = type, check = FALSE, 
 			check.vignettes = check.vignettes, replace = replace,
 			delete.source = delete.source, check.zip = FALSE)
 	}
-	clearProgress()
+	progress(101) # Clear progression indicator
 	
 	## Possibly clean the whole directory (move .zim files to \_raw
 	## and delete the \_work subdir if everything is fine
 	if (ok) zidClean(path = path, samples = samples)
 	
 	## Clean up
-	finishLoop(ok = ok, bell = bell, show.log = show.log)
+##	finishLoop(ok = ok, bell = bell, show.log = show.log)
 }
 
 ## Clean Zid (eliminate the _work subdirectory and move initial data to _raw)
@@ -275,7 +279,12 @@ delete.source = FALSE, show.log = TRUE)
 		return(invisible(FALSE))
 	
 	## Uncompress it
-	unzip(zidfile, path, delete.source = delete.source)
+	res <- unzip(zidfile, exdir = path)
+	
+	## Do we delete sources?
+	if (isTRUE(as.logical(delete.source))) unlink(zidfile)
+	
+	return(length(res) > 0)
 }
 
 ## Uncompress all .zid files in the 'path.extract' directory
@@ -289,7 +298,7 @@ show.log = TRUE, bell = FALSE)
         stop("no .zid files!")
 	
 	## start the process
-	logClear()
+##	logClear()
 	ok <- TRUE
 
 	## Check that dirs / files with corresponding names exist in path.extract
@@ -317,21 +326,20 @@ show.log = TRUE, bell = FALSE)
 	}
 	
 	## Start decompression
-	cat("Decompression...\n")
-	logProcess("\nDecompression...")
+	message("Decompression...")
 	for (s in 1:smax) {
-		Progress(s, smax) 
+		progress(s, smax) 
 		zidUncompress(zidfiles[s], path = path.extract,
 			delete.source = delete.source, show.log = FALSE)
 	}
-	clearProgress()
-	finishLoop(TRUE, bell = bell, show.log = show.log)
+	progress(101) # Clear progression indicator
+##	finishLoop(TRUE, bell = bell, show.log = show.log)
 }
 
 zidExtract <- function (file, zidfile)
 {
 	tmpd <- tempdir()
-	unzip(zidfile, tmpd)
+	unzip(zidfile, exdir = tmpd)
 	file.path(tmpd, file)
 }
 

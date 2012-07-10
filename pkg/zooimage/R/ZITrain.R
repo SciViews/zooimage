@@ -64,13 +64,13 @@ ident = NULL, start.viewer = FALSE)
 	if (!forceDirCreate(dir_)) return(invisible(FALSE))
 
 	for (i in 1:zmax) {
-		Progress(i, zmax)
+		progress(i, zmax)
         if (is.null(zidbfiles)) {
-    		logProcess("data", zidfiles[i])
+    		message("data", zidfiles[i])
             ## Using a temporary directory to unzip all files and then copy
     		## the RData files to the train directory
     		td <- tempfile()
-    		unzip(zipfile = zidfiles[i], path = td, delete.source = FALSE)
+    		unzip(zipfile = zidfiles[i], exdir = td)
     		datafiles <- file.path(td, list.files(td,
     			pattern = extensionPattern(".RData"), recursive = TRUE))
     		if (length(datafiles)) file.copy(datafiles, dir)
@@ -95,7 +95,7 @@ ident = NULL, start.viewer = FALSE)
             save(ZI.sample, file = file.path(dir, paste(sub(".zidb", "", basename(zidbfiles[i])), "_dat1.RData", sep = "")))
 		}
 	}
-	clearProgress()
+	progress(101) # Clear progression indicator
 
 	## Create the other directories
     Lines <- scan(groups.template, character(), sep = "\n", skip = 2,
@@ -152,7 +152,7 @@ increaseTrain <- function (traindir, zidbfiles)
 	zmax <- length(zidbfiles)
 	message("Adding data and vignettes to the training set...")
 	for (i in 1:zmax) {
-		Progress(i, zmax)
+		progress(i, zmax)
 		## treatment depends if it is a .zid or .zidb file
 		zidbfile <- zidbfiles[i]
 		if (grepl("[.]zidb$", zidbfile)) { # .zidb file
@@ -161,7 +161,7 @@ increaseTrain <- function (traindir, zidbfiles)
 			## Using a temporary directory to unzip all files and then copy
 			## the RData files to the train directory
 			td <- tempfile()
-			unzip(zipfile = zidbfiles[i], path = td, delete.source = FALSE)
+			unzip(zipfile = zidbfiles[i], exdir = td)
 			datafiles <- file.path(td, list.files(td,
 				pattern = extensionPattern(".RData"), recursive = TRUE))
 			if (length(datafiles))
@@ -176,7 +176,7 @@ increaseTrain <- function (traindir, zidbfiles)
 			unlink(td, recursive = TRUE)	
 		}
 	}
-	clearProgress()
+	progress(101) # Clear progression indicator
 	message("-- Done --\n")
 	return(invisible(TRUE))
 }
