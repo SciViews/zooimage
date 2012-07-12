@@ -48,7 +48,7 @@ $Tk.ZIDlgWin
 |||zimVerify()                          	~~ guiDlgFunction("zimVerify")
 |||--
 |||zimE&xtractAll()                     	~~ guiDlgFunction("zimExtractAll")
-|||zimRefreshAll()                      	~~ guiDlgFunction("zimRefreshAll")
+|||zimUpdateAll()                      	        ~~ guiDlgFunction("zimUpdateAll")
 ||$ZooImage &Picture (zip)
 |||zipImg()	    				~~ guiDlgFunction("zipImg")
 |||zipImg&All()	    				~~ guiDlgFunction("zipImgAll")

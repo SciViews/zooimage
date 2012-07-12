@@ -17,7 +17,7 @@
 
 ## Zip a .tif image and embed the corresponding .zim file as comment
 ## This requires the 'zip' program!
-zipImg <- function (imagefile, zimfile = NULL, verify.zimfile = TRUE,
+zipImg <- function (imagefile, zimfile = NULL, check.zim = TRUE,
 replace = FALSE, delete.source = FALSE)
 {
 	## We need to switch to the image dir for correct path in the zip file
@@ -57,7 +57,7 @@ replace = FALSE, delete.source = FALSE)
 		return(invisible(FALSE))
 
 	## Verify the content of the .zim file (returns -1 in case of error)
-	if (isTRUE(as.logical(verify.zimfile)) && zimVerify(zimfile) < 0)
+	if (isTRUE(as.logical(check.zim)) && zimVerify(zimfile) < 0)
 		return(invisible(FALSE))
 
 	## Zip the image in the '_raw' subdir and add the information from the .zim
@@ -93,7 +93,7 @@ replace = FALSE, delete.source = FALSE)
 
 ## Compress all .tif images in the corresponding directory
 ## (at least those with an associated .zim file)
-zipImgAll <- function (path = ".", images = NULL, check = TRUE,
+zipImgAll <- function (path = ".", images = NULL, check.zim = TRUE,
 replace = FALSE, delete.source = FALSE)
 {
 	## First, switch to that directory
@@ -135,7 +135,7 @@ replace = FALSE, delete.source = FALSE)
 
 	## Check the zim files
 	ok <- TRUE
-	if (isTRUE(as.logical(check))) {
+	if (isTRUE(as.logical(check.zim))) {
 		message("Verification of .zim files...")
 		flush.console()
 		zfiles <- unique(zimfiles)
@@ -155,12 +155,11 @@ replace = FALSE, delete.source = FALSE)
 	## If everything is ok compress these files
 	message("Compression of images...")
 	flush.console()
-	ok <- batch(images, zipImg, verify.zimfile = FALSE,
+	ok <- batch(images, zipImg, check.zim = FALSE,
 		replace = replace, delete.source = delete.source, verbose = FALSE)
 	if (!ok) {
 		warning(sum(attr(ok, "ok")), "/", length(images),
-			" images were compressed")
-		## Note: we don't detail here, because one can see created files!
+			" images were compressed (see .last.batch)")
 		invisible(FALSE)
 	} else {
 		message("-- Done! --")
@@ -257,7 +256,7 @@ delete.source = FALSE)
 		delete.source = delete.source, verbose = FALSE)
 	if (!ok) {
 		warning(sum(attr(ok, "ok")), "/", length(zipfiles),
-			" archives were uncompressed")
+			" archives were uncompressed (see .last.batch)")
 		## Note: we don't detail here, because one can see created image files!
 		invisible(FALSE)
 	} else {

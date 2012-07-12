@@ -29,7 +29,6 @@
 \alias{optInOutDecimalSep}
 \alias{calib}
 \alias{subpartZIDat}
-\alias{batchFilePlugin}
 
 \title{ The ZooImage GUI (Graphical User Interface) }
 \description{
@@ -65,8 +64,8 @@ listObjects()
 removeObjects()
 calib()
 optInOutDecimalSep()
+
 subpartZIDat()
-batchFilePlugin()
 }
 
 \arguments{

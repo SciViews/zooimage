@@ -22,21 +22,13 @@ import(RWeka)
 import(RWekajars)
 
 
-export(BFcorrection)
-export(calibrate)
-export(checkBF)
-export(compareExif)
 export(getSpectrum)
 export(histSpectrum)
-export(isTestFile)
-export(isZim)
 export(lvq)
 export(nnet2)
 export(plotAbdBio)
 export(processSample)
 export(processSampleAll)
-export(rawConvert)
-export(readExifRaw)
 export(sampleAbd)
 export(sampleBio)
 export(sampleSpectrum)
@@ -62,26 +54,26 @@ export(zidbLink)
 export(zidbDatRead)
 export(zidbPlot)
 export(zidbDrawVignette)
-export(ZIE)
-export(ZIEimportJpg)
-export(ZIEimportTable)
-export(ZIEimportTif)
-export(ZIEimportZie)
-export(zieCompile)
-export(zieMake)
-export(zimCreate)
-export(zimDatList)
-export(zimEdit)
-export(zimExtractAll)
-export(zimList)
-export(zimMake)
-export(zimRefreshAll)
-export(zimVerify)
-
-
 
 # Zic
 export(zicCheck)
+
+# Zie
+export(ZIE)
+export(zieCompile)
+export(zieCompileFlowCAM)
+export(zieMake)
+
+# Zim
+export(isZim)
+export(zimCreate)
+export(zimEdit)
+export(zimExtractAll)
+export(zimMake)
+export(zimUpdateAll)
+export(zimVerify)
+export(zimDatMakeFlowCAM)
+export(zimDatMakeFlowCAMAll)
 
 # Zip
 export(zipImg)
@@ -103,6 +95,7 @@ export(ZIRecodeLevels)
 
 # Utilities
 export(calcVars)
+export(calibrate)
 export(ecd)
 export(getDec)
 export(listSamples)
@@ -163,7 +156,6 @@ export(viewResults)
 export(ZIDlg)
 # Not in menus yet!
 export(subpartZIDat)
-export(batchFilePlugin)
 
 # GUI-Utilities
 export(selectGroups)

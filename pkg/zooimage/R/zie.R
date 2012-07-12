@@ -15,138 +15,9 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-## Specific functions for manipulating .zie files (ZooImage Import/Export)
-## These .zie files contain specifications for importing a series of images
-## and creating their corresponding .zim files (ZooImage Metadata) automatically.
-## Typically, they are created by 'importing' image/data from other software
-## or from digitization hardware/software.
-## Another version specifies rules to automated exportation of ZooImage results.
-## They are all 'ZIE' objects, with respective subclasses 'ZIEimport' and
-## 'ZIEexport'.
-
-### TODO: check image filename during importation!!!
-### TODO: a routine that lists all ZIEimport objects + summary of them.
-
-## Standard import/export classes provided by default with ZooImage
-
-## The function that eases creation of a ZIE object
-### TODO: add a 'message' entry = message to display after of the importation
-ZIE <- function (title, filter, description, pattern, command, author,
-version, date, license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
-type = c("import", "export"))
-{	
-	if (!is.character(title) || !is.character(filter) ||
-		!is.character(description) || !is.character(pattern) ||
-		!is.character(command) || !is.character(author) ||
-		!is.character(version) || !is.character(date) ||
-		!is.character(license) || !is.character(url) ||
-		!is.character(depends))
-		stop("All arguments must be character strings!")
-	obj <- list(title = title[1], filter = filter[1], 
-		description = paste(description, collapse = "\n"), pattern = pattern[1],
-		command = paste(command, collapse = "\n"), author = author[1],
-		version = version[1], license = license[1], depends = depends[1])
-	type <- match.arg(type, several.ok = FALSE)
-	class(obj) <- switch(type,
-		import = c("ZIEimport", "ZIE"),
-		export = c("ZIEexport", "ZIE"))
-	return(obj)
-}
-
-print.ZIE <- function (x, ...)
-{
-	SubClass <- class(x)[1]
-	cat("A", getTemp("ZIname"),
-		"Import/Export definition object of subclass:", SubClass, "\n")
-	cat("\n", x$description, "\n\n")
-	cat("Title:  ", x$title, "\n")
-	cat("Filter: ", x$filter, "\n")
-	cat("Pattern:", x$pattern, "\n")
-	cat("Command:", x$command, "\n")
-	cat("Author: ", x$author, "\n")
-	cat("Version:", x$version, "\n")
-	cat("Date:    ", x$date, "\n")
-	cat("License:", x$license, "\n")
-	cat("Depends:", x$depends, "\n")
-	cat("URL:    ", x$url, "\n")
-	return(invisible(x))
-}
-
-## Import plain .tif files, with manual creation of associated .zim files
-ZIEimportTif <- ZIE(
-	title       = "Tiff image files (*.tif)",
-	filter      = "*.tif",
-	description = c("Manual creation of ZooImage Metadata files (.zim)",
-				    "given a list of directly usable .tif images",
-				    "that is, no conversion required and image names",
-				    "already follow the ZooImage convention"),
-	pattern     = "\\.[tT][iI][fF]$",
-	command     = "zimMake(dir = Dir, pattern = Pattern, images = Files, show.log = TRUE)",
-	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
-	version     = "1.1-0",
-	date        = "2007-02-20",
-	license     = "GPL 2 or above",
-	url         = "",
-	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
-	type        = "import")
- 
-## Import plain .jpg files, with manual creation of associated .zim files
-ZIEimportJpg <- ZIE(
-	title       = "Jpeg image files (*.jpg)",
-	filter      = "*.jpg",
-	description = c("Manual creation of ZooImage Metadata files (.zim)",
-				    "given a list of directly usable .jpg images",
-				    "that is, no conversion required and image names",
-				    "already follow the ZooImage convention"),
-	pattern     = "\\.[jJ][pP][gG]$",
-	command     = "zimMake(dir = Dir, pattern = Pattern, images = Files, show.log = TRUE)",
-	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
-	version     = "1.1-0",
-	date        = "2007-02-20",
-	license     = "GPL 2 or above",
-	url         = "",
-	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
-	type        = "import")
-
-## Complex import of images (conversion, renaming, etc.) with automatic creation
-## of associated .zim files using a .zie file
-ZIEimportZie <- ZIE(
-	title       = "ZooImage Import Extension (Import_*.zie)",
-	filter      = "Import_*.zie",
-	description = c("Run a .zie import specification file to convert",
-				    "and/or rename images and automatically create",
-				    "associated .zim files (ZooImage Metadata)"),
-	pattern     = "\\.[zZ][iI][eE]$",
-	command     = "zieMake(path = Dir, Filemap = Files[1], check = TRUE, show.log = TRUE))",
-	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
-	version     = "1.1-0",
-	date        = "2007-02-20",
-	license     = "GPL 2 or above",
-	url         = "",
-	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
-	type        = "import")
-
-## Compile a .zie file from TemplateImport.zie and a table.txt and then compute it
-ZIEimportTable <- ZIE(
-	title       = "Table and ImportTemplate.zie (*.txt)",
-	filter      = "*.txt",
-	description = c("Create a .zie file by interpretting a table,",
-				    "using a template file in the same directory",
-				    "and named 'ImportTemplate.zie'. The resulting",
-				    ".zie file is then run to make images + metadata"),
-	pattern     = "\\.[tT][xX][tT]$",
-	command     = "zieCompile(path = Dir, TableFile = Files[1], make.it = TRUE, show.log = TRUE))",
-	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
-	version     = "1.1-0",
-	date        = "2007-02-20",
-	license     = "GPL 2 or above",
-	url         = "",
-	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
-	type        = "import")
-
+## Make .zim files and import images, using a .zie import file for specifs
 zieMake <- function (path = ".", Filemap = "Import_Table.zie", check = TRUE,
-replace = FALSE, move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$",
-show.log = TRUE, bell = FALSE)
+replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 {
 	## Example of use:
 	## Import Digicam RAW files (currently, only Canon .CR2 files)
@@ -154,9 +25,10 @@ show.log = TRUE, bell = FALSE)
 	## move processed .cr2 files into _raw; create associated .zim files
 
 	## This requires the 'dc_raw' and 'ppmtopgm' programs plus a couple of others!
+	## TODO: change this to eliminate external programs dependencies!
 	## We need 'identify' and 'convert' from ImageMagick 16 bits!
 	## Make sure they are available
-	if (isTRUE(check)) {
+	if (isTRUE(as.logical(check))) {
 		#checkCapable("identify")
 		#checkCapable("convert")
 		#checkCapable("dc_raw")
@@ -165,10 +37,9 @@ show.log = TRUE, bell = FALSE)
 	}
 	
 	## First, switch to the root directory
-	inidir <- getwd()
-	checkDirExists(path)
-	setwd(path)
-	on.exit(setwd(inidir))
+	if (!checkDirExists(path)) return(invisible(FALSE))
+	initdir <- setwd(path)
+	on.exit(setwd(initdir))
 	path <- getwd()	# Indicate we are now in the right path
 	### TODO If last subdir of path is "_raw", then, work with parent dir
 	## and do not move files in _raw subdir
@@ -176,47 +47,56 @@ show.log = TRUE, bell = FALSE)
 	## Read the Filemap
 	cat("Reading Filemap...\n")
 	if (!checkFileExists(Filemap, extension = "zie", force.file = TRUE))
-		return(NULL)
+		return(invisible(FALSE))
 	
 	## Check first line for ZI1-3
-	if (!checkFirstLine(Filemap))
-		return(NULL)
+	if (!checkFirstLine(Filemap)) return(invisible(FALSE))
 	
 	## Read the file and check it is not empty
 	## Note: we don't use comment.char = '#' because we want to read and rewrite
 	## those comments!
 	Lines <- scan(Filemap, character(), sep = "\t", skip = 1,
 		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "") 
-	if (length(Lines) < 1) stop('Empty or corrupted!')
+	if (!length(Lines)) {
+		warning('filemap empty or corrupted!')
+		return(invisible(FALSE))
+	}
 	
 	## Get the position of a section
 	getSectionPos <- function (section = "Map",
-	message = "section '[%s]' found") {
+		message = "section '[%s]' found") {
 		rx <- sprintf("[[]%s[]]", section)
 		out <- grep(rx, Lines)
-		if (length(out) != 1) stop(sprintf(message, section))
-		return(out)
+		if (length(out) != 1) {
+			warning(sprintf(message, section))
+			NULL
+		} else out
 	}
 	
 	getSection <- function (section = "Map", to = c("next","end"),
-	message = "The [Map] section is empty!") {
+		message = "The [Map] section is empty!") {
 		to <- match.arg(to)
 		start <- getSectionPos(section)[1]
+		if (!length(start)) return(NULL)
 		end <- switch(to, 
 			"next" = {
 				ends <- getSectionPos(".*")
+				if (!length(ends)) return(NULL)
 				ends[ends > start][1] - 1
 			}, 
 			"end" = length(Lines)
 		)
 		out <- Lines[seq.int(from = start + 1, to = end)]
-		if (length(out) == 0) stop(message)
-		return(out)
+		if (!length(out)) {
+			warning(message)
+			NULL
+		} else out
 	}
 	
 	## Get everything before '[Map]' as template data for the .zim file
 	posMap <- getSectionPos("Map",
 		"The file is corrupted: no or duplicated [Map] section found!")
+	if (!length(posMap)) return(invisible(FALSE))
 		
 	## Setup the zim data
 	zimData <- Lines[1:(posMap - 1)]
@@ -247,12 +127,14 @@ show.log = TRUE, bell = FALSE)
 	
 	## Get the [Map] section
 	Lines <- getSection("Map", to = "end", "The [Map] section is empty!")
+	if (!length(Lines)) return(invisible(FALSE))
+	
 	message("Reading Filemap... OK!")
 	
 	## Make sure _raw, and _work subdirectories exists and have write access
-	if (!forceDirCreate("_raw")) return(NULL)
+	if (!forceDirCreate("_raw")) return(invisible(FALSE))
 	if (Convert != "" || MoveToWork)
-		if (!forceDirCreate("_work")) return(NULL)
+		if (!forceDirCreate("_work")) return(invisible(FALSE))
 	
 	## This function constructs image filename using possibly a FilenamePattern
 	MakeImageName <- function(x, pattern = FilePat) {
@@ -272,7 +154,7 @@ show.log = TRUE, bell = FALSE)
 	## of the same image
 	### TODO: indicate progression with exact line number in the zie file!
 	### TODO: allow restarting from a given point!
-	message("Checking all lines in the .zie file for raw images...\n")
+	message("Checking all lines in the .zie file for raw images...")
 	allImages <- character(0)
 	nLines <- length(Lines)
 	for (i in 1:nLines) {
@@ -283,8 +165,11 @@ show.log = TRUE, bell = FALSE)
 		if (!grepl("^[-][>]", Lines[i])) {	# This is not a state change command
 			File <- MakeImageName(trimString(sub("[=].*$", "", Lines[i])))
 			checkFileExists(File)
-			if (File %in% allImages) 
-				stop(sprintf("Duplicated use of the same file : '%s' !", File))
+			if (File %in% allImages) {
+				warning(sprintf("Duplicated use of the same file : '%s' !",
+					File))
+				return(invisible(FALSE))
+			}
 			allImages <- c(allImages, File)		
 		}
 	}
@@ -341,11 +226,11 @@ show.log = TRUE, bell = FALSE)
 			posFrac <- grep(Frac, zimD)
 			if (length(posFrac) < 1) {
 				warning("[Fraction] section not found (", Frac, ")!")
-				return(invisible(FALSE)) 
+				return(FALSE) 
 			}			
 			if (length(posFrac) > 1) {
 				warning("multiple", Frac, "sections for sample '", Smp, "'")
-				return(invisible(FALSE))
+				return(FALSE)
 			}
 			zimD[posFrac] <- "[Fraction]"
 			## Strip out all other [Fraction_XXX] sections
@@ -357,18 +242,22 @@ show.log = TRUE, bell = FALSE)
 		
 		if (SubPat != "") {
 			## This is the header to consider
-			if (length(grep(SubPat, Smp)) == 0)
-				stop( paste("Sample '", Smp,
-					"' is incompatible\nwith SubsamplePattern '", SubPat, "'",
-					sep = ""))	
+			if (!length(grep(SubPat, Smp))) {
+				warning("Sample '", Smp,
+					"' is incompatible\nwith SubsamplePattern '", SubPat, "'")
+				return(FALSE)
+			}
 			Sub <- paste("[[]Subsample_", sub(SubPat, "\\1", Smp), "\\]",
 				sep = "")
 			posSub <- grep(Sub, zimD)
-			if (length(posSub) < 1)
-				stop(paste("[Subsample] section not found (", Sub, ")!",
-					sep = ""))
-			if (length(posSub) > 1)
-				stop(paste("multiple", Sub, "sections found for this sample!")) 
+			if (!length(posSub)) {
+				warning("[Subsample] section not found (", Sub, ")!")
+				return(FALSE)
+			}
+			if (length(posSub) > 1) {
+				warning("multiple", Sub, "sections found for this sample!")
+				return(FALSE)
+			}
 			zimD[posSub] <- "[Subsample]"
 			## Strip out all other [Subsample_XXX] sections
 			otherSub <- grep("[[]Subsample_", zimD)
@@ -396,7 +285,7 @@ show.log = TRUE, bell = FALSE)
 	UpdateZim <- function (dat, zimData) {
 		### TODO: Strip out comments (not done here, because we want to process
 		### strings with '#' correctly!
-		if (length(grep("^[-][>]", dat)) == 0) return(FALSE)
+		if (length(grep("^[-][>]", dat)) == 0) return(NULL)
 		## This line starts with "->" => we update zimData
 		Key <- sub("^[-][>]([^ =]+).*$", "\\1", dat)
 		## Special treatment if Key == "Sample"
@@ -446,6 +335,10 @@ show.log = TRUE, bell = FALSE)
 	for (i in 1:nLines) {
 		progress(i, nLines)
 		res <- UpdateZim(Lines[i], zimData)
+		if (!length(res)) {
+			warning("problem while updating .zim files")
+			return(invisible(FALSE))
+		}
 		
 		## This is not a state change command
 		if (length(res) == 1 && res == FALSE) {	
@@ -506,10 +399,10 @@ show.log = TRUE, bell = FALSE)
 			## (or check correspondance)
 			if (Exif) {
 				ExifData <- attr(zimData, "Exif")
-				ExifData2 <- readExifRaw(File, check = FALSE)
+				ExifData2 <- .readExifRaw(File, check = FALSE)
 				if (!is.null(ExifData) && length(ExifData) > 0 &&
 					ExifData != "") { # Do a comparison of Exif data
-				    compa <- compareExif(ExifData, ExifData2)
+				    compa <- .compareExif(ExifData, ExifData2)
 				    if (length(compa) > 0)
 						warning("Exif seems to be different from the rest in '",
 							File, "'")
@@ -562,7 +455,7 @@ show.log = TRUE, bell = FALSE)
 
 			## If this is a blank-field, then test it
             if (length(grep("^_CalibBF", NewFile)) > 0) {
-				msg <- checkBF(FileConv)
+				msg <- .checkBF(FileConv)
 				if (!is.null(msg) && length(msg) > 0 && msg != "") {
 					warning(paste(c(
 						"Warning! Problem(s) detected with blank-field image:",
@@ -579,7 +472,7 @@ show.log = TRUE, bell = FALSE)
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
 					tryCatch({
-						BFcorrection(FileConv, BlankField, deleteBF = FALSE)
+						.BFcorrection(FileConv, BlankField, deleteBF = FALSE)
 						}, error = function (e) {
 							warning(as.character(e))
 						})
@@ -700,8 +593,7 @@ show.log = TRUE, bell = FALSE)
 		## delete it for the moment
 		unlink("fileconv.tif")
 	}
-	
-##	finishLoop(ok, bell = bell, show.log = show.log)
+	invisible(TRUE)
 }
 ## example:
 ## setwd("g:/zooplankton/Madagascar2Macro")	# My example directory
@@ -709,27 +601,31 @@ show.log = TRUE, bell = FALSE)
 
 zieCompile <- function (path = ".", Tablefile = "Table.txt",
 Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefile),
-".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE,
-show.log = make.it)
+".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE)
 {		
 	message("Creating .zie file...")
 	
+	## Full path for Filemap
+	FilemapPath <- file.path(path, Filemap)
+	
 	## First, switch to the root directory
-	inidir <- getwd()
-	checkDirExists(path)
-	setwd(path)
-	on.exit(setwd(inidir))
-	path = getwd() # Indicate we are now in the right path
+	if (!checkDirExists(path)) return(NULL)
+	initdir <- setwd(path)
+	on.exit(setwd(initdir))
+	path <- getwd() # Indicate we are now in the right path
 	
     ## Check if needed files exist
     if (!checkFileExists(Tablefile)) return(NULL)
 	if (!checkFileExists(Template)) return(NULL)
 	
 	## Check if the zie file already exists
-    if (!replace && file.exists(Filemap))
-       stop("'", Filemap,
+    if (!isTRUE(as.logical(replace)) && file.exists(Filemap)) {
+		warning("'", Filemap,
 			"' already exists and is not replaced (replace = FALSE)!")
+		return(FilemapPath)
+	}
 	
+	## Read the data from the table
     Data <- read.table(Tablefile, header = TRUE, sep = "\t", dec = getDec(),
 		as.is = TRUE)
     
@@ -784,9 +680,11 @@ show.log = make.it)
         num <- eval(parse(text = num))
         ## Check if the number is correct
 		### TODO: add this in the template file!
-		if (length(num) < Nmin || length(num) > Nmax)
-           stop("Wrong number of images in 'Image' field for ",
+		if (length(num) < Nmin || length(num) > Nmax) {
+			warning("Wrong number of images in 'Image' field for ",
 				Data$Sample[i], "!")
+			return(NULL)
+		}
 		
 		## Update several fields according to definitions in the samples table
 		###TODO: add the other fields + define this option
@@ -811,8 +709,7 @@ show.log = make.it)
 	
 	## Do we make it also?
 	if (isTRUE(make.it)) {
-		res <- zieMake(path = path, Filemap = Filemap, check = TRUE,
-			show.log = show.log)
+		res <- zieMake(path = path, Filemap = Filemap, check = TRUE)
 		if (res) { # Everything is fine...
 			## Move the table and copy the template to the '_raw' subdir too
 			file.rename(Tablefile, file.path(path, "_raw", basename(Tablefile)))
@@ -824,14 +721,306 @@ show.log = make.it)
 			file.rename(Template, file.path(path, "_raw", basename(Template)))
 		}
 	}
-	return(invisible(file.path(path, Filemap)))
+	
+	## Everything is fine, return the path of the vcreated filemap file
+	FilemapPath
 }
 ## example:
 ## setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
 ## zieCompile(Tablefile = "Madagascar2Macro.txt", Nrange = c(2,2))
 
+## Create .zim files and the FitVisParameters.csv file for FlowCAM images
+zieCompileFlowCAM <- function (path = ".", Tablefile,
+Template = "ImportTemplate.zie", check.names = TRUE)
+{
+	## Import data from the FlowCAM
+	if (!is.character(path) || !file.exists(path) || !file.info(path)$isdir) {
+		warning("You must select a path containing text file for FlowCAM images")
+		return(invisible(FALSE))
+	}
+	
+	Tablefile <- file.path(path, basename(Tablefile))
+	if (!checkFileExists(Tablefile, "txt", force.file = TRUE)) {
+		warning("Tablefile not found: '", basename(Tablefile), "'")
+		return(invisible(FALSE))
+	}
+	
+	## Read this file
+	ImportFile <- read.table(Tablefile, header = TRUE, sep = "\t", dec = ".")
+
+	## Check colnames
+	if (isTRUE(as.logical(check.names))) {
+		ColNames <- c("Station", "Date", "FlowCell", "Mode", "Magnification",
+			"Exp_Name", "Sample", "Dilution", "Sieve", "Volume", "Pump_Speed",
+			"Duration", "Temperature", "Salinity", "Gain_Fluo_Ch1",
+			"Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2",
+			"Threshold_Scatter", "Min", "Max", "Size")
+		if (!all(ColNames %in% colnames(ImportFile))) {
+			warning("Your import file contains missing columns among Station,",
+				" Date, FlowCell, Mode, Magnification, Exp_Name, Sample,",
+				" Dilution, Sieve, Volume, Pump_Speed, Duration, Temperature,",
+				" Salinity, Gain_Fluo_Ch1, Threshold_Fluo_Ch1, Gain_Fluo_Ch2,",
+				" Threshold_Fluo_Ch2, Threshold_Scatter, Min, Max, or Size")
+			return(invisible(FALSE))
+		}
+	}
+  
+	## Check if the ImportTemplate.zie is present in the directory
+	Zie <- file.path(dirname(path), basename(Template))
+	if (!file.exists(Zie)) {
+		warning("Your directory must contain an 'ImportTemplate.zie' file")
+		return(invisible(FALSE))	
+	}
+  
+	## Check if all samples are in the directory and export missing files
+	notThere <- character(0)
+	for (i in 1:length(ImportFile$Exp_Name))
+		if (!file.exists(file.path(dirname(path), ImportFile$Exp_Name[i]))) {
+			notThere <- c(notThere, as.character(ImportFile$Exp_Name[i]))
+			warning(ImportFile$Exp_Name[i], " is not in the process directory")
+		}
+  
+	## Select only samples present in the process directory
+	if (length(notThere)) {
+		ImportFile <- ImportFile[!ImportFile$Exp_Name %in% notThere, ]
+		warning("import only samples in the process dir or import text file")
+	}
+
+	## Read ctx files of the samples from
+	Ctx <- file.path(dirname(path), ImportFile$Exp_Name,
+		paste(ImportFile$Exp_Name, "ctx", sep = "."))
+	lCtx <- length(Ctx)
+	if (!lCtx) CtxFile <- NULL else .ctxReadAll(ctxfiles = Ctx)
+
+	## Create fields to generate a table as txt format for the importation
+	Experiment <- ImportFile$Exp_Name
+	Sample <- ImportFile$Sample
+	Image <- CtxFile$Sample_Name
+	PixelSize <- CtxFile$pixelsize
+	minsize <- CtxFile$minsize
+	maxsize <- CtxFile$maxsize
+	VolumeDigitized <- CtxFile$VolumeDigitized
+	Dilution_VIS <- CtxFile$Dilution_VIS
+	SubPart <- ImportFile$Dilution / 100
+	VolIni <- ImportFile$Volume
+	CellPart <- VolumeDigitized / VolIni
+	## Table with value to change
+	ImportTxt <- data.frame(Experiment, Sample, Image, PixelSize, SubPart,
+		minsize, maxsize, VolumeDigitized, Dilution_VIS, VolIni, CellPart)
+
+	## Read the "ImportTemplate.zie" file
+	ZieFileOrig <- scan(Zie, character(), sep = "\t", skip = 0,
+		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
+	
+	## Loop to create a .zim file
+	for (i in 1:nrow(CtxFile)) {
+		ZieFile <- ZieFileOrig
+		
+		## Complete fields using ImportTxt
+		ImageLine <- grep("^Sample", ZieFile)
+		Sample <- as.numeric(sub("[ ]*$", "", sub("^Sample[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(Sample)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$Sample[i], sep = "")
+		ImageLine <- grep("^Experiment", ZieFile)
+		Experiment <- as.numeric(sub("[ ]*$", "",
+			sub("^Experiment[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
+		if (is.na(Experiment)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$Experiment[i], sep = "")
+		ImageLine <- grep("^SubPart", ZieFile)
+		SubPart <- as.numeric(sub("[ ]*$", "", sub("^SubPart[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(SubPart)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$SubPart[i], sep = "")
+		ImageLine <- grep("^CellPart", ZieFile)
+		CellPart <- as.numeric(sub("[ ]*$", "", sub("^CellPart[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(CellPart)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$CellPart[i], sep = "")
+		ImageLine <- grep("^Dilution_VIS", ZieFile)
+		Dilution_VIS <- as.numeric(sub("[ ]*$", "",
+			sub("^Dilution_VIS[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
+		if (is.na(Dilution_VIS)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$Dilution_VIS[i], sep = "")
+		ImageLine <- grep("^VolIni", ZieFile)
+		VolIni <- as.numeric(sub("[ ]*$", "", sub("^VolIni[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(VolIni)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$VolIni[i], sep = "")
+		ImageLine <- grep("^VolumeDigitized", ZieFile)
+		VolumeDigitized <- as.numeric(sub("[ ]*$", "",
+			sub("^VolumeDigitized[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
+		if (is.na(VolumeDigitized)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$VolumeDigitized[i], sep = "")
+		ImageLine <- grep("^minsize", ZieFile)
+		minsize <- as.numeric(sub("[ ]*$", "", sub("^minsize[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(minsize)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$minsize[i], sep = "")
+		ImageLine <- grep("^maxsize", ZieFile)
+		maxsize <- as.numeric(sub("[ ]*$", "", sub("^maxsize[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(maxsize)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$maxsize[i], sep = "")
+		ImageLine <- grep("^PixSize", ZieFile)
+		PixSize <- as.numeric(sub("[ ]*$", "", sub("^PixSize[ ]*[=][ ]*", "",
+			ZieFile[ImageLine[1]])))
+		if (is.na(PixSize)) ZieFile[ImageLine[1]] <-
+			paste(ZieFile[ImageLine[1]], ImportTxt$PixelSize[i], sep = "")
+		
+		## Read all context file
+		ContextFile <- scan(Ctx[i], character(), sep = "\t", skip = 0,
+			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE,
+			comment.char = "")
+
+		## Read note
+		Note <- file.path(dirname(path), ImportFile$Exp_Name[i],
+			paste(ImportFile$Exp_Name[i], "_notes.txt", sep = ""))
+		NoteFile <- scan(Note, character(), sep = "\t", skip = 0,
+			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE,
+			comment.char = "")
+		
+		## Write the resulting table in the sample directory
+		Tab <- c(ZieFile, "", ContextFile, "", "[Notes]", NoteFile)
+		Export <- file.path(dirname(path), CtxFile$Sample_Name[i],
+			paste(CtxFile$Sample_Name[i], "zim", sep = "."))
+		write(Tab, file = Export)
+	}
+	
+	## Create a batch file for FlowCAM image analysis using FitVis
+
+	## Select a directory containing a series of FlowCAM runs
+	ContextList <- .ctxReadAll(path = path, fill = FALSE, largest = FALSE,
+		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
+		masks = FALSE, verbose = TRUE)
+	
+	## Write the table of importation in that directory
+	write.table(ContextList, sep = ",", dec = ".", row.names = FALSE, 
+		file = file.path(path, "FitVisParameters.csv"), quote = TRUE,
+		col.names = TRUE)
+	
+	message("Import data table has been created in FitVisParameters.csv")
+
+	invisible(TRUE)
+}
+
+## The function that eases creation of a ZIE object
+### TODO: add a 'message' entry = message to display after of the importation
+ZIE <- function (title, filter, description, pattern, command, author,
+version, date, license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
+type = c("import", "export"))
+{	
+	if (!is.character(title) || !is.character(filter) ||
+		!is.character(description) || !is.character(pattern) ||
+		!is.character(command) || !is.character(author) ||
+		!is.character(version) || !is.character(date) ||
+		!is.character(license) || !is.character(url) ||
+		!is.character(depends))
+		stop("All arguments must be character strings!")
+	obj <- list(title = title[1], filter = filter[1], 
+		description = paste(description, collapse = "\n"), pattern = pattern[1],
+		command = paste(command, collapse = "\n"), author = author[1],
+		version = version[1], license = license[1], depends = depends[1])
+	type <- match.arg(type, several.ok = FALSE)
+	class(obj) <- switch(type,
+		import = c("ZIEimport", "ZIE"),
+		export = c("ZIEexport", "ZIE"))
+	return(obj)
+}
+
+print.ZIE <- function (x, ...)
+{
+	SubClass <- class(x)[1]
+	cat("A", getTemp("ZIname"),
+		"Import/Export definition object of subclass:", SubClass, "\n")
+	cat("\n", x$description, "\n\n")
+	cat("Title:  ", x$title, "\n")
+	cat("Filter: ", x$filter, "\n")
+	cat("Pattern:", x$pattern, "\n")
+	cat("Command:", x$command, "\n")
+	cat("Author: ", x$author, "\n")
+	cat("Version:", x$version, "\n")
+	cat("Date:    ", x$date, "\n")
+	cat("License:", x$license, "\n")
+	cat("Depends:", x$depends, "\n")
+	cat("URL:    ", x$url, "\n")
+	return(invisible(x))
+}
+
+## Import plain .tif files, with manual creation of associated .zim files
+.ZIEimportTif <- ZIE(
+	title       = "Tiff image files (*.tif)",
+	filter      = "*.tif",
+	description = c("Manual creation of ZooImage Metadata files (.zim)",
+				    "given a list of directly usable .tif images",
+				    "that is, no conversion required and image names",
+				    "already follow the ZooImage convention"),
+	pattern     = "\\.[tT][iI][fF]$",
+	command     = "zimMake(dir = Dir, pattern = Pattern, images = Files, show.log = TRUE)",
+	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
+	version     = "1.1-0",
+	date        = "2007-02-20",
+	license     = "GPL 2 or above",
+	url         = "",
+	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
+	type        = "import")
+ 
+## Import plain .jpg files, with manual creation of associated .zim files
+.ZIEimportJpg <- ZIE(
+	title       = "Jpeg image files (*.jpg)",
+	filter      = "*.jpg",
+	description = c("Manual creation of ZooImage Metadata files (.zim)",
+				    "given a list of directly usable .jpg images",
+				    "that is, no conversion required and image names",
+				    "already follow the ZooImage convention"),
+	pattern     = "\\.[jJ][pP][gG]$",
+	command     = "zimMake(dir = Dir, pattern = Pattern, images = Files, show.log = TRUE)",
+	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
+	version     = "1.1-0",
+	date        = "2007-02-20",
+	license     = "GPL 2 or above",
+	url         = "",
+	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
+	type        = "import")
+
+## Complex import of images (conversion, renaming, etc.) with automatic creation
+## of associated .zim files using a .zie file
+.ZIEimportZie <- ZIE(
+	title       = "ZooImage Import Extension (Import_*.zie)",
+	filter      = "Import_*.zie",
+	description = c("Run a .zie import specification file to convert",
+				    "and/or rename images and automatically create",
+				    "associated .zim files (ZooImage Metadata)"),
+	pattern     = "\\.[zZ][iI][eE]$",
+	command     = "zieMake(path = Dir, Filemap = Files[1], check = TRUE))",
+	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
+	version     = "1.1-0",
+	date        = "2007-02-20",
+	license     = "GPL 2 or above",
+	url         = "",
+	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
+	type        = "import")
+
+## Compile a .zie file from TemplateImport.zie and a table.txt and then compute it
+.ZIEimportTable <- ZIE(
+	title       = "Table and ImportTemplate.zie (*.txt)",
+	filter      = "*.txt",
+	description = c("Create a .zie file by interpretting a table,",
+				    "using a template file in the same directory",
+				    "and named 'ImportTemplate.zie'. The resulting",
+				    ".zie file is then run to make images + metadata"),
+	pattern     = "\\.[tT][xX][tT]$",
+	command     = "zieCompile(path = Dir, Tablefile = Files[1], make.it = TRUE))",
+	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
+	version     = "1.1-0",
+	date        = "2007-02-20",
+	license     = "GPL 2 or above",
+	url         = "",
+	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
+	type        = "import")
+
 ## Read most important EXIF data from a Digicam RAW file
-readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
+.readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
 {	
 	## Make sure dc_raw is available and rawfile exists
 	if (!checkFileExists(rawfile)) return(NULL)
@@ -878,10 +1067,10 @@ readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
 }
 ## example:
 ## setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
-## (Res <- readExifRaw("Image_0742.CR2"))
+## (Res <- .readExifRaw("Image_0742.CR2"))
 
 ## Make a comparison of two exif datasets on sensible entries
-compareExif <- function (Exif1, Exif2)
+.compareExif <- function (Exif1, Exif2)
 {
 	dif <- character(0)
 	## Need same 'Camera', 'ISO_speed', 'Shutter', 'Aperture', 'Focal_Length'
@@ -896,7 +1085,7 @@ compareExif <- function (Exif1, Exif2)
 	return(dif)
 }
 
-isTestFile <- function (File)
+.isTestFile <- function (File)
 {
 	## Determine if a given file is a test file (a file with first line being
 	## 'ZI1est' and with size < 1000)
@@ -905,13 +1094,13 @@ isTestFile <- function (File)
 }
 
 ## Check a blank-field image, either in .pgm or in .tif format	
-checkBF <- function (BFfile)
+.checkBF <- function (BFfile)
 {	
 	if (!checkFileExists(BFfile, message = "Blank-field file '%s' not found!"))
 		return(NULL)
 
 	## Is it a test file?
-	if (isTestFile(BFfile))
+	if (.isTestFile(BFfile))
 		return(character(0)) # We behave like if the file was correct!
 	
 	msg <- character(0)
@@ -967,176 +1156,15 @@ checkBF <- function (BFfile)
 }
 ## example:
 ## setwd("g:/zooplankton/Madagascar2Macro") # Directory with the example dataset
-## checkBF("test.pgm")
-## checkBF("test.tif")
-
-calibrate <- function (ODfile)
-{
-	### TODO: include also a spatial calibration procedure
-	## (with a black circle around the center of the image)
-	## and check also other characteristics, especially the sharpness
-
-    cal <- c(NA, NA)
-	names(cal) <- c("WhitePoint", "BlackPoint")
-	msg <- character(0)
-
-	if (!file.exists(ODfile)) {
-		msg <- paste("O.D. file '", ODfile, "' not found!", sep = "")
-		attr(cal, "msg") <- msg
-		return(cal)
-	}
-
-	## Is it a test file?
-	if (isTestFile(ODfile)) {
-		## We behave like if the file was correct and return fake calibration data!
-        cal <- c(1000, 50000)
-		names(cal) <- c("WhitePoint", "BlackPoint")
-		attr(cal, "msg") <- character(0)
-		return(cal)
-	}
-
-	filedir <- dirname(ODfile)
-	if (filedir != ".") {
-		## Temporary change directory to the one where the file is located
-		inidir <- getwd()
-		setwd(filedir)
-		on.exit(setwd(inidir))
-		ODfile <- basename(ODfile)
-	}
-	
-	## The command to use depends on the format of the image (determined on the
-	## extension)
-	ext <- tolower(rev(strsplit(ODfile, "\\.")[[1]])[1])
-	pgmfile <- ODfile
-	if (ext == "tif") {
-		## First, convert into a .pgm file
-		pgmfile <- paste(ODfile, "pgm", sep = ".")
-####		netpbm_tifftopnm( ODfile, pgmfile )
-		delfile <- TRUE
-		ext <- "pgm"
-	} else delfile <- FALSE
-	if (ext != "pgm")
-		return(paste("Unrecognized image format for '", ODfile, "'", sep = ""))
-####	OD <- netpbm_pgmhist(pgmfile, delete = delfile)
-	
-	## Make sure we work with 16bit images
-	if (max(OD$Gray) < 256) {
-		msg <- c(msg, "O.D. seems to be a 8bit image (16bit required)")	
-	} else {
-		## Eliminate values with low number of points
-		OD <- OD[OD$Count > 100, ]
-		
-		## Look at range: should be widespread enough, but without saturation
-		rngOD <- range(OD$Gray)
-		if (rngOD[2] > 65500) msg <-
-			c(msg, "Images are overexposed, or whitepoint is already calibrated")
-		if (rngOD[2] < 55000)
-			msg <- c(msg, "Images are underexposed")
-		
-		## Saturation on the left-side of the histogram is not much a problem!
-		if (rngOD[2] - rngOD[1] < 40000)
-			msg <- c(msg, "Images lack contrast")
-		## We should end up with four segments
-		graylev <- OD$Gray
-		gap <- (diff(graylev) > 500)
-		
-		## There are not *exactly* four gaps => problem with the image!
-		if (sum(gap) != 4) {
-			msg <- c(msg, "Impossible to calibrate O.D.: wrong image")
-		} else {
-			## Get the five peaks, analyze them and get modes for blank, NDx2,
-			## NDx4 and NDx8
-			peaks <- as.factor(cumsum(c(0, gap)) + 1)
-			peaksgray <- split(graylev, peaks)
-			names(peaksgray) <- c("Black", "NDx8", "NDx4", "NDx2", "White")
-			
-			## These are supposed to be all narrow peaks... check this
-			peakspan <- sapply(peaksgray, range)
-			peaksrange <- peakspan[2, ] - peakspan[1, ]
-			
-			## 1.2-2: width of black peak is much larger for Epson 4990
-			## => be more tolerant for that peak
-			if (any(peaksrange > c(20000, rep(5000, 4)))) {
-				wrongpeaks <- paste(names(peaksrange)[peaksrange > 5000],
-					collapse = ", ")
-				msg <- c(msg, paste("Wrong O.D. image: lack of homogeneity for",
-					wrongpeaks))
-			}
-			
-			## Look for the gray levels at the top of the peaks
-			peaksheight <- split(OD$Count, peaks)
-			names(peaksheight) <- c("Black", "NDx8", "NDx4", "NDx2", "White")
-			findmax <- function(x) which.max(lowess(x, f = 0.05, iter = 1)$y)
-			peaksval <- sapply(peaksheight, findmax)
-			
-			## Get the number of pixels in the white peak
-			nbrwhite <- peaksheight$White[peaksval["White"]]
-            
-			## Replace the location by the actual gray level
-			for (i in 1:5)
-				peaksval[i] <- peaksgray[[i]][peaksval[i]]
-			## If the number of pixels for pure white is larger than the white
-			## peak found, replace it by pure white (65535)
-			nbrpurewhite <- OD[nrow(OD), 2] 
-			if (nbrpurewhite > nbrwhite)
-				peaksval["White"] <- 65535
-			
-			## Now, we need to calibrate the black and white points
-			WhitePoint <- 65535 - peaksval["White"]
-			
-			## Perform a correction for the white point
-			peaksval <- peaksval + WhitePoint
-			
-			## Transform those gray levels into O.D.
-			peaksOD <- log(peaksval) * 65535 / log(65535)
-			
-			## Create a data frame with gray levels and corresponding OD for
-			## White, NDx2, NDx4 and NDx8
-			calib <- data.frame(Gray = peaksOD[5:2], OD = c(0, 0.3, 0.6, 0.9))
-			
-			## Fit a line on these data
-			calib.lm <- lm(OD ~ Gray, data = calib)
-			
-			## Check that calibration line is fine (i.e., the ANOVA should
-			## reject H0 at alpha = 5%)
-			if (anova(calib.lm)[["Pr(>F)"]][1] > 0.01)
-				msg <- c(msg, "Wrong OD calibration: not a straight line relation at alpha level = 0.01")
-			
-			## Check also that R squared is at least 0.98
-			rsq <- summary(calib.lm)$r.squared
-			if (rsq < 0.98)
-				msg <- c(msg, paste("Bad OD calibration (R squared = ",
-					formatC(rsq, digits = 3), ")", sep = ""))
-			
-			## Check linearity of the relationship by fitting a second order
-			## polynome and by looking at the t-test for the x square parameter
-			calib2.lm <- lm(OD ~ I(Gray^2) + Gray, data = calib)
-			if (summary(calib2.lm)$coefficients["I(Gray^2)", "Pr(>|t|)"] < 0.01)
-				msg <- c(msg, "Nonlinear OD calibration at alpha level = 0.01")
-			
-			## Calculate the value of the black point to get 0.004 OD per gray
-			## level after conversion (see the manual)
-			ccoef <- coef(calib.lm)
-			BlackPoint <- (1.024 - ccoef[1]) / ccoef[2]
-			
-			## Get the calibration data
-			cal[1] <- round(WhitePoint)
-			cal[2] <- round(BlackPoint)						
-		}
-	}
-	attr(cal, "msg") <- msg
-	return(cal)
-}
-## example:
-## setwd("g:/zooplankton/madagascar2macro")
-## calibrate("test.tif")
+## .checkBF("test.pgm")
+## .checkBF("test.tif")
 
 ## Make a blank-field correction on File, given a BFfile (blank-field) 
 ## Both files must be 16bit gray PGM images
 ## The resulting file has same name as File, but with a .tif extension instead
 ## of .pgm
 ## The function returns TRUE in case of success... or an explicit error message
-BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
+.BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 {
 	on.exit({
 		unlink(imgFile)
@@ -1170,7 +1198,7 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 	imgBFfile <- paste(noExtension(BFfile), "img", sep = ".")
 
     ## Is File a test file?
-	if (isTestFile(File)) {
+	if (.isTestFile(File)) {
 		## We behave like if the file was corrected, but just copy the content
 		## of File into tifFile
 		file.copy(File, tifFile)
@@ -1197,11 +1225,11 @@ BFcorrection <- function (File, BFfile, deleteBF = TRUE, check = TRUE)
 }
 ## example: 
 ## setwd("g:/zooplankton/madagascar2macro")
-## BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
+## .BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
 
 ## Convert a RAW file (digital camera) into a pgm file
 ### TODO: can we not do this in the the ImageJ plugin directly
-rawConvert <- function (RawFile, OutputFile = "fileconv.pgm",
+.rawConvert <- function (RawFile, OutputFile = "fileconv.pgm",
 DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
 check = TRUE)
 {	
@@ -1248,5 +1276,5 @@ check = TRUE)
 }
 ## example:
 ## setwd("d:/ZI examples/MacroG16-example")
-## rawConvert("Image_3822.CR2", fake = TRUE)
-## rawConvert("Image_3822.CR2")
+## .rawConvert("Image_3822.CR2", fake = TRUE)
+## .rawConvert("Image_3822.CR2")

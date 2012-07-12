@@ -10,9 +10,9 @@
   from .zim files are embedded as zip comments.
 }
 \usage{
-zipImg(imagefile, zimfile = NULL, verify.zimfile = TRUE, replace = FALSE,
+zipImg(imagefile, zimfile = NULL, check.zim = TRUE, replace = FALSE,
     delete.source = FALSE)
-zipImgAll(path = ".", images = NULL, check = TRUE, replace = FALSE,
+zipImgAll(path = ".", images = NULL, check.zim = TRUE, replace = FALSE,
     delete.source = FALSE)
 unzipImg(zipfile, replace = FALSE, delete.source = FALSE)
 unzipImgAll(path = ".", zipfiles = NULL, replace = FALSE,
@@ -23,15 +23,13 @@ unzipImgAll(path = ".", zipfiles = NULL, replace = FALSE,
   \item{imagefile}{ file path of the .tif image to compress. }
   \item{zimfile}{ file path of the corresponding .zim file (calculated
     automatically if \code{NULL}, by default). }
-  \item{verify.zimfile}{ do we verify the .zim file before zipping data? }
+  \item{check.zim}{ do we verify the .zim file before zipping data? }
   \item{replace}{ do we replace existing .zip files? }
   \item{delete.source}{ should the original .tif file be deleted (the .zim file
     is never deleted)? }
   \item{path}{ directory where .tif images to be zipped are located. }
   \item{images}{ a list of .tif images to zip. If \code{NULL}, the list of all
     .tif images present in \code{path} is computed. }
-  \item{check}{ do we check the validity of associated .zim files before
-    starting batch compression of all images? }
   \item{zipfile}{ a zipfile to unzip. }
   \item{zipfiles}{ a list of zipfiles to unzip. If \code{NULL}, a list of all
     .zip files found is \code{path} is calculated. }

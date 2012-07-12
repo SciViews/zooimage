@@ -221,6 +221,168 @@ parseIni <- function (data, label = "1")
 	DatSec	
 }
 
+## Garyscale calibration in O.D. scale
+## TODO: rework all this using ImageJ
+calibrate <- function (ODfile)
+{
+	### TODO: include also a spatial calibration procedure
+	## (with a black circle around the center of the image)
+	## and check also other characteristics, especially the sharpness
+
+    cal <- c(NA, NA)
+	names(cal) <- c("WhitePoint", "BlackPoint")
+	msg <- character(0)
+
+	if (!file.exists(ODfile)) {
+		msg <- paste("O.D. file '", ODfile, "' not found!", sep = "")
+		attr(cal, "msg") <- msg
+		return(cal)
+	}
+
+	## Is it a test file?
+	if (.isTestFile(ODfile)) {
+		## We behave like if the file was correct and return fake calibration data!
+        cal <- c(1000, 50000)
+		names(cal) <- c("WhitePoint", "BlackPoint")
+		attr(cal, "msg") <- character(0)
+		return(cal)
+	}
+
+	filedir <- dirname(ODfile)
+	if (filedir != ".") {
+		## Temporary change directory to the one where the file is located
+		inidir <- setwd(filedir)
+		on.exit(setwd(inidir))
+		ODfile <- basename(ODfile)
+	}
+	
+	## The command to use depends on the format of the image (determined on the
+	## extension)
+	ext <- tolower(rev(strsplit(ODfile, "\\.")[[1]])[1])
+	pgmfile <- ODfile
+	if (ext == "tif") {
+		## First, convert into a .pgm file
+		pgmfile <- paste(ODfile, "pgm", sep = ".")
+####		netpbm_tifftopnm( ODfile, pgmfile )
+		delfile <- TRUE
+		ext <- "pgm"
+	} else delfile <- FALSE
+	if (ext != "pgm")
+		return(paste("Unrecognized image format for '", ODfile, "'", sep = ""))
+####	OD <- netpbm_pgmhist(pgmfile, delete = delfile)
+	
+	## Make sure we work with 16bit images
+	if (max(OD$Gray) < 256) {
+		msg <- c(msg, "O.D. seems to be a 8bit image (16bit required)")	
+	} else {
+		## Eliminate values with low number of points
+		OD <- OD[OD$Count > 100, ]
+		
+		## Look at range: should be widespread enough, but without saturation
+		rngOD <- range(OD$Gray)
+		if (rngOD[2] > 65500) msg <-
+			c(msg, "Images are overexposed, or whitepoint is already calibrated")
+		if (rngOD[2] < 55000)
+			msg <- c(msg, "Images are underexposed")
+		
+		## Saturation on the left-side of the histogram is not much a problem!
+		if (rngOD[2] - rngOD[1] < 40000)
+			msg <- c(msg, "Images lack contrast")
+		## We should end up with four segments
+		graylev <- OD$Gray
+		gap <- (diff(graylev) > 500)
+		
+		## There are not *exactly* four gaps => problem with the image!
+		if (sum(gap) != 4) {
+			msg <- c(msg, "Impossible to calibrate O.D.: wrong image")
+		} else {
+			## Get the five peaks, analyze them and get modes for blank, NDx2,
+			## NDx4 and NDx8
+			peaks <- as.factor(cumsum(c(0, gap)) + 1)
+			peaksgray <- split(graylev, peaks)
+			names(peaksgray) <- c("Black", "NDx8", "NDx4", "NDx2", "White")
+			
+			## These are supposed to be all narrow peaks... check this
+			peakspan <- sapply(peaksgray, range)
+			peaksrange <- peakspan[2, ] - peakspan[1, ]
+			
+			## 1.2-2: width of black peak is much larger for Epson 4990
+			## => be more tolerant for that peak
+			if (any(peaksrange > c(20000, rep(5000, 4)))) {
+				wrongpeaks <- paste(names(peaksrange)[peaksrange > 5000],
+					collapse = ", ")
+				msg <- c(msg, paste("Wrong O.D. image: lack of homogeneity for",
+					wrongpeaks))
+			}
+			
+			## Look for the gray levels at the top of the peaks
+			peaksheight <- split(OD$Count, peaks)
+			names(peaksheight) <- c("Black", "NDx8", "NDx4", "NDx2", "White")
+			findmax <- function(x) which.max(lowess(x, f = 0.05, iter = 1)$y)
+			peaksval <- sapply(peaksheight, findmax)
+			
+			## Get the number of pixels in the white peak
+			nbrwhite <- peaksheight$White[peaksval["White"]]
+            
+			## Replace the location by the actual gray level
+			for (i in 1:5)
+				peaksval[i] <- peaksgray[[i]][peaksval[i]]
+			## If the number of pixels for pure white is larger than the white
+			## peak found, replace it by pure white (65535)
+			nbrpurewhite <- OD[nrow(OD), 2] 
+			if (nbrpurewhite > nbrwhite)
+				peaksval["White"] <- 65535
+			
+			## Now, we need to calibrate the black and white points
+			WhitePoint <- 65535 - peaksval["White"]
+			
+			## Perform a correction for the white point
+			peaksval <- peaksval + WhitePoint
+			
+			## Transform those gray levels into O.D.
+			peaksOD <- log(peaksval) * 65535 / log(65535)
+			
+			## Create a data frame with gray levels and corresponding OD for
+			## White, NDx2, NDx4 and NDx8
+			calib <- data.frame(Gray = peaksOD[5:2], OD = c(0, 0.3, 0.6, 0.9))
+			
+			## Fit a line on these data
+			calib.lm <- lm(OD ~ Gray, data = calib)
+			
+			## Check that calibration line is fine (i.e., the ANOVA should
+			## reject H0 at alpha = 5%)
+			if (anova(calib.lm)[["Pr(>F)"]][1] > 0.01)
+				msg <- c(msg, "Wrong OD calibration: not a straight line relation at alpha level = 0.01")
+			
+			## Check also that R squared is at least 0.98
+			rsq <- summary(calib.lm)$r.squared
+			if (rsq < 0.98)
+				msg <- c(msg, paste("Bad OD calibration (R squared = ",
+					formatC(rsq, digits = 3), ")", sep = ""))
+			
+			## Check linearity of the relationship by fitting a second order
+			## polynome and by looking at the t-test for the x square parameter
+			calib2.lm <- lm(OD ~ I(Gray^2) + Gray, data = calib)
+			if (summary(calib2.lm)$coefficients["I(Gray^2)", "Pr(>|t|)"] < 0.01)
+				msg <- c(msg, "Nonlinear OD calibration at alpha level = 0.01")
+			
+			## Calculate the value of the black point to get 0.004 OD per gray
+			## level after conversion (see the manual)
+			ccoef <- coef(calib.lm)
+			BlackPoint <- (1.024 - ccoef[1]) / ccoef[2]
+			
+			## Get the calibration data
+			cal[1] <- round(WhitePoint)
+			cal[2] <- round(BlackPoint)						
+		}
+	}
+	attr(cal, "msg") <- msg
+	return(cal)
+}
+## example:
+## setwd("g:/zooplankton/madagascar2macro")
+## calibrate("test.tif")
+
 ## Decimal separator to use in import/export ZooImage files
 getDec <- function ()
 {
@@ -280,18 +442,18 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 	zipfile <- as.character(zipfile)
 	if (length(zipfile) != 1) {
 		warning("exactly one 'zipfile' must be provided")
-		return(FALSE)
+		return(NULL)
 	}
 	if (!file.exists(zipfile)) {
 		warning("'zipfile' not found: '", basename(zipfile), "'")
-		return(FALSE)
+		return(NULL)
 	}
 	
 	if (length(zimfile)) {
 		zimfile <- as.character(zimfile)
 		if (length(zimfile) != 1) {
 			warning("exactly one 'zimfile' must be provided")
-			return(FALSE)
+			return(NULL)
 		}
 	}
 	## Make sure old data do not remain in zimfile
@@ -304,7 +466,7 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 		if (unzippgm == zippgm || inherits(try(system("unzip", intern = TRUE),
 			silent = TRUE), "try-error")) {
 			warning("'unzip' program is required, but not found")
-			return(character(0))
+			return(NULL)
 		}
 		cmd <- sprintf('"%s" -zq "%s"', unzippgm, zipfile)
 		res <- try(system(cmd, invisible = TRUE, intern = TRUE), silent = TRUE)
@@ -314,7 +476,7 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 	}
 	if (inherits(res, "try-error")) {
 		warning(as.character(res))
-		return(character(0))
+		return(NULL)
 	}
 	
 	if (length(res) < 2) {

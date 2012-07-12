@@ -242,7 +242,7 @@ zidbToZid <- function (zidbfile)
 			con = file.path(ZidbDir, paste0(ZimName, ".zim")))
     
 	## Vignettes
-    VignNames <- AllFiles[!isZimFile]
+    VignNames <- AllFiles[-isZimFile]
     message("Extracting vignettes...")
     for(i in 1 : length(VignNames)){
         writeBin(Zidb[[VignNames[i]]],

@@ -1,34 +1,44 @@
 \name{zim}
+\alias{isZim}
 \alias{zimCreate}
 \alias{zimEdit}
 \alias{zimExtractAll}
-\alias{isZim}
 \alias{zimMake}
-\alias{zimRefreshAll}
+\alias{zimDatMakeFlowCAM}
+\alias{zimDatMakeFlowCAMAll}
+\alias{zimUpdateAll}
 \alias{zimVerify}
 
 \title{ Manipulate .zim files (ZooImage Metadata/Measurements) }
+
 \description{
   Various fonctions to manipulate ZooImage Metadata in .zim format
-  (either '*.zim', or '*_dat1.zim' files).
+  (either '*.zim', or '*_datX.zim' files).
 }
+
 \usage{
-zimCreate(zimfile, template = NULL, edit = TRUE,  editor =
+zimCreate(zimfile, template = NULL, edit = TRUE, editor =
     getOption("fileEditor"), wait = FALSE)
 zimEdit(zimfile, editor = getOption("fileEditor"), wait = FALSE, \dots)
 zimMake(dir = ".", pattern = extensionPattern("tif"), images =
     list.files(dir, pattern))
+
 zimExtractAll(zipdir = ".", zipfiles = zipList(zipdir), path = NULL,
-    replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
-zimRefreshAll(zipdir = ".", zipfiles = zipList(zipdir), zimdir = NULL,
-    check.zip = TRUE, check.zim = TRUE, show.log = TRUE, bell = FALSE)
+    replace = FALSE)
+zimUpdateAll(zipdir = ".", zipfiles = zipList(zipdir), zimdir = NULL,
+    check.zim = TRUE)
+
 isZim(zimfile)
 zimVerify(zimfile, is.dat1 = hasExtension(zimfile, "_dat1.zim"),
     check.table = FALSE)
+
+zimDatMakeFlowCAM(zimfile)
+zimDatMakeFlowCAMAll(path = ".", zimfiles = NULL)
 }
 
 \arguments{
   \item{zimfile}{ a .zim file. }
+  \item{zimfiles}{ a list of .zim files to use. }
   \item{template}{ a .zim template to start with, if the .zim file does not
     exist yet. }
   \item{edit}{ do we edit the .zim file that we just created? }
@@ -40,8 +50,6 @@ zimVerify(zimfile, is.dat1 = hasExtension(zimfile, "_dat1.zim"),
     require a .zim file. }
   \item{images}{ the list of images requiring a .zim file (either all image
     matching 'pattern' in 'dir', or provide your own listing here). }
-  \item{show.log}{ do we display the log at the end of the process? }
-  \item{bell}{ do we ring the bell at the end of a long process? }
   \item{zipdir}{ a directory where to find .zip files. }
   \item{zipfiles}{ a list of .zip files (by default, all .zip files in
     'zipdir'). }
@@ -49,14 +57,11 @@ zimVerify(zimfile, is.dat1 = hasExtension(zimfile, "_dat1.zim"),
     from zipdir: it is either the same path, or the parent directory if last
     directory is named '_raw'. }
   \item{replace}{ do we replace existing .zim files? }
-  \item{check.unzip}{ do we test first if Info-Zip 'unzip' program is
-    available? }
   \item{zimdir}{ the directory where the .zim files are located. }
-  \item{check.zip}{ do we test first if Info-Zip 'zip' program is available? }
   \item{check.zim}{ do we verify .zim files before refreshing metadata in .zip
     files? }
-  \item{is.dat1}{ is it a '\_dat1.zim' file, that is a file collecting metadata
-    AND objects measurements? }
+  \item{is.dat1}{ is it a '\_dat1.zim' file, that is a file collecting
+    metadata AND objects measurements? }
   \item{check.table}{ try to read the table of measurements in the '[Data]'
     section. Ignored if \code{is.dat1 = FALSE}. }
   \item{\dots}{ further arguments passed to the \code{fileEdit()}. }
@@ -69,7 +74,7 @@ zimVerify(zimfile, is.dat1 = hasExtension(zimfile, "_dat1.zim"),
   .zim files, \code{FALSE} otherwise (details of problems are returned using
   warnings. The same mechanism (returning \code{TRUE} or \code{FALSE} invisibly,
   with detailled description of the problem in warnings) is used by
-  \code{zimExtractAll()} and \code{zimRefreshAll()} also called for their
+  \code{zimExtractAll()} and \code{zimUpdateAll()} also called for their
   side-effects of manipulating .zim/.zip files.
 
   \code{isZim()} simply returns \code{TRUE} or \code{FALSE}.
@@ -79,6 +84,11 @@ zimVerify(zimfile, is.dat1 = hasExtension(zimfile, "_dat1.zim"),
   measurement table (zero, if there is no '[Data]' section in the file, see
   hereunder). In the case of an error during verification, the function returns
   a character string with explicit description of the problem.
+  
+  \code{zimDatMakeFlowCAM()} and \code{zimDatMakeAllFlowCAM()} are, as you
+  expect, special functions to transform FlowCAM metadata into dat1.zim formats.
+  They return \code{TRUE} or \code{FALSE} invisibly, and issue warnings in case
+  of problems.
 }
 
 \details{
@@ -116,13 +126,13 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   '[Section1]' and in '[Section2]', only the first occurence of 'mykey' will be
   used by ZooImage!
 
-  The ZooImage Measurements ('_dat1.zim' files) are structured the same way, but
-  there is a special '[Data]' section at the end that contains a tab-delimited
-  table with all measurements done on identified objects, during the image
-  analysis (process of the images). This table starts with a header naming the
-  colums, with two first columns being necessary '!Item' and 'Label'. 'Label' is
-  the name of the image where the object is found and 'Item' is a unique
-  identifier (usually a number) given to that object in the image (i.e.,
+  The ZooImage Measurements ('_dat1.zim' files) are structured the same way,
+  but there is a special '[Data]' section at the end that contains a
+  tab-delimited table with all measurements done on identified objects, during
+  the image analysis (process of the images). This table starts with a header
+  naming the colums, with two first columns being necessary '!Item' and 'Label'.
+  'Label' is the name of the image where the object is found and 'Item' is a
+  unique identifier (usually a number) given to that object in the image (i.e.,
   Label+Item is the unique identifier of each object in the whole series). The
   other columns define the measurements done on the objects (area, perimeter,
   length, distribution of gray levels, etc.). The amount and name of
@@ -181,13 +191,13 @@ Software=VueScan 8.0.10  # See ZooImage.ini file for VueScan config
   images to be analyzed in ZooImage. See also \code{zieMake()} for an
   alternative, and automatic way to create all those .zim files.
 
-  \code{zimExtractAll()} and \code{zimRefreshAll()} work in conjonction with
+  \code{zimExtractAll()} and \code{zimUpdateAll()} work in conjonction with
   zipped TIFF image, as obtained by \code{zipImg()} and \code{zipImgAll()}
   (also done using \code{zidCompress}). In these .zip files, metadata is located
   in the zip archive comment. This comment is extracted into corresponding .zim
   file by \code{zimExtractAll()} for one or several zip archives. On the other
   hand, these comments are updated in the zip archive with latest information
-  present in .zim files using \code{zimRefreshAll()}.
+  present in .zim files using \code{zimUpdateAll()}.
 
   The last functions are auxiliary utilities to deal with .zim files (see also
   \code{zimList()}). \code{isZim()} simply checks if the file is a correct .zim

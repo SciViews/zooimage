@@ -3,7 +3,7 @@
 \alias{print.ZIE}
 \alias{zieMake}
 \alias{zieCompile}
-\alias{rawConvert}
+\alias{zieCompileFlowCAM}
 
 \title{ ZIE (ZooImage Extension) manipulate .zie files to add custom import, export, etc. routines to ZooImage  }
 \description{
@@ -15,71 +15,66 @@
 }
 \usage{
 zieMake(path = ".", Filemap = "Import_Table.zie", check = TRUE, replace = FALSE,
-	move.to.raw = TRUE, zip.images = "[.][tT][iI][fF]$",show.log = TRUE,
-	bell = FALSE)
+    move.to.raw = TRUE, zip.images = "[.]tif$")
+
 zieCompile(path = ".", Tablefile = "Table.txt", Template = "ImportTemplate.zie",
     Filemap = paste("Import_", noExtension(Tablefile), ".zie", sep = ""),
-	Nrange = c(1, 1000), replace = TRUE, make.it = FALSE, show.log = make.it)
+    Nrange = c(1, 1000), replace = TRUE, make.it = FALSE)
+zieCompileFlowCAM(path = ".", Tablefile, Template = "ImportTemplate.zie",
+    check.names = TRUE)
+
 ZIE(title, filter, description, pattern, command, author, version, date,
     license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
     type = c("import", "export"))
 \method{print}{ZIE}(x, \dots)
-rawConvert(RawFile, OutputFile = "fileconv.pgm",
-	DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
-	check = TRUE)
 }
 
 \arguments{
-  \item{path}{ The path where the images and the .zie file are located }
-  \item{Filemap}{ The name of the .zie file mapping images to convert }
-  \item{check}{ Do we check if conversion programs (dc_raw and ppmtopgm) are
-  available? }
-  \item{replace}{ Do we replace existing files (not used yet)? }
-  \item{move.to.raw}{ Do we move processed files to the '_raw' subdirectory
+  \item{path}{ path where the images and the .zie file are located. }
+  \item{check.names}{ do wr check names in the .zie and .txt files? }
+  \item{Filemap}{ name of the .zie file mapping images to convert. }
+  \item{check}{ do we check if conversion programs (if any needed) are available? }
+  \item{replace}{ do we replace existing files (not used yet)? }
+  \item{move.to.raw}{ do we move processed files to the '_raw' subdirectory
   (currently, it is always the case)? }
-  \item{zip.images}{ The pattern to use for images extension in the zipped file }
-  \item{show.log}{ Do we display the log at the end of the process? }
-  \item{bell}{ Do we ring the bell when the process is done? }
-  \item{Tablefile}{ A tab-delimited ASCII file containing a table defining
+  \item{zip.images}{ the pattern to use for images extension in the zipped file. }
+  \item{Tablefile}{ a tab-delimited ASCII file containing a table defining
     samples and samples characteristics used to compile .zim files and to
-	convert/rename images }
-  \item{Template}{ A template to use for creating the .zie file }
+    convert/rename images. }
+  \item{Template}{ a template to use for creating the .zie file. }
   \item{Nrange}{ A range (two integers) giving min and max number of images for
-  each sample/fraction }
-  \item{make.it}{ Do we make the .zie (run its commands) after compiling it? }
-  \item{title}{ The title of the ZooImage Extension }
-  \item{filter}{ A filter to apply to select concerned files }
-  \item{description}{ A short description of the ZooImage Extension }
-  \item{pattern}{ A regular expression to use to select concerned files }
-  \item{command}{ A string holding the R command to run to convert images }
-  \item{author}{ Who wrote and maintains the ZooImage Extension? Please, provide
-  also an email address }
-  \item{version}{ Version of the ZooImage Extension as x.y-z, in a string }
-  \item{date}{ Date at which the extension was compiled as yyyy-mm-dd }
-  \item{license}{ Which are the license terms for this ZooImage Extension? }
-  \item{url}{ A link to a web page dedicated to this ZooImage Extension }
-  \item{depends}{ Which R packages does this ZooImage Extension requires? }
-  \item{type}{ Type of ZooImage extension; currently, only "import" or "export" }
-  \item{x}{ A ZIE object }
-  \item{\dots}{ further arguments passes to the function (currently not in use) }
-  \item{RawFile}{ A RAW file from a digital camera to convert }
-  \item{OutputFile}{ The name of the output file after conversion }
-  \item{DcRawArgs}{ Arguments to use for the RAW conversion file (dc_raw) }
-  \item{fake}{ Do we create a fake file (test only)? }
+  each sample/fraction. }
+  \item{make.it}{ do we make the .zie (run its commands) after compiling it? }
+  \item{title}{ the title of the ZooImage Extension. }
+  \item{filter}{ a filter to apply to select concerned files. }
+  \item{description}{ a short description of the ZooImage Extension. }
+  \item{pattern}{ a regular expression to use to select concerned files. }
+  \item{command}{ a string holding the R command to run to convert images. }
+  \item{author}{ who wrote and maintains the ZooImage Extension? Please, provide
+  also an email address. }
+  \item{version}{ version of the ZooImage Extension as x.y-z, in a string. }
+  \item{date}{ date at which the extension was compiled as yyyy-mm-dd. }
+  \item{license}{ which are the license terms for this ZooImage Extension? }
+  \item{url}{ a link to a web page dedicated to this ZooImage Extension. }
+  \item{depends}{ which R packages does this ZooImage Extension requires? }
+  \item{type}{ type of ZooImage extension; currently, only "import" or "export". }
+  \item{x}{ a ZIE object. }
+  \item{\dots}{ further arguments passes to the function (currently not in use). }
 }
 
 \value{
-  \code{zieMake()} and \code{zieCompile()} anre invoked for their side-effects of
-  importing images and metadata into a format that ZooImage can use. The first
-  function returns \code{TRUE} or \code{FALSE}, depending if the importation was
-  done without errors, or not. More information is written in the log file. The second
-  function returns the name of the .zie file resulting from the compilation, ar it
-  returns \code{FALSE} invisibly in case it failed to compile the .zie file.
+  \code{zieMake()}, \code{zieCompile()} and \code{zieCompileFlowCAM()} are invoked
+  for their side-effects of importing images and metadata into a format that
+  ZooImage can use. The first two functions return \code{TRUE} or \code{FALSE},
+  depending if the importation was done without errors, or not. More information
+  is issued as warnings. The last function returns the name of the .zie file
+  resulting from the compilation. It returns \code{NULL} in case it failed to
+  compile the .zie file.
 
-  \code{ZIE()} creates a 'ZIE' object that describes a ZooImage Extension and allows
-  to plug it in transparently inside the ZooImage GUI. \code{print.ZIE()} nicely
-  formats the content of this objects when using the generic function \code{print()}.
-
+  \code{ZIE()} creates a 'ZIE' object that describes a ZooImage Extension and
+  allows to plug it in transparently inside the ZooImage GUI. \code{print.ZIE()}
+  nicely formats the content of this objects when using the generic function
+  \code{print()}.
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
@@ -92,10 +87,6 @@ rawConvert(RawFile, OutputFile = "fileconv.pgm",
 ### For programmers ###
 # Adding a new import filter is just a mather of writing the importation function
 # and making it available to users by means of a ZIEimport object.
-# See the example ./etc/FlowCam.r
-# Simply sourcing this file makes it available in the ZooImage environment:
-###TODO: add this file!
-###source(file.path(getTemp("ZIetc"), "FlowCam.r"))
-# Now look at the supported types in the 'Import' dialog box
 }
+
 \keyword{ utilities }

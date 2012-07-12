@@ -39,9 +39,9 @@ check.vignettes = TRUE)
 	dat1files <- sort(dat1files)
 	## Default to -1 for corrupted dat1 files
 	nitems <- sapply(dat1files, function(x) {
-		zimVerify(file.path(zidir, x), is.dat1 = TRUE )
+		zimVerify(file.path(zidir, x))
 	})
-	ok <- all(nitems != -1)
+	ok <- all(nitems >= 0)
 	
 	## Check the vignettes
 	if (isTRUE(as.logical(check.vignettes))) {
@@ -154,7 +154,7 @@ check.zip = TRUE)
 	}
 	
 	## Make sure everything is fine for this directory
-	if (check)
+	if (isTRUE(as.logical(check)))
 		zidVerify(zidir, type = type, check.vignettes = check.vignettes)
 	
 	## Make sure the .RData file is created (or refreshed)
@@ -234,13 +234,12 @@ replace = FALSE, delete.source = replace, show.log = TRUE, bell = FALSE)
 zidClean <- function (path = ".", samples = NULL)
 {
 	## Do we have samples to process
-    if (length(samples) == 0) return(invisible(FALSE))
+    if (!length(samples)) return(invisible(FALSE))
 	
     ## First, switch to that directory
-	inidir <- getwd()
-    checkDirExists(path)
-	on.exit(setwd(inidir))
-	setwd(path)
+    if (!checkDirExists(path)) return(invisible(FALSE))
+	initdir <- setwd(path)
+	on.exit(setwd(initdir))
 	    
 	## Identify paths
 	message("Cleaning directory...")
@@ -251,7 +250,7 @@ zidClean <- function (path = ".", samples = NULL)
     zimfiles <- zimfiles[zimsamples %in% samples]
 	
 	## Process
-    if (length(zimfiles) > 0) {
+    if (length(zimfiles)) {
         rawdir <- file.path(".", "_raw")
         
 		## If the _raw subdirectory does not exists, create it
@@ -359,13 +358,12 @@ zidDatMake <- function (zidir, type = "ZI3", replace = FALSE, show.log = TRUE)
     dat1files <- zimDatList(zidir)
 
     ## Create _dat1.zim file if it is missing (for FlowCAM data)
-    if (length(dat1files) == 0) {
-        ## Try to create them
-        SmpDir <- dirname(zidir)
-        ZimFile <- file.path(SmpDir, paste(basename(zidir), ".zim", sep = ""))
-        zimDatMake(ZimFile)
+    if (!length(dat1files)) {
+        SmpDir <- dirname(zidir) 
+        zimDatMakeFlowCAM(file.path(SmpDir,
+			paste(basename(zidir), "zim", sep = ".")))
         dat1files <- zimDatList(zidir)
-        if (length(dat1files) == 0) {
+        if (!length(dat1files)) {
             warning("no '_dat1.zim' file!")
 			return(invisible(FALSE))
 		}
@@ -495,7 +493,7 @@ zidDatMake <- function (zidir, type = "ZI3", replace = FALSE, show.log = TRUE)
         allmes <- data.frame(allmes[, 1:2], ECD = ECD, allmes[, 3:ncol(allmes)])
     }
     attr(allmes, "metadata") <- allmeta
-    class(allmes) <- c("ZI1Dat", "ZIDat", "data.frame")
+    class(allmes) <- c("ZI3Dat", "ZIDat", "data.frame")
     ZI.sample <- allmes
     save(ZI.sample, file = RDataFile, ascii = FALSE, version = 2,
 		compress = TRUE)
@@ -550,6 +548,6 @@ zidDatRead <- function (zidfile)
 	
 	## Set the class 
 	if (!inherits(ZI.sample, "ZIDat") && inherits(ZI.sample, "data.frame"))
-		class(ZI.sample) <- c("ZI1Dat", "ZIDat", "data.frame")
+		class(ZI.sample) <- c("ZI3Dat", "ZIDat", "data.frame")
 	return(ZI.sample)
 }

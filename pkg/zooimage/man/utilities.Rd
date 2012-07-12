@@ -7,6 +7,7 @@
 \alias{calcVars}
 \alias{ecd}
 \alias{parseIni}
+\alias{calibrate}
 \alias{getDec}
 \alias{zipNoteAdd}
 \alias{zipNoteGet}
@@ -31,6 +32,8 @@ calcVars(ZIDat, keep.vars = getOption("ZI.keep.vars"))
 ecd(area)
 
 parseIni(data, label = "1")
+
+calibrate(ODfile)
 
 getDec()
 
@@ -60,6 +63,8 @@ zipNoteGet(zipfile, zimfile = NULL)
 	Equivalent Spherical Diameter). }
   \item{data}{ a vector containing the data to parse. }
   \item{label}{ a label to include for the parsed data. }
+  \item{ODfile}{ an image file of O.D. calibrated items that can be used to
+    calibrate grayscales. }
   \item{zipfile}{ a zip archive. }
   \item{zimfile}{ a .zim file to use, or to create. If \code{NULL} (default)
     in \code{zipNoteGet()}, the data are not written in a file, but returned. }
@@ -87,12 +92,17 @@ zipNoteGet(zipfile, zimfile = NULL)
   keep track of entries when data frames originated from various different ini
   files are merged together.
   
+  \code{calibrate()} returns a vector of two numbers with white and black point
+  calibration (gray levels corresponding, respectively to O.D. = 0 and
+  O.D. = 1.024), plus a "msg" attribute with some explanation in case of problem.
+  
   \code{zipNoteAdd()} returns \code{TRUE} or \code{FALSE} depending if the data
   from the zimfile was successfully added to the zip archive or not. Problem is
   returned in a warning.
   \code{zipNoteGet()} returns the comment included in the zip archive
-  (invisibly if 'zimfile' is not \code{NULL}), or \code{character(0)} in case
-  of a problem. The problem is detailled in a warning.
+  (invisibly if 'zimfile' is not \code{NULL}), \code{character(0)} if no comment
+  if found, or \code{NULL} in case of a problem. The problem is detailled in a
+  warning.
 }
 
 \details{
@@ -130,7 +140,7 @@ makeId(df__)
 rm(df__)
 ecd(1:10)
 
-### TODO: calcVars(), parseIni(), zipNoteAdd() and zipNoteGet() examples
+### TODO: calibrate(), calcVars(), parseIni(), zipNoteAdd() and zipNoteGet() examples
 }
 
 \keyword{ utilities }

@@ -314,60 +314,51 @@ importImg <- function ()
 		title = "Select data to import...")
 
 	## Look if there is at least one image selected
-	if (!length(Images)) return(invisible())
+	if (!length(Images)) return(invisible(FALSE))
 	dir <- dirname(Images[1])
 	Images <- basename(Images)
 
-	has <- function (extension, pattern = extensionPattern(extension))
+	has <- function (file, pattern)
 		grepl(pattern, Images[1])
 
 	## Determine which kind of data it is
-	if (has(pattern = "^Import_.*[.]zie$")) {
-		return(zieMake(path = dir, Filemap = Images[1], check = TRUE,
-			show.log = TRUE))
-    } else if (has("txt")) {
-		## Special Case for flowCAM images
-		FlowCAMPath  <- file.path(dir, Images)
-		FlowCAM.txt <- read.table(FlowCAMPath, header = TRUE, sep = "\t", dec = ".")
-		TargetName <- c("Station", "Date", "FlowCell", "Mode", "Magnification",
-			"Exp_Name", "Sample", "Dilution", "Sieve", "Volume", "Pump_Speed",
-			"Duration", "Temperature", "Salinity", "Gain_Fluo_Ch1",
-			"Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2",
-			"Threshold_Scatter", "Min", "Max", "Size", "Dark_Threshold",
-			"Light_Threshold", "Dist_To_Nearest", "Lugol")
+	if (has(Images[1], pattern = "^Import_.*[.]zie$")) {
+		if (length(Images) > 1)
+			warning("you cannot select more than one .zie file; using the first one")
 		
-		if (all(TargetName %in% names(FlowCAM.txt))) {
-			res <- zimMakeFlowCAM(import = FlowCAMPath, check.names = FALSE)
-			return(invisible(res))
-		}
-		pattern <- extensionPattern(".txt")
-		message("Creating .zie file...")
-		ziefile <- zieCompile(path = dir, Tablefile = Images[1])
-		message("    ...OK!")
-		res <- zieMake(path = dirname(ziefile), Filemap = basename(ziefile),
-			check = TRUE, show.log = TRUE)
-		if (res) { # Everything is fine...
-			## Move the table and copy the template to the '_raw' subdirectory too
-			path <- dirname(ziefile)
-			tplfile <- file.path(path, Images[1])
-			file.rename(tplfile, file.path(path, "_raw", basename(tplfile)))
-			## Move also possibly the .xls equivalent
-			xlsfile <- sub( pattern, ".xls", tplfile)
-			if (xlsfile != tplfile && file.exists(xlsfile))
-			    file.rename(xlsfile, file.path(path, "_raw", basename(xlsfile)))
-			file.rename(file.path(path, "ImportTemplate.zie"), file.path(path,
-				"_raw", "ImportTemplate.zie"))
-		}
-		return(res)
+		return(invisible(zieMake(path = dir, Filemap = Images[1], check = TRUE)))
+    
+	} else if (has(Images[1], "[.]txt$")) {
+		## Special Case for FlowCAM images
+		if (length(Images) > 1)
+			warning("you cannot select more than one .txt file; using the first one")
+		
+		## I also need the "ImportTemplate.zie" file in the same path
+		txtFile <- Images
+		zieTemplate <- file.path(dirname(txtFile), "ImportTemplate.zie")
+		if (!checkFileExists(zieTemplate, "zie", force.file = TRUE))
+			return(invisible(FALSE))
+		
+		## Create .zim files + FitVisParameters.csv file for the FlowCAM
+		message("Creating .zim files and FitVisParameters.csv...")
+		res <- zieCompileFlowCAM(path = dirname(txtFile), Tablefile = txtFile,
+			Template = zieTemplate, check.names = FALSE)
+		return(invisible(res))
+	
 	} else if (has(".tif")) {
 		pattern <- extensionPattern(".tif")
+	
 	} else if (has("jpg")) {
         pattern <- extensionPattern("jpg")
-	} else stop("Unrecognized data type!")
+	
+	} else {
+		warning("unrecognized data type!")
+		return(invisible(FALSE))
+	}
 
 	## If there is no special treatment, just make all required .zim files
 	## for currently selected images
-	zimMake(dir = dir, pattern = pattern, images = Images)
+	invisible(zimMake(dir = dir, pattern = pattern, images = Images))
 }
 
 ## TODO: the text appears only on one line on the Mac???
@@ -1306,29 +1297,4 @@ subpartZIDat <- function ()
     ## Apply the thresold
     res <- subpartThreshold(ZIDat = zid, Filter = threshold)
     return(res)
-}
-
-
-## Create a batch file for FlowCAM image analysis
-batchFilePlugin <- function ()
-{
-	## Select a FlowCAM context file
-	ctxFile <- dlgOpen(multiple = FALSE, title = "Select a context file...",
-		filters = matrix(c("FlowCAM Context file", ".ctx"), ncol = 2,
-		byrow = TRUE))$res
-	if (!length(ctxFile)) return(invisible(NULL))
-	ctxSampleDir <- dirname(dirname(ctxFile))
-
-	## Create the table of importation
-	ContextList <- ctxReadAll(ctxfile = ctxFile, fil = FALSE, largest = FALSE,
-		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
-		masks = FALSE, verbose = TRUE)
-	
-	## Write the table of importation in the sample directory
-	write.table(ContextList, sep = "\t", dec = ".", row.names = FALSE, 
-		file = file.path(ctxSampleDir, "batchExampleParameters.txt"),
-		quote = TRUE, col.names = TRUE)
-	
-	message("Your import table has been created in your sample directory ",
-		ctxSampleDir)
 }

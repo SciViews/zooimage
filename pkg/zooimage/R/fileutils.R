@@ -72,7 +72,7 @@ jpgList <- function (dir, ...)
 pngList <- function (dir, ...)
 	listFilesExt(dir, extension = "png", ...)
 
-## Check if a file exists (batchable!)
+## Check if a file exists
 checkFileExists <- function (file, extension, message = "file not found: %s",
 force.file = FALSE)
 {
@@ -111,7 +111,7 @@ message = 'Path "%s" does not exist or is not a directory')
 	return(TRUE)
 }
 
-#### OK #### batcheable! (used in prepareTrain())
+## Check if a directory is empty (used in prepareTrain())
 checkEmptyDir <- function (dir, message = 'dir "%s" is not empty')
 {	
 	## Works only on a single dir (not vectorized code)
@@ -141,7 +141,6 @@ forceDirCreate <- function (dir)
 	} else TRUE
 }
 
-#### OK #### batcheable! (used in various places)
 ## Checks the first line of a file against some expected content
 checkFirstLine <- function (file, expected = c("ZI1", "ZI2", "ZI3"), 
 message = 'file "%s" is not a valid ZooImage version <= 3 file')

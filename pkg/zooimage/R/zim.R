@@ -22,13 +22,27 @@
 ## the usual extension is '_dat1.zim' to indicate that data processed with
 ## ZooImage version 1 are present in the file).
 
-#### OK ####
+## Check if a file is a "(_dat1).zim" file (must start with "ZI1", "ZI2"
+## or "ZI3" and have a '.zim' extension)
+isZim <- function (zimfile)
+{
+	## Check if the file does not exist or is a directory
+	if (!checkFileExists(zimfile, force.file = TRUE, extension = "zim"))
+		return(FALSE)
+
+	## Check the first line
+	return(checkFirstLine(zimfile))
+}
+
+## Make required .zim files for one or more images
 zimMake <- function (dir = ".", pattern = extensionPattern("tif"),
 images = list.files(dir, pattern))
 {
 	## Check that there are images to process
-	if (length(images) < 1)
-		stop("no images to process!")
+	if (!length(images)) {
+		warning("no images to process!")
+		return(invisible(FALSE))
+	}
 
 	## Name of images is something like SCS.xxxx-xx-xx.SS+Ann.tif
 	## We make the same .zim file for all ...+Ann images, so, reduce the list
@@ -45,26 +59,22 @@ images = list.files(dir, pattern))
 			assignTemp(".template", zim)
 		} else message("Checking .zim file ", basename(zim), "...")
 		## Verify that the .zim file is correct
-		zimVerify(zim)
+		zimVerify(zim) >= 0
 	}
 	on.exit(rmTemp(".template"))
-	batch(zims, makeZim)
+	message("Creating .zim files...")
+	flush.console()
+	ok <- batch(zims, makeZim, verbose = FALSE)
+	if (!ok) {
+		warning(sum(attr(ok, "ok")), "/", length(images),
+			" .zim files created (see .last.batch)")
+		invisible(FALSE)
+	} else {
+		message("-- Done! --")
+		invisible(TRUE)
+	}
 }
 
-#### OK ####
-## Check if a file is a "(_dat1).zim" file (must start with "ZI1", "ZI2"
-## or "ZI3" and have a '.zim' extension)
-isZim <- function (zimfile)
-{
-	## Check if the file does not exist or is a directory
-	if (!checkFileExists(zimfile, force.file = TRUE, extension = "zim"))
-		return(FALSE)
-
-	## Check the first line
-	return(checkFirstLine(zimfile))
-}
-
-#### TODO: change all this! #### batcheable!
 ## Verify a "(_dat1).zim" file (all required fields + return the number of items
 ## in it). If it succeeds, return the number of measured items as numeric
 ## Otherwise, return -1... If there is no data, return 0
@@ -194,34 +204,36 @@ check.table = FALSE)
 	} else return(0)
 }
 
-## TODO: use batch() instead!
 ## Extract notes from .zip files and place them in .zim files
 zimExtractAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
-path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
+path = NULL, replace = FALSE)
 {
 	## Make sure all zipfiles are in the same directory
 	zipdirs <- dirname(zipfiles)
-	if (length(unique(zipdirs)) > 1)
-		stop("All zip files must be located in the same directory!")
+	if (length(unique(zipdirs)) > 1) {
+		warning("all .zip files must be located in the same directory!")
+		return(invisible(FALSE))
+	}
 
 	## Check that the dir exists!
-	checkDirExists(zipdir)
+	if (!checkDirExists(zipdir)) return(invisible(FALSE))
 
 	## Move to zipdir
-    inidir <- getwd()
-	setwd(zipdir)
-	on.exit(setwd(inidir))
+	initdir <- setwd(zipdir)
+	on.exit(setwd(initdir))
 	zipdir <- getwd()   # That way, if we had ".", it is now expanded
 
 	## Use only basenames for zip files
 	zipfiles <- sort(basename(zipfiles))
 
 	## Check that zipfiles exist
-	if (!all(file.exists(zipfiles)))
-		stop("One or several files not found!")
+	if (!all(file.exists(zipfiles))) {
+		stop("one or several .zip files not found!")
+		return(invisible(FALSE))
+	}
 
 	## Look at the path where to place .zim files
-	if (is.null(path)) {
+	if (!length(path)) {
 		## The rule is the following one:
 		## 1) if last subdir is "_raw", then place .zim file up one level
 		## 2) else, place them in the same dir as the zip files
@@ -229,71 +241,77 @@ path = NULL, replace = FALSE, check.unzip = TRUE, show.log = TRUE, bell = FALSE)
 		if (tolower(basename(path)) == "_raw") path <- dirname(path)
 	} else {    # Look if this is a valid directory
 		path <- path[1]
-		checkDirExists(path)
+		if (!checkDirExists(path)) return(invisible(FALSE))
 	}
 
 	## Compute the names of .zim files from the names of .zip files
 	## Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from
 	## SCS.xxxx-xx-xx.SS+Fnn)
 	## If there are duplicates, only extract first one
-	zimfiles <- sprintf( "%s.zim", sampleInfo(zipfiles, "fraction",
-		ext = extensionPattern(".zip")))
+	zimfiles <- paste(sampleInfo(zipfiles, "fraction",
+		ext = extensionPattern(".zip")), "zim", sep = ".")
 	keep <- !duplicated(zimfiles)
 	zimfiles <- zimfiles[keep]
 	zipfiles <- zipfiles[keep]
 
-	## Make full path for zimfiles
+	## Make full path name for zimfiles
 	zimfiles <- file.path(path, zimfiles)
 
 	## If replace == FALSE, eliminate existing .zim files from the list
-	if (!replace) {
+	if (!isTRUE(as.logical(replace))) {
 		keep <- !file.exists(zimfiles)
 		zimfiles <- zimfiles[keep]
 		zipfiles <- zipfiles[keep]
 	}
 
 	## Are there files left
-	if (length(zimfiles) == 0)
-		stop("Done, no file to process!")
+	if (!length(zimfiles)) {
+		message("done: no file to process!")
+		return(invisible(TRUE))
+	}
 
 	## Extract .zim files, one at a time, and check them
-	zmax <- length(zimfiles)
-
-	ok <- sapply(1:zmax, function (i) {
-		## Extract the .zim file from zip comment
-		zipNoteGet(zipfiles[i], zimfiles[i])
-
-		## Check that the .zim file is created
-		if (zimVerify(zimfiles[i]) == 0) {
-			warning("wrong zim file '", zimfiles[i], "'")
+	items <- 1:length(zimfiles)
+	zimExtract <- function (item, zipfiles, zimfiles) {
+		## Extract the .zim file
+		if (is.null(zipNoteGet(zipfiles[item], zimfiles[item])))
 			return(FALSE)
-		} else return(TRUE)
-	})
-
-	## Clean up
-##	finishLoop(ok = all(as.logical(ok)), ok.console.msg = "",
-##		nok.console.msg = "", bell = bell, show.log = show.log,
-##		ok.log.msg = paste(zmax, ".zim files correctly extracted"),
-##		nok.log.msg = paste(sum(!ok), "files not correctly extracted on", zmax))
+		
+		## Check that the .zim file is created and return result accordingly
+		zimVerify(zimfiles[item]) >= 0
+	}
+	## Batch process all files
+	message("Compression of images...")
+	flush.console()
+	ok <- batch(items, fun = zimExtract, zipfiles = zipfiles,
+		zimfiles = zimfiles, verbose = FALSE)
+	if (!ok) {
+		warning(sum(attr(ok, "ok")), "/", length(zimfiles),
+			" metadata were extracted into .zim files (see .last.batch)")
+		invisible(FALSE)
+	} else {
+		message("-- Done! --")
+		invisible(TRUE)
+	}
 }
 
-## TODO: use batch() instead!
 ## Given a list of .zip files and a path where .zim files are located,
-## the function updates comment fields of the .zip files with latest .zim content
-zimRefreshAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
-zimdir = NULL, check.zip = TRUE, check.zim = TRUE, show.log = TRUE,
-bell = FALSE)
+## update comment fields of the .zip files with latest .zim content
+zimUpdateAll <- function (zipdir = ".", zipfiles = zipList(zipdir),
+zimdir = NULL, check.zim = TRUE)
 {
     ## Make sure we have full path for zip files
 	if (zipdir == ".") zipdir <- getwd()
 	zipfiles <- file.path(zipdir, zipfiles)
 
     ## Check that zipfiles exist
-	if (!all(file.exists(zipfiles)))
-		stop("One or several .zip files not found!")
+	if (!all(file.exists(zipfiles))) {
+		warning("one or several .zip files not found!")
+		return(invisible(FALSE))
+	}
 
 	## Look for the path where .zim files are located
-	if (is.null(zimdir)) {
+	if (!length(zimdir)) {
 		## The rule is the following one:
 		## 1) if last subdir of .zip files is "_raw", then .zim files
 		##    should be up one level
@@ -303,13 +321,13 @@ bell = FALSE)
 			zimdir <- dirname(zimdir)
 	} else {    # Look if this is valid directory
 		zimdir <- zimdir[1]
-		checkDirExists(zimdir, message = "'%s' is not a valid directory!")
+		if (!checkDirExists(zimdir, message = "'%s' is not a valid directory!"))
+			return(invisible(FALSE))
 	}
 
 	## Switch to that dir
-	inidir <- getwd()
-	setwd(zimdir)
-	on.exit(setwd(inidir))
+	initdir <- setwd(zimdir)
+	on.exit(setwd(initdir))
 
 	## Compute the names of zim files from the names of zip files
 	## Note: use only the fraction, that is, SCS.xxxx-xx-xx.SS+F from
@@ -327,52 +345,53 @@ bell = FALSE)
 	zipfiles <- zipfiles[keep]
 
 	## Are there files left?
-	if (length(zimfiles) == 0)
-		stop("Done, no file to update!")
-
-	## Check the zim files using zimVerify() if necessary
-##	logClear()
-	ok <- TRUE
-	if (check.zim) {
-		message("Verification of .zim files...")
-		zfiles <- unique(zimfiles)
-		zmax <- length(zfiles)
-
-		oks <- sapply(1:zmax, function (z) {
-			progress(z, zmax)
-			return(zimVerify(zfiles[z]))
-		})
-		ok <- all(oks)
-		progress(101) # Clear progression indicator
+	if (!length(zimfiles)) {
+		message("done: no file to update!")
+		return(invisible(TRUE))
 	}
 
+	## Check the zim files
+	ok <- TRUE
+	if (isTRUE(as.logical(check.zim))) {
+		message("Verification of .zim files...")
+		flush.console()
+		zfiles <- unique(zimfiles)
+		zimCheck <- function (zim) {
+			message("Verifying '", basename(zim), "' ...")
+			zimVerify(zim) >= 0
+		}
+		ok <- batch(zfiles, zimCheck, verbose = FALSE)
+	}
 	if (ok) {
 		message("-- Done! --")
 	} else {
-		warning(zimdir,
-			" contains corrupted .zim files, compression not started!")
+		warning("corrupted .zim file(s) found, update not started (see .last.batch)")
 		return(invisible(FALSE))
 	}
 
 	## If everything is OK, update comments in the zip files with the content
 	## of the .zim files
-	imax <- length(zipfiles)
-	message("Update of .zip comments...")
-	for (i in 1:imax) {
-		progress(i, imax)
-
-		## Replace the zip comment with content of the corresponding .zim file
-		zipNoteAdd(zipfiles[i] , zimfiles[i])
+	message("Update of metadata in .zip files from .zim data...")
+	flush.console()
+	items <- 1:length(zipfiles)
+	updateZip <- function (item, zipfiles, zimfiles) {
+		zipNoteAdd(zipfiles[item] , zimfiles[item])
 	}
-	progress(101) # Clear progression indicator
-
-	## Clean up
-##	finishLoop(ok, bell = bell, show.log = show.log)
+	ok <- batch(items, zipfiles = zipfiles, zimfiles = zimfiles,
+		verbose = FALSE)
+	if (!ok) {
+		warning(sum(attr(ok, "ok")), "/", length(zipfiles),
+			" zip files were updated (see .last.batch)")
+		invisible(FALSE)
+	} else {
+		message("-- Done! --")
+		invisible(TRUE)
+	}
 }
 
 ## Create a .zim file
-zimCreate <- function (zimfile, template = NULL,
-edit = TRUE, editor = getOption("fileEditor"), wait = FALSE)
+zimCreate <- function (zimfile, template = NULL, edit = TRUE,
+editor = getOption("fileEditor"), wait = FALSE)
 {
 	## Create a .zim file from a template and edit it
 	if (missing(zimfile) || is.null(zimfile) || zimfile == "") {
@@ -380,30 +399,31 @@ edit = TRUE, editor = getOption("fileEditor"), wait = FALSE)
 			title = "ZIM file creation", default = "myfile.zim")$res
 		if (!length(zimfile)) return(invisible(FALSE))
 		if (!hasExtension(zimfile, "zim"))
-			zimfile <- paste(zimfile, ".zis", sep = "")
+			zimfile <- paste(zimfile, ".zim", sep = "")
 	}
 
 	## If the file exists, edit existing version instead
     if (file.exists(zimfile))
-		if (isTRUE(edit)) {
+		if (isTRUE(as.logical(edit))) {
 			return(zimEdit(zimfile, editor = editor, wait = wait))
 		} else return(invisible(TRUE))
 
 	## Look for the template
-	if (is.null(template))
+	if (!length(template))
 		template <- file.path(getOption("ZITemplates"), "default.zim")
 	if (!isZim(template)) return(invisible(FALSE))
 	## Copy the template into the new file
 	file.copy(template, zimfile)
 	
 	## Possibly edit this new file
-	if (isTRUE(edit)) {
+	if (isTRUE(as.logical(edit))) {
 		return(zimEdit(zimfile, editor = editor, wait = wait))
 	} else return(invisible(TRUE))
 }
 
 ## Edit a .zim file
-zimEdit <- function (zimfile, editor = getOption("fileEditor"), wait = FALSE, ...)
+zimEdit <- function (zimfile, editor = getOption("fileEditor"), wait = FALSE,
+...)
 {
 	if (missing(zimfile) || !length(zimfile) || zimfile == "") {
 		zimfile <- selectFile("Zim")
@@ -412,16 +432,99 @@ zimEdit <- function (zimfile, editor = getOption("fileEditor"), wait = FALSE, ..
 	fileEdit(zimfile, editor = editor, wait = wait, ...)
 }
 
+## Create a dat1.zim file by pooling lst and results.csv tables
+zimDatMakeFlowCAM <- function (zimfile)
+{
+	## Check argument
+	if (length(zimfile) != 1 || !is.character(zimfile)) {
+		warning("you must select one .zim file")
+		return(invisible(FALSE))
+	}
+	if (!checkFileExists(zimfile, extension = "zim", force.file = TRUE))
+		return(invisible(FALSE))
+
+	message("compiling measurements and '", basename(zimfile), "'")
+	
+	## Dir containing the .zim file
+	zidir <- dirname(zimfile)
+
+	## Read list file
+	## Read visual spreadsheet data (from the FlowCAM)
+	visdata <- .lstRead(file.path(zidir,
+		paste(basename(zidir), "lst", sep = ".")), skip = 2)
+	
+	## Read ImageJ results (from FITVis)
+	fitdata <- read.table(file.path(zidir, "results.csv"),
+		sep = ",", header = TRUE, dec = ".")
+	
+	## Create a General table of mesurements
+	alldata <- cbind(visdata, fitdata)
+	
+	## Add Label columns
+	alldata$Label <- rep(basename(zidir), nrow(alldata))
+	## Transform Id column in !Item column
+	names(alldata)[grep("Id", names(alldata))] <- "!Item"
+	## Select only useful columns
+	alldata$FIT_Filename <- NULL
+	
+	## Create _dat1.zim file
+	zidatfile <- file.path(zidir, basename(zidir),
+		sub("\\.zim$", "_dat1.zim", basename(zimfile)))
+	if (!file.exists(dirname(zidatfile))) {
+		warning("directory ", dirname(zidatfile), " does not exist")
+		return(invisible(FALSE))
+	}
+	file.copy(from = zimfile, to = zidatfile, overwrite = FALSE)
+	
+	## Add table of measurements at the end
+	cat("\n[Data]\n", file = zidatfile, append = TRUE)
+	write.table(alldata, file = zidatfile, append = TRUE, quote = FALSE,
+		sep = "\t", col.names = TRUE, row.names = FALSE, dec = ".")
+	
+	invisible(TRUE)
+}
+
+## Create several dat1.zim files
+zimDatMakeFlowCAMAll <- function (path = ".", zimfiles = NULL)
+{
+	## First, switch to that directory
+	if (!checkDirExists(path)) return(invisible(FALSE))
+	
+	if (!length(zimfiles)) { # Compute them from path
+		zimfiles <- dir(path, pattern = extensionPattern("zim"),
+			full.names = TRUE, all.files = FALSE, recursive = TRUE)
+	}	
+	## Check at least one .zim file is found or provided
+	if (!length(zimfiles)) {
+		warning("you must select a dir containing .zim file(s)")
+		return(invisible(FALSE))
+	}
+	
+	## Batch process creation of all dat1.zim files
+	message("Creating _dat1.zim files...")
+	flush.console()
+	ok <- batch(zimfiles, zimDatMakeFlowCAM, verbose = FALSE)
+	if (!ok) {
+		warning(sum(attr(ok, "ok")), "/", length(zimfiles),
+			" files were completed (see .last.batch)")
+		invisible(FALSE)
+	} else {
+		message("-- Done! --")
+		invisible(TRUE)
+	}
+}
+
 ## FlowCAM special treatment because the plugin doesn't export dat1.zim!
-## read list file
-lstRead <- function (lstfile, skip = 2)
+## Read list file
+## TODO: avoid duplicated code between versions
+.lstRead <- function (lstfile, skip = 2)
 {
 	## Determine the version of the FlowCAM
-	ncol <- length(read.table(lstfile, header = FALSE, sep = ":", dec = ".", skip = 2,
-		nrows = 1))
+	ncol <- length(read.table(lstfile, header = FALSE, sep = ":", dec = ".",
+		skip = skip, nrows = 1))
 	if (ncol <= 44) {
 		## FlowCAM II with 44 columns
-		## read the table
+		## Read the table
 		tab <- read.table(lstfile, header = FALSE, sep = ":", dec = '.',
 			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
 				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
@@ -445,7 +548,7 @@ lstRead <- function (lstfile, skip = 2)
 		tab$FIT_Source_Image <- NA
 		tab$FIT_Calibration_Image <- NA
 		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-		## New variables calculation (present in dataexport.csv from the FlowCAM)
+		## New variables calc (present in dataexport.csv from the FlowCAM)
 		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
 		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
 		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
@@ -476,7 +579,7 @@ lstRead <- function (lstfile, skip = 2)
 		tab$FIT_High_U32 <- NA
 		tab$FIT_Low_U32 <- NA
 		tab$FIT_Total <- NA
-		## New variables calculation (present in dataexport.csv from the FlowCAM)
+		## New variables calcul (present in dataexport.csv from the FlowCAM)
 		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
 		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
 		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
@@ -486,18 +589,25 @@ lstRead <- function (lstfile, skip = 2)
 		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
 		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
 	}
-	return(tab)
+	tab
 }
 
 ## Read context file
 ## TODO: avoid duplicated code between versions
-ctxRead <- function(ctxfile, fil = FALSE, largest = FALSE, vignettes = TRUE,
+.ctxRead <- function(ctxfile, fill = FALSE, largest = FALSE, vignettes = TRUE,
 scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE,
 verbose = TRUE)
 {
 	## Check arguments
-	if (!is.character(ctxfile)) stop("You must select one context file")
+	if (length(ctxfile) != 1 || !is.character(ctxfile)) {
+		warning("you must select one FlowCAM context (.ctx) file")
+		return(NULL)
+	}
+	if (!checkFileExists(ctxfile, extension = "ctx", force.file = TRUE))
+		return(NULL)
+
 	## Extract information from context file
+	message("reading data from FlowCAM context file '", basename(ctxfile), "'")
 	## Scan the ctx file
 	ctxdata <- scan(ctxfile, character(), sep = "\t", skip = 0,
 		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
@@ -528,7 +638,7 @@ verbose = TRUE)
 		ImageLine <- grep("^CaptureDarkOrLightPixels", ctxdata)
 		DarkOrLight <- as.numeric(sub("[ ]*$", "",
 			sub("^CaptureDarkOrLightPixels[ ]*[=][ ]*", "",
-				ctxdata[ImageLine[1]])))
+			ctxdata[ImageLine[1]])))
 		if (DarkOrLight == 0) {
 			use <- "dark"
 		} else if (DarkOrLight == 1) {
@@ -585,9 +695,9 @@ verbose = TRUE)
 		Bottom <- as.numeric(sub("[ ]*$", "",
 			sub("^AcceptableBottom[ ]*[=][ ]*", "", ctxdata[ImageLine[1]])))
 		## Calculation of area of one image in
-		## µm <= (R-L * PixelSize) * (B-T * PixelSize)
+		## micron <= (R-L * PixelSize) * (B-T * PixelSize)
 		Area <- ((Right - Left) * pixelsize) * ((Bottom - Top) * pixelsize)
-		## Total volume analysed (cm³ = ml)
+		## Total volume analysed (cm^3 = ml)
 		VolumeDigitized <- (Area/(10^8)) * (FlowCell/10000) * Raw
 		## New fields in the ctx FlowCAM III
 		Threshold_Scatter <- NA
@@ -683,10 +793,10 @@ verbose = TRUE)
 		ImageLine <- grep("^AcceptableBottom", ctxdata)
 		Bottom <- as.numeric(sub("[ ]*$", "",
 			sub("^AcceptableBottom[ ]*[=][ ]*", "", ctxdata[ImageLine[1]])))
-		## Calculation of area of one image in µm
+		## Calculation of area of one image in microns
 		## <= (R-L * PixelSize) * (B-T * PixelSize)
 		Area <- ((Right - Left) * pixelsize) * ((Bottom - Top) * pixelsize)
-		## Total volume analysed (cm³ = ml)
+		## Total volume analysed (cm^3 = ml)
 		VolumeDigitized <- (Area/(10^8)) * (FlowCell/10000) * Raw
 		## Total volume analyzed calculated by Visual Spreadsheet
 		ImageLine <- grep("^TotalVolumeML", ctxdata)
@@ -706,243 +816,45 @@ verbose = TRUE)
 		FlashDuration <- as.numeric(sub("[ ]*$", "",
 		sub("^FlashDuration[ ]*[=][ ]*", "", ctxdata[ImageLine[1]])))
 	}
-	## Create a table
-	res <- data.frame(select, interval, pixelsize, minsize, maxsize, use,
-		thresholddark, thresholdlight, fil = fil, largest = largest,
+	## Create the table and return it
+	data.frame(select, interval, pixelsize, minsize, maxsize, use,
+		thresholddark, thresholdlight, fill = fill, largest = largest,
 		vignettes = vignettes, scalebar = scalebar, enhance = enhance,
 		outline = outline, masks = masks, verbose = verbose, Sample_Name,
 		FlowCell, Gain_Fluo_Ch1, Threshold_Fluo_Ch1, Gain_Fluo_Ch2,
 		Threshold_Fluo_Ch2, Threshold_Scatter, Dist_To_Nearest, VolumeDigitized,
 		VolumeDigitized_VIS, SoftwareVersion, Dilution_VIS, AutoImageRate,
 		FlashDuration)
-	## Print results
-	return(res)
 }
 
 ## Read several ctx files
-ctxReadAll <- function (ctxfile, fil = FALSE, largest = FALSE, vignettes = TRUE,
-scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE,
-verbose = TRUE)
+.ctxReadAll <- function (path = ".", ctxfiles = NULL, fill = FALSE,
+largest = FALSE, vignettes = TRUE, scalebar = TRUE, enhance = FALSE,
+outline = FALSE, masks = FALSE, verbose = TRUE)
 {
-	## Check arguments
-	if (!is.character(ctxfile)) stop("You must select one context file")
-	## List all ctx files to read
-	ListCtx <- list.files(path = dirname(dirname(ctxfile)), pattern = "\\.ctx$",
-		all.files = FALSE, full.names = TRUE, recursive = TRUE)
+	## First, switch to that directory
+	if (!checkDirExists(path)) return(NULL)
+	
+	if (!length(ctxfiles)) { # Compute them from path
+		ctxfiles <- dir(path, pattern = extensionPattern("ctx"),
+			full.names = TRUE, all.files = FALSE, recursive = TRUE)
+	}	
+	## Check at least one .ctx file is found or provided
+	if (!length(ctxfiles)) {
+		warning("you must select a dir containing FlowCAM data")
+		return(NULL)
+	}
+	
+	## Read first ctx file
+	res <- .ctxRead(ctxfiles[1], fill = FALSE, largest = FALSE, vignettes = TRUE,
+		scalebar = TRUE, enhance = FALSE, outline = FALSE, masks = FALSE,
+		verbose = TRUE)
 	## Make a loop to read each one
-	lListCtx <- length(ListCtx)
-	if (lListCtx > 1) {
-		## More than one ctx file to read
-		AllCtx <- ctxRead(ListCtx[i], fil = fil, largest = largest,
-			vignettes = vignettes, scalebar = scalebar, enhance = enhance,
-			outline = outline, masks = masks, verbose = verbose)
-		for (i in 2:lListCtx)
-			AllCtx <- rbind(AllCtx, ctxRead(ListCtx[i], fil = fil,
-				largest = largest, vignettes = vignettes, scalebar = scalebar,
-				enhance = enhance, outline = outline, masks = masks,
-				verbose = verbose))
-	} else {
-		## Only one ctx file to read
-		AllCtx <- ctxRead(ListCtx, fil = FALSE, largest = FALSE,
-			vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
-			masks = FALSE, verbose = TRUE)
-	}
-	return(AllCtx)
-}
-
-## Create a zim file for FlowCAM images
-zimMakeFlowCAM <- function (import = ".", check.names = TRUE)
-{
-	## Importation methods for FlowCAM data
-	if (!is.character(import))
-		stop("You must select a import text file for FlowCAM images")
-	## Read this file
-	ImportFile <- read.table(import, header = TRUE, sep = "\t", dec = ".")
-
-	## Check colnames
-	if (isTRUE(check.names)) {
-		ColNames <- c("Station", "Date", "FlowCell", "Mode", "Magnification",
-			"Exp_Name", "Sample", "Dilution", "Sieve", "Volume", "Pump_Speed",
-			"Duration", "Temperature", "Salinity", "Gain_Fluo_Ch1",
-			"Threshold_Fluo_Ch1", "Gain_Fluo_Ch2", "Threshold_Fluo_Ch2",
-			"Threshold_Scatter", "Min", "Max", "Size")
-		if (!all(ColNames %in% colnames(ImportFile)))
-			stop("Your import file contains missing columns among Station,",
-				" Date, FlowCell, Mode, Magnification, Exp_Name, Sample,",
-				" Dilution, Sieve, Volume, Pump_Speed, Duration, Temperature,",
-				" Salinity, Gain_Fluo_Ch1, Threshold_Fluo_Ch1, Gain_Fluo_Ch2,",
-				" Threshold_Fluo_Ch2, Threshold_Scatter, Min, Max, or Size")
-	}
-  
-	## Check if the ImportTemplate.zie is present in the directory
-	if (!file.exists(file.path(dirname(import), "ImportTemplate.zie")))
-		stop("Your directory must contain an 'ImportTemplate.zie' file")
-  
-	## Check if all samples are in the directory and export missing files
-	notThere <- character(0)
-	for (i in 1:length(ImportFile$Exp_Name)) {
-		if (!file.exists(file.path(dirname(import), ImportFile$Exp_Name[i]))) {
-			notThere <- c(notThere, as.character(ImportFile$Exp_Name[i]))
-			cat(ImportFile$Exp_Name[i], "is not in the process directory\n")
-		}
-	}
-  
-	## Select only samples present in the process directory
-	if (length(notThere)) {
-		ImportFile <- ImportFile[!ImportFile$Exp_Name %in% notThere, ]
-		cat("Only import samples in the process dir or the import text file\n")
-	}
-
-	## Read ctx files of the samples from
-	Ctx <- file.path(dirname(import), ImportFile$Exp_Name,
-		paste(ImportFile$Exp_Name, "ctx", sep = "."))
-	lCtx <- length(Ctx)
-	if (!lCtx) {
-		CtxFile <- NULL
-	} else {
-		CtxFile <- ctxRead(Ctx[1])
-		if (lCtx > 1) for (i in 2:lCtx) CtxFile <- rbind(CtxFile, ctxRead(Ctx[i]))
-	}
-	## Create fields to generate a table as txt format for the importation
-	Experiment <- ImportFile$Exp_Name
-	Sample <- ImportFile$Sample
-	Image <- CtxFile$Sample_Name
-	PixelSize <- CtxFile$pixelsize
-	minsize <- CtxFile$minsize
-	maxsize <- CtxFile$maxsize
-	VolumeDigitized <- CtxFile$VolumeDigitized
-	Dilution_VIS <- CtxFile$Dilution_VIS
-	SubPart <- ImportFile$Dilution / 100
-	VolIni <- ImportFile$Volume
-	CellPart <- VolumeDigitized / VolIni
-	## Table with value to change
-	ImportTxt <- data.frame(Experiment, Sample, Image, PixelSize, SubPart,
-		minsize, maxsize, VolumeDigitized, Dilution_VIS, VolIni, CellPart)
-	## Check if "ImportTemplate.zie" file exists
-	Zie <- file.path(dirname(import), "ImportTemplate.zie")
-	if (!file.exists(Zie))
-		stop("There is no 'ImportTemplate.zie' file in the process directory")
-	## Read the "ImportTemplate.zie" file
-	ZieFileOrig <- scan(Zie, character(), sep = "\t", skip = 0,
-		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-	## Loop to create a file _dat1.zim
-	for (i in 1:nrow(CtxFile)) {
-		ZieFile <- ZieFileOrig
-		## Complete fields using ImportTxt
-		ImageLine <- grep("^Sample", ZieFile)
-		Sample <- as.numeric(sub("[ ]*$", "", sub("^Sample[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(Sample)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$Sample[i], sep = "")
-		ImageLine <- grep("^Experiment", ZieFile)
-		Experiment <- as.numeric(sub("[ ]*$", "",
-			sub("^Experiment[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
-		if (is.na(Experiment)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$Experiment[i], sep = "")
-		ImageLine <- grep("^SubPart", ZieFile)
-		SubPart <- as.numeric(sub("[ ]*$", "", sub("^SubPart[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(SubPart)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$SubPart[i], sep = "")
-		ImageLine <- grep("^CellPart", ZieFile)
-		CellPart <- as.numeric(sub("[ ]*$", "", sub("^CellPart[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(CellPart)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$CellPart[i], sep = "")
-		ImageLine <- grep("^Dilution_VIS", ZieFile)
-		Dilution_VIS <- as.numeric(sub("[ ]*$", "",
-			sub("^Dilution_VIS[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
-		if (is.na(Dilution_VIS)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$Dilution_VIS[i], sep = "")
-		ImageLine <- grep("^VolIni", ZieFile)
-		VolIni <- as.numeric(sub("[ ]*$", "", sub("^VolIni[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(VolIni)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$VolIni[i], sep = "")
-		ImageLine <- grep("^VolumeDigitized", ZieFile)
-		VolumeDigitized <- as.numeric(sub("[ ]*$", "",
-			sub("^VolumeDigitized[ ]*[=][ ]*", "", ZieFile[ImageLine[1]])))
-		if (is.na(VolumeDigitized)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$VolumeDigitized[i], sep = "")
-		ImageLine <- grep("^minsize", ZieFile)
-		minsize <- as.numeric(sub("[ ]*$", "", sub("^minsize[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(minsize)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$minsize[i], sep = "")
-		ImageLine <- grep("^maxsize", ZieFile)
-		maxsize <- as.numeric(sub("[ ]*$", "", sub("^maxsize[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(maxsize)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$maxsize[i], sep = "")
-		ImageLine <- grep("^PixSize", ZieFile)
-		PixSize <- as.numeric(sub("[ ]*$", "", sub("^PixSize[ ]*[=][ ]*", "",
-			ZieFile[ImageLine[1]])))
-		if (is.na(PixSize)) ZieFile[ImageLine[1]] <-
-			paste(ZieFile[ImageLine[1]], ImportTxt$PixelSize[i], sep = "")
-		## Read all context file
-		ContextFile <- scan(Ctx[i], character(), sep = "\t", skip = 0,
-			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-
-		## Read note
-		Note <- file.path(dirname(import), ImportFile$Exp_Name[i],
-			paste(ImportFile$Exp_Name[i], "_notes.txt", sep = ""))
-		NoteFile <- scan(Note, character(), sep = "\t", skip = 0,
-			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-		## Write table in the sample directory
-		Tab <- c(ZieFile, "", ContextFile, "", "[Notes]", NoteFile)
-		Export <- file.path(dirname(import), CtxFile$Sample_Name[i],
-			paste(CtxFile$Sample_Name[i], "zim", sep = "."))
-		write(Tab, file = Export)
-	}
-}
-
-## Create a dat1.zim file by pooling lst and results.csv tables
-zimDatMake <- function (zimfile)
-{
-	## Check if the zim file exists
-	if (!file.exists(zimfile))
-		stop(basename(zimfile), " is not found")
-	## Dir containing the .zim file
-	zidir <- dirname(zimfile)
-	## Read list file
-	lstfile <- file.path(zidir, paste(basename(zidir), "lst", sep = "."))
-	## Read visual spreadsheet data (from the FlowCAM)
-	visdata <- lstRead(lstfile, skip = 2)
-	## Read ImageJ results (from FITVis)
-	ijdata <- read.table(file.path(zidir, "results.csv"),
-		sep = ",", header = TRUE, dec = ".")
-	## Create a General table of mesurements
-	alldata <- cbind(visdata, ijdata)
-	## Add Label columns
-	alldata$Label <- rep(basename(zidir), nrow(alldata))
-	## Transform Id column in !Item column
-	names(alldata)[grep("Id", names(alldata))] <- "!Item"
-	## Select only useful columns
-	alldata$FIT_Filename <- NULL
-	## Create _dat1.zim file
-	zidatfile <- file.path(zidir, basename(zidir), basename(zimfile))
-	if (!file.exists(dirname(zidatfile)))
-		stop("Directory ", dirname(zidatfile), " does not exist")
-	file.copy(from = zimfile, to = zidatfile, overwrite = FALSE)
-	## Add table of measurements at the end
-	cat("\n[Data]\n", file = zidatfile, append = TRUE)
-	write.table(alldata, file = zidatfile, append = TRUE, quote = FALSE,
-		sep = "\t", col.names = TRUE, row.names = FALSE, dec = ".")
-	## Rename the _dat1.zim file
-	zidat1file <- file.path(dirname(zidatfile),
-		sub("\\.zim$", "_dat1.zim", basename(zimfile)))
-	file.rename(from = zidatfile, to = zidat1file)
-}
-
-## Create several dat1.zim files
-## TODO: rework this and use log file!
-zimDatMakeAll <- function (zimfile)
-{
-	## Search all zim files in process directory
-	procdir <- dirname(dirname(zimfile))
-	allzim <- list.files(path = procdir, pattern = "\\.zim$", all.files = FALSE,
-		full.names = TRUE, recursive = TRUE)
-	if (!length(allzim)) return()
-	## Loop to automatically create dat1.zim files
-	for (i in 1:length(allzim)) zimDatMake(allzim[i])
+	nfiles <- length(ctxfiles)
+	if (nfiles > 1) for (i in 2:nfiles)
+		res <- rbind(res, .ctxRead(ctxfiles[i], fill = fill,
+			largest = largest, vignettes = vignettes, scalebar = scalebar,
+			enhance = enhance, outline = outline, masks = masks,
+			verbose = verbose))
+	res
 }

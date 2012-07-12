@@ -54,7 +54,7 @@ zisCreate(zisNew, template = zisFile, edit = FALSE)  # One can edit it here too
 ## Edit the new file, and wait edition is completed
 zisEdit(zisNew, wait = TRUE)
 ## It contains:
-file.show(zisNew, title = basename(zisNew), delete.file = TRUE)
+if (interactive()) file.show(zisNew, title = basename(zisNew), delete.file = TRUE)
 
 ## Clean up
 rm(zisFile, zisData, zisNew)
