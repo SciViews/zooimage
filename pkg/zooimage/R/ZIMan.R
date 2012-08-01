@@ -172,9 +172,9 @@ log = TRUE)
 addIdent <- function (RdataFile, Auto)
 {
 	if (!is.character(RdataFile))
-		stop("'RdataFile' muste be the path of the Rdata to modify")
+		stop("'RdataFile' must be the path of the RData file to update")
 	## Load Rdata in memory
-	load(file = RdataFile, envir = .GlobalEnv)
+	load(file = RdataFile)
   
 	## Add the Ident column
 	ZI.sample$Ident <- as.factor(Auto)
@@ -182,8 +182,8 @@ addIdent <- function (RdataFile, Auto)
 	## Replace existing Rdata
 	save(ZI.sample, file = RdataFile)
   
-	## Remove Rdata from memory
-	rm(ZI.sample, envir = .GlobalEnv)
+	## Return data invisibly
+	invisible(ZI.sample)
 }
 
 # Read manual validation
@@ -201,7 +201,7 @@ na.rm = FALSE)
   
 	## Change classes of the object
 	class(ManValidation) <- c("ZIMan", class(ManValidation))
-	return(ManValidation)
+	ManValidation
 }
 
 ## Provide groups after manual validation
@@ -209,9 +209,9 @@ reclass <- function (ZIMan)
 {
 	## Check arguments
 	if (!inherits(ZIMan, "ZIMan"))
-		stop("ZIMan must be an object of class 'ZIMan'")
+		stop("'ZIMan' must be an object of class 'ZIMan'")
 	if (!isTRUE("Class" %in% names(ZIMan)))
-		stop("ZIMan doesn't contain a column named 'Class'")
+		stop("'ZIMan' doesn't contain a column named 'Class'")
   
 	## New identification
 	res <- table(ZIMan$Class)
@@ -223,14 +223,13 @@ confusionCompa <- function (ZIMan)
 {
 	## Check arguments
 	if (!inherits(ZIMan, "ZIMan"))
-		stop("ZIMan must be an object of class 'ZIMan'")
+		stop("'ZIMan' must be an object of class 'ZIMan'")
 	if (!isTRUE("Class" %in% names(ZIMan)))
-		stop("ZIMan doesn'y contain a column named 'Class'")
+		stop("'ZIMan' does not contain a column named 'Class'")
 	if (!isTRUE("Ident" %in% names(ZIMan)))
-		stop("ZIMan doesn'y contain a column named 'Ident'")
+		stop("'ZIMan' does not contain a column named 'Ident'")
 	## Confusion matrix
-	res <- table(Class = ZIMan$Class, Predict = ZIMan$Ident)
-	return(res)
+	table(Class = ZIMan$Class, Predict = ZIMan$Ident)
 }
 
 ## Difference between prediction
@@ -238,16 +237,12 @@ ZIManCompa <- function (ZIMan)
 {
 	# Check arguments
 	if (!inherits(ZIMan, "ZIMan"))
-		stop("ZIMan must be an object of class 'ZIMan'")
+		stop("'ZIMan' must be an object of class 'ZIMan'")
 	if (!isTRUE("Class" %in% names(ZIMan)))
-		stop("ZIMan doesn'y contain a column named 'Class'")
+		stop("'ZIMan' does not contain a column named 'Class'")
 	if (!isTRUE("Ident" %in% names(ZIMan)))
-		stop("ZIMan doesn'y contain a column named 'Ident'")
-	## Difference
-	Before <- table(ZIMan$Ident)
-	After <- table(ZIMan$Class)
-	res <- list(Predicted = Before, Validated = After)
-	return(res)  
+		stop("'ZIMan' does not contain a column named 'Ident'")
+	list(Predicted = table(ZIMan$Ident), Validated = table(ZIMan$Class))  
 }
 
 ## Substract a ZIDat table according a threshold formula
@@ -268,5 +263,5 @@ subpartThreshold  <- function (ZIDat, Filter = NULL)
     
     res <- ZIDat[SubPart$Index, ]
     attr(res, "Threshold") <- Threshold
-    return(res)
+    res
 }

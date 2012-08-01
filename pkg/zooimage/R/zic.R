@@ -37,11 +37,11 @@ zicCheck <- function (zicfile)
 	## Second line must be [path]
 	Line2 <- scan(zicfile, character(), skip = 1, nmax = 2, quiet = TRUE)
 	if (tolower(Line2[1]) != "[path]") {
-		warning("not a .zic file, or corrupted at line #2!")
+		warning("not a ZIC file, or corrupted at line #2!")
 		return(FALSE)
 	}
 	if (length(Line2) < 2) {
-		warning("empty .zic file is not correct")
+		warning("empty ZIC file is not correct")
 		return(FALSE)
 	} else return(TRUE)
 }

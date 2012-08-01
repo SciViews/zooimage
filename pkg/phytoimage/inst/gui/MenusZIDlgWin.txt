@@ -58,7 +58,6 @@ $Tk.ZIDlgWin
 ||$PhytoImage &Data (zid)
 |||zidDatMake()					~~ guiDlgFunction("zidDatMake")
 |||zidDatRead()					~~ guiDlgFunction("zidDatRead")
-|||zidExtract()		    			~~ guiDlgFunction("zidExtract")
 |||-
 |||zidVerify()					~~ guiDlgFunction("zidVerify")
 |||zidVerify&All()				~~ guiDlgFunction("zidVerifyAll")

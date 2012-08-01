@@ -13,7 +13,7 @@
 \alias{makeZid}
 \alias{makeTrain}
 \alias{collectTrain}
-\alias{addToTrain}
+\alias{addVigsToTrain}
 \alias{makeClass}
 \alias{analyzeClass}
 \alias{vignettesClass}
@@ -50,7 +50,7 @@ processImg()
 makeZid()
 makeTrain()
 collectTrain()
-addToTrain()
+addVigsToTrain()
 makeClass()
 analyzeClass()
 vignettesClass()

@@ -22,7 +22,7 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
     if (!checkFileExists(zisfile, extension = "zis", force.file = TRUE))
 		return(NULL)
 	if (!checkFirstLine(zisfile)) return(NULL)
-	rl <- readLines(zisfile)
+	rl <- readLines(zisfile,  encoding = "UTF-8")
 	if (!length(rl) > 1) {
 		warning("the file is empty or corrupted!")
 		return(NULL)
@@ -30,7 +30,7 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	positions <- grep("^[[].*[]]", rl)
 	sections <- sub("^[[](.*)[]]", "\\1", rl[positions])
 	if (!all(expected.sections %in% sections)) {
-		warning("incorrect zis file; it does not contain all expected sections")
+		warning("incorrect ZIS file; it does not contain all expected sections")
 		return(NULL)
 	}
 	start <- positions + 1
@@ -77,7 +77,7 @@ edit = TRUE, editor = getOption("fileEditor"), wait = FALSE)
 {	
 	## Use a ui to get the file name
 	if (missing(zisfile) || !length(zisfile) || zisfile == "") {
-		zisfile <- dlgInput("Give a name for the new .zis file:",
+		zisfile <- dlgInput("Give a name for the new ZIS file:",
 			title = "ZIS file creation", default = "Description.zis")$res
 		if (!length(zisfile)) return(invisible(FALSE))
 		if (!hasExtension(zisfile, "zis"))

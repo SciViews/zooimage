@@ -1,9 +1,13 @@
 \name{ZIRes}
+\alias{processSample}
+\alias{processSampleAll}
 \alias{sampleAbd}
+\alias{sampleBio}
+\alias{sampleSpectrum}
+\alias{plotAbdBio}
 \alias{histSpectrum}
 \alias{merge.ZITable}
 \alias{plot.ZITable}
-\alias{plotAbdBio}
 
 \title{ Various function to calculate results ('ZIRes' object) }
 \description{
@@ -12,27 +16,80 @@
   and they collect them together in a 'ZIRes' table.
 }
 \usage{
+processSample(ZidFile, ZidbFile = NULL, ZIClass, ZIMan, ZIDesc, abd.taxa = NULL,
+    abd.groups = NULL, abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL,
+    bio.conv = c(1, 0, 1), headers = c("Abd", "Bio"), spec.taxa = NULL,
+    spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE,
+    exportdir = NULL, SemiTab = NULL, Semi = FALSE)
+processSampleAll(path = ".", ZidFiles = NULL, ZIClass, ZIMan = NULL,
+    ZIDesc = zisRead("Description.zis"), abd.taxa = NULL, abd.groups = NULL,
+    abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1),
+    headers = c("Abd", "Bio"), spec.taxa = NULL, spec.groups = NULL,
+    spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE, exportdir = NULL)
+
 sampleAbd(ZIDat, sample, taxa = NULL, groups = NULL, type = c("absolute",
     "log", "relative"), header = "Abd")
-histSpectrum(spect, class = 1:18 * 0.3/3 + 0.2, lag = 0.25, log.scale = TRUE,
-    width = 0.1, xlab = "classes (mm)", ylab = if (log.scale)
-    "log(abundance + 1)/m^3" else "Abundance (ind./m^3", main = "", ylim = c(0, 2),
-    plot.exp = FALSE)
-\method{merge}{ZITable}(x, y, ...)
-\method{plot}{ZITable}(x, y, ...)
+sampleBio(ZIDat, sample, taxa = NULL, groups = NULL, conv = c(1, 0, 1),
+    header = "Bio", exportdir = NULL)
+sampleSpectrum(ZIDat, sample, taxa = NULL, groups = NULL,
+    breaks = seq(0.25, 2, by = 0.1), use.Dil = TRUE)    
+
 plotAbdBio(t, y1, y2, y3, ylim = c(0, 3), xlab = "Date", ylab = "log(abundance + 1)",
     main = "", cols = c("green", "blue", "red"), pchs = 1:3, hgrid = 1:3, vgrid = t,
     vline = NULL, xleg = min(vgrid), yleg = ylim[2], legend = c("series 1",
     "series 2", "series 3"), type = "o")
+histSpectrum(spect, class = 1:18 * 0.3/3 + 0.2, lag = 0.25, log.scale = TRUE,
+    width = 0.1, xlab = "classes (mm)", ylab = if (log.scale)
+    "log(abundance + 1)/m^3" else "Abundance (ind./m^3", main = "", ylim = c(0, 2),
+    plot.exp = FALSE)
+
+\method{merge}{ZITable}(x, y, ...)
+\method{plot}{ZITable}(x, y, ...)
 }
 
 \arguments{
+  \item{ZidFile}{ ... }
+  \item{ZidbFile}{ ... }
+  \item{ZIClass}{ ... }
+  \item{ZIMan}{ ... }
+  \item{ZIDesc}{ ... }
+  \item{abd.taxa}{ ... }
+  \item{abd.groups}{ ... }
+  \item{abd.type}{ ... }
+  \item{bio.taxa}{ ... }
+  \item{bio.groups}{ ... }
+  \item{bio.conv}{ ... }
+  \item{headers}{ ... }
+  \item{spec.taxa}{ ... }
+  \item{spec.groups}{ ... }
+  \item{spec.breaks}{ ... }
+  \item{spec.use.Dil}{ ... }
+  \item{exportdir}{ ... }
+  \item{SemiTab}{ ... }
+  \item{Semi}{ ... }
+  \item{path}{ ... }
+  \item{ZidFiles}{ ... }
   \item{ZIDat}{ A 'ZIDat' object }
   \item{sample}{ A sample }
   \item{taxa}{ Taxa to consider }
   \item{groups}{ Groups to consider }
   \item{type}{ Type of plot }
   \item{header}{ Header for the variable }
+  \item{conv}{ ... }
+  \item{breaks}{ ... }
+  \item{use.Dil}{ ... }
+  \item{t}{ The time vector }
+  \item{y1}{ The first series to plot against time }
+  \item{y2}{ The second series to plot against time }
+  \item{y3}{ The third series to plot against time }
+  \item{cols}{ Colors to use for the series }
+  \item{pchs}{ The points to use for the series }
+  \item{hgrid}{ Where to put horizontal grid? }
+  \item{vgrid}{ Where to put vertical grid? }
+  \item{vline}{ One or more vertical lines to draw }
+  \item{xleg}{ X position of the legend }
+  \item{yleg}{ Y position of the legend }
+  \item{legend}{ The legend for the three series }
   \item{spect}{ A spectrum to plot }
   \item{class}{ The classes to use for breaking the spectrum }
   \item{lag}{ The lag for where the first class starts }
@@ -46,25 +103,15 @@ plotAbdBio(t, y1, y2, y3, ylim = c(0, 3), xlab = "Date", ylab = "log(abundance +
   \item{x}{ A first table }
   \item{y}{ A second table }
   \item{\dots}{ Additionnal tables }
-  \item{t}{ The time vector }
-  \item{y1}{ The first series to plot against time }
-  \item{y2}{ The second series to plot against time }
-  \item{y3}{ The third series to plot against time }
-  \item{cols}{ Colors to use for the series }
-  \item{pchs}{ The points to use for the series }
-  \item{hgrid}{ Where to put horizontal grid? }
-  \item{vgrid}{ Where to put vertical grid? }
-  \item{vline}{ One or more vertical lines to draw }
-  \item{xleg}{ X position of the legend }
-  \item{yleg}{ Y position of the legend }
-  \item{legend}{ The legend for the three series }
 }
 
 \author{ Philippe Grosjean & Kevin Denis }
 
 \seealso{ \code{\link{ZIClass}} }
+
 \examples{
 ##TODO...
 }
+
 \keyword{ utilities }
 

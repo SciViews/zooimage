@@ -1,0 +1,54 @@
+import(dataframe)
+import(stats)
+import(class)
+import(nnet)
+import(MASS)
+import(e1071)
+import(randomForest)
+import(RWeka)
+import(RColorBrewer)
+import(gplots)
+import(grDevices)
+
+#importFrom(gdata, combine)
+
+export(mlearning)
+export(mlLda)
+export(mlQda)
+export(mlRforest)
+export(mlLvq)
+export(mlNnet)
+export(mlNaiveBayes)
+export(mlNaiveBayesWeka)
+
+export(summary.lvq)
+
+export(response)
+export(train)
+
+export(confusion)
+export(comparisonPlot)
+
+S3method(confusion, default)
+S3method(confusion, mlearning)
+S3method(print, confusion)
+S3method(plot, confusion)
+S3method(summary, confusion)
+S3method(print, summary.confusion)
+
+S3method(print, mlearning)
+S3method(summary, mlearning)
+S3method(print, summary.mlearning)
+S3method(plot, mlearning)
+S3method(predict, mlearning)
+
+S3method(response, default)
+S3method(train, default)
+
+S3method(summary, lvq)
+S3method(print, summary.lvq)
+
+S3method(predict, mlLda)
+S3method(predict, mlQda)
+S3method(predict, mlRforest)
+S3method(predict, mlLvq)

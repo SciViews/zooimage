@@ -53,21 +53,21 @@ images = list.files(dir, pattern))
 	## The process to run in batch
 	makeZim <- function (zim) {
 		if (!file.exists(zim)) {
-			message("Processing .zim file ", basename(zim), "...")
+			message("Processing ZIM file ", basename(zim), "...")
 			zimCreate(zim, template = getTemp(".template"), wait = TRUE)
 			## Get this zim as new template
 			assignTemp(".template", zim)
-		} else message("Checking .zim file ", basename(zim), "...")
+		} else message("Checking ZIM file ", basename(zim), "...")
 		## Verify that the .zim file is correct
 		zimVerify(zim) >= 0
 	}
 	on.exit(rmTemp(".template"))
-	message("Creating .zim files...")
+	message("Creating ZIM files...")
 	flush.console()
 	ok <- batch(zims, makeZim, verbose = FALSE)
 	if (!ok) {
 		warning(sum(attr(ok, "ok")), "/", length(images),
-			" .zim files created (see .last.batch)")
+			" ZIM files created (see .last.batch)")
 		invisible(FALSE)
 	} else {
 		message("-- Done! --")
@@ -211,7 +211,7 @@ path = NULL, replace = FALSE)
 	## Make sure all zipfiles are in the same directory
 	zipdirs <- dirname(zipfiles)
 	if (length(unique(zipdirs)) > 1) {
-		warning("all .zip files must be located in the same directory!")
+		warning("all ZIP files must be located in the same directory!")
 		return(invisible(FALSE))
 	}
 
@@ -228,7 +228,7 @@ path = NULL, replace = FALSE)
 
 	## Check that zipfiles exist
 	if (!all(file.exists(zipfiles))) {
-		stop("one or several .zip files not found!")
+		stop("one or several ZIP files not found!")
 		return(invisible(FALSE))
 	}
 
@@ -287,7 +287,7 @@ path = NULL, replace = FALSE)
 		zimfiles = zimfiles, verbose = FALSE)
 	if (!ok) {
 		warning(sum(attr(ok, "ok")), "/", length(zimfiles),
-			" metadata were extracted into .zim files (see .last.batch)")
+			" metadata were extracted into ZIM files (see .last.batch)")
 		invisible(FALSE)
 	} else {
 		message("-- Done! --")
@@ -306,7 +306,7 @@ zimdir = NULL, check.zim = TRUE)
 
     ## Check that zipfiles exist
 	if (!all(file.exists(zipfiles))) {
-		warning("one or several .zip files not found!")
+		warning("one or several ZIP files not found!")
 		return(invisible(FALSE))
 	}
 
@@ -353,7 +353,7 @@ zimdir = NULL, check.zim = TRUE)
 	## Check the zim files
 	ok <- TRUE
 	if (isTRUE(as.logical(check.zim))) {
-		message("Verification of .zim files...")
+		message("Verification of ZIM files...")
 		flush.console()
 		zfiles <- unique(zimfiles)
 		zimCheck <- function (zim) {
@@ -365,13 +365,13 @@ zimdir = NULL, check.zim = TRUE)
 	if (ok) {
 		message("-- Done! --")
 	} else {
-		warning("corrupted .zim file(s) found, update not started (see .last.batch)")
+		warning("corrupted ZIM file(s) found, update not started (see .last.batch)")
 		return(invisible(FALSE))
 	}
 
 	## If everything is OK, update comments in the zip files with the content
 	## of the .zim files
-	message("Update of metadata in .zip files from .zim data...")
+	message("Update of metadata in ZIP files from ZIM data...")
 	flush.console()
 	items <- 1:length(zipfiles)
 	updateZip <- function (item, zipfiles, zimfiles) {
@@ -381,7 +381,7 @@ zimdir = NULL, check.zim = TRUE)
 		verbose = FALSE)
 	if (!ok) {
 		warning(sum(attr(ok, "ok")), "/", length(zipfiles),
-			" zip files were updated (see .last.batch)")
+			" ZIP files were updated (see .last.batch)")
 		invisible(FALSE)
 	} else {
 		message("-- Done! --")
@@ -395,7 +395,7 @@ editor = getOption("fileEditor"), wait = FALSE)
 {
 	## Create a .zim file from a template and edit it
 	if (missing(zimfile) || is.null(zimfile) || zimfile == "") {
-		zimfile <- dlgInput("Give a name for the new .zim file:",
+		zimfile <- dlgInput("Give a name for the new ZIM file:",
 			title = "ZIM file creation", default = "myfile.zim")$res
 		if (!length(zimfile)) return(invisible(FALSE))
 		if (!hasExtension(zimfile, "zim"))
@@ -437,7 +437,7 @@ zimDatMakeFlowCAM <- function (zimfile)
 {
 	## Check argument
 	if (length(zimfile) != 1 || !is.character(zimfile)) {
-		warning("you must select one .zim file")
+		warning("you must select one ZIM file")
 		return(invisible(FALSE))
 	}
 	if (!checkFileExists(zimfile, extension = "zim", force.file = TRUE))
@@ -496,7 +496,7 @@ zimDatMakeFlowCAMAll <- function (path = ".", zimfiles = NULL)
 	}	
 	## Check at least one .zim file is found or provided
 	if (!length(zimfiles)) {
-		warning("you must select a dir containing .zim file(s)")
+		warning("you must select a dir containing ZIM file(s)")
 		return(invisible(FALSE))
 	}
 	
@@ -841,7 +841,7 @@ outline = FALSE, masks = FALSE, verbose = TRUE)
 	}	
 	## Check at least one .ctx file is found or provided
 	if (!length(ctxfiles)) {
-		warning("you must select a dir containing FlowCAM data")
+		warning("you must select a directory containing FlowCAM data")
 		return(NULL)
 	}
 	

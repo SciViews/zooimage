@@ -78,8 +78,16 @@ listSamples <- function (ZIobj)
 makeId <- function (ZIDat)
 	paste(ZIDat$Label, ZIDat$Item, sep = "_")
 
+## Default list of variables to keep
+keepVars <- function ()
+	c("logECD", "logArea", "logPerim.", "logMajor", "logMinor", "logFeret",
+	  "Mean", "Median", "Mode", "Min", "Max", "StdDev", "Range", "MeanPos",
+	  "SDNorm", "CV", "IntDen", "Transp1", "Transp2", "Skew", "Kurt",
+	  "Circ.", "AspectRatio",  "Elongation", "Compactness", "Roundness",
+	  "CentBoxD", "GrayCentBoxD", "CentroidsD", "logMeanDia", "logMeanFDia")
+
 ## Calculate derived variables... default function
-calcVars <- function (ZIDat, keep.vars = getOption("ZI.keep.vars"))
+calcVars <- function (x, keep.vars = getOption("ZI.keepVars", keepVars))
 {	
 	## This is the calculation of derived variables
 	## Note that you can make your own version of this function for more
@@ -88,13 +96,12 @@ calcVars <- function (ZIDat, keep.vars = getOption("ZI.keep.vars"))
 	## A small hack to correct some 0 (which can be problematic in further calcs)
 	noZero <- function (x) {
 		x[x == 0] <- 0.000000001
-		return(x)
+		x
 	}
 	## Euclidean distance between two points
 	distance <- function (x, y)
 		sqrt(x^2 + y^2)
 	
-	x <- ZIDat
 	x$Minor <- noZero(x$Minor)
 	x$Major <- noZero(x$Major) 
 	x$AspectRatio <- x$Minor / x$Major 
@@ -111,10 +118,13 @@ calcVars <- function (ZIDat, keep.vars = getOption("ZI.keep.vars"))
 	x$logPerim. <- log(x$Perim.)
 	x$logMajor <- log(x$Major)
 	x$logMinor <- log(x$Minor)
+	x$logECD <- log(noZero(x$ECD))
 	x$Feret <- noZero(x$Feret)
 	x$logFeret <- log(x$Feret)
 	x$MeanDia <- (x$Major + x$Minor) / 2
 	x$MeanFDia <- (x$Feret + x$Minor) / 2
+	x$logMeanDia <- log(x$MeanDia)
+	x$logMeanFDia <- log(x$MeanFDia)
 	x$Transp1 <- 1 - (x$ECD / x$MeanDia)
 	x$Transp1[x$Transp1 < 0] <- 0
 	x$Transp2 <- 1 - (x$ECD / x$MeanFDia)
@@ -125,11 +135,15 @@ calcVars <- function (ZIDat, keep.vars = getOption("ZI.keep.vars"))
 	x$Roundness <- 4 * x$Area / (pi * sqrt(x$Major))
 	
 	## Select variables to keep
-	if (length(keep.vars))
+	if (length(keep.vars)) {
+		## If  keep.vars is a function, evaluate it...
+		if (is.function(keep.vars)) keep.vars <- keep.vars()
+		## Select only variables to keep
 		x <- x[, keep.vars[keep.vars %in% names(x)]]
+	}
 
 	## Return the recalculated data frame
-	return(x)
+	x
 }
 
 ## Calculate equivalent circular diameter (similar to equivalent spherical

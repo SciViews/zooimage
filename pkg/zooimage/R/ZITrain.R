@@ -18,6 +18,7 @@
 ## Prepare 'dir\subdir' for a manual classification by expanding all vignettes
 ## from a given number of zidfiles to the '_' subdir, and making
 ## a template for subdirs
+## TODO: eliminate zidfiles and detect if it is zidfiles or zidbfiles like in addToTrain()
 prepareTrain <- function (rootdir, subdir = "_train", zidfiles, zidbfiles = NULL,
 groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"),
 ident = NULL, start.viewer = FALSE)
@@ -92,7 +93,8 @@ ident = NULL, start.viewer = FALSE)
             }
             ## Save vignettes
             ZI.sample <- Zidb$.Data
-            save(ZI.sample, file = file.path(dir, paste(sub(".zidb", "", basename(zidbfiles[i])), "_dat1.RData", sep = "")))
+            save(ZI.sample, file = file.path(dir, paste(sub(".zidb", "",
+				basename(zidbfiles[i])), "_dat1.RData", sep = "")))
 		}
 	}
 	progress(101) # Clear progression indicator
@@ -115,11 +117,11 @@ ident = NULL, start.viewer = FALSE)
 	## Finish and possibly start the image viewer
 	message(" -- Done! --")
 	if (isTRUE(as.logical(start.viewer))) imageViewer(dir_)
-	return(invisible(TRUE))
+	invisible(TRUE)
 }
 
 ## Function to add new vignettes in a training set
-increaseTrain <- function (traindir, zidbfiles)
+addToTrain <- function (traindir, zidbfiles)
 {
 	## Check if selected zid(b) files are already classified in the training set
 	Rdata <- list.files(traindir, pattern = "[.]RData$")
@@ -127,11 +129,11 @@ increaseTrain <- function (traindir, zidbfiles)
 	NewZidb <- !RdataNew %in% Rdata
 	
 	if (!any(NewZidb)) { # All zidbs are already in the training set
-		warning("All selected zid(b) files already in the training set")
+		warning("All selected ZID(B) files already in the training set")
 		return(invisible(FALSE))
 	} else { # Keep only new zid(b) files
 		zidbfiles <- zidbfiles[NewZidb]
-		warning("You have selected ", length(zidbfiles), " new zid(b) files.\n",
+		warning("You have selected ", length(zidbfiles), " new ZID(B) files.\n",
 			"The others files are already included in the training set")
 	}
 	
@@ -156,7 +158,15 @@ increaseTrain <- function (traindir, zidbfiles)
 		## treatment depends if it is a .zid or .zidb file
 		zidbfile <- zidbfiles[i]
 		if (grepl("[.]zidb$", zidbfile)) { # .zidb file
-			
+			## TODO: extract data from .zidb files...
+
+
+
+
+
+
+
+
 		} else { # .zid file
 			## Using a temporary directory to unzip all files and then copy
 			## the RData files to the train directory
@@ -178,7 +188,7 @@ increaseTrain <- function (traindir, zidbfiles)
 	}
 	progress(101) # Clear progression indicator
 	message("-- Done --\n")
-	return(invisible(TRUE))
+	invisible(TRUE)
 }
 
 ## Retrieve information from a manual training set in a 'ZITrain' object	
@@ -203,7 +213,7 @@ na.rm = FALSE, numvars = NULL)
 
 	## Check the result...
 	if (!length(res)) {
-		warning("no .png or .jpg vignettes found in this tree")
+		warning("no PNG or JPEG vignettes found in this tree")
 		return(invisible(FALSE))
 	}
 
@@ -328,7 +338,7 @@ recode.ZITrain <- function (ZITrain, ZIRecode, warn.only = FALSE)
 	
 	## Check that all levels in ZITrain$Class are represented in ZIRecode
 	if (!all(sort(levels(ZITrain$Class))  == sort(levels(ZIRecode[ , 1]))))
-			stop("Not all levels of ZIRecode match levels of ZITrain")
+			stop("Not all levels of 'ZIRecode' match levels of the 'ZITrain' object")
 	
 	## Class column of ZITrain is transformed into a character vector
 	Class <- as.character(ZITrain$Class)

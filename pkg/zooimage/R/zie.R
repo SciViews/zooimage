@@ -154,7 +154,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	## of the same image
 	### TODO: indicate progression with exact line number in the zie file!
 	### TODO: allow restarting from a given point!
-	message("Checking all lines in the .zie file for raw images...")
+	message("Checking all lines in the ZIE file for raw images...")
 	allImages <- character(0)
 	nLines <- length(Lines)
 	for (i in 1:nLines) {
@@ -178,7 +178,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	
 	## Now that we know all image files are there, process the [Map] section
 	## line-by-line	
-	message("Processing all lines in the .zie file (import images and make .zim files)...")
+	message("Processing all lines in the ZIE file (import images and make ZIM files)...")
 	ok <- TRUE
 	
 	## BuildZim : This function builds the zim file and check it
@@ -952,7 +952,7 @@ print.ZIE <- function (x, ...)
 	title       = "Tiff image files (*.tif)",
 	filter      = "*.tif",
 	description = c("Manual creation of ZooImage Metadata files (.zim)",
-				    "given a list of directly usable .tif images",
+				    "given a list of directly usable TIFF images",
 				    "that is, no conversion required and image names",
 				    "already follow the ZooImage convention"),
 	pattern     = "\\.[tT][iI][fF]$",
@@ -970,7 +970,7 @@ print.ZIE <- function (x, ...)
 	title       = "Jpeg image files (*.jpg)",
 	filter      = "*.jpg",
 	description = c("Manual creation of ZooImage Metadata files (.zim)",
-				    "given a list of directly usable .jpg images",
+				    "given a list of directly usable JPEG images",
 				    "that is, no conversion required and image names",
 				    "already follow the ZooImage convention"),
 	pattern     = "\\.[jJ][pP][gG]$",
@@ -988,9 +988,9 @@ print.ZIE <- function (x, ...)
 .ZIEimportZie <- ZIE(
 	title       = "ZooImage Import Extension (Import_*.zie)",
 	filter      = "Import_*.zie",
-	description = c("Run a .zie import specification file to convert",
+	description = c("Run a ZIE import specification file to convert",
 				    "and/or rename images and automatically create",
-				    "associated .zim files (ZooImage Metadata)"),
+				    "associated ZIM files (ZooImage Metadata)"),
 	pattern     = "\\.[zZ][iI][eE]$",
 	command     = "zieMake(path = Dir, Filemap = Files[1], check = TRUE))",
 	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",
@@ -1005,10 +1005,10 @@ print.ZIE <- function (x, ...)
 .ZIEimportTable <- ZIE(
 	title       = "Table and ImportTemplate.zie (*.txt)",
 	filter      = "*.txt",
-	description = c("Create a .zie file by interpretting a table,",
+	description = c("Create a ZIE file by interpretting a table,",
 				    "using a template file in the same directory",
 				    "and named 'ImportTemplate.zie'. The resulting",
-				    ".zie file is then run to make images + metadata"),
+				    "ZIE file is then run to make images + metadata"),
 	pattern     = "\\.[tT][xX][tT]$",
 	command     = "zieCompile(path = Dir, Tablefile = Files[1], make.it = TRUE))",
 	author      = "Philippe Grosjean (phgrosjean@sciviews.org)",

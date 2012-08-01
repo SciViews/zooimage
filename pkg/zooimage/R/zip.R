@@ -45,7 +45,7 @@ replace = FALSE, delete.source = FALSE)
 	} else {
 		zimfile <- as.character(zimfile)
 		if (length(zimfile) > 1) {
-			warning("you cannot provide more than one .zim file")
+			warning("you cannot provide more than one ZIM file")
 			return(invisible(FALSE))
 		}
 	}
@@ -123,12 +123,12 @@ replace = FALSE, delete.source = FALSE)
 		ext = extensionPattern("tif") ), ".zim", sep = "")
 	keep <- file.exists(zimfiles)
 	if (!any(keep)) {
-		warning("You must create .zim files first (ZooImage Metadata)!")
+		warning("You must create ZIM files first (ZooImage Metadata)!")
 		return(invisible(FALSE))	
 	}
 	if (!all(keep)) {
     	warning(sum(!keep), " on ", length(keep),
-			" images have no .zim file associated and will not be processed!")
+			" images have no ZIM file associated and will not be processed!")
 		images <- images[keep]
 		zimfiles <- zimfiles[keep]
 	}
@@ -136,7 +136,7 @@ replace = FALSE, delete.source = FALSE)
 	## Check the zim files
 	ok <- TRUE
 	if (isTRUE(as.logical(check.zim))) {
-		message("Verification of .zim files...")
+		message("Verification of ZIM files...")
 		flush.console()
 		zfiles <- unique(zimfiles)
 		zimCheck <- function (zim) {
@@ -148,7 +148,7 @@ replace = FALSE, delete.source = FALSE)
 	if (ok) {
 		message("-- Done! --")
 	} else {
-		warning("corrupted .zim file(s) found, compression not started!")
+		warning("corrupted ZIM file(s) found, compression not started!")
 		return(invisible(FALSE))
 	}
 
@@ -239,7 +239,7 @@ delete.source = FALSE)
 
 	## If there is no .zip files in this dir, exit now
 	if (!length(zipfiles)) {
-		warning("There is no zip archives to process in ", getwd())
+		warning("There is no ZIP archives to process in ", getwd())
 		return(invisible(FALSE))	
 	}
 
@@ -250,14 +250,13 @@ delete.source = FALSE)
 	}
 
 	## Uncompress these files
-	message("Uncompression of zip archives...")
+	message("Decompression of .zip archives...")
 	flush.console()
 	ok <- batch(zipfiles, unzipImg, replace = replace,
 		delete.source = delete.source, verbose = FALSE)
 	if (!ok) {
 		warning(sum(attr(ok, "ok")), "/", length(zipfiles),
 			" archives were uncompressed (see .last.batch)")
-		## Note: we don't detail here, because one can see created image files!
 		invisible(FALSE)
 	} else {
 		message("-- Done! --")

@@ -1,11 +1,12 @@
 \name{ZITrain}
 \alias{getTrain}
 \alias{prepareTrain}
-\alias{increaseTrain}
+\alias{addToTrain}
 \alias{ZIRecodeLevels}
 \alias{recode.ZITrain}
 
 \title{ Manipulate training sets and 'ZITrain' objects }
+
 \description{
   'ZITrain' contain a hierarchy of groups (taxonomic or not) and a link to a
   series of items belonging to these groups. It can be obtained after manual or
@@ -15,7 +16,7 @@
 prepareTrain(rootdir, subdir = "_train", zidfiles, zidbfiles = NULL,
     groups.template = c("[Basic]", "[Detailed]", "[Very detailed]"),
     ident = NULL, start.viewer = FALSE)
-increaseTrain(traindir, zidbfiles)
+addToTrain(traindir, zidbfiles)
 getTrain(traindir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE,
     numvars = NULL)
 
@@ -54,8 +55,9 @@ ZIRecodeLevels(ZITrain, level = 1)
 \author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }
 
 \seealso{ \code{\link{ZIClass}} }
+
 \examples{
 ##TODO...
 }
-\keyword{ utilities }
 
+\keyword{ utilities }

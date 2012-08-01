@@ -42,7 +42,7 @@ ZIDlg <- function ()
 	menuAddItem("Analyze", "Make .zid files...", "makeZid()")
 	menuAddItem("Analyze", "-", "")
 	menuAddItem("Analyze", "Make training set...", "makeTrain()")
-	menuAddItem("Analyze", "Add vignettes to training set", "addToTrain()")
+	menuAddItem("Analyze", "Add vignettes to training set", "addVigsToTrain()")
 	menuAddItem("Analyze", "Read training set...", "collectTrain()")
 	menuAddItem("Analyze", "Make classifier...", "makeClass()")
 	menuAddItem("Analyze", "Analyze classifier...", "analyzeClass()")
@@ -324,14 +324,14 @@ importImg <- function ()
 	## Determine which kind of data it is
 	if (has(Images[1], pattern = "^Import_.*[.]zie$")) {
 		if (length(Images) > 1)
-			warning("you cannot select more than one .zie file; using the first one")
+			warning("you cannot select more than one ZIE file; using the first one")
 		
 		return(invisible(zieMake(path = dir, Filemap = Images[1], check = TRUE)))
     
 	} else if (has(Images[1], "[.]txt$")) {
 		## Special Case for FlowCAM images
 		if (length(Images) > 1)
-			warning("you cannot select more than one .txt file; using the first one")
+			warning("you cannot select more than one TXT file; using the first one")
 		
 		## I also need the "ImportTemplate.zie" file in the same path
 		txtFile <- Images
@@ -580,7 +580,7 @@ collectTrain <- function ()
 }
 
 ## Add data to an existing training set
-addToTrain <- function ()
+addVigsToTrain <- function ()
 {
 	## Select zid or zidb files to add in the training set
 	zidb <- selectFile(type = "ZidZidb", multiple = TRUE, quote = FALSE)
@@ -598,7 +598,7 @@ addToTrain <- function ()
 	
 	## Extract vignettes in the training set in a _NewVignettesX directory
 	message("Adding vignettes from these files to _ subdir...")
-	increaseTrain(traindir = dir, zidbfiles = zidb)
+	addToTrain(traindir = dir, zidbfiles = zidb)
 }
 
 ## New version to accept variables selection and/or new formula 1.2-2
@@ -640,23 +640,16 @@ makeClass <- function ()
 			"Mode, Min, Max, logPerim., logMajor, logMinor, Circ., logFeret, ",
 			"IntDen, Elongation, CentBoxD, GrayCentBoxD, CentroidsD, Range, ",
 			"MeanPos, SDNorm, CV")
-		## Compute algorithm & package from res
+		## Compute algorithm from res
 		algorithm <- switch(res,
 			`linear discriminant analysis` = "lda",
 			`recursive partitioning (tree)` = "rpart",
 			`random forest` = "randomForest",
 			`support vector machine` = "svm",
 			`k-nearest neighbour` = "ipredknn",
-			`learning vector quantization` = "lvq",
-			`neural network` = "nnet2")
-		package <- switch(res,
-			`linear discriminant analysis` = "MASS",
-			`recursive partitioning (tree)` = "rpart",
-			`random forest` = "randomForest",
-			`support vector machine` = "e1071",
-			`k-nearest neighbour` = "ipred",
-			`learning vector quantization` = "class",
-			`neural network` = "nnet")
+			`learning vector quantization` = "mlLvq",
+			`neural network` = "mlNnet")
+
 		## Look if we have a manual training set object defined
 		ZIT <- getTemp("ZI.TrainName")
 		if (is.null(ZIT)) ZIT <- ""
@@ -671,8 +664,7 @@ makeClass <- function ()
 		if (!length(name)) return(invisible(NULL))
 		name <- make.names(name)	# Make sure it is a valid name!
 		## Calculate results
-		res <- ZIClass(get(ZIT, envir = .GlobalEnv), algorithm = algorithm,
-			package = package)
+		res <- ZIClass(data = get(ZIT, envir = .GlobalEnv), algorithm = algorithm)
 	} else {
 		## Options if 'Variables Selection is selected v 1.2-2
 		opts <- c("linear discriminant analysis",
@@ -700,23 +692,16 @@ makeClass <- function ()
 			title = "Select an algorithm for creating your classifier:")$res	
 		if (!length(res)) return(invisible(NULL))
 
-		## Compute algorithm & package from res
+		## Compute algorithm from res
 		algorithm <- switch(res,
 			`linear discriminant analysis` = "lda",
 			`recursive partitioning (tree)` = "rpart",
 			`random forest` = "randomForest",
 			`support vector machine` = "svm",
 			`k-nearest neighbour` = "ipredknn",
-			`learning vector quantization` = "lvq",
-			`neural network` = "nnet2")
-		package <- switch(res,
-			`linear discriminant analysis` = "MASS",
-			`recursive partitioning (tree)` = "rpart",
-			`random forest` = "randomForest",
-			`support vector machine` = "e1071",
-			`k-nearest neighbour` = "ipred",
-			`learning vector quantization` = "class",
-			`neural network` = "nnet")
+			`learning vector quantization` = "mlLvq",
+			`neural network` = "mlNnet")
+
 		## Look if we have a manual training set object defined
 		ZIT <- getTemp("ZI.TrainName")
 		if (is.null(ZIT)) ZIT <- ""
@@ -783,8 +768,7 @@ makeClass <- function ()
 		}
 		form <- selectVars(get(ZIT, envir = .GlobalEnv, inherits = FALSE))
 		## Calculate results using formula created by variables selection
-		res <- ZIClass(get(ZIT, envir = .GlobalEnv), algorithm = algorithm,
-			package = package, Formula = form)
+		res <- ZIClass(form, data = get(ZIT, envir = .GlobalEnv), algorithm = algorithm)
 	}
 	## Print results
 	assign(name, res, envir = .GlobalEnv)
@@ -823,12 +807,12 @@ analyzeClass <- function ()
 		stop("No classifier. Please, create one first!")
 
 	ZIC <- get(ZIC, envir = .GlobalEnv)
-	conf <- ZIConf(ZIC)
+	conf <- confusion(ZIC)
 	switch(res,
 		`Print Confusion Matrix` = print(conf),
-		`Plot Confusion Matrix` = confusionPlot(ZIC),
-		`Print Precision/recall` = print(confusionStat(ZIConf = conf)),
-		`Precision/recall` = plot(conf, type = "precision_recall"))
+		`Plot Confusion Matrix` = plot(conf, type = "image2"),
+		`Print Precision/recall` = print(summary(conf)),
+		`Plot Precision/recall` = plot(conf, type = "precision_recall"))
 	return(invisible(res))
 }
 
@@ -1068,7 +1052,7 @@ processSamples <- function()
 		abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL,
 		bio.conv = conv, headers = c("Abd", "Bio"), spec.taxa = NULL,
 		spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
-		exportdir = exportdir, show.log = TRUE, bell = FALSE, ZIMan = ZIManTable)
+		exportdir = exportdir, ZIMan = ZIManTable)
 	
 	## Assign this result to the variable
 	assign(name, res, envir = .GlobalEnv)

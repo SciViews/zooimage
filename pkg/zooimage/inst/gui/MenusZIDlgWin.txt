@@ -58,7 +58,6 @@ $Tk.ZIDlgWin
 ||$ZooImage &Data (zid)
 |||zidDatMake()					~~ guiDlgFunction("zidDatMake")
 |||zidDatRead()					~~ guiDlgFunction("zidDatRead")
-|||zidExtract()	    				~~ guiDlgFunction("zidExtract")
 |||-
 |||zidVerify()					~~ guiDlgFunction("zidVerify")
 |||zidVerifyAll()	    			~~ guiDlgFunction("zidVerifyAll")
@@ -77,7 +76,7 @@ $Tk.ZIDlgWin
 ||$ZooImage &Training set
 |||prepareTrain()				~~ guiDlgFunction("prepareTrain")
 |||getTrain()				        ~~ guiDlgFunction("getTrain")
-|||increaseTrain()                              ~~ guiDlgFunction("increaseTrain")
+|||addToTrain()                                 ~~ guiDlgFunction("addToTrain")
 |||-
 |||re&code.ZITrain()				~~ guiDlgFunction("recode.ZITrain")
 |||ZIRecodeLevels()			        ~~ guiDlgFunction("ZIRecodeLevels")

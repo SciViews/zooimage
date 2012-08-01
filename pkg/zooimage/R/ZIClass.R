@@ -15,71 +15,80 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-## Modifications in calculation of probabilities to accept variables selection v1.2-2
-ZIClass <- function (df, algorithm = c("lda", "randomForest"),
-package = c("MASS", "randomForest"), Formula = Class ~ logArea + Mean + StdDev +
-Mode + Min + Max + logPerim. + logMajor + logMinor + Circ. + logFeret + IntDen +
-Elongation + CentBoxD + GrayCentBoxD + CentroidsD + Range + MeanPos + SDNorm + CV,
-calc.vars = getOption("ZI.calcVars", "calcVars"), k.xval = 10, ...)
+ZIClass <- function (formula, data, mlearning = getOption("ZI.mlearning",
+mlRforest), calc.vars = getOption("ZI.calcVars", calcVars), k.xval = 10, ...,
+subset, na.action = getOption("ZI.naAction", na.omit))
 {
-	## Check package availability
-	## Note: this is supposed to be managed in the NAMESPACE
-	## package <- package[1]
-	## if (!is.null(package)) require( package, character.only = TRUE)
+	## Added by Kev... should not be necessary!
+	# calcVars removes attributes of x --> extract path here before calcVars application
+#    Path <- attr(data, "path")
+	
+	## Check calc.vars and use it on data
+	if (length(calc.vars))
+		if (!is.function(calc.vars)) {
+			stop("'calc.vars' must be a function or NULL")
+		} else data <- calc.vars(data)
 
-	## Check calc.vars
-	calc.vars <- as.character(calc.vars)[1]
-	if (!is.null(calc.vars)) {
-		CV <- match.fun(calc.vars)
-		df <- CV(df)
+	## Machine learning function
+	if (!is.function(mlearning))
+		stop("'mlearning' must be a function that produce a 'mlearning' object ()or a compatible one")
+	
+	## train the machine learning algorithm
+	if (missing(subset) || !length(subset)) {
+		ZI.class <- mlearning(formula, data = data, ..., na.action = na.action)
+	} else {
+		ZI.class <- mlearning(formula, data = data, ..., subset,
+			na.action = na.action)
 	}
-
-	## Algorithm
-	algorithm <- algorithm[1]
-	algo.fun  <- match.fun(algorithm)
-	ZI.class <- algo.fun(Formula, data = df, ...)
-	ZI.class <- structure(ZI.class,
-		class = c("ZIClass", class(ZI.class)),
-		algorithm = algorithm,
-		package = package,
-		calc.vars = CV,
-		classes = df[[as.character(Formula)[2]]]
-	)
+	
+	## Add ZIClass as class of the object
+	class(ZI.class) <- c("ZIClass", class(ZI.class))
+	
+#	structure(naiveBayes(x = train, y = cl, laplace = laplace, ...),
+#		data = subdata$data, vars = subdata$vars, classes = subdata$classes,
+#		levels = subdata$levels, call = match.call(),
+#		algorithm = "naive Bayes classifier",
+#		class = c("mlNaiveBayes", "mlearning", "naiveBayes"))
+#	
+#	ZI.class <- structure(ZI.class,
+#		class = c("ZIClass", class(ZI.class)),
+#		algorithm = algorithm, calc.vars = calc.vars,
+#		classes = data[[as.character(formula)[2]]]
+#	)
 
 	## Calculate predictions with full training set
-    attr(ZI.class, "predict") <- predict(ZI.class, df, calc.vars = FALSE,
-		class.only = TRUE)
+    attr(ZI.class, "predict") <- predict(ZI.class, data, calc.vars = FALSE)
 
 	## Calculation of probabilities
-  	if (algorithm == "randomForest") {
-  		## Use Formula for the probabilities v1.2-2
-  		rf <- randomForest(formula = Formula, data = df)
-  		attr(ZI.class, "proba") <- predict(object = rf, newdata = df,
-			type = "prob")
-	}
+#  	if (algorithm == "randomForest") {
+#  		## Use Formula for the probabilities v1.2-2
+#  		rf <- randomForest(formula = formula, data = data)
+#  		attr(ZI.class, "proba") <- predict(object = rf, newdata = data,
+#			type = "prob")
+#	}
 
 	## Possibly make a k-fold cross-validation and check results
-	if (!is.null(k.xval)) {
+	if (length(k.xval)) {
 		# Modification to accept classifier from party package : ctree and cforest
 		if (algorithm == "lda") {
 			mypredict <- function (object, newdata)
 				predict(object, newdata = newdata)$class
-		} else if(package == "party"){
+		} else if (algorithm %in% c("ctree", "cforest")){
             mypredict <- function(object, newdata)
                 predict(object, newdata = newdata, type = "response", OOB = FALSE)        
         } else {
 			mypredict <- function (object, newdata)
 				predict(object, newdata = newdata, type = "class")
 		}
-    	res <- cv(attr(ZI.class, "classes"), Formula, data = df,
+    	res <- cv(attr(ZI.class, "classes"), formula, data = df,
 			model = get(algorithm), predict = mypredict, k = k.xval,
 			predictions = TRUE, ...)$predictions
 		attr(ZI.class, "kfold.predict") <- res
 		attr(ZI.class, "k") <- k.xval
-		attr(ZI.class, "formula") <- Formula
-		attr(ZI.class, "path") <- attr(df, "path")
+		attr(ZI.class, "formula") <- formula
+		attr(ZI.class, "path") <- attr(data, "path")
 	}
-	return(ZI.class)
+	ZI.class
 }
 
 print.ZIClass <- function (x, ...)
@@ -89,18 +98,18 @@ print.ZIClass <- function (x, ...)
 	lclasses <- levels(classes)
     predicted <- attr(x, "predict")
 	k <- attr(x, "k")
-	cat("A ZIClass object predicting for", length(lclasses), "classes:\n")
+	cat("A 'ZIClass' object predicting for", length(lclasses), "classes:\n")
 	print(lclasses)
-	Confu <- ZIConf(classes, predicted)
+	Confu <- confusion(classes, predicted)
 	mism <- 100 * (1 - (sum(diag(Confu)) / sum(Confu)))
 
 	## Change the number of digits to display
-	oldDigits <- options(digits = 4); on.exit(options(oldDigits))
+	oldDigits <- options(digits = 4)
+	on.exit(options(oldDigits))
 	cat("\nAlgorithm used:", algorithm, "\n")
 	cat("Mismatch in classification: ", mism, "%\n", sep = "")
 	if (!is.null(k)) {
-    	cat("k-fold cross validation error estimation (k = ", k, "):\n",
-			sep = "")
+    	cat("k-fold cross validation error estimation (k = ", k, "):\n")
 		kfold.predict <- attr(x, "kfold.predict")
 		prior <- table(classes)
 		ok <- diag(table(classes, kfold.predict))
@@ -110,7 +119,15 @@ print.ZIClass <- function (x, ...)
 		`Error (%)` <- sort(1 - (ok / prior)) * 100
 		print(as.data.frame(`Error (%)`))
 	}
-	return(invisible(x))
+	invisible(x)
+}
+
+summary.ZIClass <- function(object, sort.by = NULL, decreasing = FALSE,
+na.rm = FALSE, ...)
+{
+	## Get the confusion object out of a ZIClass object and calc stats from there
+	summary(confusion(object), sort.by = sort.by, decreasing = decreasing,
+		na.rm = na.rm)
 }
 
 predict.ZIClass <- function (object, ZIDat, calc.vars = TRUE,
@@ -122,23 +139,19 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 	if (!inherits(ZIDat, c("ZIDat", "data.frame")))
 		stop("'ZIDat' must be a 'ZIDat' or 'data.frame' object")
 	
-	## Possibly load a specific package for prediction
-	package <- attr(object, "package")
-	if (!is.null(package)) {
-        ## Make sure that the specific required package is loaded
-        eval(parse(text = paste("require(", package, ")", sep = "")))
-    }
-
     class(object) <- class(object)[-1]
 	data <- as.data.frame(ZIDat)
 	
-	if (calc.vars) data <- attr(object, "calc.vars")(data)
-	if (isTRUE(na.rm)) na.omit(data)
+	if (isTRUE(as.logical(calc.vars)))
+		data <- attr(object, "calc.vars")(data)
+	if (isTRUE(as.logical(na.rm))) na.omit(data)
 	
+	algorithm <- attr(object, "algorithm")
 	if (type != "prob") {
 	   # modification to accept algoritms from party package
-	   if (package == "party") {
-            Ident <- predict(object, newdata = data, type = "response", OOB = FALSE)
+	   if (algorithm %in% c("ctree", "cforest")) {
+            Ident <- predict(object, newdata = data, type = "response",
+				OOB = FALSE)
 		} else {
             Ident <- predict(object, newdata = data, type = type)
 		}
@@ -153,63 +166,48 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 	## Special case for prediction from an LDA (list with $class item)
 	if (inherits(Ident, "list") && "class" %in% names(Ident))
 		Ident <- Ident$class
-	if (!class.only) {
+	if (!isTRUE(as.logical(class.only))) {
 		res <- cbind(ZIDat, Ident)
 		class(res) <- class(ZIDat)
 	} else res <- Ident
 	
 	## New metadata attribute
 	attr(res, "metadata") <- attr(ZIDat, "metadata")
-	return(res)
+	res
 }
 
-nnet2 <- function (formula, data, size = 7, rang = 0.1, decay = 5e-4,
-maxit = 1000, ...)
-	structure(nnet(formula = formula, data = data, size = size, rang = rang,
-		decay = decay, maxit = maxit, ...),
-		class = c("nnet2", "nnet.formula", "nnet"))
-
-predict.nnet2 <- function (object, newdata, type = c("raw", "class"), ...)
+confusion.ZIClass <- function (x, ...)
 {
-	if (!inherits(object, "nnet2"))
-		stop("'object' must be a 'nnet2' object")
-    class(object) <- class(object)[-1]
-	res <- predict(object, newdata = newdata, type = type, ...)
-	## If type is class, we got a character vector... but should get a factor
-	if (type == "class") res <- factor(res, levels = object$lev)
-	return(res)
-}
+	## If the object is ZIClass, calculate 'confusion'
+	## from attributes 'classes' and 'kfold.predict' 
+	if (!inherits(x, "ZIClass"))
+		stop("'x' must be a 'ZIClass' object")
+	
+	x <- attr(x, "classes")
+	y <- attr(x, "kfold.predict")
+	labels <- c("Class", "Predict")
+	clCompa <- data.frame(Class = x, Predict = y)
+	## How many common objects by level?
+	NbrPerClass1 <- table(clCompa[, 1])
+	## How many predicted objects
+	NbrPerClass2 <- table(clCompa[, 2])
+	## Confusion matrix
+	Conf <- table(clCompa)
+	## Further stats: total, true positives, accuracy
+	Total <- sum(Conf)
+	TruePos <- sum(diag(Conf))
+	Stats <- c(total = Total, truepos = TruePos, accuracy = TruePos / Total * 100)
 
-## Extract classes and training vars from data, according to formula lhs ~ rhs
-## This is a very simplified way of doing it... It does not manage complex
-## formula constructions!
-lvq <- function (formula, data, k = 5, size = NULL)
-{
-    vars <- all.vars(formula)
-	train <- data[, vars[-1]]
-	cl <- data[, vars[1]]
-	lev <- levels(cl)
-	codebk <- olvq1(train, cl, lvqinit(train, cl, k = k, size = size))
-	res <- list(codebook = codebk, data = data, vars = vars, classes = cl,
-		lev = lev)
-	class(res) <- "lvq"
-	return(res)
-}
+	## Change labels to get a more compact presentation
+	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
+	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
 
-predict.lvq <- function (object, newdata, type = "class", ...)
-{
-	if (!inherits(object, "lvq"))
-		stop("'object' must be a 'lvq' object")
-    if (missing(newdata)) newdata <- object$data
-	lvqtest(object$codebook, newdata[, object$vars[-1]])
-}
-
-### NaiveBayes from RWeka package
-NaiveBayes <- function(formula, data, ...)
-{
-    # Import algorithm from Weka
-    NB <- make_Weka_classifier("weka/classifiers/bayes/NaiveBayes")
-    # create classifier
-    res <- NB(formula, data, ...)
-    return(res)
+	## Additional data as attributes
+	attr(Conf, "stats") <- Stats
+	attr(Conf, "nbr.rows") <- NbrPerClass1
+	attr(Conf, "nbr.cols") <- NbrPerClass2
+	
+	## This is a confusion object
+	class(Conf) <- c("confusion", "table")
+	Conf
 }
