@@ -8,21 +8,34 @@
 \alias{plot.mlearning}
 \alias{predict.mlearning}
 \alias{mlLda}
+\alias{mlLda.default}
+\alias{mlLda.formula}
 \alias{predict.mlLda}
 \alias{mlQda}
+\alias{mlQda.default}
+\alias{mlQda.formula}
 \alias{predict.mlQda}
 \alias{mlRforest}
+\alias{mlRforest.default}
+\alias{mlRforest.formula}
 \alias{predict.mlRforest}
 \alias{mlNnet}
+\alias{mlNnet.default}
+\alias{mlNnet.formula}
 \alias{mlLvq}
+\alias{mlLvq.default}
+\alias{mlLvq.formula}
 \alias{predict.mlLvq}
 \alias{mlNaiveBayes}
+\alias{mlNaiveBayes.default}
+\alias{mlNaiveBayes.formula}
 \alias{mlNaiveBayesWeka}
+\alias{mlNaiveBayesWeka.default}
+\alias{mlNaiveBayesWeka.formula}
 \alias{response}
 \alias{response.default}
 \alias{train}
 \alias{train.default}
-
 
 \title{ Alternate interface to various machine learning algorithms }
 \description{
@@ -41,34 +54,48 @@ mlearning(formula, data, method, model.args, call = match.call(), ...,
 \method{predict}{mlearning}(object, newdata, type = c("class", "member", "both"),
     scale = TRUE, na.action = na.exclude, ...)
 
-mlLda(formula, data, ..., subset, na.action)
+mlLda(...)
+\method{mlLda}{default}(train, response, ...)
+\method{mlLda}{formula}(formula, data, ..., subset, na.action)
 \method{predict}{mlLda}(object, newdata, type = c("class", "member", "both",
     "projection"), scale = TRUE,prior = object$prior, dimension,
     method = c("plug-in", "predictive", "debiased"), ...)
 
-mlQda(formula, data, ..., subset, na.action)
+mlQda(...)
+\method{mlQda}{default}(train, response, ...)
+\method{mlQda}{formula}(formula, data, ..., subset, na.action)
 \method{predict}{mlQda}(object, newdata, type = c("class", "member", "both"),
     prior = object$prior, method = c("plug-in", "predictive", "debiased",
     "looCV"), ...)
 
-mlRforest(formula, data, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...,
+mlRforest(...)
+\method{mlRforest}{default}(train, response, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...)
+\method{mlRforest}{formula}(formula, data, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...,
     subset, na.action)
 \method{predict}{mlRforest}(object, newdata, type = c("class", "member", "both",
     "vote"), scale = TRUE, norm.votes = FALSE, oob = FALSE, ...)
 
-mlNnet(formula, data, size = NULL, rang = NULL, decay = 0, maxit = 1000, ...,
+mlNnet(...)
+\method{mlNnet}{default}(train, response, size = NULL, rang = NULL, decay = 0, maxit = 1000, ...)
+\method{mlNnet}{formula}(formula, data, size = NULL, rang = NULL, decay = 0, maxit = 1000, ...,
     subset, na.action)
 
-mlLvq(formula, data, k = 5, size, prior, algorithm = "olvq1", ...,
+mlLvq(...)
+\method{mlLvq}{default}(train, response, k = 5, size, prior, algorithm = "olvq1", ...)
+\method{mlLvq}{formula}(formula, data, k = 5, size, prior, algorithm = "olvq1", ...,
     subset, na.action)
 \method{summary}{lvq}(object, ...)
 \method{print}{summary.lvq}(x, ...)
 \method{predict}{mlLvq}(object, newdata, type = "class",
     na.action = na.exclude,...)
 
-mlNaiveBayes(formula, data, laplace = 0, ..., subset, na.action)
+mlNaiveBayes(...)
+\method{mlNaiveBayes}{default}(train, response, laplace = 0, ...)
+\method{mlNaiveBayes}{formula}(formula, data, laplace = 0, ..., subset, na.action)
 
-mlNaiveBayesWeka(formula, data, ..., subset, na.action)
+mlNaiveBayesWeka(...)
+\method{mlNaiveBayesWeka}{default}(train, response, ...)
+\method{mlNaiveBayesWeka}{formula}(formula, data, ..., subset, na.action)
 
 response(object, ...)
 \method{response}{default}(object, ...)
@@ -121,6 +148,9 @@ train(object, ...)
     depending on the machine learning algorithm. With \code{both}, class and
     member are both returned at once in a list. }
   \item{scale}{ is \code{member} ensured to sum to one (true by default)? }
+  \item{train}{ a matrix or data frame with predictors. }
+  \item{response}{ a vector of factor (classification) or numeric (regression),
+    or \code{NULL} (unsupervised classification). }
   \item{prior}{ prior probabilities of the classes (the proportions in the
     training set are used by default). For \code{mlLvq()}, probabilities to
     represent classes in the codebook (default values are the proportions in
@@ -225,6 +255,9 @@ summary(res <- mlLda(Species ~ ., data = ir2)) # virginica is NOT there
 predict(res, type = "both")
 ## ... but, of course, the classifier is wrong for Iris versicolor
 confusion(predict(res, newdata = iris), iris$Species)
+
+## Simpler interface, but more memory-effective
+summary(mlLda(train = iris[, -5], response = iris$Species))
 
 
 ## Supervised classification using quadratic discriminant analysis

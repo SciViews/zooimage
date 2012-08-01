@@ -94,21 +94,35 @@ mlearning <- function (formula, data, method, model.args, call = match.call(),
 		train <- data[, term.labels]
 	}
 	
-	## Construct the mlearning object
-	args <- list(...)
-	args$type <- type
+	## Calculate weights
+	w <- model.weights(data)
+	if (length(w) == 0L) w <- rep(1, nrow(train))
+	
+	## Pass special arguments to the default method
+	args <- list()
+	args$formula <- formula
 	args$levels <- lev
+	args$n <- nobs
+	args$weights <- w
+	args$optim <- optim
+	args$type <- type
+	args$na.action <- substitute(na.action)
+	args$mlearning.call <- call
+	args$method <- method
+	
+	## Construct the mlearning object
+	match.fun(method)(train = train, response = response, .args. = args, ...)
 	
 	## Call the corresponding workhorse function
-	res <- match.fun(paste(".", method, sep = ""))(train = train,
-		response = response, formula = formula, data = data, args, ...)
+	#res <- match.fun(paste(".", method, sep = ""))(train = train,
+	#	response = response, formula = formula, data = data, args, ...)
 		
 	## Return a mlearning object
-	structure(res$object, formula = formula, train = train, response = response,
-		levels = lev, n = nobs, optim = optim, numeric.only = res$numeric.only,
-		type = type, pred.type = res$pred.type, summary = res$summary,
-		na.action = substitute(na.action), mlearning.call = call,
-		method = method, algorithm = res$algorithm, class = res$class)
+	#structure(res$object, formula = formula, train = train, response = response,
+	#	levels = lev, n = nobs, optim = optim, numeric.only = res$numeric.only,
+	#	type = type, pred.type = res$pred.type, summary = res$summary,
+	#	na.action = substitute(na.action), mlearning.call = call,
+	#	method = method, algorithm = res$algorithm, class = res$class)
 }
 
 print.mlearning <- function (x, ...)
@@ -315,21 +329,34 @@ type = c("class", "member", "both"), scale = TRUE, na.action = na.exclude, ...)
 }
 
 ## Note: ldahist() in MASS (when only one LD) seems to be broken!
-mlLda <- function (formula, data, ..., subset, na.action)
+mlLda <- function (...)
+	UseMethod("mlLda")
+
+mlLda.formula <- function (formula, data, ..., subset, na.action)
 	mlearning(formula, data = data, method = "mlLda", model.args =
 		list(formula  = formula, data = substitute(data),
 		subset = substitute(subset)), call = match.call(), ...,
 		subset = subset, na.action = substitute(na.action))
 
-.mlLda <- function (train, response, formula, data, args, ...)
+mlLda.default <- function (train, response, ...)
 {
-	if (args$type != "classification")
+	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlLda")
-	list(object = MASS:::lda.default(x = sapply(train, as.numeric),
-		grouping = response, ...),
-		pred.type = c(class = "class", member = "posterior",
-			projection = "x"),
-		numeric.only = TRUE, summary = NULL,
+
+	.args. <- list(...)$.args.
+	if (!length(.args.)) .args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = "classification", na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlLda")
+	
+	## Return a mlearning object
+	structure(MASS:::lda.default(x = sapply(train, as.numeric),
+		grouping = response, ...), formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
+		pred.type = c(class = "class", member = "posterior", projection = "x"),
+		summary = NULL, na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "linear discriminant analysis",
 		class = c("mlLda", "mlearning", "lda"))
 }
@@ -387,20 +414,34 @@ method = c("plug-in", "predictive", "debiased"), ...)
 		stop("unrecognized 'type' (must be 'class', 'member', 'both' or 'projection')"))
 }
 
-mlQda <- function (formula, data, ..., subset, na.action)
+mlQda <- function (...)
+	UseMethod("mlQda")
+
+mlQda.formula <- function (formula, data, ..., subset, na.action)
 	mlearning(formula, data = data, method = "mlQda", model.args =
 		list(formula  = formula, data = substitute(data),
 		subset = substitute(subset)), call = match.call(), ...,
 		subset = subset, na.action = substitute(na.action))
 
-.mlQda <- function (train, response, formula, data, args, ...)
+mlQda.default <- function (train, response, ...)
 {
-	if (args$type != "classification")
+	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlQda")
-	list(object = MASS:::qda.default(x = sapply(train, as.numeric),
-		grouping = response, ...),
+
+	.args. <- list(...)$.args.
+	if (!length(.args.)) .args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = "classification", na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlQda")
+	
+	## Return a mlearning object
+	structure(MASS:::qda.default(x = sapply(train, as.numeric),
+		grouping = response, ...), formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
 		pred.type = c(class = "class", member = "posterior"),
-		numeric.only = TRUE, summary = NULL,
+		summary = NULL, na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "quadratic discriminant analysis",
 		class = c("mlQda", "mlearning", "qda"))
 }
@@ -451,7 +492,10 @@ prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV"),
 		stop("unrecognized 'type' (must be 'class', 'member' or 'both')"))
 }
 
-mlRforest <- function (formula, data, ntree = 500, mtry,
+mlRforest <- function (...)
+	UseMethod("mlRforest")
+
+mlRforest.formula <- function (formula, data, ntree = 500, mtry,
 replace = TRUE, classwt = NULL, ..., subset, na.action)
 {
 	if (missing(mtry)) {
@@ -469,13 +513,30 @@ replace = TRUE, classwt = NULL, ..., subset, na.action)
 	}
 }
 
-.mlRforest <- function (train, response, formula, data, args, ...)
+mlRforest.default <- function (train, response, ntree = 500, mtry,
+replace = TRUE, classwt = NULL, ...)
 {
-	list(object = randomForest:::randomForest.default(x = train,
-		y = response, ...),
-		pred.type = c(class = "response", member = "prob",
-			vote = "vote"),
-		numeric.only = FALSE, summary = NULL,
+	.args. <- list(...)$.args.
+	if (!length(.args.)) {
+		if (!length(response)) {
+			type <- "unsupervised"
+		} else if (is.factor(response)) {
+			type <- "classification"
+		} else type <- "regression"
+		.args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = type, na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlRforest")
+	}
+	
+	## Return a mlearning object
+	structure(randomForest:::randomForest.default(x = train,
+		y = response, ...), formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
+		pred.type = c(class = "response", member = "prob", vote ="vote"),
+		summary = NULL, na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "random forest",
 		class = c("mlRforest", "mlearning", "randomForest"))
 }
@@ -529,7 +590,10 @@ scale = TRUE, norm.votes = FALSE, oob = FALSE, ...) {
 		type = type, scale = scale, norm.votes = norm.votes, ...)
 }
 
-mlNnet <- function (formula, data, size = NULL, rang = NULL, decay = 0,
+mlNnet <- function (...)
+	UseMethod("mlNnet")
+
+mlNnet.formula <- function (formula, data, size = NULL, rang = NULL, decay = 0,
 maxit = 1000, ..., subset, na.action)
 	mlearning(formula, data = data, method = "mlNnet", model.args =
 		list(formula  = formula, data = substitute(data),
@@ -537,29 +601,40 @@ maxit = 1000, ..., subset, na.action)
 		rang = rang, decay = decay, maxit = maxit, ...,
 		subset = subset, na.action = substitute(na.action))
 
-.mlNnet <- function (train, response, formula, data, args, ...)
+mlNnet.default <- function (train, response, size = NULL, rang = NULL, decay = 0,
+maxit = 1000, ...)
 {
-
-	if (args$type == "unsupervised")
+	if (!length(response))
 		stop("unsupervised classification not usable for mlNnet")
-	argsNames <- names(args)
-	args$x <- sapply(train, as.numeric)
+
+	nnetArgs <- list(...)
+	.args. <- nnetArgs$.args.
+	nnetArgs$.args. <- NULL
+	if (!length(.args.)) .args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = if (is.factor(response)) "classification" else "regression",
+		na.action = "na.pass", mlearning.call = match.call(), method = "mlNnet")
+	
+	## Construct arguments list for nnet() call
+	nnetArgs$x <- sapply(train, as.numeric)
+	
 	## Weights
-	w <- model.weights(data)
-	if (length(w) == 0L) w <- rep(1, nrow(train))
-	args$weights <- w
-			
-	## Possibly recalculate best defaults for size and rang
-	if (!"size" %in% argsNames || is.null(args$size))
-		args$size <- length(levels(response)) - 1 # Is this a reasonable default?
-	if (!"rang" %in% argsNames || is.null(args$rang)) {
+	if (!length(nnetArgs$weights)) nnetArgs$weights <- .args.$weights
+	
+	## size
+	if (!length(size))
+		size <- length(levels(response)) - 1 # Is this a reasonable default?
+	nnetArgs$size <- size
+	
+	## rang
+	if (!length(rang)) {
 		## default is 0.7 in original nnet code,
 		## but the doc proposes something else
-		rang <- round(1 / max(abs(args$x)), 2)
+		rang <- round(1 / max(abs(nnetArgs$x)), 2)
 		if (rang < 0.01) rang <- 0.01
 		if (rang > 0.7) rang <- 0.7
-		args$rang <- rang
 	}
+	nnetArgs$rang <- rang
 			
 	## TODO: should I need to implement this???
 	#x <- model.matrix(Terms, m, contrasts)
@@ -571,29 +646,37 @@ maxit = 1000, ..., subset, na.action)
 	## Classification or regression?
 	if (is.factor(response)) {
 		if (length(levels(response)) == 2L) {
-			args$y <- as.vector(unclass(response)) - 1
-			args$entropy <- TRUE
-			res <- do.call(nnet.default, args)
-			res$lev <- args$levels
+			nnetArgs$y <- as.vector(unclass(response)) - 1
+			nnetArgs$entropy <- TRUE
+			res <- do.call(nnet.default, nnetArgs)
+			res$lev <- .args.$levels
 		} else {
-			args$y <- class.ind(response)
-			args$softmax <- TRUE
-			res <- do.call(nnet.default, args)
-		res$lev <- args$levels
+			nnetArgs$y <- class.ind(response)
+			nnetArgs$softmax <- TRUE
+			res <- do.call(nnet.default, nnetArgs)
+			res$lev <- .args.$levels
 		}
 	} else { # Regression
-		args$y <- response
-		res <- do.call(nnet.default, args)	
+		nnetArgs$y <- response
+		res <- do.call(nnet.default, nnetArgs)	
 	}
-			
-	list(object = res, pred.type = c(class = "class", member = "raw"),
-		numeric.only = TRUE, summary = "summary",
+	
+	## Return a mlearning object
+	structure(res, formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
+		pred.type = c(class = "class", member = "raw"),
+		summary = "summary", na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "single-hidden-layer neural network",
 		class = c("mlNnet", "mlearning", "nnet"))
 }
 
-mlLvq <- function (formula, data, k = 5, size, prior, algorithm = "olvq1", ...,
-subset, na.action)
+mlLvq <- function (...)
+	UseMethod("mlLvq")
+
+mlLvq.formula <- function (formula, data, k = 5, size, prior,
+algorithm = "olvq1", ..., subset, na.action)
 {
 	if (missing(size)) {
 		if (missing(prior)) {
@@ -626,26 +709,27 @@ subset, na.action)
 	}
 }
 
-.mlLvq <- function (train, response, formula, data, args, ...)
+mlLvq.default <- function (train, response, k = 5, size, prior,
+algorithm = "olvq1", ...)
 {
-	argsNames <- names(args)
-	if (args$type != "classification")
+	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlLvq")
-			
+
+	dots <- list(...)
+	.args. <- dots$.args.
+	if (!length(.args.)) .args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = "classification", na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlQda")
+	
 	## matrix of numeric values
 	train <- sapply(train, as.numeric)
 			
 	## Default values for size and prior, if not provided
 	n <- nrow(train)
-	if ("k" %in% argsNames) {
-		k <- args$k
-	} else k <- 5 # Default value
-	if ("prior" %in% argsNames) {
-		prior <- args$prior
-	} else prior <- tapply(rep(1, length(response)), response, sum)/n
-	if ("size" %in% argsNames) {
-		size <- args$size
-	} else {
+	if (missing(prior))
+		prior <- tapply(rep(1, length(response)), response, sum) / n
+	if (missing(size)) {
 		np <- length(prior)  
 		size <- min(round(0.4 * np * (np - 1 + ncol(train) / 2), 0), n)
 	}
@@ -654,22 +738,17 @@ subset, na.action)
 	init <- lvqinit(train, response, k = k, size = size, prior = prior)
 	
 	## Calculate final codebook
-	if ("algorithm" %in% argsNames) {
-		algorithm <- as.character(args$algorithm)[1]
-	} else algorithm <- "olvq1" # Default algorithm
+	algorithm <- dots$algorithm
+	if (!length(algorithm)) algorithm <- "olvq1" # Default algorithm
 	if (algorithm == "olvq1") times <- 40 else times <- 100
-	if ("niter" %in% argsNames) {
-		niter <- args$niter
-	} else niter <- times * nrow(init$x) # Default value
-	if ("alpha" %in% argsNames) {
-		alpha <- args$alpha
-	} else alpha <- if (algorithm == "olvq1") 0.3 else 0.03
-	if ("win" %in% argsNames) {
-		win <- args$win
-	} else win <- 0.3
-	if ("epsilon" %in% argsNames) {
-		epsilon <- args$epsilon
-	} else epsilon <- 0.1
+	niter <- dots$niter
+	if (!length(niter)) niter <- times * nrow(init$x) # Default value
+	alpha <- dots$alpha
+	if (!length(alpha)) alpha <- if (algorithm == "olvq1") 0.3 else 0.03
+	win <- dots$win
+	if (!length(win)) win <- 0.3
+	epsilon <- dots$epsilon
+	if (!length(epsilon)) epsilon <- 0.1
 	codebk <- switch(algorithm,
 		olvq1 = olvq1(train, response, init, niter = niter,
 			alpha = alpha),
@@ -680,9 +759,14 @@ subset, na.action)
 		lvq3 = lvq3(train, response, init, niter = niter,
 			alpha = alpha, win = win, epsilon = epsilon),
 		stop("algorithm must be 'lvq1', 'lvq2', 'lvq3' or 'olvq1'"))
-			
-	list(object = codebk, pred.type = c(class = "class"),
-		numeric.only = TRUE, summary = "summary.lvq",
+				
+	## Return a mlearning object
+	structure(codebk, formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
+		pred.type = c(class = "class"), summary = "summary.lvq",
+		na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "learning vector quantization",
 		class = c("mlLvq", "mlearning", class(codebk)))
 }
@@ -710,7 +794,7 @@ na.action = na.exclude, ...)
 		newdata <- attr(object, "train")
 	} else if (attr(object, "optim")) { # Use optimized approach
 		## Just keep vars similar as in train
-		vars <- names(attr(object, "train"))
+		vars <- colnames(attr(object, "train"))
 		if (!all(vars %in% names(newdata)))
 			stop("one or more missing variables in newdata")
 		newdata <- newdata[, vars]
@@ -729,41 +813,67 @@ na.action = na.exclude, ...)
 }
 
 ## NaiveBayes from e1071 package
-mlNaiveBayes <- function(formula, data, laplace = 0, ..., subset, na.action)
+mlNaiveBayes <- function (...)
+	UseMethod("mlNaiveBayes")
+
+mlNaiveBayes.formula <- function(formula, data, laplace = 0, ...,
+subset, na.action)
 	mlearning(formula, data = data, method = "mlNaiveBayes", model.args =
 		list(formula  = formula, data = substitute(data),
 		subset = substitute(subset)), call = match.call(), laplace = laplace,
 		..., subset = subset, na.action = substitute(na.action))
 
-.mlNaiveBayes <- function (train, response, formula, data, args, ...)
+mlNaiveBayes.default <- function (train, response, laplace = 0, ...)
 {
-	if (args$type != "classification")
+	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlNaiveBayes")
-			
-	list(object = naiveBayes(x = train, y = response, ...),
+
+	.args. <- list(...)$.args.
+	if (!length(.args.)) .args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = "classification", na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlNaiveBayes")
+	
+	## Return a mlearning object
+	structure(e1071:::naiveBayes.default(x = train, y = response,
+		laplace = laplace, ...), formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
 		pred.type = c(class = "class", member = "raw"),
-		numeric.only = FALSE, summary = NULL,
+		summary = NULL, na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "naive Bayes classifier",
 		class = c("mlNaiveBayes", "mlearning", "naiveBayes"))
 }
 	
 ## NaiveBayes from RWeka package
-mlNaiveBayesWeka <- function(formula, data, ..., subset, na.action)
+mlNaiveBayesWeka <- function (...)
+	UseMethod("mlNaiveBayesWeka")
+
+mlNaiveBayesWeka.formula <- function(formula, data, ..., subset, na.action)
 	mlearning(formula, data = data, method = "mlNaiveBayesWeka", model.args =
 		list(formula  = formula, data = substitute(data),
-		subset = substitute(subset)), call = match.call(), ...,
-		subset = subset, na.action = substitute(na.action))
+		subset = substitute(subset)), call = match.call(),
+		..., subset = subset, na.action = substitute(na.action))
 
-.mlNaiveBayesWeka <- function (train, response, formula, data, args, ...)
+mlNaiveBayesWeka.default <- function (train, response, ...)
 {
-	if (args$type != "classification")
+	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlNaiveBayesWeka")
-			
-	wekaArgs <- list(control = args$control)
+
+	.args. <- list(...)$.args.
+	if (!length(.args.)) .args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = "classification", na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlNaiveBayesWeka")
+	
+	wekaArgs <- list(control = .args.$control)
 	
 	## If response is not NULL, add it to train
 	if (length(response)) {
-		response.label <- all.vars(formula)[1]
+		formula <- .args.$formula
+		if (!length(formula)) response.label <- "Class" else
+			response.label <- all.vars(formula)[1]
 		data <- data.frame(response, train)
 		names(data) <- c(response.label, colnames(train))
 		wekaArgs$data <- data
@@ -772,13 +882,16 @@ mlNaiveBayesWeka <- function(formula, data, ..., subset, na.action)
 		wekaArgs$data <- train
 		wekaArgs$formula <- ~ . 
 	}
+	
 	WekaClassifier <- make_Weka_classifier("weka/classifiers/bayes/NaiveBayes")
 	
-	list(object = do.call(WekaClassifier, wekaArgs),
-		#x = sapply(model.frame[, term.labels], as.numeric),
-		#y = as.factor(model.frame[, response.label]), ...),
+	## Return a mlearning object
+	structure(do.call(WekaClassifier, wekaArgs), formula = .args.$formula,
+		train = train, response = response, levels = .args.$levels, n = .args.$n,
+		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
 		pred.type = c(class = "class", member = "probability"),
-		numeric.only = FALSE, summary = "summary",
+		summary = "summary", na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "Weka naive Bayes classifier",
 		class = c("mlNaiveBayesWeka", "mlearning", "Weka_classifier"))
 }
