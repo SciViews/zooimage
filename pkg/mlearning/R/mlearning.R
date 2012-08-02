@@ -252,7 +252,7 @@ plot.mlearning <- function (x, y, ...)
 }
 
 predict.mlearning <- function(object, newdata,
-type = c("class", "member", "both"), scale = TRUE, na.action = na.exclude, ...)
+type = c("class", "member", "both"), na.action = na.exclude, ...)
 {
 	## Not usable for unsupervised type
 	if (attr(object, "type") == "unsupervised")
@@ -308,8 +308,7 @@ type = c("class", "member", "both"), scale = TRUE, na.action = na.exclude, ...)
 		levels <- levels(object)
 		return(list(class = .expandFactor(factor(as.character(classes),
 			levels = levels), n, ndrop),
-			member = .expandMatrix(.membership(members, levels = levels,
-			scale = scale), n, ndrop)))
+			member = .expandMatrix(.membership(members, levels = levels), n, ndrop)))
 	} else {
 		res <- predict(object, newdata = newdata, type = pred.type[type], ...)
 	}
@@ -318,13 +317,98 @@ type = c("class", "member", "both"), scale = TRUE, na.action = na.exclude, ...)
 	res <- switch(type,
 		class = .expandFactor(factor(as.character(res), levels = levels(object)),
 			n, ndrop),
-		member = .expandMatrix(.membership(res, levels = levels(object),
-			scale = scale), n, ndrop),
+		member = .expandMatrix(.membership(res, levels = levels(object)),
+			n, ndrop),
 		switch(class(res)[1],
 			factor = .expandFactor(res, n, ndrop),
 			matrix = .expandMatrix(res, n, ndrop),
 			res))
 		
+	res
+}
+
+cvpredict <- function (object, ...)
+	UseMethod("cvpredict")
+
+cvpredict.mlearning <- function(object, type = c("class", "member", "both"),
+cv.k = 10, cv.strat = TRUE, ...)
+{
+	type <- switch(attr(object, "type"),
+		regression = "class", # Another way to ignore 'type' for regressions
+		classification = as.character(type)[1],
+		stop("works only for classification or regression mlearning objects"))
+	
+	if (type == "class") {
+		predictions <- TRUE
+		getmodels <- FALSE
+	} else if (type == "member") {
+		predictions <- FALSE
+		getmodels <- TRUE
+	} else if (type == "both") {
+		predictions <- TRUE
+		getmodels <- TRUE
+	} else stop("type must be 'class', 'member' or 'both'")
+	
+	## Create data, using numbers are rownames
+	data <- data.frame(.response. = response(object), train(object))
+	rn <- rownames(data)
+	rownames(data) <- 1:NROW(data)
+	
+	## The predict() method with ... arguments added to the call
+	constructPredict <- function (...) {
+		fun <- function (object, newdata) return()
+		body(fun) <- as.call(c(list(substitute(predict),
+			object = substitute(object), newdata = substitute(newdata)), list(...)))
+		fun
+	}
+	Predict <- constructPredict(...)
+	
+	## Perform cross-validation or bootstrap for prediction
+	args <- attr(object, "args")
+	if (!is.list(args)) args <- list()
+	args$formula <- substitute(.response. ~ .)
+	args$data <- substitute(data)
+	args$model <- substitute(mlearning)
+	args$method <- attr(object, "method")
+	args$predict <- substitute(Predict)
+	args$estimator <- "cv"
+	args$est.para <- control.errorest(predictions = predictions,
+		getmodels = getmodels, k = cv.k, strat = cv.strat)
+	est <- do.call(errorest, args)
+	
+	## Only class
+	if (type == "class") {
+		res <- est$predictions
+	} else {
+		## Need to calculate member
+		predMember <- function (x, object, ...)
+			suppressWarnings(predict(x, newdata =
+				train(object)[-as.numeric(rownames(train(x))), ], ...))
+	
+		## Apply predict on all model and collect results together
+		member <- lapply(est$models, predMember, object = object, type = "member",
+			na.action = na.exclude, ...)
+	
+		## Concatenate results
+		member <- do.call(rbind, member)
+	
+		## Sort in correct order and replace initial rownames
+		ord <- as.numeric(rownames(member))
+		rownames(member) <- rn[ord]
+		member <- member[order(ord), ]
+	
+		if (type == "member") res <- member else
+			res <- list(class = est$predictions, member = member)	
+	}
+	
+	## Add est object as "method" attribute, without predictions or models
+	est$name <- "cross-validation"
+	est$predictions <- NULL
+	est$models <- NULL
+	est$call <- match.call()
+	est$strat <- cv.strat
+	attr(res, "method") <- est
+	
 	res
 }
 
@@ -343,7 +427,9 @@ mlLda.default <- function (train, response, ...)
 	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlLda")
 
-	.args. <- list(...)$.args.
+	dots <- list(...)
+	.args. <- dots$.args.
+	dots$.args. <- NULL
 	if (!length(.args.)) .args. <- list(levels = levels(response),
 		n = c(intial = NROW(train), final = NROW(train)),
 		type = "classification", na.action = "na.pass",
@@ -352,7 +438,7 @@ mlLda.default <- function (train, response, ...)
 	## Return a mlearning object
 	structure(MASS:::lda.default(x = sapply(train, as.numeric),
 		grouping = response, ...), formula = .args.$formula, train = train,
-		response = response, levels = .args.$levels, n = .args.$n,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
 		pred.type = c(class = "class", member = "posterior", projection = "x"),
 		summary = NULL, na.action = .args.$na.action,
@@ -362,9 +448,8 @@ mlLda.default <- function (train, response, ...)
 }
 
 predict.mlLda <- function(object, newdata,
-type = c("class", "member", "both", "projection"), scale = TRUE,
-prior = object$prior, dimension,
-method = c("plug-in", "predictive", "debiased"), ...)
+type = c("class", "member", "both", "projection"), prior = object$prior,
+dimension, method = c("plug-in", "predictive", "debiased"), ...)
 {
 	if (!inherits(object, "mlLda"))
 		stop("'object' must be a 'mlLda' object")
@@ -405,11 +490,10 @@ method = c("plug-in", "predictive", "debiased"), ...)
 	## Rework results according to what we want
 	switch(as.character(type)[1],
 		class = factor(as.character(res$class), levels = levels(object)),
-		member = .membership(res$posterior, levels = levels(object),
-			scale = scale),
+		member = .membership(res$posterior, levels = levels(object)),
 		both = list(class = factor(as.character(res$class),
 			levels = levels(object)), member = .membership(res$posterior,
-			levels = levels(object), scale = scale)),
+			levels = levels(object))),
 		projection = res$x,
 		stop("unrecognized 'type' (must be 'class', 'member', 'both' or 'projection')"))
 }
@@ -428,7 +512,9 @@ mlQda.default <- function (train, response, ...)
 	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlQda")
 
-	.args. <- list(...)$.args.
+	dots <- list(...)
+	.args. <- dots$.args.
+	dots$.args. <- NULL
 	if (!length(.args.)) .args. <- list(levels = levels(response),
 		n = c(intial = NROW(train), final = NROW(train)),
 		type = "classification", na.action = "na.pass",
@@ -437,7 +523,7 @@ mlQda.default <- function (train, response, ...)
 	## Return a mlearning object
 	structure(MASS:::qda.default(x = sapply(train, as.numeric),
 		grouping = response, ...), formula = .args.$formula, train = train,
-		response = response, levels = .args.$levels, n = .args.$n,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
 		pred.type = c(class = "class", member = "posterior"),
 		summary = NULL, na.action = .args.$na.action,
@@ -484,11 +570,10 @@ prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV"),
 	## Rework results according to what we want
 	switch(as.character(type)[1],
 		class = factor(as.character(res$class), levels = levels(object)),
-		member = .membership(res$posterior, levels = levels(object),
-			scale = scale),
+		member = .membership(res$posterior, levels = levels(object)),
 		both = list(class = factor(as.character(res$class),
 			levels = levels(object)), member = .membership(res$posterior,
-			levels = levels(object), scale = scale)),
+			levels = levels(object))),
 		stop("unrecognized 'type' (must be 'class', 'member' or 'both')"))
 }
 
@@ -516,7 +601,9 @@ replace = TRUE, classwt = NULL, ..., subset, na.action)
 mlRforest.default <- function (train, response, ntree = 500, mtry,
 replace = TRUE, classwt = NULL, ...)
 {
-	.args. <- list(...)$.args.
+	dots <- list(...)
+	.args. <- dots$.args.
+	dots$.args. <- NULL
 	if (!length(.args.)) {
 		if (!length(response)) {
 			type <- "unsupervised"
@@ -528,6 +615,9 @@ replace = TRUE, classwt = NULL, ...)
 		type = type, na.action = "na.pass",
 		mlearning.call = match.call(), method = "mlRforest")
 	}
+	dots$ntree <- ntree
+	dots$replace <- replace
+	dots$classwt <- classwt
 	
 	## Return a mlearning object
 	if (missing(mtry) || !length(mtry)) {
@@ -535,13 +625,14 @@ replace = TRUE, classwt = NULL, ...)
 		y = response, ntree = ntree, replace = replace,
 		classwt = classwt, ...)
 	} else {
+		dots$mtry <- mtry
 		res <- randomForest:::randomForest.default(x = train,
 		y = response, ntree = ntree, mtry = mtry, replace = replace,
 		classwt = classwt, ...)
 	}
 	 
 	structure(res, formula = .args.$formula, train = train,
-		response = response, levels = .args.$levels, n = .args.$n,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
 		pred.type = c(class = "response", member = "prob", vote ="vote"),
 		summary = NULL, na.action = .args.$na.action,
@@ -551,13 +642,14 @@ replace = TRUE, classwt = NULL, ...)
 }
 
 predict.mlRforest <- function(object, newdata,
-type = c("class", "member", "both", "vote"),
-scale = TRUE, norm.votes = FALSE, oob = FALSE, ...) {
+type = c("class", "member", "both", "vote"), norm.votes = FALSE,
+method = c("direct", "oob"), ...)
+{
 	type <- as.character(type)[1]
 	
-	if (isTRUE(as.logical(oob))) { # Get out-of-bag prediction!
+	if (as.character(method)[1] == "oob") { # Get out-of-bag prediction!
 		if (!missing(newdata))
-			stop("you cannot provide newdata when oob = TRUE")
+			stop("you cannot provide newdata when method = 'oob'")
 		
 		toProps <- function (x, ntree) {
 			if (sum(x[1, ] > 1)) {
@@ -575,28 +667,31 @@ scale = TRUE, norm.votes = FALSE, oob = FALSE, ...) {
 			res
 		}
 		
-		switch(type,
+		res <- switch(type,
 			class = factor(as.character(object$predicted),
 				levels = levels(object)),
 			member = .membership(toProps(object$votes, object$ntree),
-				levels = levels(object), scale = scale),
+				levels = levels(object)),
 			both = list(class = factor(as.character(object$predicted),
 				levels = levels(object)),
 				member = .membership(toProps(object$votes, object$ntree),
-				levels = levels(object), scale = scale)),
+				levels = levels(object))),
 			vote = {
 				if (isTRUE(as.logical(norm.votes))) {
 					.membership(toProps(object$votes, object$ntree),
-						levels = levels(object), scale = scale)
+						levels = levels(object))
 				} else {
 					.membership(toVotes(object$votes, object$ntree),
-						levels = levels(object), scale = scale)
+						levels = levels(object))
 				}
 			},
 			stop("unknown type, must be 'class', 'member', 'both' or 'vote'"))
 		
+		attr(res, "method") <- list(name = "out-of-bag")
+		res
+		
 	} else predict.mlearning(object = object, newdata = newdata,
-		type = type, scale = scale, norm.votes = norm.votes, ...)
+		type = type, norm.votes = norm.votes, ...)
 }
 
 mlNnet <- function (...)
@@ -616,8 +711,13 @@ maxit = 1000, ...)
 	if (!length(response))
 		stop("unsupervised classification not usable for mlNnet")
 
-	nnetArgs <- list(...)
+	nnetArgs <- dots <- list(...)
 	.args. <- nnetArgs$.args.
+	dots$.args. <- NULL
+	dots$size <- size
+	dots$rang <- rang
+	dots$decay <- decay
+	dots$maxit <- maxit
 	nnetArgs$.args. <- NULL
 	if (!length(.args.)) .args. <- list(levels = levels(response),
 		n = c(intial = NROW(train), final = NROW(train)),
@@ -676,7 +776,7 @@ maxit = 1000, ...)
 	
 	## Return a mlearning object
 	structure(res, formula = .args.$formula, train = train,
-		response = response, levels = .args.$levels, n = .args.$n,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
 		pred.type = c(class = "class", member = "raw"),
 		summary = "summary", na.action = .args.$na.action,
@@ -688,20 +788,20 @@ maxit = 1000, ...)
 mlLvq <- function (...)
 	UseMethod("mlLvq")
 
-mlLvq.formula <- function (formula, data, k = 5, size, prior,
+mlLvq.formula <- function (formula, data, k.nn = 5, size, prior,
 algorithm = "olvq1", ..., subset, na.action)
 {
 	if (missing(size)) {
 		if (missing(prior)) {
 			mlearning(formula, data = data, method = "mlLvq", model.args =
 				list(formula  = formula, data = substitute(data),
-				subset = substitute(subset)), call = match.call(), k = k,
+				subset = substitute(subset)), call = match.call(), k.nn = k.nn,
 				algorithm = algorithm, ...,
 				subset = subset, na.action = substitute(na.action))
 		} else {
 			mlearning(formula, data = data, method = "lvq", model.args =
 				list(formula  = formula, data = substitute(data),
-				subset = substitute(subset)), call = match.call(), k = k,
+				subset = substitute(subset)), call = match.call(), k.nn = k.nn,
 				prior = prior, algorithm = algorithm, ...,
 				subset = subset, na.action = substitute(na.action))
 		}
@@ -709,20 +809,20 @@ algorithm = "olvq1", ..., subset, na.action)
 		if (missing(prior)) {
 			mlearning(formula, data = data, method = "lvq", model.args =
 				list(formula  = formula, data = substitute(data),
-				subset = substitute(subset)), call = match.call(), k = k,
+				subset = substitute(subset)), call = match.call(), k.nn = k.nn,
 				size = size, algorithm = algorithm, ...,
 				subset = subset, na.action = substitute(na.action))
 		} else {
 			mlearning(formula, data = data, method = "lvq", model.args =
 				list(formula  = formula, data = substitute(data),
-				subset = substitute(subset)), call = match.call(), k = k,
+				subset = substitute(subset)), call = match.call(), k.nn = k.nn,
 				size = size, prior = prior, algorithm = algorithm, ...,
 				subset = subset, na.action = substitute(na.action))
 		}
 	}
 }
 
-mlLvq.default <- function (train, response, k = 5, size, prior,
+mlLvq.default <- function (train, response, k.nn = 5, size, prior,
 algorithm = "olvq1", ...)
 {
 	if (!is.factor(response))
@@ -730,6 +830,9 @@ algorithm = "olvq1", ...)
 
 	dots <- list(...)
 	.args. <- dots$.args.
+	dots$.args. <- NULL
+	dots$k.nn <- k.nn
+	dots$algorithm <- algorithm
 	if (!length(.args.)) .args. <- list(levels = levels(response),
 		n = c(intial = NROW(train), final = NROW(train)),
 		type = "classification", na.action = "na.pass",
@@ -740,15 +843,16 @@ algorithm = "olvq1", ...)
 			
 	## Default values for size and prior, if not provided
 	n <- nrow(train)
-	if (missing(prior))
+	if (missing(prior) || !length(prior)) {
 		prior <- tapply(rep(1, length(response)), response, sum) / n
-	if (missing(size)) {
+	} else dots$prior <- prior
+	if (missing(size) || !length(size)) {
 		np <- length(prior)  
 		size <- min(round(0.4 * np * (np - 1 + ncol(train) / 2), 0), n)
-	}
+	} else dots$size <- size
 			
 	## Initialize codebook
-	init <- lvqinit(train, response, k = k, size = size, prior = prior)
+	init <- lvqinit(train, response, k = k.nn, size = size, prior = prior)
 	
 	## Calculate final codebook
 	if (algorithm == "olvq1") times <- 40 else times <- 100
@@ -773,7 +877,7 @@ algorithm = "olvq1", ...)
 				
 	## Return a mlearning object
 	structure(codebk, formula = .args.$formula, train = train,
-		response = response, levels = .args.$levels, n = .args.$n,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
 		pred.type = c(class = "class"), summary = "summary.lvq",
 		na.action = .args.$na.action,
@@ -839,7 +943,10 @@ mlNaiveBayes.default <- function (train, response, laplace = 0, ...)
 	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlNaiveBayes")
 
-	.args. <- list(...)$.args.
+	dots <- list(...)
+	.args. <- dots$.args.
+	dots$.args. <- NULL
+	dots$laplace <- laplace
 	if (!length(.args.)) .args. <- list(levels = levels(response),
 		n = c(intial = NROW(train), final = NROW(train)),
 		type = "classification", na.action = "na.pass",
@@ -848,7 +955,7 @@ mlNaiveBayes.default <- function (train, response, laplace = 0, ...)
 	## Return a mlearning object
 	structure(e1071:::naiveBayes.default(x = train, y = response,
 		laplace = laplace, ...), formula = .args.$formula, train = train,
-		response = response, levels = .args.$levels, n = .args.$n,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
 		pred.type = c(class = "class", member = "raw"),
 		summary = NULL, na.action = .args.$na.action,
@@ -872,7 +979,7 @@ mlNaiveBayesWeka.default <- function (train, response, ...)
 	if (!is.factor(response))
 		stop("only factor response (classification) accepted for mlNaiveBayesWeka")
 
-	.args. <- list(...)$.args.
+	.args. <- dots <- list(...)$.args.
 	if (!length(.args.)) .args. <- list(levels = levels(response),
 		n = c(intial = NROW(train), final = NROW(train)),
 		type = "classification", na.action = "na.pass",
@@ -899,8 +1006,8 @@ mlNaiveBayesWeka.default <- function (train, response, ...)
 	## Return a mlearning object
 	structure(do.call(WekaClassifier, wekaArgs), formula = .args.$formula,
 		train = train, response = response, levels = .args.$levels, n = .args.$n,
-		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
-		pred.type = c(class = "class", member = "probability"),
+		args = dots, optim = .args.$optim, numeric.only = FALSE,
+		type = .args.$type, pred.type = c(class = "class", member = "probability"),
 		summary = "summary", na.action = .args.$na.action,
 		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "Weka naive Bayes classifier",

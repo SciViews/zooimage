@@ -6,8 +6,8 @@ Date: 2012-07-18
 Author: Ph. Grosjean & K. Denis
 Maintainer: Ph. Grosjean <Philippe.Grosjean@umons.ac.be>
 Depends: R (>= 2.14.0)
-Imports: dataframe, stats, nnet, class, MASS, e1071, randomForest, RWeka, RColorBrewer, gplots, grDevices 
-Suggests: rJava, RWekajars, mlbench, datasets
+Imports: dataframe, stats, nnet, class, MASS, e1071, randomForest, RWeka, ipred, grDevices 
+Suggests: rJava, RWekajars, mlbench, datasets, RColorBrewer
 Description: This package provides alternate interface to various machine
     learning algorithms in order to offer a unified, formula-based, interface.
     However, given the caveats of the formula interface in R (leading to

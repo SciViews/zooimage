@@ -6,7 +6,6 @@
 \alias{plot.confusion}
 \alias{summary.confusion}
 \alias{print.summary.confusion}
-\alias{comparisonPlot}
 
 \title{ Construct and analyze confusion matrices }
 \description{
@@ -24,19 +23,16 @@ confusion(x, \dots)
     labels = c("Actual", "Predicted"), \dots)
 
 \method{print}{confusion}(x, error.col = TRUE, \dots)
-\method{plot}{confusion}(x, y, type = c("image", "image2", "tree_image",
-    "precision_recall", "precision_recall2", "dendrogram"), \dots)
+\method{plot}{confusion}(x, y = NULL, type = c("image", "barplot", "stars",
+    "dendrogram"), stat1 = "Recall", stat2 = "Precision", \dots)
 \method{summary}{confusion}(object, sort.by = NULL, decreasing = FALSE,
     na.rm = FALSE, \dots)
 \method{print}{summary.confusion}(x, \dots)
-
-comparisonPlot(x, y, stat1 = "Recall", stat2 = "Precision", barplot = TRUE)
 }
 
 \arguments{
-  \item{x}{ an object (a \code{summary.confusion} object for \code{comparisonPlot()}). }
-  \item{y}{ another object, from which to extract the second classification
-    (a \code{summary.confusion} second object for \code{comparisonPlot()}). }
+  \item{x}{ an object. }
+  \item{y}{ another object, from which to extract the second classification. }
   \item{vars}{ the variables of interest in the first and second classification
     in the case the objects are lists or data frames. Otherwise, this argument
     is ignored and \code{x} and \code{y} must be factors with same length and
@@ -46,59 +42,53 @@ comparisonPlot(x, y, stat1 = "Recall", stat2 = "Precision", barplot = TRUE)
   \item{merge.by}{ a character string with the name of variables to use to merge
     the two data frames, or \code{NULL}. }
   \item{error.col}{ is a column with class error added (yes by default)? }
-  \item{type}{ the type of graph to plot. }
+  \item{type}{ the type of graph to plot (only \code{"stars"} if two confusion
+    matrices are to be compared). }
+  \item{stat1}{ first statistic to compare in the stars plot. }
+  \item{stat2}{ second statistic to compare in the stars plot. }
   \item{object}{ a 'confusion' object. }
   \item{sort.by}{ the statistics to use to sort the table (by default, FN, the
     false negative rate). }
   \item{decreasing}{ do we sort in increasing or decreasing order? }
   \item{na.rm}{ do we eliminate entries with missing data first (using
     \code{na.omit()})? }
-  \item{\dots}{ further arguments passed to the function (not used yet). }
-  \item{stat1}{ first statistic to compare. }
-  \item{stat2}{ second statistic to compare. }
-  \item{barplot}{ make a barplot or scatterplot? }
+  \item{\dots}{ further arguments passed to the function. }
 }
 
 \value{
   A confusion matrix in a 'confusion' object.
 }
 
-\author{Philippe Grosjean <Philippe.Grosjean@umons.ac.be>}
+\author{Philippe Grosjean <Philippe.Grosjean@umons.ac.be> and
+  Kevin Denis <Kevin.Denis@umons.ac.be>}
 
-\seealso{\code{\link{mlNnet}}}
+\seealso{\code{\link{mlearning}}}
 
 \examples{
-data("iris", package = "datasets")
+data("Glass", package = "mlbench")
+## Use a little bit more informative labels for Type
+Glass$Type <- as.factor(paste("Glass", Glass$Type))
 
-## Use learning vector quantization to classify the iris species
+## Use learning vector quantization to classify the glass types
 ## (using default parameters)
-irisLvq <- mlLvq(Species ~ ., data = iris)
-summary(irisLvq)
+summary(glassLvq <- mlLvq(Type ~ ., data = Glass))
 
-## TODO: use a better example and show how to use cross-validation!
-## Calculate confusion matrix and plot it in different ways
-## Note that it is just for demonstration...
-## In real world, you should use cross-validation in order
-## to get interpretable results!
-irisConf <- confusion(irisLvq) # Self-consistency
-irisConf
-plot(irisConf)
-plot(irisConf, type = "image2")
-plot(irisConf, type = "tree_image")
-plot(irisConf, type = "precision_recall")
-plot(irisConf, type = "precision_recall2")
-plot(irisConf, type = "dendrogram")
+## Calculate cross-validated confusion matrix and plot it in different ways
+(glassConf <- confusion(cvpredict(glassLvq), Glass$Type))
+plot(glassConf) # Image by default, with attempt to sort cols and rows
+plot(glassConf, sort = NULL) # No sorting
+plot(glassConf, type = "barplot")
+plot(glassConf, type = "stars")
+plot(glassConf, type = "dendrogram")
 
-summary(irisConf)
+summary(glassConf)
 
 ## Build another classifier and make a comparison
-irisNaiveBayes <- mlNaiveBayes(Species ~ ., data = iris)
-summary(irisNaiveBayes)
+summary(glassNaiveBayes <- mlNaiveBayes(Type ~ ., data = Glass))
+(glassConf2 <- confusion(cvpredict(glassNaiveBayes), Glass$Type))
 
-irisConf2 <- confusion(irisNaiveBayes) # Self-consistency
-irisConf2
-
-comparisonPlot(summary(irisConf), summary(irisConf2))
+## Comparison plot for two items
+plot(glassConf, glassConf2)
 }
 
 \keyword{ tree }

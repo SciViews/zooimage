@@ -7,6 +7,8 @@
 \alias{print.summary.lvq}
 \alias{plot.mlearning}
 \alias{predict.mlearning}
+\alias{cvpredict}
+\alias{cvpredict.mlearning}
 \alias{mlLda}
 \alias{mlLda.default}
 \alias{mlLda.formula}
@@ -52,13 +54,17 @@ mlearning(formula, data, method, model.args, call = match.call(), ...,
 \method{print}{summary.mlearning}(x, ...)
 \method{plot}{mlearning}(x, y, ...)
 \method{predict}{mlearning}(object, newdata, type = c("class", "member", "both"),
-    scale = TRUE, na.action = na.exclude, ...)
+    na.action = na.exclude, ...)
+    
+cvpredict(object, ...)
+\method{cvpredict}{mlearning}(object, type = c("class", "member", "both"),
+    cv.k = 10, cv.strat = TRUE, ...)
 
 mlLda(...)
 \method{mlLda}{default}(train, response, ...)
 \method{mlLda}{formula}(formula, data, ..., subset, na.action)
 \method{predict}{mlLda}(object, newdata, type = c("class", "member", "both",
-    "projection"), scale = TRUE,prior = object$prior, dimension,
+    "projection"), prior = object$prior, dimension,
     method = c("plug-in", "predictive", "debiased"), ...)
 
 mlQda(...)
@@ -73,7 +79,7 @@ mlRforest(...)
 \method{mlRforest}{formula}(formula, data, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...,
     subset, na.action)
 \method{predict}{mlRforest}(object, newdata, type = c("class", "member", "both",
-    "vote"), scale = TRUE, norm.votes = FALSE, oob = FALSE, ...)
+    "vote"), norm.votes = FALSE, method = c("direct", "oob"), ...)
 
 mlNnet(...)
 \method{mlNnet}{default}(train, response, size = NULL, rang = NULL, decay = 0, maxit = 1000, ...)
@@ -81,8 +87,8 @@ mlNnet(...)
     subset, na.action)
 
 mlLvq(...)
-\method{mlLvq}{default}(train, response, k = 5, size, prior, algorithm = "olvq1", ...)
-\method{mlLvq}{formula}(formula, data, k = 5, size, prior, algorithm = "olvq1", ...,
+\method{mlLvq}{default}(train, response, k.nn = 5, size, prior, algorithm = "olvq1", ...)
+\method{mlLvq}{formula}(formula, data, k.nn = 5, size, prior, algorithm = "olvq1", ...,
     subset, na.action)
 \method{summary}{lvq}(object, ...)
 \method{print}{summary.lvq}(x, ...)
@@ -135,6 +141,9 @@ train(object, ...)
     named, if provided). The default, and most suitable option for
     \code{predict()} methods is \code{na.exclude} and rows with NAs in newdata
     are then, excluded from prediction, but reinjected in final results. }  
+  \item{cv.k}{ k for k-fold cross validation, cf \code{errorest()}. }
+  \item{cv.strat}{ is the subsampling stratified or not in cross validation,
+    cf \code{errorest()}. }
   \item{x}{ a mlearning object. }
   \item{y}{ another object (depending on the machine learning algorithm, but it
     is usually not used). }
@@ -147,7 +156,6 @@ train(object, ...)
     corresponds to posterior probability, raw results, normalized votes, etc.,
     depending on the machine learning algorithm. With \code{both}, class and
     member are both returned at once in a list. }
-  \item{scale}{ is \code{member} ensured to sum to one (true by default)? }
   \item{train}{ a matrix or data frame with predictors. }
   \item{response}{ a vector of factor (classification) or numeric (regression),
     or \code{NULL} (unsupervised classification). }
@@ -162,8 +170,6 @@ train(object, ...)
   \item{replace}{ sample cases with or without replacement? }
   \item{classwt}{ priors of the classes. Need not add up to one. }
   \item{norm.votes}{ are votes normed to one? }
-  \item{oob}{ out-of-bag prediction is returned. If \code{TRUE}, \code{newdata}
-    cannot be provided. }
   \item{size}{ number of units in the hidden layer for \code{mlNnet()}. Can be
     zero if there are skip-layer units. If \code{NULL}, a reasonalbe default is
     computed. for \code{mlLvq()}, the size of the codebook. Defaults to
@@ -174,7 +180,7 @@ train(object, ...)
     computed. }
   \item{decay}{ parameter for weight decay. Default 0. }
   \item{maxit}{ maximum number of iterations. Default 1000. }
-  \item{k}{ k used for k-NN test of correct classification. Default is 5. }
+  \item{k.nn}{ k used for k-NN test of correct classification. Default is 5. }
   \item{algorithm}{ an algorithm among 'olvq1' (default, the optimized lvq1),
     'lvq1', 'lvq2', or 'lvq3'. }
   \item{laplace}{ positive double controlling Laplace smoothing for the naive
@@ -198,10 +204,11 @@ train(object, ...)
   Philippe Grosjean <Philippe.Grosjean@umons.ac.be> in order to get similar
   interface and objects. All credits to original authors (click here under). }
 
-\seealso{\code{\link{confusion}}, \code{\link[MASS]{lda}},
-  \code{\link[MASS]{qda}}, \code{\link[randomForest]{randomForest}},
-  \code{\link[class]{olvq1}}, \code{\link[nnet]{nnet}},
-  \code{\link[e1071]{naiveBayes}}, \code{\link[RWeka]{make_Weka_classifier}}}
+\seealso{\code{\link{confusion}}, \code{\link[ipred]{errorest}},
+  \code{\link[MASS]{lda}}, \code{\link[MASS]{qda}},
+  \code{\link[randomForest]{randomForest}}, \code{\link[class]{olvq1}},
+  \code{\link[nnet]{nnet}}, \code{\link[e1071]{naiveBayes}},
+  \code{\link[RWeka]{make_Weka_classifier}}}
 
 \examples{
 ## Prepare data: split into training set (2/3) and test set (1/3)
@@ -236,7 +243,6 @@ points(predict(irLda, newdata = irisTest, type = "projection"),
 confusion(irLda) # Wrong, cf. biased estimation (so-called, self-consistency)
 ## Estimation using a separate test set
 confusion(predict(irLda, newdata = irisTest), irisTest$Species)
-## TODO: cross-validation and bootstrap estimates
 
 ## Another dataset (binary predictor... not optimal for lda, just for test)
 summary(res <- mlLda(Class ~ ., data = HouseVotes84, na.action = na.omit))
@@ -273,14 +279,19 @@ confusion(res) # Self-consistency
 ## Supervised classification using random forest
 summary(res <- mlRforest(Species ~ ., data = irisTrain))
 plot(res)
+## For such a relatively simple case, 50 trees are enough
+summary(res <- mlRforest(Species ~ ., data = irisTrain, ntree = 50))
 predict(res) # Default type is class
 predict(res, type = "member")
 predict(res, type = "both")
 predict(res, type = "vote")
 ## Out-of-bag prediction
-predict(res, oob = TRUE)
+predict(res, method = "oob")
 confusion(res) # Self-consistency
-confusion(res, oob = TRUE) # Out-of-bag performances
+confusion(res, method = "oob") # Out-of-bag performances
+## Cross-validation prediction is a good choice when there is no test set:
+cvpredict(res)
+confusion(cvpredict(res), na.omit(irisTrain)$Species)
 confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
 
 ## Regression using random forest (from ?randomForest)

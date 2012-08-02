@@ -128,59 +128,64 @@ print.confusion <- function (x, error.col = TRUE, ...)
 	X <- x
 	class(X) <- "table"
 	if (isTRUE(as.logical(error.col))) {
-		print(cbind(X, `Error (%)` = round((1 - diag(X) / apply(X, 1, sum)) * 100, 1)))
+		print(cbind(X, `Error (FNR)` = round((1 - diag(X) / apply(X, 1, sum)), 3)))
 	} else print(X)
 	
 	## Return the original object invisibly
 	invisible(x)
 }
 
-plot.confusion <- function (x, y,
-type = c("image", "image2", "tree_image", "precision_recall",
-"precision_recall2", "dendrogram"), ...)
+plot.confusion <- function (x, y = NULL,
+type = c("image", "barplot", "stars", "dendrogram"), stat1 = "Recall",
+stat2 = "Precision", ...)
 {
-	type <- match.arg(type)
-	res <- switch(type[1],
-		image = .confusionMap(x, ...),
-		image2 = .confusionMap2(x, ...),
-		tree_image = .confusionTree(x, ...),
-		precision_recall = .confusionBar(x, ...),
-		precision_recall2 = .confusionBar2(x, ...),
-		dendrogram = .confusionDendro(x, ...),
-		stop("'type' must be 'image', 'tree_image', 'precision_recall', 'precision_recall2' or 'dendrogram'"))
+	if (is.null(y)) type <- match.arg(type)[1] else type <- "stars"
+	res <- switch(type,
+		image = .confusionImage(x, y, ...),
+		barplot = .confusionBar(x, y, ...),
+		stars = .confusionStars(x, y, stat1 = stat1, stat2 = stat2, ...),
+		dendrogram = .confusionDendro(x, y, ...),
+		stop("'type' must be 'image', 'barplot', 'stars' or 'dendrogram'"))
 	invisible(res)
 }
 
 ## These functions do the respective graphs for confusion objects
-.confusionMap <- function (x, col = heat.colors(10),
-mar = c(5.1, 12.1, 4.1, 2.1), ...)
-{
-	if (!inherits(x, "confusion"))
-		stop("'x' must be a 'confusion' object")
-	omar  <- par("mar")
-	on.exit(par(omar))
-    par(mar = mar)
-	n <- ncol(x)
-	image(1:n, 1:n, 1 / (t(x[n:1, 1:n])), col = col, xlab = "", ylab = "",
-		xaxt = "n", yaxt = "n", ...)
-    axis(1, at = 1:n, las = 2)
-    axis(2, at = n:1, labels = paste(names(attr(x, "nbr.cols")), 1:n),
-		las = 1)
-    abline(h = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
-    abline(v = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
-	invisible(x)
-}
+## Old (simpler) version
+#.confusionImage <- function (x, y = NULL, col = heat.colors(10),
+#mar = c(5.1, 12.1, 4.1, 2.1), ...)
+#{
+#	if (!inherits(x, "confusion"))
+#		stop("'x' must be a 'confusion' object")
 
-## Alternate graphical representation of the confusion matrix (modif K. Denis)
-.confusionMap2 <- function (x, mar = c(3.1, 10.1, 3.1, 3.1), asp = 1, 
+#	if (!is.null(y))
+#		stop("cannot use a second classifier 'y' for this plot")
+#	omar  <- par("mar")
+#	on.exit(par(omar))
+#    par(mar = mar)
+#	n <- ncol(x)
+#	image(1:n, 1:n, 1 / (t(x[n:1, 1:n])), col = col, xlab = "", ylab = "",
+#		xaxt = "n", yaxt = "n", ...)
+#    axis(1, at = 1:n, las = 2)
+#    axis(2, at = n:1, labels = paste(names(attr(x, "nbr.cols")), 1:n),
+#		las = 1)
+#    abline(h = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
+#    abline(v = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
+#	invisible(x)
+#}
+
+## Representation of the confusion matrix
+.confusionImage <- function (x, y = NULL, mar = c(3.1, 10.1, 3.1, 3.1), asp = 1, 
 label = "Actual \\ Predicted", sort = "complete", cex = 1, colfun = NULL,
 ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 {
 	if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
+
+	if (!is.null(y))
+		stop("cannot use a second classifier 'y' for this plot")
 	
 	## Default color function
-	rwb.colors <- function (n, alpha = 1, s = 0.9, v = 0.9) {
+	if (!length(colfun)) colfun <- function (n, alpha = 1, s = 0.9, v = 0.9) {
 		if ((n <- as.integer(n[1L])) <= 0) return(character(0L))
 		## Define the initial (red) and final (blue) colors with white in between
 		cols <- c(hsv(h = 0, s = s, v = v, alpha = alpha),   # Red
@@ -189,7 +194,6 @@ ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 		## Use a color ramp from red to white to blue
 		return(colorRampPalette(cols)(n))
 	}
-	if (!length(colfun)) colfun <- rwb.colors
 	
     manuLev <- sub("...", "", rownames(x))
     autoLev <- manuLev
@@ -222,8 +226,8 @@ ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 	## Negative values (in blue) on the diagonal (correct IDs)
 	diag(confuCol) <- -diag(confuCol)	
 	## Make an image of this matrix
-	omar <- par(no.readonly = TRUE)
-	on.exit(par(mar = omar))
+	opar <- par(no.readonly = TRUE)
+	on.exit(par(opar))
 	par(mar = mar, cex = cex)
 	image(1:n, 1:n, -t(confuCol[nrow(confuCol):1, ]), zlim = c(-10, 10),
 		asp = asp, bty = "n", col = colfun(ncols), xaxt = "n", yaxt = "n",
@@ -249,29 +253,38 @@ ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 	invisible(x)
 }
 
-.confusionTree <- function (x, maxval = 10, margins = c(2, 10),
-row.v = TRUE, col.v = TRUE, ...)
-{
-	if (!inherits(x, "confusion"))
-		stop("'x' must be a 'confusion' object")
-	nX <- nrow(x)
-	nY <- ncol(x)
-	nZ <- nX * nY
-	confmat <- pmin(x, maxval)
-	mypalette <- brewer.pal(maxval - 1, "Spectral")
-	heatmap.2(x, col= c(0, mypalette), symm = TRUE, margins = margins,
-		trace = "both", Rowv = row.v, Colv = col.v, cexRow = 0.2 + 1 / log10(nX),
-		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE, ...)
-}
+## Eliminated to avoid dependency on RColorBrewer and gplots!
+#.confusionTree <- function (x, y = NULL, maxval = 10, margins = c(2, 10),
+#row.v = TRUE, col.v = TRUE, ...)
+#{
+#	if (!inherits(x, "confusion"))
+#		stop("'x' must be a 'confusion' object")
+#	if (!is.null(y))
+#		stop("cannot use a second classifier 'y' for this plot")
+#
+#	nX <- nrow(x)
+#	nY <- ncol(x)
+#	nZ <- nX * nY
+#	confmat <- pmin(x, maxval)
+#	mypalette <- brewer.pal(maxval - 1, "Spectral")
+#	heatmap.2(x, col= c(0, mypalette), symm = TRUE, margins = margins,
+#		trace = "both", Rowv = row.v, Colv = col.v, cexRow = 0.2 + 1 / log10(nX),
+#		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE, ...)
+#}
 
 # Confusion bar with recall and precision in green bar and not outside as before
 # function modified for publication hclust 
-.confusionBar <- function (x, col = c("PeachPuff2", "green3", "lemonChiffon2"),
-mar = c(1.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, cex.legend = cex,
-main = "Precision versus Recall", min.width = 17, ...)
+.confusionBar <- function (x, y = NULL,
+col = c("PeachPuff2", "green3", "lemonChiffon2"), mar = c(1.1, 8.1, 4.1, 2.1),
+cex = 0.7, cex.axis = cex, cex.legend = cex, main = "Precision versus Recall",
+min.width = 17, ...)
 {
     if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
+		
+	if (!is.null(y))
+		stop("cannot use a second classifier 'y' for this plot")
+	
     TP <- diag(x)
     fn <- rowSums(x) - TP
     fp <- colSums(x) - TP
@@ -346,55 +359,118 @@ main = "Precision versus Recall", min.width = 17, ...)
 }
 
 ## Precision vs Recall, alternate presentation
-.confusionBar2 <- function (x,
-col = c("PeachPuff2", "green",  "green3", "lemonChiffon2"),
-mar = c(2.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, cex.legend = cex,
-main = "Precision versus Recall", ...)
-{
-	if (!inherits(x, "confusion"))
-		stop("'x' must be a 'confusion' object")
-	## Calculation of statistics
-	Stats <- summary(x)
-	FDR <- Stats$FDR * 100
-	Precision <- Stats$Precision * 100
-	Recall <- Stats$Recall * 100
-	FNR <- Stats$FNR * 100
-	## Order statistics according to Precision + recall
-	pos <- order(Recall + Precision, decreasing = TRUE)
-	## Results to plot
-	res <- cbind(FDR, Precision, Recall, FNR)
-	## Do the plot
-	omar <- par("mar")
-	on.exit(par(omar))
-	par(mar = mar)
-	barplot(t(res[pos, ]), horiz = TRUE, col = col, xaxt = "n", las = 1,
-		space = 0, ...)
-	## Add information
-	n <- nrow(Stats)
-	Labels <- names(attr(x, "nbr.cols"))
-	axis(2, 1:n - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
-		labels = Labels[pos])
-	title(main = main)
-	text(rep(1, n), 1:n - 0.5, paste(round(FDR[pos]), "%", sep = ""),
-		adj = c(0, 0.5), cex = cex)
-	text(FDR[pos] + Precision[pos]/2, 1:n - 0.5, paste(round(Precision[pos]),
-		"%", sep = ""), adj = c(0, 0.5), cex = cex)
-	text(FDR[pos] + Precision[pos] + Recall[pos]/2, 1:n - 0.5,
-		paste(round(Recall[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
-	text(rep(191, n), 1:n - 0.5, paste(round(FNR[pos]), "%", sep = ""),
-		adj = c(0, 0.5), cex = cex)
-	legend("top", legend = c("False Discovery ", "Precision", "Recall",
-		"False Negative"), cex = cex.legend, fill = col, bty = "n", horiz = TRUE)
-	text(96, -0.5, "< higher precision - underestimate <=> overestimate - higher recall >  ",
-		cex = cex)
-	invisible(res)
-}
+## Note used, but saved for now
+#.confusionBar <- function (x, y = NULL,
+#col = c("PeachPuff2", "green",  "green3", "lemonChiffon2"),
+#mar = c(2.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, cex.legend = cex,
+#main = "Precision versus Recall", ...)
+#{
+#	if (!inherits(x, "confusion"))
+#		stop("'x' must be a 'confusion' object")
+#	if (!is.null(y))
+#		stop("cannot use a second classifier 'y' for this plot")
+#
+#	## Calculation of statistics
+#	Stats <- summary(x)
+#	FDR <- Stats$FDR * 100
+#	Precision <- Stats$Precision * 100
+#	Recall <- Stats$Recall * 100
+#	FNR <- Stats$FNR * 100
+#	## Order statistics according to Precision + recall
+#	pos <- order(Recall + Precision, decreasing = TRUE)
+#	## Results to plot
+#	res <- cbind(FDR, Precision, Recall, FNR)
+#	## Do the plot
+#	omar <- par("mar")
+#	on.exit(par(omar))
+#	par(mar = mar)
+#	barplot(t(res[pos, ]), horiz = TRUE, col = col, xaxt = "n", las = 1,
+#		space = 0, ...)
+#	## Add information
+#	n <- nrow(Stats)
+#	Labels <- names(attr(x, "nbr.cols"))
+#	axis(2, 1:n - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
+#		labels = Labels[pos])
+#	title(main = main)
+#	text(rep(1, n), 1:n - 0.5, paste(round(FDR[pos]), "%", sep = ""),
+#		adj = c(0, 0.5), cex = cex)
+#	text(FDR[pos] + Precision[pos]/2, 1:n - 0.5, paste(round(Precision[pos]),
+#		"%", sep = ""), adj = c(0, 0.5), cex = cex)
+#	text(FDR[pos] + Precision[pos] + Recall[pos]/2, 1:n - 0.5,
+#		paste(round(Recall[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
+#	text(rep(191, n), 1:n - 0.5, paste(round(FNR[pos]), "%", sep = ""),
+#		adj = c(0, 0.5), cex = cex)
+#	legend("top", legend = c("False Discovery ", "Precision", "Recall",
+#		"False Negative"), cex = cex.legend, fill = col, bty = "n", horiz = TRUE)
+#	text(96, -0.5, "< higher precision - underestimate <=> overestimate - higher recall >  ",
+#		cex = cex)
+#	invisible(res)
+#}
 
-## New graphical representation of the confusion matrix as a dendrogram
-.confusionDendro <- function (x, method = "ward")
+.confusionStars <- function(x, y = NULL, stat1 = "Recall", stat2 = "Precision",
+main = NULL, col = NULL, ...)
 {
     if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
+    if (!is.null(y) && !inherits(x, "confusion"))
+        stop("'y' must be NULL or a 'confusion' object")
+	
+	SupportedStats <- c("Recall", "Precision", "Specificity",
+        "NPV", "FPR", "FNR", "FDR", "FOR")
+    if (!stat1 %in% SupportedStats)
+        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+    if (!stat2 %in% SupportedStats)
+        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+    Blue <- topo.colors(16)
+    Green <- terrain.colors(16)
+    Stat <- summary(x)
+    if (!is.null(y)) { # Comparison of two confusion matrices
+		Stat2 <- summary(y)
+		Data <- data.frame(Stat2[, stat1], Stat[, stat1], Stat[, stat2],
+			Stat2[, stat2])
+		Data <- rbind(Data, rep(0, 4))
+		colnames(Data) <- paste(rep(c(stat1, stat2), each = 2), c(2, 1, 1, 2))
+		if (!length(main))
+			main <- paste("Groups comparison between classifier 1 and 2\nAccuracy 1 =",
+				round(attr(Stat, "Accuracy") * 100), "%, accuracy 2 =",
+				round(attr(Stat2, "Accuracy") * 100), "%")
+		if (!length(col))
+			col <- c("green", Green[1], Blue[2], Blue[6])
+	} else { # Single confusion matrix
+		Data <- data.frame(Stat[, stat1], Stat[, stat2])
+		Data <- rbind(Data, rep(0, 2))
+		colnames(Data) <- c(stat1, stat2)
+		if (!length(main))
+			main <- paste("Groups comparison\nAccuracy =",
+				round(attr(Stat, "Accuracy") * 100), "%")
+		if (!length(col))
+			col <- c(Green[1], Blue[2])
+	}
+    rownames(Data) <- c(rownames(Stat), " ")
+    
+	## Calculate key location
+		kl <- stars(Data, draw.segments = TRUE, scale = FALSE, # key.loc = c(13, 1.5),
+			len = 0.8, main =  main, col.segments = col, plot = FALSE, ...)
+		kcoords <- c(max(kl[, 1]), min(kl[, 2]))
+		kspan <- apply(kl, 2, min) / 1.95
+	## Draw the plot	
+	res <- stars(Data, draw.segments = TRUE, scale = FALSE, key.loc = kcoords,
+		len = 0.8, main =  main, col.segments = col, ...)
+	## Draw a rectangle around key to differentiate it from the rest
+	rect(kcoords[1] - kspan[1], kcoords[2] - kspan[2], kcoords[1] + kspan[1],
+		kcoords[2] + kspan[2])
+	
+	res
+}
+
+## Representation of the confusion matrix as a dendrogram
+.confusionDendro <- function (x, y = NULL, method = "ward")
+{
+    if (!inherits(x, "confusion"))
+        stop("'x' must be a 'confusion' object")
+	if (!is.null(y))
+		stop("cannot use a second classifier 'y' for this plot")	
+	
     ## Transform the confusion matrix into a symmetric matrix by adding its
 	## transposed matrix
     ConfuSim <- x + t(x)
@@ -627,88 +703,115 @@ print.summary.confusion <- function (x, ...)
 	return(invisible(x))
 }
 
-## Compare statistics between two classifiers for all groups
-comparisonPlot <- function (x, y, stat1 = "Recall",
-stat2 = "Precision", barplot = TRUE)
-{
-    SupportedStats <- c("Recall", "Precision", "Specificity", "NPV", "FPR",
-		"FNR", "FDR", "FOR")
-    if (!stat1 %in% SupportedStats)
-        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-    if (!stat2 %in% SupportedStats)
-        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-	
-    n <- nrow(x)
-    ## Select columns
-    xstat1 <- x[, stat1]
-    xstat2 <- x[, stat2]
-    ystat1 <- y[, stat1]
-    ystat2 <- y[, stat2]
-     
-    if (!isTRUE(as.logical(barplot))) {
-        plot(xstat1, ylim = c(-1, 1.1), ylab = paste("<==", stat2, "/",
-			stat1, "==>", sep = " "), xlab = "Groups", axes = FALSE,
-			col = "red", main = "Comparison of two statistics for two classifiers",
-			lwd = 2, cex = 1.5, pch = 3)
-        points(ystat1, pch = 4, col = "blue", lwd = 2, cex = 1.5)
-        points(-xstat2, pch = 3, col = "red", lwd = 2, cex = 1.5)
-        points(-ystat2, pch = 4, col = "blue", lwd = 2, cex = 1.5)
-        
-		## Add lines for more comprehensive interpretation
-        for (i in 1:n) abline(v = i, lty = 3, col = "lightgray")
-        abline(h = 0, lty = 1)
-        abline(h = 0.25, lty = 2)
-        abline(h = 0.5, lty = 2)
-        abline(h = 0.75, lty = 2)
-        abline(h = -0.25, lty = 2)
-        abline(h = -0.5, lty = 2)
-        abline(h = -0.75, lty = 2)                    
-        
-		## Add axes
-        axis(1, at = 1:n, labels = 1:n)
-        axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1),
-			labels = c(1, 0.75, 0.5, 0.25, 0, 0.25, 0.5, 0.75, 1))
-        
-		## Add legend
-        legend("topright", legend = c("Classifier 1", "Classifier 2"),
-			pch = c(3, 4), col = c("red", "blue"), horiz = TRUE, bg = "white",
-			cex = 0.75, pt.cex = 1.5, pt.lwd = 2)    
-    
-	} else { # Barplot
-        barplot(xstat1, ylim = c(-1.05, 1.15), axes = FALSE,
-			ylab = paste("<==", stat2, "/", stat1, "==>", sep = " "),
-            xlab = "Groups", main = "Comparison of two statistics for two classifiers")
-        barplot(-xstat2, add = TRUE, axes = FALSE)
-        
-		## Add lines for more comprehensive interpretation
-        for (i in 1:n) abline(v = i + i * 0.2 - 0.5, lty = 3, col = "lightgray")
-        abline(h = 0, lty = 1)
-        abline(h = 0.25, lty = 2)
-        abline(h = 0.5, lty = 2)
-        abline(h = 0.75, lty = 2)
-        abline(h = 1, lty = 3)
-        abline(h = -0.25, lty = 2)
-        abline(h = -0.5, lty = 2)
-        abline(h = -0.75, lty = 2)                    
-        abline(h = -1, lty = 3)
-        X <- 1:n + 1:n * 0.2 - 0.5
-        
-		## Add arrows (suppress wqrnings in case of zero length arrows)
-        suppressWarnings(arrows(x0 = X, y0 = xstat1, x1 = X, y1 = ystat1,
-			length = 0.1))
-        suppressWarnings(arrows(x0 = X, y0 = -xstat2, x1 = X, y1 = -ystat2,
-			length = 0.1))
-        
-		## Add axes
-        axis(1, at = X, labels = 1:n)
-        axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1),
-			labels = c(1, 0.75, 0.5, 0.25, 0, 0.25, 0.5, 0.75, 1))
-        
-		## Add legend
-		legend("topright", legend = c("Classifier 1", "Classifier 2"),
-			pch = c(15, 4), col = c("darkgray", "black"), horiz = TRUE,
-			bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)
-    }
-	invisible(list(xstat1 = xstat1, xstat2 = xstat2,
-		ystat1 = ystat1, ystat2 = ystat2))
-}
+#comparisonPlot <-
+#function (x, y, stat1 = "Recall", stat2 = "Precision", type = c("barplot", "p", "stars"), ...)
+#{
+#    type <- match.arg(type)
+#    res <- switch(type[1], barplot = barplot.comparison(x, y, stat1, stat2, ...),
+#        p = plot.comparison(x, y, stat1, stat2, ...),
+#        stars = stars.comparison(x, y, stat1, stat2, ...), stop("'type' must be 'barplot', 'p' or 'stars'"))
+#    invisible(res)
+#}
+#
+#stars.comparison <- function(x, y, stat1 = "Recall", stat2 = "Precision", ...)
+#{
+#    if(!inherits(x, "summary.confusion"))
+#        stop("x must be a summary.confusion object")
+#    if(!inherits(y, "summary.confusion"))
+#        stop("y must be a summary.confusion object")
+#    SupportedStats <- c("Recall", "Precision", "Specificity",
+#        "NPV", "FPR", "FNR", "FDR", "FOR")
+#    if (!stat1 %in% SupportedStats)
+#        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+#    if (!stat2 %in% SupportedStats)
+#        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+#    Blue <- topo.colors(16)
+#    Green <- terrain.colors(16)
+#    Data <- data.frame(y[, stat1], x[, stat1], x[, stat2], y[, stat2])
+#    rownames(Data) <- rownames(x)
+#    colnames(Data) <- c(paste(stat1, "_2", sep = ""), paste(stat1, "_1", sep = ""), paste(stat2, "_1", sep = ""), paste(stat2, "_2", sep = ""))
+#    stars(Data, draw.segments = TRUE, scale = FALSE, key.loc = c(13,1.5), len = 0.8,
+#        main = paste("Groups comparison between classifier 1 and 2", "\n", "Accuracy 1 =", round(attr(Stats, "Accuracy") *100), "%,",  "Accuracy 2 =", round(attr(Stats2, "Accuracy") *100), "%"),
+#        col.segments = c("green", Green[1], Blue[2], Blue[6]), ...)
+#}
+
+#barplot.comparison <- function(x, y, stat1 = "Recall", stat2 = "Precision", ...){
+#    SupportedStats <- c("Recall", "Precision", "Specificity",
+#        "NPV", "FPR", "FNR", "FDR", "FOR")
+#    if (!stat1 %in% SupportedStats)
+#        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+#    if (!stat2 %in% SupportedStats)
+#        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+#    n <- nrow(x)
+#    xstat1 <- x[, stat1]
+#    xstat2 <- x[, stat2]
+#    ystat1 <- y[, stat1]
+#    ystat2 <- y[, stat2]
+#    barplot(xstat1, ylim = c(-1.05, 1.15), axes = FALSE,
+#            ylab = paste("<==", stat2, "/", stat1, "==>", sep = " "),
+#            xlab = "Groups", main = "Comparison of two statistics for two classifiers", ...)
+#    barplot(-xstat2, add = TRUE, axes = FALSE)
+#    for (i in 1:n) abline(v = i + i * 0.2 - 0.5, lty = 3,
+#        col = "lightgray")
+#    abline(h = 0, lty = 1)
+#    abline(h = 0.25, lty = 2)
+#    abline(h = 0.5, lty = 2)
+#    abline(h = 0.75, lty = 2)
+#    abline(h = 1, lty = 3)
+#    abline(h = -0.25, lty = 2)
+#    abline(h = -0.5, lty = 2)
+#    abline(h = -0.75, lty = 2)
+#    abline(h = -1, lty = 3)
+#    X <- 1:n + 1:n * 0.2 - 0.5
+#    suppressWarnings(arrows(x0 = X, y0 = xstat1, x1 = X,
+#        y1 = ystat1, length = 0.1))
+#    suppressWarnings(arrows(x0 = X, y0 = -xstat2, x1 = X,
+#        y1 = -ystat2, length = 0.1))
+#    axis(1, at = X, labels = 1:n)
+#    axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5,
+#        0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25,
+#        0.5, 0.75, 1))
+#    legend("topright", legend = c("Classifier 1", "Classifier 2"),
+#        pch = c(15, 4), col = c("darkgray", "black"), horiz = TRUE,
+#        bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)
+#    invisible(list(xstat1 = xstat1, xstat2 = xstat2, ystat1 = ystat1,
+#        ystat2 = ystat2))
+#}
+#
+#plot.comparison <- function(x, y, stat1 = "Recall", stat2 = "Precision", ...){
+#    SupportedStats <- c("Recall", "Precision", "Specificity",
+#        "NPV", "FPR", "FNR", "FDR", "FOR")
+#    if (!stat1 %in% SupportedStats)
+#        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+#    if (!stat2 %in% SupportedStats)
+#        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+#    n <- nrow(x)
+#    xstat1 <- x[, stat1]
+#    xstat2 <- x[, stat2]
+#    ystat1 <- y[, stat1]
+#    ystat2 <- y[, stat2]
+#    plot(xstat1, ylim = c(-1, 1.1), ylab = paste("<==", stat2,
+#        "/", stat1, "==>", sep = " "), xlab = "Groups", axes = FALSE,
+#        col = "red", main = "Comparison of two statistics for two classifiers",
+#        lwd = 2, cex = 1.5, pch = 3, ...)
+#    points(ystat1, pch = 4, col = "blue", lwd = 2, cex = 1.5)
+#    points(-xstat2, pch = 3, col = "red", lwd = 2, cex = 1.5)
+#    points(-ystat2, pch = 4, col = "blue", lwd = 2, cex = 1.5)
+#    for (i in 1:n) abline(v = i, lty = 3, col = "lightgray")
+#    abline(h = 0, lty = 1)
+#    abline(h = 0.25, lty = 2)
+#    abline(h = 0.5, lty = 2)
+#    abline(h = 0.75, lty = 2)
+#    abline(h = -0.25, lty = 2)
+#    abline(h = -0.5, lty = 2)
+#    abline(h = -0.75, lty = 2)
+#    axis(1, at = 1:n, labels = 1:n)
+#    axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5,
+#        0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25,
+#        0.5, 0.75, 1))
+#    legend("topright", legend = c("Classifier 1", "Classifier 2"),
+#        pch = c(3, 4), col = c("red", "blue"), horiz = TRUE,
+#        bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)
+#    invisible(list(xstat1 = xstat1, xstat2 = xstat2, ystat1 = ystat1,
+#        ystat2 = ystat2))
+#}
