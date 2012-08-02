@@ -530,8 +530,17 @@ replace = TRUE, classwt = NULL, ...)
 	}
 	
 	## Return a mlearning object
-	structure(randomForest:::randomForest.default(x = train,
-		y = response, ...), formula = .args.$formula, train = train,
+	if (missing(mtry) || !length(mtry)) {
+		res <- randomForest:::randomForest.default(x = train,
+		y = response, ntree = ntree, replace = replace,
+		classwt = classwt, ...)
+	} else {
+		res <- randomForest:::randomForest.default(x = train,
+		y = response, ntree = ntree, mtry = mtry, replace = replace,
+		classwt = classwt, ...)
+	}
+	 
+	structure(res, formula = .args.$formula, train = train,
 		response = response, levels = .args.$levels, n = .args.$n,
 		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
 		pred.type = c(class = "response", member = "prob", vote ="vote"),
@@ -635,6 +644,10 @@ maxit = 1000, ...)
 		if (rang > 0.7) rang <- 0.7
 	}
 	nnetArgs$rang <- rang
+	
+	## decay and maxit
+	nnetArgs$decay <- decay
+	nnetArgs$maxit <- maxit
 			
 	## TODO: should I need to implement this???
 	#x <- model.matrix(Terms, m, contrasts)
@@ -738,8 +751,6 @@ algorithm = "olvq1", ...)
 	init <- lvqinit(train, response, k = k, size = size, prior = prior)
 	
 	## Calculate final codebook
-	algorithm <- dots$algorithm
-	if (!length(algorithm)) algorithm <- "olvq1" # Default algorithm
 	if (algorithm == "olvq1") times <- 40 else times <- 100
 	niter <- dots$niter
 	if (!length(niter)) niter <- times * nrow(init$x) # Default value
