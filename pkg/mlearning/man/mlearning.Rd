@@ -31,9 +31,6 @@
 \alias{mlNaiveBayes}
 \alias{mlNaiveBayes.default}
 \alias{mlNaiveBayes.formula}
-\alias{mlNaiveBayesWeka}
-\alias{mlNaiveBayesWeka.default}
-\alias{mlNaiveBayesWeka.formula}
 \alias{response}
 \alias{response.default}
 \alias{train}
@@ -54,7 +51,7 @@ mlearning(formula, data, method, model.args, call = match.call(), ...,
 \method{print}{summary.mlearning}(x, ...)
 \method{plot}{mlearning}(x, y, ...)
 \method{predict}{mlearning}(object, newdata, type = c("class", "member", "both"),
-    na.action = na.exclude, ...)
+    method = c("direct", "cv"), na.action = na.exclude, ...)
     
 cvpredict(object, ...)
 \method{cvpredict}{mlearning}(object, type = c("class", "member", "both"),
@@ -65,21 +62,21 @@ mlLda(...)
 \method{mlLda}{formula}(formula, data, ..., subset, na.action)
 \method{predict}{mlLda}(object, newdata, type = c("class", "member", "both",
     "projection"), prior = object$prior, dimension,
-    method = c("plug-in", "predictive", "debiased"), ...)
+    method = c("plug-in", "predictive", "debiased", "cv"), ...)
 
 mlQda(...)
 \method{mlQda}{default}(train, response, ...)
 \method{mlQda}{formula}(formula, data, ..., subset, na.action)
 \method{predict}{mlQda}(object, newdata, type = c("class", "member", "both"),
     prior = object$prior, method = c("plug-in", "predictive", "debiased",
-    "looCV"), ...)
+    "looCV", "cv"), ...)
 
 mlRforest(...)
 \method{mlRforest}{default}(train, response, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...)
 \method{mlRforest}{formula}(formula, data, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...,
     subset, na.action)
 \method{predict}{mlRforest}(object, newdata, type = c("class", "member", "both",
-    "vote"), norm.votes = FALSE, method = c("direct", "oob"), ...)
+    "vote"), method = c("direct", "oob", "cv"), ...)
 
 mlNnet(...)
 \method{mlNnet}{default}(train, response, size = NULL, rang = NULL, decay = 0, maxit = 1000, ...)
@@ -92,16 +89,12 @@ mlLvq(...)
     subset, na.action)
 \method{summary}{lvq}(object, ...)
 \method{print}{summary.lvq}(x, ...)
-\method{predict}{mlLvq}(object, newdata, type = "class",
+\method{predict}{mlLvq}(object, newdata, type = "class", method = c("direct", "cv"), 
     na.action = na.exclude,...)
 
 mlNaiveBayes(...)
 \method{mlNaiveBayes}{default}(train, response, laplace = 0, ...)
 \method{mlNaiveBayes}{formula}(formula, data, laplace = 0, ..., subset, na.action)
-
-mlNaiveBayesWeka(...)
-\method{mlNaiveBayesWeka}{default}(train, response, ...)
-\method{mlNaiveBayesWeka}{formula}(formula, data, ..., subset, na.action)
 
 response(object, ...)
 \method{response}{default}(object, ...)
@@ -120,14 +113,16 @@ train(object, ...)
     variables are possible according to usual formula convention (possibly
     protected by \code{I()}). }
   \item{data}{ a data.frame to use as a training set. }
-  \item{method}{ a mchine learning method to use. For \code{predict()}, it is
+  \item{method}{ a machine learning method to use. For \code{predict()}, it is
     the prediction method. According to \code{predict.lda} in package MASS:
     determines how the parameter estimation is handled. With \code{"plug-in"}
     (the default) the usual unbiased parameter estimates are used and assumed to
     be correct. With \code{"debiased"} an unbiased estimator of the log posterior
     probabilities is used, and with \code{"predictive"} the parameter estimates
     are integrated out using a vague prior. With \code{"looCV"} the leave-one-out
-    cross-validation fits to the original dataset are computed and returned. }
+    cross-validation fits to the original dataset are computed and returned. If
+    you indicate \code{method = "cv"} then \code{cvpredict()} is used and you
+    cannot provide \code{newdata} in that case. }
   \item{model.args}{ arguments for formula modeling with substituted data and
     subset... Not to be used by the end-user. }
   \item{call}{ the function call. Not to be used by the end-user. }
@@ -169,7 +164,6 @@ train(object, ...)
   \item{mtry}{ number of variables randomly sampled as candidates at each split. }
   \item{replace}{ sample cases with or without replacement? }
   \item{classwt}{ priors of the classes. Need not add up to one. }
-  \item{norm.votes}{ are votes normed to one? }
   \item{size}{ number of units in the hidden layer for \code{mlNnet()}. Can be
     zero if there are skip-layer units. If \code{NULL}, a reasonalbe default is
     computed. for \code{mlLvq()}, the size of the codebook. Defaults to
@@ -290,8 +284,9 @@ predict(res, method = "oob")
 confusion(res) # Self-consistency
 confusion(res, method = "oob") # Out-of-bag performances
 ## Cross-validation prediction is a good choice when there is no test set:
-cvpredict(res)
-confusion(cvpredict(res), na.omit(irisTrain)$Species)
+predict(res, method = "cv")  # Idem: cvpredict(res)
+confusion(res, method = "cv") # Cross-validation for performances estimation
+## Evaluation of performances using a separate test set
 confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
 
 ## Regression using random forest (from ?randomForest)
@@ -348,17 +343,8 @@ predict(res, type = "both")
 confusion(res) # Self-consistency
 confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
 
-## Weka version
-summary(res <- mlNaiveBayesWeka(Species ~ ., data = irisTrain))
-confusion(res) # Self-consistency
-confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
-
-## Another dataset (binary predictor)
+## Another dataset
 summary(res <- mlNaiveBayes(Class ~ ., data = HouseVotes84, na.action = na.omit))
-confusion(res) # Self-consistency
-
-## Weka version
-summary(res <- mlNaiveBayesWeka(Class ~ ., data = HouseVotes84, na.action = na.omit))
 confusion(res) # Self-consistency
 }
 

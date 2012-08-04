@@ -1,18 +1,14 @@
 Package: mlearning
 Type: Package
-Title: Machine learning algorithms with unified formula interface and confusion matrices
+Title: Machine learning algorithms with unified interface and confusion matrices
 Version: 1.0-0
-Date: 2012-07-18
+Date: 2012-08-04
 Author: Ph. Grosjean & K. Denis
 Maintainer: Ph. Grosjean <Philippe.Grosjean@umons.ac.be>
 Depends: R (>= 2.14.0)
-Imports: dataframe, stats, nnet, class, MASS, e1071, randomForest, RWeka, ipred, grDevices 
-Suggests: rJava, RWekajars, mlbench, datasets, RColorBrewer
-Description: This package provides alternate interface to various machine
-    learning algorithms in order to offer a unified, formula-based, interface.
-    However, given the caveats of the formula interface in R (leading to
-    multiple copies of the data), if a simplified formula is provided (like
-    Class ~ .), a more performant code is used, if possible. Confusion matrices
-    can be calculated and viewed as tables or plots, too.
+Imports: stats, grDevices, class, nnet, MASS, e1071, randomForest, ipred 
+Suggests: mlbench, datasets, RColorBrewer
+Description: This package provides a unified interface to various machine
+    learning algorithms. Confusion matrices are provided too.
 License: GPL (>= 2)
 URL: http://www.sciviews.org/zooimage

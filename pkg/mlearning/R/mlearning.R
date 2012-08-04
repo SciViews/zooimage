@@ -252,11 +252,19 @@ plot.mlearning <- function (x, y, ...)
 }
 
 predict.mlearning <- function(object, newdata,
-type = c("class", "member", "both"), na.action = na.exclude, ...)
+type = c("class", "member", "both"), method = c("direct", "cv"),
+na.action = na.exclude, ...)
 {
 	## Not usable for unsupervised type
 	if (attr(object, "type") == "unsupervised")
 		stop("no predict() method for unsupervised version")
+	
+	## If method == "cv", delegate to cvpredict()
+	if (as.character(method)[1] == "cv") {
+		if (!missing(newdata))
+			stop("cannot handle new data with method = 'cv'")
+		return(cvpredict(object = object, type = type, ...))
+	}
 	
 	## Recalculate newdata according to formula...
 	if (missing(newdata)) { # Use train
@@ -273,10 +281,7 @@ type = c("class", "member", "both"), na.action = na.exclude, ...)
 	}
 	## Do we need only numerical predictors
 	if (attr(object, "numeric.only"))
-		if (any(sapply(newdata, is.factor))) {
-			warning("force conversion from factor to numeric; may be not optimal or suitable")
-			newdata <- sapply(as.data.frame(newdata), as.numeric)
-		}
+		newdata <- sapply(as.data.frame(newdata), as.numeric)
 	
 	## Determine how many data and perform na.action
 	n <- NROW(newdata)
@@ -435,6 +440,10 @@ mlLda.default <- function (train, response, ...)
 		type = "classification", na.action = "na.pass",
 		mlearning.call = match.call(), method = "mlLda")
 	
+	## Check if there are factor predictors
+	if (any(sapply(train, is.factor)))
+		warning("force conversion from factor to numeric; may be not optimal or suitable")
+	
 	## Return a mlearning object
 	structure(MASS:::lda.default(x = sapply(train, as.numeric),
 		grouping = response, ...), formula = .args.$formula, train = train,
@@ -449,10 +458,23 @@ mlLda.default <- function (train, response, ...)
 
 predict.mlLda <- function(object, newdata,
 type = c("class", "member", "both", "projection"), prior = object$prior,
-dimension, method = c("plug-in", "predictive", "debiased"), ...)
+dimension, method = c("plug-in", "predictive", "debiased", "cv"), ...)
 {
 	if (!inherits(object, "mlLda"))
 		stop("'object' must be a 'mlLda' object")
+	
+	## If method == "cv", delegate to cvpredict()
+	method <- as.character(method)[1]
+	if (method == "cv") {
+		if (!missing(newdata))
+			stop("cannot handle new data with method = 'cv'")
+		if (missing(dimension)) {
+			return(cvpredict(object = object, type = type, prior = prior, ...))	
+		} else {
+			return(cvpredict(object = object, type = type, prior = prior,
+				dimension = dimension, ...))
+		}
+	}
 	
 	## Recalculate newdata according to formula...
 	if (missing(newdata)) { # Use train
@@ -468,18 +490,14 @@ dimension, method = c("plug-in", "predictive", "debiased"), ...)
 			data = newdata, na.action = na.pass)[, names(attr(object, "train"))]
 	}
 	## Only numerical predictors
-	if (any(sapply(newdata, is.factor))) {
-		warning("force conversion from factor to numeric; not optimal or suitable predictors")
-		newdata <- sapply(as.data.frame(newdata), as.numeric)
-	}
+	newdata <- sapply(as.data.frame(newdata), as.numeric)
 	
-	## dimension and method
+	## dimension
 	if (missing(dimension)) {
         dimension <- length(object$svd)
 	} else {
 		dimension <- min(dimension, length(object$svd))
 	}
-	method <- as.character(method)[1]
 	
 	## Delegate to the MASS predict.lda method
 	class(object) <- class(object)[-(1:2)]
@@ -520,6 +538,10 @@ mlQda.default <- function (train, response, ...)
 		type = "classification", na.action = "na.pass",
 		mlearning.call = match.call(), method = "mlQda")
 	
+	## Check if there are factor predictors
+	if (any(sapply(train, is.factor)))
+		warning("force conversion from factor to numeric; may be not optimal or suitable")
+	
 	## Return a mlearning object
 	structure(MASS:::qda.default(x = sapply(train, as.numeric),
 		grouping = response, ...), formula = .args.$formula, train = train,
@@ -533,11 +555,19 @@ mlQda.default <- function (train, response, ...)
 }
 
 predict.mlQda <- function(object, newdata, type = c("class", "member", "both"),
-prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV"),
-...)
+prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV",
+"cv"), ...)
 {
 	if (!inherits(object, "mlQda"))
 		stop("'object' must be a 'mlQda' object")
+	
+	## If method == "cv", delegate to cvpredict()
+	method <- as.character(method)[1]
+	if (method == "cv") {
+		if (!missing(newdata))
+			stop("cannot handle new data with method = 'cv'")
+		return(cvpredict(object = object, type = type, prior = prior, ...))
+	}
 	
 	## Recalculate newdata according to formula...
 	if (missing(newdata)) { # Use train
@@ -553,14 +583,8 @@ prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV"),
 			data = newdata, na.action = na.pass)[, names(attr(object, "train"))]
 	}
 	## Only numerical predictors
-	if (any(sapply(newdata, is.factor))) {
-		warning("force conversion from factor to numeric; not optimal or suitable predictors")
-		newdata <- sapply(as.data.frame(newdata), as.numeric)
-	}
-	
-	## method
-	method <- as.character(method)[1]
-	
+	newdata <- sapply(as.data.frame(newdata), as.numeric)
+		
 	## Delegate to the MASS predict.qda method
 	class(object) <- class(object)[-(1:2)]
 	## I need to suppress warnings, because NAs produce ennoying warnings!
@@ -642,14 +666,20 @@ replace = TRUE, classwt = NULL, ...)
 }
 
 predict.mlRforest <- function(object, newdata,
-type = c("class", "member", "both", "vote"), norm.votes = FALSE,
-method = c("direct", "oob"), ...)
+type = c("class", "member", "both", "vote"), method = c("direct", "oob", "cv"),
+...)
 {
 	type <- as.character(type)[1]
 	
-	if (as.character(method)[1] == "oob") { # Get out-of-bag prediction!
+	## If method == "cv", delegate to cvpredict()
+	method <- as.character(method)[1]
+	if (method == "cv") {
 		if (!missing(newdata))
-			stop("you cannot provide newdata when method = 'oob'")
+			stop("cannot handle new data with method = 'cv'")
+		return(cvpredict(object = object, type = type, ...))
+	} else if (method == "oob") { # Get out-of-bag prediction!
+		if (!missing(newdata))
+			stop("you cannot provide newdata with method = 'oob'")
 		
 		toProps <- function (x, ntree) {
 			if (sum(x[1, ] > 1)) {
@@ -676,22 +706,15 @@ method = c("direct", "oob"), ...)
 				levels = levels(object)),
 				member = .membership(toProps(object$votes, object$ntree),
 				levels = levels(object))),
-			vote = {
-				if (isTRUE(as.logical(norm.votes))) {
-					.membership(toProps(object$votes, object$ntree),
-						levels = levels(object))
-				} else {
-					.membership(toVotes(object$votes, object$ntree),
-						levels = levels(object))
-				}
-			},
+			vote = .membership(toVotes(object$votes, object$ntree),
+						levels = levels(object)),
 			stop("unknown type, must be 'class', 'member', 'both' or 'vote'"))
 		
 		attr(res, "method") <- list(name = "out-of-bag")
 		res
 		
 	} else predict.mlearning(object = object, newdata = newdata,
-		type = type, norm.votes = norm.votes, ...)
+		type = type, norm.votes = FALSE, ...)
 }
 
 mlNnet <- function (...)
@@ -839,7 +862,10 @@ algorithm = "olvq1", ...)
 		mlearning.call = match.call(), method = "mlQda")
 	
 	## matrix of numeric values
-	train <- sapply(train, as.numeric)
+	if (any(sapply(train, is.factor))) {
+		warning("force conversion from factor to numeric; may be not optimal or suitable")
+		train <- sapply(train, as.numeric)
+	}
 			
 	## Default values for size and prior, if not provided
 	n <- nrow(train)
@@ -898,13 +924,20 @@ print.summary.lvq <- function (x, ...)
 }
 
 predict.mlLvq <- function (object, newdata, type = "class",
-na.action = na.exclude, ...)
+method = c("direct", "cv"), na.action = na.exclude, ...)
 {
 	if (!inherits(object, "mlLvq"))
 		stop("'object' must be a 'mlLvq' object")
 	if (type != "class") stop("Only 'class' currently supported for type")
     
-		## Recalculate newdata according to formula...
+	## If method == "cv", delegate to cvpredict()
+	if (as.character(method)[1] == "cv") {
+		if (!missing(newdata))
+			stop("cannot handle new data with method = 'cv'")
+		return(cvpredict(object = object, type = type, ...))
+	}
+	
+	## Recalculate newdata according to formula...
 	if (missing(newdata)) { # Use train
 		newdata <- attr(object, "train")
 	} else if (attr(object, "optim")) { # Use optimized approach
@@ -965,51 +998,52 @@ mlNaiveBayes.default <- function (train, response, laplace = 0, ...)
 }
 	
 ## NaiveBayes from RWeka package
-mlNaiveBayesWeka <- function (...)
-	UseMethod("mlNaiveBayesWeka")
-
-mlNaiveBayesWeka.formula <- function(formula, data, ..., subset, na.action)
-	mlearning(formula, data = data, method = "mlNaiveBayesWeka", model.args =
-		list(formula  = formula, data = substitute(data),
-		subset = substitute(subset)), call = match.call(),
-		..., subset = subset, na.action = substitute(na.action))
-
-mlNaiveBayesWeka.default <- function (train, response, ...)
-{
-	if (!is.factor(response))
-		stop("only factor response (classification) accepted for mlNaiveBayesWeka")
-
-	.args. <- dots <- list(...)$.args.
-	if (!length(.args.)) .args. <- list(levels = levels(response),
-		n = c(intial = NROW(train), final = NROW(train)),
-		type = "classification", na.action = "na.pass",
-		mlearning.call = match.call(), method = "mlNaiveBayesWeka")
-	
-	wekaArgs <- list(control = .args.$control)
-	
-	## If response is not NULL, add it to train
-	if (length(response)) {
-		formula <- .args.$formula
-		if (!length(formula)) response.label <- "Class" else
-			response.label <- all.vars(formula)[1]
-		data <- data.frame(response, train)
-		names(data) <- c(response.label, colnames(train))
-		wekaArgs$data <- data
-		wekaArgs$formula <- as.formula(paste(response.label, "~ ."))
-	} else { # Unsupervised classification
-		wekaArgs$data <- train
-		wekaArgs$formula <- ~ . 
-	}
-	
-	WekaClassifier <- make_Weka_classifier("weka/classifiers/bayes/NaiveBayes")
-	
-	## Return a mlearning object
-	structure(do.call(WekaClassifier, wekaArgs), formula = .args.$formula,
-		train = train, response = response, levels = .args.$levels, n = .args.$n,
-		args = dots, optim = .args.$optim, numeric.only = FALSE,
-		type = .args.$type, pred.type = c(class = "class", member = "probability"),
-		summary = "summary", na.action = .args.$na.action,
-		mlearning.call = .args.$mlearning.call, method = .args.$method,
-		algorithm = "Weka naive Bayes classifier",
-		class = c("mlNaiveBayesWeka", "mlearning", "Weka_classifier"))
-}
+## TODO: keep this for mlearningWeka package!
+#mlNaiveBayesWeka <- function (...)
+#	UseMethod("mlNaiveBayesWeka")
+#
+#mlNaiveBayesWeka.formula <- function(formula, data, ..., subset, na.action)
+#	mlearning(formula, data = data, method = "mlNaiveBayesWeka", model.args =
+#		list(formula  = formula, data = substitute(data),
+#		subset = substitute(subset)), call = match.call(),
+#		..., subset = subset, na.action = substitute(na.action))
+#
+#mlNaiveBayesWeka.default <- function (train, response, ...)
+#{
+#	if (!is.factor(response))
+#		stop("only factor response (classification) accepted for mlNaiveBayesWeka")
+#
+#	.args. <- dots <- list(...)$.args.
+#	if (!length(.args.)) .args. <- list(levels = levels(response),
+#		n = c(intial = NROW(train), final = NROW(train)),
+#		type = "classification", na.action = "na.pass",
+#		mlearning.call = match.call(), method = "mlNaiveBayesWeka")
+#	
+#	wekaArgs <- list(control = .args.$control)
+#	
+#	## If response is not NULL, add it to train
+#	if (length(response)) {
+#		formula <- .args.$formula
+#		if (!length(formula)) response.label <- "Class" else
+#			response.label <- all.vars(formula)[1]
+#		data <- data.frame(response, train)
+#		names(data) <- c(response.label, colnames(train))
+#		wekaArgs$data <- data
+#		wekaArgs$formula <- as.formula(paste(response.label, "~ ."))
+#	} else { # Unsupervised classification
+#		wekaArgs$data <- train
+#		wekaArgs$formula <- ~ . 
+#	}
+#	
+#	WekaClassifier <- make_Weka_classifier("weka/classifiers/bayes/NaiveBayes")
+#	
+#	## Return a mlearning object
+#	structure(do.call(WekaClassifier, wekaArgs), formula = .args.$formula,
+#		train = train, response = response, levels = .args.$levels, n = .args.$n,
+#		args = dots, optim = .args.$optim, numeric.only = FALSE,
+#		type = .args.$type, pred.type = c(class = "class", member = "probability"),
+#		summary = "summary", na.action = .args.$na.action,
+#		mlearning.call = .args.$mlearning.call, method = .args.$method,
+#		algorithm = "Weka naive Bayes classifier",
+#		class = c("mlNaiveBayesWeka", "mlearning", "Weka_classifier"))
+#}

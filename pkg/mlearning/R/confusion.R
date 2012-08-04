@@ -1,182 +1,302 @@
-## TODO: add the possibility to droplevels() in confusion object!... or in print()/plot()?
 confusion <- function (x, ...)
 	UseMethod("confusion")
 
-.confusion <- function (classes, labels, ...)
+.confusion <- function (classes, labels, weights, ...)
 {
-	if (!length(labels)) {
-		labels <- c("Predicted", "Actual")
-	} else {
-		labels <- as.character(labels)
-		if (length(labels) != 2)
-			stop("You must provide exactly 2 character strings for 'labels'")
-	}
-	## Make sure both variables are correctly named
-	names(classes) <- labels
-	## How many objects by level?
-	NbrPerClass1 <- table(classes[, 1])
-	## How many predicted objects
-	NbrPerClass2 <- table(classes[, 2])
-	## Confusion matrix
-	Conf <- table(classes)
-	## Further stats: total, true positives, accuracy
-	Total <- sum(Conf)
-	TruePos <- sum(diag(Conf))
-	Stats <- c(total = Total, truepos = TruePos,
-		accuracy = TruePos / Total * 100)
-
-	## Change labels to get a more compact presentation
-	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
-	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
-
-	## Additional data as attributes
-	attr(Conf, "stats") <- Stats
-	attr(Conf, "nbr.rows") <- NbrPerClass1
-	attr(Conf, "nbr.cols") <- NbrPerClass2
+	res <- table(classes, dnn = labels)
+	total <- sum(res)
+	truePos <- sum(diag(res))
+	row.freqs <- rowSums(res)	
 	
-	## This is a confusion object
-	class(Conf) <- c("confusion", "table")
-	Conf
+	## Additional data as attributes
+	attr(res, "row.freqs") <- row.freqs
+	attr(res, "col.freqs") <- colSums(res)
+	attr(res, "levels") <- levels(classes[1, ]) # These are *initial* levels!
+	## Final levels may differ if there are empty levels, or NAs!
+	attr(res, "weights") <- row.freqs # Initial weights are row.freqs
+	attr(res, "stats") <- c(total = total, truepos = truePos,
+		error = 1 - (truePos / total))
+	
+	## This is a confusion object, inheriting from table
+	class(res) <- c("confusion", "table")
+	
+	## Do we reweight the confusion matrix?
+	if (!missing(weights)) weights(res) <- weights
+	
+	res
 }
 	
 confusion.default <- function (x, y = NULL, vars = c("Actual", "Predicted"),
-labels = vars, merge.by = "Id", ...)
+labels = vars, merge.by = "Id", weights, ...)
 {	
 	## If the object is already a 'confusion' object, return it
 	if (inherits(x, "confusion")) {
 		if (!missing(y))
-			warning("you cannot provide 'y' when 'x' is already a 'confusion' object")
+			warning("you cannot provide 'y' when 'x' is a 'confusion' object")
+		## Possibly reweight it
+		if (!missing(weights)) weights(x) <- weights		
 		return(x)
 	}
 	
 	## Idem if there is a 'confusion' attribute and no y
 	conf <- attr(x, "confusion")
-	if (!is.null(conf) && missing(y)) return(conf)
-	
-	## Check/convert vars and labels
-	if (!length(vars)) {
-		vars <- c("Class", "Ident")
-	} else {
-		vars <- as.character(vars)
-		if (length(vars) != 2)
-			stop("You must provide exactly 2 strings for 'vars'")
-	}
+	if (!is.null(conf) && missing(y)) {
+		## Possibly reweight it
+		if (!missing(weights)) weights(conf) <- weights
+		return(conf)
+	}	
+
+	## Reworks and check arguments
+	vars <- as.character(vars)
+	if (length(vars) != 2)
+		stop("You must provide exactly 2 strings for 'vars'")
 	merge.by <- as.character(merge.by)
 	
 	## There are three possibilities:
-	## 1) a single data frame => use vars
+	## 1) A single data frame => use vars
 	if (missing(y)) {
 		## Special case of a data frame or list of two factors: keep as it is
 		if (is.list(x) && length(x) == 2 && is.null(vars)) {
 			clCompa <- as.data.frame(x)
-			labels <- names(clCompa)
+			if (missing(labels)) labels <- names(clCompa)
 		} else {
 			x <- as.data.frame(x)
-			## Check that vars exist and levels of two vars do match
+			## Check that vars exist
 			if (is.null(names(x)) || !all(vars %in% names(x)))
 				stop("'vars' are not among column names of 'x'")
-			if (!all(sort(levels(x[[vars[1]]])) == sort(levels(x[[vars[2]]]))))
-				stop("the levels of the two variables in 'x' do not match")
+			## Check that levels of two vars do match
+			lev1 <- levels(x[[vars[1]]])
+			lev2 <- levels(x[[vars[2]]])
+			if (!all(lev1 == lev2)) {
+				## If difference is only in the order of both levels, reorder #2
+				if (!all(sort(lev1) == sort(lev2))) {
+					stop("levels of the two variables in 'x' do not match")
+				} else x[[vars[2]]] <- factor(as.character(x[[vars[2]]]),
+					levels = lev1)
+			}
 			clCompa <- data.frame(class1 = x[[vars[1]]], class2 = x[[vars[2]]])
 		}
 	} else { # y is provided
-		## 2) two vectors of factors to compare (must have same length/same levels)
+		## 2) Two vectors of factors (must have same length/same levels)
 		if (is.factor(x) && is.factor(y)) {
+			## Check length match
 			if (length(x) != length(x))
-				stop("not the same number of items in 'x' and 'y'")
-			if (!all(sort(levels(x))  == sort(levels(y))))
-				stop("'x' and 'y' levels do not match")
+				stop("lengths of 'x' and 'y' are not the same")
+			## Check levels match
+			lev1 <- levels(x)
+			lev2 <- levels(y)
+			if (!all(lev1  == lev2)) {
+				## If difference is only in the order of both levels, reorder #2
+				if (!all(sort(lev1)  == sort(lev1))) {
+					stop("'x' and 'y' levels do not match")
+				} else y <- factor(as.character(y), levels = lev1)
+			}
 			clCompa <- data.frame(class1 = y, class2 = x)
 		} else {
-			## 3) two data frames => merge first, then use vars
-			## Check levels match
-			## Note: if one is a subset of the other,
-			## would it be possible to match them???
+			## 3) Two data frames => merge first, then use vars
+			## Check vars exist
 			if (is.null(names(x)) || !(vars[1] %in% names(x)))
 				stop("first item of 'vars' is not among names of 'x'")
 			if (is.null(names(y)) || !(vars[2] %in% names(y)))
 				stop("second item of 'vars' is not among names of 'y'")
-			if (!all(sort(levels(x[[vars[1]]]))  == sort(levels(y[[vars[2]]]))))
-				stop("levels of the  two variables in 'x' and 'y' do not match")
+			## Check that levels of two vars do match
+			lev1 <- levels(x[[vars[1]]])
+			lev2 <- levels(y[[vars[2]]])
+			if (!all(lev1  == lev2)) {
+				## If difference is only in the order of both levels, reorder #2
+				if (!all(sort(lev1)  == sort(lev2))) {
+					stop("levels of the variables in 'x' and 'y' do not match")
+				} else x[[vars[2]]] <- factor(as.character(x[[vars[2]]]),
+					levels = lev1)
+			}
 			## Merge data according to merge.by
-			clCompa <- merge(y[, c(vars[2], merge.by)], x[, c(vars[1], merge.by)],
-				by = merge.by)
-			clCompa <- clCompa[, c(ncol(clCompa) - 1, ncol(clCompa))]
+			clCompa <- merge(y[, c(vars[2], merge.by)],
+				x[, c(vars[1], merge.by)], by = merge.by)
+			nc <- ncol(clCompa)
+			clCompa <- clCompa[, c(nc - 1, nc)]
 			## Are there common objects left?
-			if (nrow(clCompa) == 0)
-				stop("no common objects between 'x' and 'y'")
+			if (!nrow(clCompa)) stop("no common objects between 'x' and 'y'")
 		}
 	}
 	
-	.confusion(clCompa, labels, ...)
+	## Construct the confusion object
+	if (missing(weights)) {
+		.confusion(classes = clCompa, labels = labels, ...)
+	} else {
+		.confusion(classes = clCompa, labels = labels, weights = weights, ...)
+	}
 }
 
 confusion.mlearning <- function (x, y = response(x),
-labels = c("Actual", "Predicted"), ...)
-	.confusion(data.frame(class1 = y, class2 = predict(x, ...)),
-		labels = labels, ...)
+labels = c("Actual", "Predicted"), weights, ...) {
+	## Check labels
+	labels <- as.character(labels)
+	if (length(labels) != 2)
+		stop("You must provide exactly 2 character strings for 'labels'")
+	
+	## Extract class2 by using predict on the mlearning object
+	class2 <- predict(x, ...)
+	
+	## Check that both variables are of same length and same levels
+	if (length(y) != length(class2))
+		stop("lengths of 'x' and 'y' are not the same")
+	lev1 <- levels(y)
+	lev2 <- levels(class2)
+	if (!all(lev1  == lev2)) {
+		## If difference is only in the order of both levels, reorder #2
+		if (!all(sort(lev1)  == sort(lev2))) {
+			stop("levels of 'x' and 'y' do not match")
+		} else class2 <- factor(as.character(class2), levels = lev1)
+	}
+	
+	## Construct the confusion object
+	if (missing(weights)) {
+		.confusion(data.frame(class1 = y, class2 = class2),
+			labels = labels, ...)
+	} else {
+		.confusion(data.frame(class1 = y, class2 = class2),
+			labels = labels, weights = weights, ...)
+	}
+}
 
-print.confusion <- function (x, error.col = TRUE, ...)
+weights.confusion <- function (object, ...)
+	attr(object, "weights")
+
+`weights<-`<- function (object, ..., value)
+	UseMethod("weights<-")
+
+`weights<-.confusion`<- function (object, ..., value)
+{
+	if (!length(value)) { # value is NULL or of zero length
+		## Reset weights to original frequencies
+		value <- attr(object, "row.freqs")
+		attr(object, "weights") <- value
+		round(object / apply(object, 1, sum) * value)
+	
+	} else if (is.numeric(value)) { # value is numeric
+		
+		if (length(value) == 1) { # value is a single number
+			if (is.na(value) || !is.finite(value) || value <= 0)
+				stop("value must be a finite positive number")
+			res <- object / apply(object, 1, sum) * as.numeric(value)
+		
+		} else { # value is a vector of numerics
+			## It must be either of the same length as nrow(object) or of
+			## levels(objects)
+			l <- length(value)
+			n <- names(value)
+			l2 <- levels(object)
+			
+			if (l == nrow(object)) {
+				## If the vector is named, check names and possibly reorder it
+				if (length(n))
+					if (all(n %in% rownames(object))) {
+						value <- value[rownames(object)]
+					} else stop("Names of the values do not match levels in the confusion matrix")
+			
+			} else if (l == length(l2)) {
+				## Assume names as levels(object), if they are not provides
+				if (!length(n)) names(value) <- n <- l2
+				
+				## If the vector is named, check names match levels
+				if (length(n))
+					if (all(n %in% l2)) {
+						## Extract levels used in the confusion matrix
+						value <- value[rownames(object)]
+					} else stop("Names of the values do not match levels in the confusion matrix")
+
+			} else stop("length of 'value' do not match the number of levels in the confusion matrix")	
+			
+			res <- object / apply(object, 1, sum) * as.numeric(value)
+		}
+		attr(res, "weights") <- rowSums(res)
+		res
+		
+	} else stop("value must be a numeric vector, a single number or NULL")
+}
+
+print.confusion <- function (x, sums = TRUE, error.col = sums, digits = 0,
+sort = "ward", ...)
 {
 	## General stats on the confusion matrix
 	Stats <- attr(x, "stats")
+	Error <- round(Stats["error"] * 100, 1)
 	cat(Stats["total"], " items classified with ", Stats["truepos"],
-		" true positives (", round(Stats["accuracy"], 1), "% accuracy)\n",
+		" true positives (error rate = ", Error, "%)\n",
 		sep = "")
+	row.freqs <- attr(x, "row.freqs")
+	if (!all(attr(x, "weights") == row.freqs)) {
+		cat("with initial row weights (frequencies):\n")
+		print(row.freqs)
+		cat("Reweighted to:\n")
+	}
 	
 	## Print the confusion matrix itself
 	X <- x
 	class(X) <- "table"
+
+    n <- ncol(X)
+
+	## Do we sort items?
+	if (length(sort) && !is.na(sort) && sort != FALSE && sort != "") {
+		## Grouping of items
+		confuSim <- X + t(X)
+		confuSim <- 1 - (confuSim / sum(confuSim) * 2)
+		confuDist <- structure(confuSim[lower.tri(confuSim)], Size = n,
+			Diag = FALSE, Upper = FALSE, method = "confusion", call = "",
+			class = "dist")
+		order <- hclust(confuDist, method = sort)$order
+		X <- X[order, order]
+	}
+	
+	## Change row and column names to a more compact representation
+	nbrs <- formatC(1:ncol(X), digits = 1, flag = "0")
+	colnames(X) <- nbrs
+	rownames(X) <- paste(nbrs, rownames(X))
+	
+	## Add sums?
+	if (isTRUE(as.logical(sums))) {
+		## Calculate error (%)
+		ErrorTot <- (1 - (sum(diag(x)) / sum(x))) * 100
+		Errors <- as.integer(round(c((1 - diag(X) / apply(X, 1, sum)) * 100,
+			ErrorTot), 0))
+		## ... and add row and column sums
+		X <- addmargins(X, FUN = list(`(sum)` = sum), quiet = TRUE)
+	} else Errors <- as.integer(round((1 - diag(X) / apply(X, 1, sum)) * 100, 0))
+	
+	## Add class errors?
 	if (isTRUE(as.logical(error.col))) {
-		print(cbind(X, `Error (FNR)` = round((1 - diag(X) / apply(X, 1, sum)), 3)))
-	} else print(X)
+		X <- as.table(cbind(X, `(FNR%)` = Errors))
+		dn <- dimnames(X)
+		names(dn) <- names(dimnames(x))
+		dimnames(X) <- dn
+	}
+	print(round(X, digits))
 	
 	## Return the original object invisibly
 	invisible(x)
 }
 
+## TODO: a precision-recall diagram for all groups with F1-score lines
 plot.confusion <- function (x, y = NULL,
 type = c("image", "barplot", "stars", "dendrogram"), stat1 = "Recall",
-stat2 = "Precision", ...)
+stat2 = "Precision", names, ...)
 {
 	if (is.null(y)) type <- match.arg(type)[1] else type <- "stars"
+	if (missing(names)) names <- c(substitute(x), substitute(y))
 	res <- switch(type,
-		image = .confusionImage(x, y, ...),
-		barplot = .confusionBar(x, y, ...),
-		stars = .confusionStars(x, y, stat1 = stat1, stat2 = stat2, ...),
-		dendrogram = .confusionDendro(x, y, ...),
+		image = confusionImage(x, y, ...),
+		barplot = confusionBarplot(x, y, ...),
+		stars = confusionStars(x, y, stat1 = stat1, stat2 = stat2, names, ...),
+		dendrogram = confusionDendrogram(x, y, ...),
 		stop("'type' must be 'image', 'barplot', 'stars' or 'dendrogram'"))
 	invisible(res)
 }
 
-## These functions do the respective graphs for confusion objects
-## Old (simpler) version
-#.confusionImage <- function (x, y = NULL, col = heat.colors(10),
-#mar = c(5.1, 12.1, 4.1, 2.1), ...)
-#{
-#	if (!inherits(x, "confusion"))
-#		stop("'x' must be a 'confusion' object")
-
-#	if (!is.null(y))
-#		stop("cannot use a second classifier 'y' for this plot")
-#	omar  <- par("mar")
-#	on.exit(par(omar))
-#    par(mar = mar)
-#	n <- ncol(x)
-#	image(1:n, 1:n, 1 / (t(x[n:1, 1:n])), col = col, xlab = "", ylab = "",
-#		xaxt = "n", yaxt = "n", ...)
-#    axis(1, at = 1:n, las = 2)
-#    axis(2, at = n:1, labels = paste(names(attr(x, "nbr.cols")), 1:n),
-#		las = 1)
-#    abline(h = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
-#    abline(v = (1:(n + 1)) - 0.5, lty = 2, col = "gray")
-#	invisible(x)
-#}
-
 ## Representation of the confusion matrix
-.confusionImage <- function (x, y = NULL, mar = c(3.1, 10.1, 3.1, 3.1), asp = 1, 
-label = "Actual \\ Predicted", sort = "complete", cex = 1, colfun = NULL,
-ncols = 41, col0 = FALSE, grid.col = "gray", ...)
+confusionImage <- function (x, y = NULL, labels = names(dimnames(x)),
+sort = "ward", numbers = TRUE, digits = 0, mar = c(3.1, 10.1, 3.1, 3.1),
+cex = 1, asp = 1, colfun, ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 {
 	if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
@@ -184,100 +304,95 @@ ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 	if (!is.null(y))
 		stop("cannot use a second classifier 'y' for this plot")
 	
+	## Default labels in case none provided
+	if (is.null(labels)) labels <- c("Actual", "Predicted")
+	
 	## Default color function
-	if (!length(colfun)) colfun <- function (n, alpha = 1, s = 0.9, v = 0.9) {
+	## (greens for correct values, reds for errors, white for zero)
+	if (missing(colfun)) colfun <- function (n, alpha = 1, s = 0.9, v = 0.9) {
 		if ((n <- as.integer(n[1L])) <= 0) return(character(0L))
-		## Define the initial (red) and final (blue) colors with white in between
+		## Initial (red) and final (green) colors with white in between
 		cols <- c(hsv(h = 0, s = s, v = v, alpha = alpha),   # Red
 				  hsv(h = 0, s = 0, v = v, alpha = alpha),   # White
-				  hsv(h = 2/3, s = s, v = v, alpha = alpha)) # Blue
-		## Use a color ramp from red to white to blue
+				  hsv(h = 2/6, s = s, v = v, alpha = alpha)) # Green
+		## Use a color ramp from red to white to green
 		return(colorRampPalette(cols)(n))
 	}
 	
-    manuLev <- sub("...", "", rownames(x))
-    autoLev <- manuLev
     n <- ncol(x)
 
 	## Do we sort items?
 	if (length(sort) && !is.na(sort) && sort != FALSE && sort != "") {
 		## Grouping of items
 		confuSim <- x + t(x)
-		confuSim <- max(confuSim) - confuSim
+		confuSim <- 1 - (confuSim / sum(confuSim) * 2)
 		confuDist <- structure(confuSim[lower.tri(confuSim)], Size = n,
 			Diag = FALSE, Upper = FALSE, method = "confusion", call = "",
 			class = "dist")
 		order <- hclust(confuDist, method = sort)$order
 		x <- x[order, order]
-		autoLev <- autoLev[order]
-		manuLev <- manuLev[order]
 	}
-	## Recode levels so that a number is used in front of manu labels
-	## and shown in auto
-	autoLev <- formatC(1:length(autoLev), width = 2, flag = "0")
-	manuLev <- paste(manuLev, autoLev, sep = "-")
-	row.names(x) <- manuLev
-	colnames(x) <- autoLev
-	## Calculate colors (use a transfo to get 0, 1, 2, 3, 4, 7, 10, 15, 25+)
+	
+	## Recode row and column names for more compact display
+	colnames(x) <- names2 <- formatC(1:n, digits = 1, flag = "0")
+	rownames(x) <- names1 <- paste(names2, rownames(x))
+	
+	## Transform for better colorization
+	## (use a transfo to get 0, 1, 2, 3, 4, 7, 10, 15, 25+)
 	confuCol <- x
 	confuCol <- log(confuCol + .5) * 2.33
 	confuCol[confuCol < 0] <- if (isTRUE(as.logical(col0))) 0 else NA
 	confuCol[confuCol > 10] <- 10
-	## Negative values (in blue) on the diagonal (correct IDs)
+	
+	## Negative values (in green) on the diagonal (correct IDs)
 	diag(confuCol) <- -diag(confuCol)	
+	
 	## Make an image of this matrix
 	opar <- par(no.readonly = TRUE)
 	on.exit(par(opar))
 	par(mar = mar, cex = cex)
 	image(1:n, 1:n, -t(confuCol[nrow(confuCol):1, ]), zlim = c(-10, 10),
 		asp = asp, bty = "n", col = colfun(ncols), xaxt = "n", yaxt = "n",
-		xlab = "", ylab = "", main = "", ...)
-	## Print the actual numbers
-	confuTxt <- as.character(x[n:1, ])
-	confuTxt[confuTxt == "0"] <- ""
-	text(rep(1:n, each = n), 1:n, labels = confuTxt)
-	## The grid
-	abline(h = 0:n + 0.5, col = grid.col)
-	abline(v = 0:n + 0.5, col = grid.col)
-	## The axis labels
-	axis(1, 1:n, labels = autoLev, tick =  FALSE, padj = 0)
-	axis(2, 1:n, labels = manuLev[n:1], tick =  FALSE, las = 1, hadj = 1)
-	axis(3, 1:n, labels = autoLev, tick =  FALSE) #, cex.lab = cex)
-	axis(4, 1:n, labels = autoLev[n:1], tick =  FALSE, las = 1, hadj = 0)
-	## Legend at top-left
-	mar[2] <- 1.1
-	par (mar = mar, new = TRUE)
-	plot(0, 0, type = "n", xaxt = "n", yaxt = "n", bty = "n")
-	mtext(label, adj = 0, line = 1, cex = cex)
+		xlab = "", ylab = "", ...)
+	
+	## Indicate the actual numbers
+	if (isTRUE(as.logical(numbers))) {
+		confuTxt <- as.character(round(x[n:1, ], digits = digits))
+		confuTxt[confuTxt == "0"] <- ""
+		text(rep(1:n, each = n), 1:n, labels = confuTxt)
+	}
+	
+	## Add the grid
+	if (length(grid.col)) {
+		abline(h = 0:n + 0.5, col = grid.col)
+		abline(v = 0:n + 0.5, col = grid.col)
+	}
+	
+	## Add the axis labels
+	axis(1, 1:n, labels = names2, tick =  FALSE, padj = 0)
+	axis(2, 1:n, labels = names1[n:1], tick =  FALSE, las = 1, hadj = 1)
+	axis(3, 1:n, labels = names2, tick =  FALSE)
+	axis(4, 1:n, labels = names2[n:1], tick =  FALSE, las = 1, hadj = 0)
+	
+	## Add labels at top-left
+	if (length(labels)) {
+		if (length(labels) != 2) stop("You must provide two labels")
+		mar[2] <- 1.1
+		par (mar = mar, new = TRUE)
+		plot(0, 0, type = "n", xaxt = "n", yaxt = "n", bty = "n")
+		mtext(paste(labels, collapse = " // "), adj = 0, line = 1, cex = cex)
+	}
+	
 	## Return the confusion matrix, as displayed, in text format
 	invisible(x)
 }
 
-## Eliminated to avoid dependency on RColorBrewer and gplots!
-#.confusionTree <- function (x, y = NULL, maxval = 10, margins = c(2, 10),
-#row.v = TRUE, col.v = TRUE, ...)
-#{
-#	if (!inherits(x, "confusion"))
-#		stop("'x' must be a 'confusion' object")
-#	if (!is.null(y))
-#		stop("cannot use a second classifier 'y' for this plot")
-#
-#	nX <- nrow(x)
-#	nY <- ncol(x)
-#	nZ <- nX * nY
-#	confmat <- pmin(x, maxval)
-#	mypalette <- brewer.pal(maxval - 1, "Spectral")
-#	heatmap.2(x, col= c(0, mypalette), symm = TRUE, margins = margins,
-#		trace = "both", Rowv = row.v, Colv = col.v, cexRow = 0.2 + 1 / log10(nX),
-#		cexCol = 0.2 + 1 / log10(nY), tracecol = "Black", linecol = FALSE, ...)
-#}
-
-# Confusion bar with recall and precision in green bar and not outside as before
-# function modified for publication hclust 
-.confusionBar <- function (x, y = NULL,
+## Confusion barplot with recall and precision in green bars
+## TODO: various bar rescaling possibilities!!!
+confusionBarplot <- function (x, y = NULL,
 col = c("PeachPuff2", "green3", "lemonChiffon2"), mar = c(1.1, 8.1, 4.1, 2.1),
-cex = 0.7, cex.axis = cex, cex.legend = cex, main = "Precision versus Recall",
-min.width = 17, ...)
+cex = 1, cex.axis = cex, cex.legend = cex,
+main = "F-score (precision versus recall)", numbers = TRUE, min.width = 17, ...)
 {
     if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
@@ -285,143 +400,89 @@ min.width = 17, ...)
 	if (!is.null(y))
 		stop("cannot use a second classifier 'y' for this plot")
 	
-    TP <- diag(x)
-    fn <- rowSums(x) - TP
-    fp <- colSums(x) - TP
-    FN <- fn <- fn/(fn + TP)
-    FP <- fp <- fp/(TP + fp)
-    FP[is.na(FP)] <- 1
-    tp <- 1 - fn
-    fp <- tp/(1 - fp) * fp
-    scale <- fn + tp + fp
-    fn <- fn/scale * 100
-    tp <- tp/scale * 100
-    fp <- fp/scale * 100
-    fn[is.na(tp)] <- 50
+	## F-score is 2 * recall * precision / (recall + precision), ... but also
+	## F-score = TP / (TP + FP/2 + FN/2). We represent this in a barplot
+	TP <- tp <- diag(x)
+	FP <- fp <- colSums(x) - tp
+	FN <- fn <- rowSums(x) - tp
+	## In case we have missing data...
+	fn[is.na(tp)] <- 50
     fp[is.na(tp)] <- 50
     tp[is.na(tp)] <- 0
-    res <- matrix(c(fp, tp, fn), ncol = 3)
-    colnames(res) <- c("fp", "tp", "fn")
-    Labels <- names(attr(x, "nbr.cols"))
-    pos <- order(res[, 2], decreasing = TRUE)
+
+	## We scale these values, so that the sum fp/2 + tp + fn/2 makes 100
+	scale <- fp/2 + tp + fn/2
+    res <- matrix(c(fp/2 / scale * 100, tp / scale * 100, fn/2 / scale * 100),
+		ncol = 3)
+    colnames(res) <- c("FPcontrib", "Fscore", "FNcontrib") # In %
+    Labels <- names(attr(x, "col.freqs"))
+    
+	## The graph is ordered in decreasing F-score values
+	pos <- order(res[, 2], decreasing = TRUE)
     res <- res[pos, ]
     FN <- FN[pos]
     FP <- FP[pos]
     TP <- TP[pos]
     Labels <- Labels[pos]
-    L <- length(FN)
-    omar <- par("mar")
+    l <- length(FN)
+    
+	## Plot the graph
+	omar <- par("mar")
     on.exit(par(omar))
     par(mar = mar)
-	## Plot the graph
-    barplot(t(res), horiz = TRUE, col = col, xaxt = "n", las = 1, space = 0, ...)
-    lines(c(50, 50), c(0, L), lwd = 1)
-    xpos <- res[, 1] + res[, 2]/2
-    text(xpos, 1:L - 0.5, round(TP), adj = c(0.5, 0.5), cex = cex)
-    # Add recall and precision if enough place to print it...
-    NotPlace <- res[,"tp"] <= min.width
-    if (any(NotPlace)) {
-		## Special case if not enough place to print precision and recall
-		## Add Precision
-		PrecTxt <- paste(round((1 - FP) * 100), "%", sep = "")
-		PrecTxt[NotPlace] <- ""
-		text(res[,"fp"] + 1, 1:L - 0.5, PrecTxt, adj = c(0, 0.5), cex = cex)
-		## Add FDR
-		FDTxt <- paste(round((FP) * 100), "%", sep = "")
-		FDTxt[!NotPlace] <- ""
-		text(rep(1, length(FP)), 1:L - 0.5, FDTxt, adj = c(0, 0.5), cex = cex)
-		## Add Recall
-		RecTxt <- paste(round((1 - FN) * 100), "%", sep = "")
-		RecTxt[NotPlace] <- ""
-		text(res[,"fp"] + res[, "tp"] - 5, 1:L - 0.5, RecTxt, adj = c(0, 0.5),
-			cex = cex)
-		## Add FN
-		FNTxt <- paste(round((FN) * 100), "%", sep = "")
-		FNTxt[!NotPlace] <- ""
-		text(rep(99, length(FN)), 1:L - 0.5, FNTxt, adj = c(1, 0.5), cex = cex)
-    } else {
-		## Add Precision
-		text(res[,"fp"] + 1, 1:L - 0.5, paste(round((1 - FP) *
-			100), "%", sep = ""), adj = c(0, 0.5), cex = cex)
-		## Add Recall
-		text(res[,"fp"] + res[, "tp"] - 5, 1:L - 0.5, paste(round((1 - FN) *
-			100), "%", sep = ""), adj = c(0, 0.5), cex = cex)
-    }
-    legend(50, L * 1.05, legend = c("False Discovery : (1 - Prec.)",
-		"True Positive (TP)", "False Negative : (1 - Rec.)"), cex = cex.legend,
-		xjust = 0.5, yjust = 1, fill = col, bty = "n", horiz = TRUE)
-    axis(2, 1:L - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
-		labels = Labels)
-    title(main = main)
-    text(50, -0.5, "< higher precision : TP/(TP+FP) - underestimate <=> overestimate - higher recall : TP/(TP+FN) >  ",
-        cex = cex)
+    ## The barplot
+	barplot(t(res), horiz = TRUE, col = col, xaxt = "n", las = 1, space = 0,
+		main = main, ...)
+    ## The line that shows where symmetry is
+	lines(c(50, 50), c(0, l), lwd = 1)
+    
+	## Do we add figures into the plot?
+	if (isTRUE(as.logical(numbers))) {
+		## F-score is written in the middle of the central bar
+		xpos <- res[, 1] + res[, 2] / 2
+		text(xpos, 1:l - 0.5, paste("(", round(res[, 2]), "%)", sep = ""),
+			adj = c(0.5, 0.5), cex = cex)
+		
+		## Add the number of FP and FN to the left and right, respectively
+		text(rep(1, l), 1:l - 0.5, round(FP), adj = c(0, 0.5), cex = cex)
+		text(rep(99, l), 1:l - 0.5, round(FN), adj = c(1, 0.5), cex = cex)
+	}
+
+    ## Add a legend (if cex.legend is not NULL)
+	if (length(cex.legend)) {
+		legend(50, l * 1.05, legend = c("False Positives",
+			"2*TP (F-score %)", "False Negatives"), cex = cex.legend, xjust = 0.5, yjust = 1,
+			fill = col, bty = "n", horiz = TRUE)
+	}
+    
+	## Add axes if cex.axis is not NULL
+	if (length(cex.axis))
+		axis(2, 1:l - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
+			labels = Labels)
+    
     invisible(res)
 }
 
-## Precision vs Recall, alternate presentation
-## Note used, but saved for now
-#.confusionBar <- function (x, y = NULL,
-#col = c("PeachPuff2", "green",  "green3", "lemonChiffon2"),
-#mar = c(2.1, 8.1, 4.1, 2.1), cex = 0.7, cex.axis = cex, cex.legend = cex,
-#main = "Precision versus Recall", ...)
-#{
-#	if (!inherits(x, "confusion"))
-#		stop("'x' must be a 'confusion' object")
-#	if (!is.null(y))
-#		stop("cannot use a second classifier 'y' for this plot")
-#
-#	## Calculation of statistics
-#	Stats <- summary(x)
-#	FDR <- Stats$FDR * 100
-#	Precision <- Stats$Precision * 100
-#	Recall <- Stats$Recall * 100
-#	FNR <- Stats$FNR * 100
-#	## Order statistics according to Precision + recall
-#	pos <- order(Recall + Precision, decreasing = TRUE)
-#	## Results to plot
-#	res <- cbind(FDR, Precision, Recall, FNR)
-#	## Do the plot
-#	omar <- par("mar")
-#	on.exit(par(omar))
-#	par(mar = mar)
-#	barplot(t(res[pos, ]), horiz = TRUE, col = col, xaxt = "n", las = 1,
-#		space = 0, ...)
-#	## Add information
-#	n <- nrow(Stats)
-#	Labels <- names(attr(x, "nbr.cols"))
-#	axis(2, 1:n - 0.5, tick = FALSE, las = 1, cex.axis = cex.axis,
-#		labels = Labels[pos])
-#	title(main = main)
-#	text(rep(1, n), 1:n - 0.5, paste(round(FDR[pos]), "%", sep = ""),
-#		adj = c(0, 0.5), cex = cex)
-#	text(FDR[pos] + Precision[pos]/2, 1:n - 0.5, paste(round(Precision[pos]),
-#		"%", sep = ""), adj = c(0, 0.5), cex = cex)
-#	text(FDR[pos] + Precision[pos] + Recall[pos]/2, 1:n - 0.5,
-#		paste(round(Recall[pos]), "%", sep = ""), adj = c(0, 0.5), cex = cex)
-#	text(rep(191, n), 1:n - 0.5, paste(round(FNR[pos]), "%", sep = ""),
-#		adj = c(0, 0.5), cex = cex)
-#	legend("top", legend = c("False Discovery ", "Precision", "Recall",
-#		"False Negative"), cex = cex.legend, fill = col, bty = "n", horiz = TRUE)
-#	text(96, -0.5, "< higher precision - underestimate <=> overestimate - higher recall >  ",
-#		cex = cex)
-#	invisible(res)
-#}
-
-.confusionStars <- function(x, y = NULL, stat1 = "Recall", stat2 = "Precision",
-main = NULL, col = NULL, ...)
+## TODO: check the box around the legend
+confusionStars <- function(x, y = NULL, stat1 = "Recall", stat2 = "Precision",
+names, main, col = c("green2", "blue2", "green4", "blue4"), ...)
 {
-    if (!inherits(x, "confusion"))
+    ## Check objects
+	if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
     if (!is.null(y) && !inherits(x, "confusion"))
         stop("'y' must be NULL or a 'confusion' object")
 	
+	## Check stats
 	SupportedStats <- c("Recall", "Precision", "Specificity",
         "NPV", "FPR", "FNR", "FDR", "FOR")
     if (!stat1 %in% SupportedStats)
-        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+        stop("stats1 must be one of Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
     if (!stat2 %in% SupportedStats)
-        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-    Blue <- topo.colors(16)
+        stop("stats2 must be one of Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
+	
+	## Choose colors TODO: add a colors argument!
+	Blue <- topo.colors(16)
     Green <- terrain.colors(16)
     Stat <- summary(x)
     if (!is.null(y)) { # Comparison of two confusion matrices
@@ -430,32 +491,45 @@ main = NULL, col = NULL, ...)
 			Stat2[, stat2])
 		Data <- rbind(Data, rep(0, 4))
 		colnames(Data) <- paste(rep(c(stat1, stat2), each = 2), c(2, 1, 1, 2))
-		if (!length(main))
-			main <- paste("Groups comparison between classifier 1 and 2\nAccuracy 1 =",
-				round(attr(Stat, "Accuracy") * 100), "%, accuracy 2 =",
-				round(attr(Stat2, "Accuracy") * 100), "%")
-		if (!length(col))
-			col <- c("green", Green[1], Blue[2], Blue[6])
+		if (missing(main)) { # Calculate a suitable title
+			if (missing(names)) {
+				names <- c(substitute(x), substitute(y))
+			} else if (length(names) != 2)
+				stop("you must provide two nmaes for the two compared classifiers")
+			names <- as.character(names)
+			main <- paste("Groups comparison (1 =", names[1], ", 2 =",
+			names[2], ")")
+		}
+		if (length(col) >= 4) {
+			col <- col[c(3, 1, 2, 4)]
+		} else stop("you must provide four colors for the two statistics and the two classifiers")
 	} else { # Single confusion matrix
 		Data <- data.frame(Stat[, stat1], Stat[, stat2])
 		Data <- rbind(Data, rep(0, 2))
 		colnames(Data) <- c(stat1, stat2)
-		if (!length(main))
-			main <- paste("Groups comparison\nAccuracy =",
-				round(attr(Stat, "Accuracy") * 100), "%")
-		if (!length(col))
-			col <- c(Green[1], Blue[2])
+		if (missing(main))
+			main <- paste("Groups comparison")
+		if (length(col) >= 2) {
+			col <- col[1:2]
+		} else stop("you must provide two colors for the two statistics")
 	}
     rownames(Data) <- c(rownames(Stat), " ")
-    
+	## Note: last one is empty box for legend
+	
+	## Save graph parameters and restore on exit
+	opar <- par(no.readonly = TRUE)
+	on.exit(par(opar))
+	
 	## Calculate key location
-		kl <- stars(Data, draw.segments = TRUE, scale = FALSE, # key.loc = c(13, 1.5),
-			len = 0.8, main =  main, col.segments = col, plot = FALSE, ...)
-		kcoords <- c(max(kl[, 1]), min(kl[, 2]))
-		kspan <- apply(kl, 2, min) / 1.95
+	kl <- stars(Data, draw.segments = TRUE, scale = FALSE,
+		len = 0.8, main = main, col.segments = col, plot = FALSE, ...)
+	kcoords <- c(max(kl[, 1]), min(kl[, 2]))
+	kspan <- apply(kl, 2, min) / 1.95
+	
 	## Draw the plot	
 	res <- stars(Data, draw.segments = TRUE, scale = FALSE, key.loc = kcoords,
-		len = 0.8, main =  main, col.segments = col, ...)
+		len = 0.8, main = main, col.segments = col, ...)
+	
 	## Draw a rectangle around key to differentiate it from the rest
 	rect(kcoords[1] - kspan[1], kcoords[2] - kspan[2], kcoords[1] + kspan[1],
 		kcoords[2] + kspan[2])
@@ -464,35 +538,44 @@ main = NULL, col = NULL, ...)
 }
 
 ## Representation of the confusion matrix as a dendrogram
-.confusionDendro <- function (x, y = NULL, method = "ward")
+confusionDendrogram <- function (x, y = NULL, labels = rownames(x),
+sort = "ward", main = "Groups clustering", ...)
 {
-    if (!inherits(x, "confusion"))
+    ## Check objects
+	if (!inherits(x, "confusion"))
         stop("'x' must be a 'confusion' object")
 	if (!is.null(y))
 		stop("cannot use a second classifier 'y' for this plot")	
 	
-    ## Transform the confusion matrix into a symmetric matrix by adding its
-	## transposed matrix
+    ## Transform the confusion matrix into a symmetric matrix
     ConfuSim <- x + t(x)
-    ConfuSim <- max(ConfuSim) - ConfuSim
-    ## Create the structure of a "dist" object
+    ConfuSim <- 1 - (ConfuSim / sum(ConfuSim) * 2)
+	
+	
+	## Create the structure of a "dist" object
     ConfuDist <- structure(ConfuSim[lower.tri(ConfuSim)], Size = nrow(x),
         Diag = FALSE, Upper = FALSE, method = "confusion", call = "",
         class = "dist")
-    ## method :"ward", "single", "complete", "average", "mcquitty",
+    
+	## method :"ward", "single", "complete", "average", "mcquitty",
 	## "median" or "centroid"
-    HC <- hclust(ConfuDist, method = method)
-    plot(HC, labels = rownames(x))
-    invisible(HC)
+    HC <- hclust(ConfuDist, method = as.character(sort)[1])
+    plot(HC, labels = labels, main = main, ...)
+    
+	invisible(HC)
 }
 
 ## Table with stats per groupe precision, recall, etc
-summary.confusion <- function(object, sort.by = NULL, decreasing = FALSE,
-na.rm = FALSE, ...)
+summary.confusion <- function(object, type = "all", sort.by = "Fscore",
+decreasing = TRUE, ...)
 {
-    ## General parameters
+    ## Check objects
+	if (!inherits(object, "confusion"))
+        stop("'object' must be a 'confusion' object")
+	
+	## General parameters
     ## Number of groups
-    Ngp <- ncol(object)
+    Ngp <- nrow(object)
     
     ## Total : TP + TN + FP + FN
     Tot <- sum(object)
@@ -517,14 +600,7 @@ na.rm = FALSE, ...)
 
     ## TN : True Negative = Total - TP - FP - FN
     TN <- rep(Tot, Ngp) - TP - FP - FN
-    
-    ## General statistics
-    ## Accuracy = (TP + TN) / (TP + TN + FP + FN)
-    Accuracy <- TP_TN / Tot
-    
-    ## Error = 1 - Accuracy
-    Error <- 1 - Accuracy
-    
+
     ## The 8 basic ratios
     ## Recall = TP / (TP + FN) = 1 - FNR
     Recall <- TP / (TP_FN)
@@ -567,9 +643,13 @@ na.rm = FALSE, ...)
 	## (1 - FOR)
     LRNS <- FDR / (NPV)
     
-    ## Additional statistics
-    ## F-measure = F1 score = Harmonic mean of Precision and recall
-    Fmeasure <- 2 * ((Precision * Recall) / (Precision + Recall))
+	## Additional statistics
+    ## F-score = F-measure = F1 score = Harmonic mean of Precision and recall
+    Fscore <- 2 * ((Precision * Recall) / (Precision + Recall))
+	## F-score is also TP/(TP + (FP + FN) / 2). As such, if TP is null but
+	## at least one of FP or FN is not null, F-score = 0. In this case,
+	## as both Recall and Precision equal zero, we got NaN => do the correction!
+	Fscore[is.nan(Fscore)] <- 0
     
     ## Balanced accuracy = (Sensitivity + Specificity) / 2
     BalAcc <- (Recall + Specificity) / 2
@@ -588,230 +668,81 @@ na.rm = FALSE, ...)
     Chisq <- (((TP * TN) - (FP * FN))^2 * (TP + TN + FP + FN)) /
 		((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
 
-    ## Automatic classification - Manual calssification
+    ## Automatic classification - Manual classification
     Auto_Manu <- TP_FP - TP_FN
     
     ## Bray-Curtis dissimilarity index
-    Dissimilarity <- abs(Auto_Manu) / (sum(TP_FP) + sum(TP_FN))
+    Bray <- abs(Auto_Manu) / (sum(TP_FP) + sum(TP_FN))
+	
+	## General statistics
+    ## Error = 1 - Accuracy = 1 - ((TP + TN) / (TP + TN + FP + FN))
+    Error <- 1 - (TP_TN / Tot)
+	## Micro and macro-averaged F-score
+	meanRecall <- sum(Recall, na.rm = TRUE) / Ngp
+	meanPrecision <- sum(Precision, na.rm = TRUE) / Ngp
+	Fmicro <- 2 * meanRecall * meanPrecision / (meanRecall + meanPrecision)
+	Fmacro <- sum(Fscore, na.rm = TRUE) / Ngp
     
     res <- data.frame(
-	   Auto = TP_FP, Manu = TP_FN, Auto_Manu = Auto_Manu,
-	   Dissimilarity = Dissimilarity, TP = TP, FP = FP, FN = FN, TN = TN,
-	   Recall = Recall, Precision = Precision,	Specificity = Specificity,
-	   NPV = NPV, FPR = FPR, FNR = FNR, FDR = FDR, FOR = FOR, LRPT = LRPT,
-	   LRNT = LRNT, LRPS = LRPS, LRNS = LRNS, Fmeasure = Fmeasure,
-	   BalAcc = BalAcc, MCC = MCC, Chisq = Chisq)
+	   Fscore = Fscore, Recall = Recall, Precision = Precision,
+	   Specificity = Specificity, NPV = NPV, FPR = FPR, FNR = FNR, FDR = FDR,
+	   FOR = FOR, LRPT = LRPT, LRNT = LRNT, LRPS = LRPS, LRNS = LRNS, 
+	   BalAcc = BalAcc, MCC = MCC, Chisq = Chisq, Bray = Bray, Auto = TP_FP,
+	   Manu = TP_FN, A_M = Auto_Manu, TP = TP, FP = FP, FN = FN, TN = TN)
 
-    rownames(res) <- rownames(object)
-    ## Sort the table in function of one parameter... by default FN
-    if (!is.null(sort.by))
-	   res <- res[order(res[, sort.by], decreasing = decreasing), ]
-    attr(res, "Accuracy") <- Accuracy
-    attr(res, "Error") <- Error
+    rownames(res) <- lev <- rownames(object)
     
-    ## Kevin, je comprend rien a tout ce code. Tu as deja injecte les resultats
-	## dans res. Donc, tout ce que tu fais ci-dessous n'est PAS repercute dans
-	## le resultat final renvoye par la fonction!!!
-	## Remove NaN if any 0/0
-    if (isTRUE(as.logical(na.rm))) {
-    	## Cases where it is impossible to calculate some statistics: 0/0 or X/0
-    	## Case 1 : Everything is Correct -> FP = 0, FN = 0
-    	Case1Idx <- FP == 0 & FN == 0 # not any error!
-    	if (any(Case1Idx)) {
-    	    Recall[Case1Idx] <- 1
-    	    FNR[Case1Idx] <- 0
-    	    Precision[Case1Idx] <- 1
-    	    FDR[Case1Idx] <- 0
-    	    Specificity[Case1Idx] <- 1
-    	    FPR[Case1Idx] <- 0
-    	    NPV[Case1Idx] <- 1
-    	    FOR[Case1Idx] <- 0
-    	}
-    	## Case 2 : Everything is Wrong and only false positive
-		## -> Impossible to calculate Recall and NPV
-    	Case2Idx <- TP == 0 & TN == 0 & FP > 0 & FN == 0
-    	if (any(Case2Idx)) {
-    #	    Recall[Case2Idx] <- 0
-    #	    FNR[Case2Idx] <- 1
-    #	    NPV[Case2Idx] <- 0
-    #	    FOR[Case2Idx] <- 1
-    	    Recall[Case2Idx] <- 1
-    	    FNR[Case2Idx] <- 0
-    	    NPV[Case2Idx] <- 1
-    	    FOR[Case2Idx] <- 0
-    	}
-    	## Case 3 : Everything is Wrong and only false negative
-		## -> Impossible to calculate Precision and Specificity
-    	Case3Idx <- TP == 0 & TN == 0 & FP == 0 & FN > 0
-    	if (any(Case3Idx)) {
-    #	    Precision[Case3Idx] <- 0
-    #	    FDR[Case3Idx] <- 1
-    #	    Specificity[Case3Idx] <- 0
-    #	    FPR[Case3Idx] <- 1
-    	    Precision[Case3Idx] <- 1
-    	    FDR[Case3Idx] <- 0
-    	    Specificity[Case3Idx] <- 1
-    	    FPR[Case3Idx] <- 0
-    	}
-    	## Case 4 : No FP and No TN -> Impossible to calculate Specificity
-    	Case4Idx <- TP > 0 & TN == 0 & FP == 0 & FN > 0
-    	if (any(Case4Idx)) {
-    #	    Specificity[Case4Idx] <- 0
-    #	    FPR[Case4Idx] <- 1
-    	    Specificity[Case4Idx] <- 1
-    	    FPR[Case4Idx] <- 0
-    	}
-    	## Case 5 : No TP and No FP -> Impossible to calculate Precision
-    	Case5Idx <- TP == 0 & TN > 0 & FP == 0 & FN > 0
-    	if(any(Case5Idx)){
-    #	    Precision[Case5Idx] <- 0
-    #	    FDR[Case5Idx] <- 1
-    	    Precision[Case5Idx] <- 1
-    	    FDR[Case5Idx] <- 0
-    	}
-    	## Case 6 : No TP and no FN -> Impossible to calculate Recall
-    	Case6Idx <- TP == 0 & TN > 0 & FP > 0 & FN == 0
-    	if (any(Case6Idx)) {
-    #	    Recall[Case6Idx] <- 0
-    #	    FNR[Case6Idx] <- 1
-    	    Recall[Case6Idx] <- 1
-    	    FNR[Case6Idx] <- 0
-    	}
-    	## Case 7 : No TN and no FN
-		## -> Impossible to calculate Negative predicted value
-    	Case7Idx <- TP > 0 & TN == 0 & FP > 0 & FN == 0
-    	if (any(Case7Idx)) {
-    #	    NPV[Case7Idx] <- 0
-    #	    FOR[Case7Idx] <- 1
-    	    NPV[Case7Idx] <- 1
-    	    FOR[Case7Idx] <- 0
-    	}
-    }
-    class(res) <- c("summary.confusion", "data.frame")
+	## Sort the table in function of one parameter... by default Fscore
+	if (length(sort.by) && sort.by != FALSE) {
+		if (sort.by %in% names(res)) {
+			ord <- order(res[, sort.by], decreasing = decreasing)
+			res <- res[ord, ]
+			lev <- lev[ord]
+		} else warning("wrong sort.by: ignored and no sort performed")
+	}
+	
+	## What type of results should we return?
+	if (length(type) && type != "all") {
+		okType <- type[type %in% names(res)]
+		if (!length(okType)) stop("Wrong type specified")
+		if (length(okType) < length(type))
+			warning("one or more wrong types are ignored")
+		res <- res[, okType]
+		## If the data are reduced to a numeric vector, reinject names
+		## and return only this vector
+		if (is.numeric(res)) {
+			res <- as.numeric(res)
+			names(res) <- lev
+			attr(res, "stat.type") <- okType
+			return(res)
+		}
+	}
+
+    attr(res, "stats") <- attr(object, "stats")
+    attr(res, "stats.weighted") <-
+		c(error = Error, Fmicro = Fmicro, Fmacro = Fmacro)
+    
+    class(res) <- c("summary.confusion", class(res))
 	res
 }
 
 print.summary.confusion <- function (x, ...)
 {
-	## TODO: be more verbous and indicate more data here!
-	cat("Accuracy: ", round(attr(x, "Accuracy") * 100, digits = 2),
-		"%\n", "Error: ", round(attr(x, "Error") * 100, digits = 2),
-		"%\n\n", sep = "")
+	## General stats on the confusion matrix
+	Stats <- attr(x, "stats")
+	Error <- round(Stats["error"] * 100, 1)
+	cat(Stats["total"], " items classified with ", Stats["truepos"],
+		" true positives (error = ", Error, "%)\n",
+		sep = "")
+	cat("\nGlobal statistics on reweighted data:\n")
+	Stats2 <- attr(x, "stats.weighted")
+	cat("Error rate: ", round(Stats2["error"] * 100, digits = 1),
+		"%, F(micro-average): ", round(Stats2["Fmicro"], digits = 3),
+		", F(macro-average): ", round(Stats2["Fmacro"], digits = 3), "\n\n",
+		sep = "")
 	X <- x
-	class(X) <- "data.frame"
+	class(X) <- class(X)[-1]
 	print(X)
-	return(invisible(x))
+	
+	invisible(x)
 }
-
-#comparisonPlot <-
-#function (x, y, stat1 = "Recall", stat2 = "Precision", type = c("barplot", "p", "stars"), ...)
-#{
-#    type <- match.arg(type)
-#    res <- switch(type[1], barplot = barplot.comparison(x, y, stat1, stat2, ...),
-#        p = plot.comparison(x, y, stat1, stat2, ...),
-#        stars = stars.comparison(x, y, stat1, stat2, ...), stop("'type' must be 'barplot', 'p' or 'stars'"))
-#    invisible(res)
-#}
-#
-#stars.comparison <- function(x, y, stat1 = "Recall", stat2 = "Precision", ...)
-#{
-#    if(!inherits(x, "summary.confusion"))
-#        stop("x must be a summary.confusion object")
-#    if(!inherits(y, "summary.confusion"))
-#        stop("y must be a summary.confusion object")
-#    SupportedStats <- c("Recall", "Precision", "Specificity",
-#        "NPV", "FPR", "FNR", "FDR", "FOR")
-#    if (!stat1 %in% SupportedStats)
-#        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-#    if (!stat2 %in% SupportedStats)
-#        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-#    Blue <- topo.colors(16)
-#    Green <- terrain.colors(16)
-#    Data <- data.frame(y[, stat1], x[, stat1], x[, stat2], y[, stat2])
-#    rownames(Data) <- rownames(x)
-#    colnames(Data) <- c(paste(stat1, "_2", sep = ""), paste(stat1, "_1", sep = ""), paste(stat2, "_1", sep = ""), paste(stat2, "_2", sep = ""))
-#    stars(Data, draw.segments = TRUE, scale = FALSE, key.loc = c(13,1.5), len = 0.8,
-#        main = paste("Groups comparison between classifier 1 and 2", "\n", "Accuracy 1 =", round(attr(Stats, "Accuracy") *100), "%,",  "Accuracy 2 =", round(attr(Stats2, "Accuracy") *100), "%"),
-#        col.segments = c("green", Green[1], Blue[2], Blue[6]), ...)
-#}
-
-#barplot.comparison <- function(x, y, stat1 = "Recall", stat2 = "Precision", ...){
-#    SupportedStats <- c("Recall", "Precision", "Specificity",
-#        "NPV", "FPR", "FNR", "FDR", "FOR")
-#    if (!stat1 %in% SupportedStats)
-#        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-#    if (!stat2 %in% SupportedStats)
-#        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-#    n <- nrow(x)
-#    xstat1 <- x[, stat1]
-#    xstat2 <- x[, stat2]
-#    ystat1 <- y[, stat1]
-#    ystat2 <- y[, stat2]
-#    barplot(xstat1, ylim = c(-1.05, 1.15), axes = FALSE,
-#            ylab = paste("<==", stat2, "/", stat1, "==>", sep = " "),
-#            xlab = "Groups", main = "Comparison of two statistics for two classifiers", ...)
-#    barplot(-xstat2, add = TRUE, axes = FALSE)
-#    for (i in 1:n) abline(v = i + i * 0.2 - 0.5, lty = 3,
-#        col = "lightgray")
-#    abline(h = 0, lty = 1)
-#    abline(h = 0.25, lty = 2)
-#    abline(h = 0.5, lty = 2)
-#    abline(h = 0.75, lty = 2)
-#    abline(h = 1, lty = 3)
-#    abline(h = -0.25, lty = 2)
-#    abline(h = -0.5, lty = 2)
-#    abline(h = -0.75, lty = 2)
-#    abline(h = -1, lty = 3)
-#    X <- 1:n + 1:n * 0.2 - 0.5
-#    suppressWarnings(arrows(x0 = X, y0 = xstat1, x1 = X,
-#        y1 = ystat1, length = 0.1))
-#    suppressWarnings(arrows(x0 = X, y0 = -xstat2, x1 = X,
-#        y1 = -ystat2, length = 0.1))
-#    axis(1, at = X, labels = 1:n)
-#    axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5,
-#        0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25,
-#        0.5, 0.75, 1))
-#    legend("topright", legend = c("Classifier 1", "Classifier 2"),
-#        pch = c(15, 4), col = c("darkgray", "black"), horiz = TRUE,
-#        bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)
-#    invisible(list(xstat1 = xstat1, xstat2 = xstat2, ystat1 = ystat1,
-#        ystat2 = ystat2))
-#}
-#
-#plot.comparison <- function(x, y, stat1 = "Recall", stat2 = "Precision", ...){
-#    SupportedStats <- c("Recall", "Precision", "Specificity",
-#        "NPV", "FPR", "FNR", "FDR", "FOR")
-#    if (!stat1 %in% SupportedStats)
-#        stop("stats1 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-#    if (!stat2 %in% SupportedStats)
-#        stop("stats2 must be one of followed stats: Recall, Precision, Specificity, NPV, FPR, FNR, FDR, FOR")
-#    n <- nrow(x)
-#    xstat1 <- x[, stat1]
-#    xstat2 <- x[, stat2]
-#    ystat1 <- y[, stat1]
-#    ystat2 <- y[, stat2]
-#    plot(xstat1, ylim = c(-1, 1.1), ylab = paste("<==", stat2,
-#        "/", stat1, "==>", sep = " "), xlab = "Groups", axes = FALSE,
-#        col = "red", main = "Comparison of two statistics for two classifiers",
-#        lwd = 2, cex = 1.5, pch = 3, ...)
-#    points(ystat1, pch = 4, col = "blue", lwd = 2, cex = 1.5)
-#    points(-xstat2, pch = 3, col = "red", lwd = 2, cex = 1.5)
-#    points(-ystat2, pch = 4, col = "blue", lwd = 2, cex = 1.5)
-#    for (i in 1:n) abline(v = i, lty = 3, col = "lightgray")
-#    abline(h = 0, lty = 1)
-#    abline(h = 0.25, lty = 2)
-#    abline(h = 0.5, lty = 2)
-#    abline(h = 0.75, lty = 2)
-#    abline(h = -0.25, lty = 2)
-#    abline(h = -0.5, lty = 2)
-#    abline(h = -0.75, lty = 2)
-#    axis(1, at = 1:n, labels = 1:n)
-#    axis(2, at = c(-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5,
-#        0.75, 1), labels = c(1, 0.75, 0.5, 0.25, 0, 0.25,
-#        0.5, 0.75, 1))
-#    legend("topright", legend = c("Classifier 1", "Classifier 2"),
-#        pch = c(3, 4), col = c("red", "blue"), horiz = TRUE,
-#        bg = "white", cex = 0.75, pt.cex = 1.5, pt.lwd = 2)
-#    invisible(list(xstat1 = xstat1, xstat2 = xstat2, ystat1 = ystat1,
-#        ystat2 = ystat2))
-#}
