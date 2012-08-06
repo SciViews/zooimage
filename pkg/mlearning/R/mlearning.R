@@ -302,7 +302,8 @@ na.action = na.exclude, ...)
 		levels <- levels(object)
 		return(list(class = .expandFactor(factor(as.character(classes),
 			levels = levels), n, ndrop),
-			member = .expandMatrix(.membership(members, levels = levels), n, ndrop)))
+			membership = .expandMatrix(.membership(members, levels = levels),
+			n, ndrop)))
 	} else {
 		res <- predict(object, newdata = newdata, type = pred.type[type], ...)
 	}
@@ -311,7 +312,7 @@ na.action = na.exclude, ...)
 	res <- switch(type,
 		class = .expandFactor(factor(as.character(res), levels = levels(object)),
 			n, ndrop),
-		member = .expandMatrix(.membership(res, levels = levels(object)),
+		membership = .expandMatrix(.membership(res, levels = levels(object)),
 			n, ndrop),
 		switch(class(res)[1],
 			factor = .expandFactor(res, n, ndrop),
@@ -383,27 +384,27 @@ cv.k = 10, cv.strat = TRUE, ...)
 		}
 	
 		## Apply predict on all model and collect results together
-		member <- lapply(est$models, predCV, object = object, type = "membership",
-			na.action = na.exclude, ...)
+		membership <- lapply(est$models, predCV, object = object,
+			type = "membership", na.action = na.exclude, ...)
 	
 		## Concatenate results
-		member <- do.call(rbind, member)
+		membership <- do.call(rbind, membership)
 	
 		## Sort in correct order and replace initial rownames
-		ord <- as.numeric(rownames(member))
+		ord <- as.numeric(rownames(membership))
 		## Sometimes, errorest() duplicates one or two items in two models
 		## (rounding errors?) => eliminate them here
 		notDup <- !duplicated(ord)
-		member <- member[notDup, ]
+		membership <- membership[notDup, ]
 		ord <- ord[notDup]
 		
 		# Restore order of the items
-		rownames(member) <- rn[ord]
+		rownames(membership) <- rn[ord]
 		pos <- order(ord)
-		member <- member[pos, ]
+		membership <- membership[pos, ]
 	
 		if (type == "membership") {
-			res <- member
+			res <- membership
 		} else {  # Need both class and membership
 			## Because we don't know who is who in est$predictions in case of
 			## duplicated items in est$models, we prefer to recalculate classes
@@ -416,7 +417,7 @@ cv.k = 10, cv.strat = TRUE, ...)
 			if (any(classes != est$predictions))
 				warning("cross-validated classes do not match")
 
-			res <- list(class = classes, membership = member)
+			res <- list(class = classes, membership = membership)
 		}
 	}
 	
