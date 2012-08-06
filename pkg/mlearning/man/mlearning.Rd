@@ -50,24 +50,24 @@ mlearning(formula, data, method, model.args, call = match.call(), ...,
 \method{summary}{mlearning}(object, ...)
 \method{print}{summary.mlearning}(x, ...)
 \method{plot}{mlearning}(x, y, ...)
-\method{predict}{mlearning}(object, newdata, type = c("class", "member", "both"),
+\method{predict}{mlearning}(object, newdata, type = c("class", "membership", "both"),
     method = c("direct", "cv"), na.action = na.exclude, ...)
     
 cvpredict(object, ...)
-\method{cvpredict}{mlearning}(object, type = c("class", "member", "both"),
+\method{cvpredict}{mlearning}(object, type = c("class", "membership", "both"),
     cv.k = 10, cv.strat = TRUE, ...)
 
 mlLda(...)
 \method{mlLda}{default}(train, response, ...)
 \method{mlLda}{formula}(formula, data, ..., subset, na.action)
-\method{predict}{mlLda}(object, newdata, type = c("class", "member", "both",
+\method{predict}{mlLda}(object, newdata, type = c("class", "membership", "both",
     "projection"), prior = object$prior, dimension,
     method = c("plug-in", "predictive", "debiased", "cv"), ...)
 
 mlQda(...)
 \method{mlQda}{default}(train, response, ...)
 \method{mlQda}{formula}(formula, data, ..., subset, na.action)
-\method{predict}{mlQda}(object, newdata, type = c("class", "member", "both"),
+\method{predict}{mlQda}(object, newdata, type = c("class", "membership", "both"),
     prior = object$prior, method = c("plug-in", "predictive", "debiased",
     "looCV", "cv"), ...)
 
@@ -75,7 +75,7 @@ mlRforest(...)
 \method{mlRforest}{default}(train, response, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...)
 \method{mlRforest}{formula}(formula, data, ntree = 500, mtry, replace = TRUE, classwt = NULL, ...,
     subset, na.action)
-\method{predict}{mlRforest}(object, newdata, type = c("class", "member", "both",
+\method{predict}{mlRforest}(object, newdata, type = c("class", "membership", "both",
     "vote"), method = c("direct", "oob", "cv"), ...)
 
 mlNnet(...)
@@ -147,10 +147,10 @@ train(object, ...)
     predictions. }
   \item{type}{ the type of result to get. Usually, \code{"class"}, which is the
     default. Depending on the algorithm, other types are also available.
-    \code{member} and \code{both} are almost always available too. \code{member}
-    corresponds to posterior probability, raw results, normalized votes, etc.,
-    depending on the machine learning algorithm. With \code{both}, class and
-    member are both returned at once in a list. }
+    \code{membership} and \code{both} are almost always available too.
+    \code{membership} corresponds to posterior probability, raw results,
+    normalized votes, etc., depending on the machine learning algorithm. With
+    \code{both}, class and membership are both returned at once in a list. }
   \item{train}{ a matrix or data frame with predictors. }
   \item{response}{ a vector of factor (classification) or numeric (regression),
     or \code{NULL} (unsupervised classification). }
@@ -224,8 +224,8 @@ irLda
 summary(irLda)
 plot(irLda, col = as.numeric(response(irLda)) + 1)
 predict(irLda, newdata = irisTest) # class (default type)
-predict(irLda, type = "member") # posterior probability
-predict(irLda, type = "both") # both class and member in a list
+predict(irLda, type = "membership") # posterior probability
+predict(irLda, type = "both") # both class and membership in a list
 ## Sometimes, other types are allowed, like for lda:
 predict(irLda, type = "projection") # Projection on the LD axes
 ## Add test set items to the previous plot
@@ -251,7 +251,7 @@ summary(mlLda(Species ~ log(Petal.Length) + log(Petal.Width) +
 ## Factor levels with missing items are allowed
 ir2 <- iris[-(51:100), ] # No Iris versicolor in the training set
 summary(res <- mlLda(Species ~ ., data = ir2)) # virginica is NOT there
-## Missing levels are reinjected in class or member by predict()
+## Missing levels are reinjected in class or membership by predict()
 predict(res, type = "both")
 ## ... but, of course, the classifier is wrong for Iris versicolor
 confusion(predict(res, newdata = iris), iris$Species)
@@ -276,7 +276,7 @@ plot(res)
 ## For such a relatively simple case, 50 trees are enough
 summary(res <- mlRforest(Species ~ ., data = irisTrain, ntree = 50))
 predict(res) # Default type is class
-predict(res, type = "member")
+predict(res, type = "membership")
 predict(res, type = "both")
 predict(res, type = "vote")
 ## Out-of-bag prediction
@@ -310,7 +310,7 @@ plot(hclust(as.dist(1 - iris.urf$proximity), method = "average"),
 set.seed(689)
 summary(res <- mlNnet(Species ~ ., data = irisTrain))
 predict(res) # Default type is class
-predict(res, type = "member")
+predict(res, type = "membership")
 predict(res, type = "both")
 confusion(res) # Self-consistency
 confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
@@ -338,7 +338,7 @@ confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
 ## Supervised classification using naive Bayes
 summary(res <- mlNaiveBayes(Species ~ ., data = irisTrain))
 predict(res) # Default type is class
-predict(res, type = "member")
+predict(res, type = "membership")
 predict(res, type = "both")
 confusion(res) # Self-consistency
 confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs

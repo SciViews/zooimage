@@ -16,13 +16,9 @@
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 ZIClass <- function (formula, data, mlearning = getOption("ZI.mlearning",
-mlRforest), calc.vars = getOption("ZI.calcVars", calcVars), k.xval = 10, ...,
-subset, na.action = getOption("ZI.naAction", na.omit))
-{
-	## Added by Kev... should not be necessary!
-	# calcVars removes attributes of x --> extract path here before calcVars application
-#    Path <- attr(data, "path")
-	
+mlRforest), calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10, cv.strat,
+..., subset, na.action = getOption("ZI.naAction", na.omit))
+{	
 	## Check calc.vars and use it on data
 	if (length(calc.vars))
 		if (!is.function(calc.vars)) {
@@ -30,10 +26,11 @@ subset, na.action = getOption("ZI.naAction", na.omit))
 		} else data <- calc.vars(data)
 
 	## Machine learning function
+	mlearning <- match.fun(mlearning)
 	if (!is.function(mlearning))
-		stop("'mlearning' must be a function that produce a 'mlearning' object ()or a compatible one")
+		stop("'mlearning' must be a function that produce a 'mlearning' object or a compatible one")
 	
-	## train the machine learning algorithm
+	## Train the machine learning algorithm
 	if (missing(subset) || !length(subset)) {
 		ZI.class <- mlearning(formula, data = data, ..., na.action = na.action)
 	} else {
@@ -43,50 +40,17 @@ subset, na.action = getOption("ZI.naAction", na.omit))
 	
 	## Add ZIClass as class of the object
 	class(ZI.class) <- c("ZIClass", class(ZI.class))
-	
-#	structure(naiveBayes(x = train, y = cl, laplace = laplace, ...),
-#		data = subdata$data, vars = subdata$vars, classes = subdata$classes,
-#		levels = subdata$levels, call = match.call(),
-#		algorithm = "naive Bayes classifier",
-#		class = c("mlNaiveBayes", "mlearning", "naiveBayes"))
-#	
-#	ZI.class <- structure(ZI.class,
-#		class = c("ZIClass", class(ZI.class)),
-#		algorithm = algorithm, calc.vars = calc.vars,
-#		classes = data[[as.character(formula)[2]]]
-#	)
+	attr(ZI.class, "calc.vars") <- calc.vars
 
 	## Calculate predictions with full training set
     attr(ZI.class, "predict") <- predict(ZI.class, data, calc.vars = FALSE)
 
-	## Calculation of probabilities
-#  	if (algorithm == "randomForest") {
-#  		## Use Formula for the probabilities v1.2-2
-#  		rf <- randomForest(formula = formula, data = data)
-#  		attr(ZI.class, "proba") <- predict(object = rf, newdata = data,
-#			type = "prob")
-#	}
-
 	## Possibly make a k-fold cross-validation and check results
-	if (length(k.xval)) {
-		# Modification to accept classifier from party package : ctree and cforest
-		if (algorithm == "lda") {
-			mypredict <- function (object, newdata)
-				predict(object, newdata = newdata)$class
-		} else if (algorithm %in% c("ctree", "cforest")){
-            mypredict <- function(object, newdata)
-                predict(object, newdata = newdata, type = "response", OOB = FALSE)        
-        } else {
-			mypredict <- function (object, newdata)
-				predict(object, newdata = newdata, type = "class")
-		}
-    	res <- cv(attr(ZI.class, "classes"), formula, data = df,
-			model = get(algorithm), predict = mypredict, k = k.xval,
-			predictions = TRUE, ...)$predictions
-		attr(ZI.class, "kfold.predict") <- res
-		attr(ZI.class, "k") <- k.xval
-		attr(ZI.class, "formula") <- formula
-		attr(ZI.class, "path") <- attr(data, "path")
+	if (length(cv.k)) {
+		attr(ZI.class, "cvpredict") <- cvpredict(ZI.class, type = "both",
+			cv.k = cv.k, cv.strat = cv.strat)
+		attr(ZI.class, "k") <- cv.k
+		attr(ZI.class, "strat") <- cv.strat
 	}
 	ZI.class
 }
@@ -122,7 +86,7 @@ print.ZIClass <- function (x, ...)
 	invisible(x)
 }
 
-summary.ZIClass <- function(object, sort.by = NULL, decreasing = FALSE,
+summary.ZIClass <- function(object, sort.by = "Fscore", decreasing = TRUE,
 na.rm = FALSE, ...)
 {
 	## Get the confusion object out of a ZIClass object and calc stats from there
@@ -176,38 +140,38 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
 	res
 }
 
-confusion.ZIClass <- function (x, ...)
-{
-	## If the object is ZIClass, calculate 'confusion'
-	## from attributes 'classes' and 'kfold.predict' 
-	if (!inherits(x, "ZIClass"))
-		stop("'x' must be a 'ZIClass' object")
-	
-	x <- attr(x, "classes")
-	y <- attr(x, "kfold.predict")
-	labels <- c("Class", "Predict")
-	clCompa <- data.frame(Class = x, Predict = y)
-	## How many common objects by level?
-	NbrPerClass1 <- table(clCompa[, 1])
-	## How many predicted objects
-	NbrPerClass2 <- table(clCompa[, 2])
-	## Confusion matrix
-	Conf <- table(clCompa)
-	## Further stats: total, true positives, accuracy
-	Total <- sum(Conf)
-	TruePos <- sum(diag(Conf))
-	Stats <- c(total = Total, truepos = TruePos, accuracy = TruePos / Total * 100)
-
-	## Change labels to get a more compact presentation
-	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
-	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
-
-	## Additional data as attributes
-	attr(Conf, "stats") <- Stats
-	attr(Conf, "nbr.rows") <- NbrPerClass1
-	attr(Conf, "nbr.cols") <- NbrPerClass2
-	
-	## This is a confusion object
-	class(Conf) <- c("confusion", "table")
-	Conf
-}
+#confusion.ZIClass <- function (x, ...)
+#{
+#	## If the object is ZIClass, calculate 'confusion'
+#	## from attributes 'classes' and 'kfold.predict' 
+#	if (!inherits(x, "ZIClass"))
+#		stop("'x' must be a 'ZIClass' object")
+#	
+#	x <- attr(x, "classes")
+#	y <- attr(x, "kfold.predict")
+#	labels <- c("Class", "Predict")
+#	clCompa <- data.frame(Class = x, Predict = y)
+#	## How many common objects by level?
+#	NbrPerClass1 <- table(clCompa[, 1])
+#	## How many predicted objects
+#	NbrPerClass2 <- table(clCompa[, 2])
+#	## Confusion matrix
+#	Conf <- table(clCompa)
+#	## Further stats: total, true positives, accuracy
+#	Total <- sum(Conf)
+#	TruePos <- sum(diag(Conf))
+#	Stats <- c(total = Total, truepos = TruePos, accuracy = TruePos / Total * 100)
+#
+#	## Change labels to get a more compact presentation
+#	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
+#	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
+#
+#	## Additional data as attributes
+#	attr(Conf, "stats") <- Stats
+#	attr(Conf, "nbr.rows") <- NbrPerClass1
+#	attr(Conf, "nbr.cols") <- NbrPerClass2
+#	
+#	## This is a confusion object
+#	class(Conf) <- c("confusion", "table")
+#	Conf
+#}

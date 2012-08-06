@@ -112,17 +112,6 @@ mlearning <- function (formula, data, method, model.args, call = match.call(),
 	
 	## Construct the mlearning object
 	match.fun(method)(train = train, response = response, .args. = args, ...)
-	
-	## Call the corresponding workhorse function
-	#res <- match.fun(paste(".", method, sep = ""))(train = train,
-	#	response = response, formula = formula, data = data, args, ...)
-		
-	## Return a mlearning object
-	#structure(res$object, formula = formula, train = train, response = response,
-	#	levels = lev, n = nobs, optim = optim, numeric.only = res$numeric.only,
-	#	type = type, pred.type = res$pred.type, summary = res$summary,
-	#	na.action = substitute(na.action), mlearning.call = call,
-	#	method = method, algorithm = res$algorithm, class = res$class)
 }
 
 print.mlearning <- function (x, ...)
@@ -252,7 +241,7 @@ plot.mlearning <- function (x, y, ...)
 }
 
 predict.mlearning <- function(object, newdata,
-type = c("class", "member", "both"), method = c("direct", "cv"),
+type = c("class", "membership", "both"), method = c("direct", "cv"),
 na.action = na.exclude, ...)
 {
 	## Not usable for unsupervised type
@@ -296,7 +285,7 @@ na.action = na.exclude, ...)
 	## Otherwise, this is a supervised classification
 	type <- as.character(type)[1]
 	## Special case for both
-	if (type == "both") type <- c("class", "member")
+	if (type == "both") type <- c("class", "membership")
 	## Check that type is supported and look for corresponding type name
 	## in original predict() method
 	pred.type <- attr(object, "pred.type")
@@ -304,11 +293,11 @@ na.action = na.exclude, ...)
 		stop("unsupported predict type")
 	
 	if (length(type) == 2) {
-		## Special case where we predict both class and member
+		## Special case where we predict both class and membership
 		classes <- predict(object, newdata = newdata,
 			type = pred.type["class"], ...)
 		members <- predict(object, newdata = newdata,
-			type = pred.type["member"], ...)
+			type = pred.type["membership"], ...)
 		## Create a list with both res
 		levels <- levels(object)
 		return(list(class = .expandFactor(factor(as.character(classes),
@@ -335,7 +324,7 @@ na.action = na.exclude, ...)
 cvpredict <- function (object, ...)
 	UseMethod("cvpredict")
 
-cvpredict.mlearning <- function(object, type = c("class", "member", "both"),
+cvpredict.mlearning <- function(object, type = c("class", "membership", "both"),
 cv.k = 10, cv.strat = TRUE, ...)
 {
 	type <- switch(attr(object, "type"),
@@ -346,13 +335,13 @@ cv.k = 10, cv.strat = TRUE, ...)
 	if (type == "class") {
 		predictions <- TRUE
 		getmodels <- FALSE
-	} else if (type == "member") {
+	} else if (type == "membership") {
 		predictions <- FALSE
 		getmodels <- TRUE
 	} else if (type == "both") {
 		predictions <- TRUE
 		getmodels <- TRUE
-	} else stop("type must be 'class', 'member' or 'both'")
+	} else stop("type must be 'class', 'membership' or 'both'")
 	
 	## Create data, using numbers are rownames
 	data <- data.frame(.response. = response(object), train(object))
@@ -368,7 +357,7 @@ cv.k = 10, cv.strat = TRUE, ...)
 	}
 	Predict <- constructPredict(...)
 	
-	## Perform cross-validation or bootstrap for prediction
+	## Perform cross-validation for prediction
 	args <- attr(object, "args")
 	if (!is.list(args)) args <- list()
 	args$formula <- substitute(.response. ~ .)
@@ -385,13 +374,16 @@ cv.k = 10, cv.strat = TRUE, ...)
 	if (type == "class") {
 		res <- est$predictions
 	} else {
-		## Need to calculate member
-		predMember <- function (x, object, ...)
+		## Need to calculate membership
+		predCV <- function (x, object, ...) {
+			Train <- train(object)
+			rownames(Train) <- 1:NROW(Train)
 			suppressWarnings(predict(x, newdata =
-				train(object)[-as.numeric(rownames(train(x))), ], ...))
+				Train[-as.numeric(rownames(train(x))), ], ...))
+		}
 	
 		## Apply predict on all model and collect results together
-		member <- lapply(est$models, predMember, object = object, type = "member",
+		member <- lapply(est$models, predCV, object = object, type = "membership",
 			na.action = na.exclude, ...)
 	
 		## Concatenate results
@@ -399,11 +391,33 @@ cv.k = 10, cv.strat = TRUE, ...)
 	
 		## Sort in correct order and replace initial rownames
 		ord <- as.numeric(rownames(member))
+		## Sometimes, errorest() duplicates one or two items in two models
+		## (rounding errors?) => eliminate them here
+		notDup <- !duplicated(ord)
+		member <- member[notDup, ]
+		ord <- ord[notDup]
+		
+		# Restore order of the items
 		rownames(member) <- rn[ord]
-		member <- member[order(ord), ]
+		pos <- order(ord)
+		member <- member[pos, ]
 	
-		if (type == "member") res <- member else
-			res <- list(class = est$predictions, member = member)	
+		if (type == "membership") {
+			res <- member
+		} else {  # Need both class and membership
+			## Because we don't know who is who in est$predictions in case of
+			## duplicated items in est$models, we prefer to recalculate classes
+			classes <- unlist(lapply(est$models, predCV, object = object,
+				type = "class", na.action = na.exclude, ...))
+			classes <- classes[notDup]
+			classes <- classes[pos]
+			
+			## Check that both classes are the same!
+			if (any(classes != est$predictions))
+				warning("cross-validated classes do not match")
+
+			res <- list(class = classes, membership = member)
+		}
 	}
 	
 	## Add est object as "method" attribute, without predictions or models
@@ -449,7 +463,7 @@ mlLda.default <- function (train, response, ...)
 		grouping = response, ...), formula = .args.$formula, train = train,
 		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
-		pred.type = c(class = "class", member = "posterior", projection = "x"),
+		pred.type = c(class = "class", membership = "posterior", projection = "x"),
 		summary = NULL, na.action = .args.$na.action,
 		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "linear discriminant analysis",
@@ -457,7 +471,7 @@ mlLda.default <- function (train, response, ...)
 }
 
 predict.mlLda <- function(object, newdata,
-type = c("class", "member", "both", "projection"), prior = object$prior,
+type = c("class", "membership", "both", "projection"), prior = object$prior,
 dimension, method = c("plug-in", "predictive", "debiased", "cv"), ...)
 {
 	if (!inherits(object, "mlLda"))
@@ -508,12 +522,12 @@ dimension, method = c("plug-in", "predictive", "debiased", "cv"), ...)
 	## Rework results according to what we want
 	switch(as.character(type)[1],
 		class = factor(as.character(res$class), levels = levels(object)),
-		member = .membership(res$posterior, levels = levels(object)),
+		membership = .membership(res$posterior, levels = levels(object)),
 		both = list(class = factor(as.character(res$class),
-			levels = levels(object)), member = .membership(res$posterior,
+			levels = levels(object)), membership = .membership(res$posterior,
 			levels = levels(object))),
 		projection = res$x,
-		stop("unrecognized 'type' (must be 'class', 'member', 'both' or 'projection')"))
+		stop("unrecognized 'type' (must be 'class', 'membership', 'both' or 'projection')"))
 }
 
 mlQda <- function (...)
@@ -547,14 +561,14 @@ mlQda.default <- function (train, response, ...)
 		grouping = response, ...), formula = .args.$formula, train = train,
 		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
-		pred.type = c(class = "class", member = "posterior"),
+		pred.type = c(class = "class", membership = "posterior"),
 		summary = NULL, na.action = .args.$na.action,
 		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "quadratic discriminant analysis",
 		class = c("mlQda", "mlearning", "qda"))
 }
 
-predict.mlQda <- function(object, newdata, type = c("class", "member", "both"),
+predict.mlQda <- function(object, newdata, type = c("class", "membership", "both"),
 prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV",
 "cv"), ...)
 {
@@ -594,11 +608,11 @@ prior = object$prior, method = c("plug-in", "predictive", "debiased", "looCV",
 	## Rework results according to what we want
 	switch(as.character(type)[1],
 		class = factor(as.character(res$class), levels = levels(object)),
-		member = .membership(res$posterior, levels = levels(object)),
+		membership = .membership(res$posterior, levels = levels(object)),
 		both = list(class = factor(as.character(res$class),
-			levels = levels(object)), member = .membership(res$posterior,
+			levels = levels(object)), membership = .membership(res$posterior,
 			levels = levels(object))),
-		stop("unrecognized 'type' (must be 'class', 'member' or 'both')"))
+		stop("unrecognized 'type' (must be 'class', 'membership' or 'both')"))
 }
 
 mlRforest <- function (...)
@@ -658,7 +672,7 @@ replace = TRUE, classwt = NULL, ...)
 	structure(res, formula = .args.$formula, train = train,
 		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
-		pred.type = c(class = "response", member = "prob", vote ="vote"),
+		pred.type = c(class = "response", membership = "prob", vote ="vote"),
 		summary = NULL, na.action = .args.$na.action,
 		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "random forest",
@@ -666,7 +680,7 @@ replace = TRUE, classwt = NULL, ...)
 }
 
 predict.mlRforest <- function(object, newdata,
-type = c("class", "member", "both", "vote"), method = c("direct", "oob", "cv"),
+type = c("class", "membership", "both", "vote"), method = c("direct", "oob", "cv"),
 ...)
 {
 	type <- as.character(type)[1]
@@ -700,15 +714,15 @@ type = c("class", "member", "both", "vote"), method = c("direct", "oob", "cv"),
 		res <- switch(type,
 			class = factor(as.character(object$predicted),
 				levels = levels(object)),
-			member = .membership(toProps(object$votes, object$ntree),
+			membership = .membership(toProps(object$votes, object$ntree),
 				levels = levels(object)),
 			both = list(class = factor(as.character(object$predicted),
 				levels = levels(object)),
-				member = .membership(toProps(object$votes, object$ntree),
+				membership = .membership(toProps(object$votes, object$ntree),
 				levels = levels(object))),
 			vote = .membership(toVotes(object$votes, object$ntree),
 						levels = levels(object)),
-			stop("unknown type, must be 'class', 'member', 'both' or 'vote'"))
+			stop("unknown type, must be 'class', 'membership', 'both' or 'vote'"))
 		
 		attr(res, "method") <- list(name = "out-of-bag")
 		res
@@ -801,7 +815,7 @@ maxit = 1000, ...)
 	structure(res, formula = .args.$formula, train = train,
 		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
-		pred.type = c(class = "class", member = "raw"),
+		pred.type = c(class = "class", membership = "raw"),
 		summary = "summary", na.action = .args.$na.action,
 		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "single-hidden-layer neural network",
@@ -990,7 +1004,7 @@ mlNaiveBayes.default <- function (train, response, laplace = 0, ...)
 		laplace = laplace, ...), formula = .args.$formula, train = train,
 		response = response, levels = .args.$levels, n = .args.$n, args = dots,
 		optim = .args.$optim, numeric.only = FALSE, type = .args.$type,
-		pred.type = c(class = "class", member = "raw"),
+		pred.type = c(class = "class", membership = "raw"),
 		summary = NULL, na.action = .args.$na.action,
 		mlearning.call = .args.$mlearning.call, method = .args.$method,
 		algorithm = "naive Bayes classifier",
@@ -1041,7 +1055,7 @@ mlNaiveBayes.default <- function (train, response, laplace = 0, ...)
 #	structure(do.call(WekaClassifier, wekaArgs), formula = .args.$formula,
 #		train = train, response = response, levels = .args.$levels, n = .args.$n,
 #		args = dots, optim = .args.$optim, numeric.only = FALSE,
-#		type = .args.$type, pred.type = c(class = "class", member = "probability"),
+#		type = .args.$type, pred.type = c(class = "class", membership = "probability"),
 #		summary = "summary", na.action = .args.$na.action,
 #		mlearning.call = .args.$mlearning.call, method = .args.$method,
 #		algorithm = "Weka naive Bayes classifier",
