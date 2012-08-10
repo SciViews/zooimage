@@ -37,20 +37,24 @@ cv.strat = TRUE, ..., subset, na.action = na.omit)
 	class(ZI.class) <- c("ZIClass", class(ZI.class))
 	attr(ZI.class, "calc.vars") <- calc.vars
 
+	## Get useful attrobutes from ZITrain
+	attr(ZI.class, "traindir") <- attr(data, "traindir")
+	attr(ZI.class, "path") <- attr(data, "path")
+
 	## Calculate predictions with full training set
     attr(ZI.class, "predict") <- predict(ZI.class, data, calc = FALSE)
 
 	## Possibly make a k-fold cross-validation and check results
 	if (length(cv.k)) {
-		attr(ZI.class, "cvpredict") <- cvpredict(ZI.class, type = "both",
+		attr(ZI.class, "cvpredict") <- cvpredict(ZI.class, type = "class",
 			cv.k = cv.k, cv.strat = cv.strat)
 		attr(ZI.class, "k") <- cv.k
 		attr(ZI.class, "strat") <- cv.strat
 	}
 	
-	## Make sure the '+other+' group exists
+	## Make sure the '+others+' group exists
 	lev <- levels(ZI.class)
-	if (!"+other+" %in% lev) attr(ZI.class, "levels") <- c(lev, "+other+")
+	if (!"+others+" %in% lev) attr(ZI.class, "levels") <- c(lev, "+others+")
 	
 	ZI.class
 }

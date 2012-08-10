@@ -85,11 +85,15 @@ export(zisRead)
 # ZIClass
 export(ZIClass)
 
-# ZITrain
+# ZITrain/ZITest
 export(prepareTrain)
 export(addToTrain)
 export(getTrain)
+export(prepareTest)
+export(addToTest)
+export(getTest)
 export(recode)
+export(template)
 
 # Utilities
 export(calcVars)
@@ -166,7 +170,9 @@ export(startPgm)
 export(modalAssistant)
 
 # S3 methods
+S3method(template, default)
 S3method(recode, ZITrain)
+S3method(recode, ZITest)
 
 S3method(print, ZIClass)
 S3method(predict, ZIClass)

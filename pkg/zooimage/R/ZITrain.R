@@ -15,10 +15,22 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
+template <- function (object, ...)
+	UseMethod("template")
+	
+template.default <- function (object, add.others = TRUE, ...)
+{
+	res <- attr(object, "path")
+	if (isTRUE(as.logical(add.others)) &&
+		!"+others+" %in% unlist(strsplit(res, "/", fixed = TRUE)))
+		res <- c(res, "+others+")
+	
+	res
+}
+
 ## Prepare 'dir\subdir' for a manual classification by expanding all vignettes
 ## from a given number of zidfiles to the '_' subdir, and making
 ## a template for subdirs
-## TODO: eliminate zidfiles and detect if it is zidfiles or zidbfiles like in addToTrain()
 prepareTrain <- function (traindir, zidbfiles,
 template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL)
 {
@@ -108,7 +120,7 @@ template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL)
 				basename(zidbfiles[i])), "_dat1.RData", sep = "")))
 		}
 	}
-	progress(zmax + 1) # Clear progression indicator
+	progress(101) # Clear progression indicator
 	
 	### TODO: relocate vignettes in subdirectories, if ident is not NULL
 	if (length(ident)) {
@@ -117,6 +129,21 @@ template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL)
 
 	message(" -- Done! --")
 	invisible(TRUE)
+}
+
+prepareTest <- function (testdir, zidbfiles, template, ident = NULL)
+{
+	if (!is.null(attr(template, "path"))) template <- attr(template, "path")
+	if (!"+others+" %in% unlist(strsplit(template, "/", fixed = TRUE)))
+		template <- c(template, "+others+")
+	tpl <- structure(1, path = template)
+	res <- prepareTrain(testdir, zidbfiles = zidbfiles,
+		template = tpl, ident = ident)
+	## Add a .zic file there to make sure to respect training set classes
+	cat("ZI3\n[path]\n", paste(template, collapse = "\n"), "\n", sep = "",
+		file = file.path(testdir, "_template.zic"))
+	
+	res
 }
 
 ## Function to add new vignettes in a training set
@@ -151,7 +178,7 @@ addToTrain <- function (traindir, zidbfiles, ident = NULL)
 	
 	## Extract RData in the root directory
 	zmax <- length(zidbfiles)
-	message("Adding data and vignettes to the training set...")
+	message("Adding data and vignettes to the training set...\n")
 	for (i in 1:zmax) {
 		progress(i, zmax)
 		## treatment depends if it is a .zid or .zidb file
@@ -192,10 +219,13 @@ addToTrain <- function (traindir, zidbfiles, ident = NULL)
 			unlink(td, recursive = TRUE)	
 		}
 	}
-	progress(zmax + 1) # Clear progression indicator
+	progress(101) # Clear progression indicator
 	message("-- Done --\n")
 	invisible(TRUE)
 }
+
+addToTest <- function (testdir, zidbfiles, ident = NULL)
+	addToTrain(traindir = testdir, zidbfiles = zidbfiles, ident = ident)
 
 ## Retrieve information from a manual training set in a 'ZITrain' object	
 getTrain <- function (traindir, creator = NULL, desc = NULL, keep_ = FALSE,
@@ -286,8 +316,8 @@ na.rm = FALSE)
 		} else message("NAs found in the table of measurements and left there")
 	
 	## Add attributes
-	attr(df, "basedir") <- dir
-	attr(df, "path") <- sort(unique(Path))
+	attr(df, "traindir") <- dir
+	attr(df, "path") <- unique(Path)
 	if (length(creator)) attr(df, "creator") <- creator
 	if (length(desc)) attr(df, "desc") <- desc
 	Classes <- c("ZI3Train", "ZITrain", Classes)
@@ -326,6 +356,31 @@ na.rm = FALSE)
 	df
 }
 
+getTest <- function (testdir, creator = NULL, desc = NULL, keep_ = FALSE,
+na.rm = FALSE)
+{
+	## Same as getTrain() but returns a ZITest object... and read _template.zic
+	## to make sure that path and classes do match!
+	if (!file.exists(zicfile) || !zicCheck(zicfile))
+		stop("testdir does not seem to contain a valid test set (may be use getTrain()?)")
+	
+	res <- getTrain(traindir = testdir, creator = creator, desc = desc,
+		keep_ = keep_, na.rm = na.rm)
+	class(res) <- c("ZI3Test", "ZITest", class(res)[-(1:2)])
+	
+	## Read the _template.zic file and change res$Class factors and path accordingly
+	path <- scan(zicfile, character(), sep = "\n", skip = 2, quiet = TRUE)
+	if (!length(path))
+		stop(sprintf("'%s' is empty or corrupted!", zicfile))
+	attr(res, "path") <- path
+	
+	## Now, make sure to recode res$Class factor in the correct order!
+	lev <- sort(basename(path))
+	res$Class <- factor(as.character(res$Class), levels = lev)
+
+	res
+}
+
 .recodeLevels <- function (object, depth = 1)
 {
 	if (!inherits(object, "ZITrain"))
@@ -352,9 +407,6 @@ recode <- function (object, ...)
 
 recode.ZITrain <- function (object, new.levels, depth, ...)
 {	
-	if (!inherits(object, "ZITrain"))
-		stop("'ZITrain' must be a 'ZITrain' object")
-	
 	if (!missing(depth)) {
 		if (!missing(new.levels))
 			warning("depth is provided, so, new.levels is ignored and recomputed")
@@ -388,3 +440,5 @@ recode.ZITrain <- function (object, new.levels, depth, ...)
 	if (!is.null(path)) attr(object, "path") <- path
 	object
 }
+
+recode.ZITest <- recode.ZITrain

@@ -15,89 +15,99 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-processSample <- function (ZidFile, ZidbFile = NULL, ZIClass, ZIMan, ZIDesc,
-abd.taxa = NULL, abd.groups = NULL, abd.type = "absolute", bio.taxa = NULL,
-bio.groups = NULL, bio.conv = c(1, 0, 1), headers = c("Abd", "Bio"),
-spec.taxa = NULL, spec.groups = NULL, spec.breaks = seq(0.25, 2, by = 0.1),
-spec.use.Dil = TRUE, exportdir = NULL, SemiTab = NULL, Semi = FALSE)
+processSample <- function (zidbfile, ZIClass = NULL, use = "both",
+ZIDesc, abd.taxa = NULL, abd.groups = NULL,
+abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL, bio.conv = c(1, 0, 1),
+headers = c("Abd", "Bio"), spec.taxa = NULL, spec.groups = NULL,
+spec.breaks = seq(0.25, 2, by = 0.1), spec.use.Dil = TRUE, exportdir = NULL,
+SemiTab = NULL, Semi = FALSE)
 {    
-	## Check if the ZidFile exists
-	if (!checkFileExists(ZidFile, message = "'ZidFile' not found"))
-		return(invisible(FALSE))
-	
+	zidbfile <- as.character(zidbfile)[1]
+	if (hasExtension(zidbfile, "zidb")) dbext <- "zidb" else dbext <- "zid"
+    if (!checkFileExists(zidbfile, dbext)) return(invisible(FALSE))
+		
 	## Check if ZIClass is of the right class
-	if (!inherits(ZIClass, "ZIClass")) {
+	if (!is.null(ZIClass) && !inherits(ZIClass, "ZIClass")) {
 		warning("'ZIClass' must be a 'ZIClass' object")
 		return(invisible(FALSE))
 	}
     
-	if (!length(ZidbFile)) {
-        ## Check if the ZidFile exists
-        if (!checkFileExists(ZidFile, force.file = TRUE))
-			return(invisible(FALSE))
-		
-        ## Get ZIDat from the ZidFile
-        ZIDat <- zidDatRead(ZidFile)
-        Sample <- sampleInfo(ZidFile, type = "sample",
-            ext = extensionPattern(".zid"))
-	
-	} else { # There is a ZIDB file
-        ## Check if the ZidbFile exists
-        if (!checkFileExists(ZidbFile, force.file = TRUE))
-			return(invisible(FALSE))
-		
-        ## Get ZIDat from the ZidbFile
-        ZIDat <- zidbDatRead(ZidbFile)
-        ## Get ZIDat from the ZidFile
-        Sample <- sampleInfo(ZidbFile, type = "sample",
+	if (dbext == "zidb") { # This is a ZIDB file
+		ZIDat <- zidbDatRead(zidbfile)
+        Sample <- sampleInfo(zidbfile, type = "sample",
             ext = extensionPattern(".zidb"))
+		RES <- zidbSampleRead(zidbfile)
+	} else { # This is an old ZID file
+		 ZIDat <- zidDatRead(zidbfile)
+        Sample <- sampleInfo(zidbfile, type = "sample",
+            ext = extensionPattern(".zid"))
+		ZIDesc <- zisRead(ZIDesc)
+		RES <- ZIDesc[ZIDesc$Label == Sample, ] 
+		if (nrow(RES) == 0)
+			stop("'ZIDesc' has no data for that sample!")
 	}
 	
-	## By default, we have to predict ZidFile with a classifier
-	MakePredictions <- TRUE
+#	## By default, we have to predict zidbfile with a classifier
+#	MakePredictions <- TRUE
+#	
+#	## Modified by Kevin 2010-08-03
+#	if (!is.null(ZIMan)) {
+#		## We want to use a ZIMan table
+#		if (!inherits(ZIMan, "ZIMan"))
+#			stop("'ZIMan' must be a data.frame of class 'ZIMan'")
+#		
+#		## List of samples allready manually validated
+#		AllSamples <- attr(ZIMan, "Samples")
+#		
+#		## Check if manual validation exists for this zid file
+#		if (noExtension(ZidFile) %in% AllSamples) {
+#			## The ZidFile was manually validated
+#			## --> use Class column for identification
+#			## Subtable of ZidFile vignettes
+#			Vignettes <- makeId(ZIDat)
+#			ZIDat <- ZIMan[ZIMan$Id %in% Vignettes, ]
+#			## Sort the table
+#			ZIDat <- ZIDat[order(ZIDat$Item), ]
+#			## We don't have to predict this sample anymore!
+#			MakePredictions <- FALSE
+#		}
+#	}
 	
-	## Modified by Kevin 2010-08-03
-	if (!is.null(ZIMan)) {
-		## We want to use a ZIMan table
-		if (!inherits(ZIMan, "ZIMan"))
-			stop("'ZIMan' must be a data.frame of class 'ZIMan'")
-		
-		## List of samples allready manually validated
-		AllSamples <- attr(ZIMan, "Samples")
-		
-		## Check if manual validation exists for this zid file
-		if (noExtension(ZidFile) %in% AllSamples) {
-			## The ZidFile was manually validated
-			## --> use Class column for identification
-			## Subtable of ZidFile vignettes
-			Vignettes <- makeId(ZIDat)
-			ZIDat <- ZIMan[ZIMan$Id %in% Vignettes, ]
-			## Sort the table
-			ZIDat <- ZIDat[order(ZIDat$Item), ]
-			## We don't have to predict this sample anymore!
-			MakePredictions <- FALSE
-		}
-	}
-	
-	if (isTRUE(MakePredictions)) {
-		## We have to recognize the zid file with a classifier
-		ZIDat <- predict(ZIClass, ZIDat)
-	}
-	
-	## Check if one can get sample metadata from ZIDesc
-	RES <- ZIDesc[ZIDesc$Label == Sample, ] 
-	if (nrow(RES) == 0)
-		stop("'ZIDesc' has no data for that sample!")
-	
-	## Use manual validation if it is present
-	if (isTRUE(MakePredictions)) {
-		## Use Automatic prediction
-		Grp <- levels(ZIDat$Ident)	
+#	if (isTRUE(MakePredictions)) {
+#		## We have to recognize the zid file with a classifier
+#		ZIDat <- predict(ZIClass, ZIDat)
+#	}
+
+	## Depending on 'us', rework ZIDat$Ident...
+	if (use == "Class") {
+		ZIDat$Ident <- ZIDat$Class
 	} else {
-		## Use manual validation as identification
-		Grp <- levels(ZIDat$Class)
+		if (!is.null(ZIClass)) {
+			## If a ZIClass object is provided, (re)perform the prediction
+			ZIDat <- predict(ZIClass, ZIDat, class.only = FALSE)
+		}
+		if (use == "both") { # If Class available, use it, otherwise, use Ident
+			if ("Class" %in% names(ZIDat)) {
+				Ident <- ZIDat$Class
+				missIdent <- is.na(Ident)
+				Ident[missIdent] <- ZIDat$Ident[missIdent]
+				ZIDat$Ident <- Ident
+			}
+		} else if (use != "Ident")
+			stop("Unknown 'use', must be 'Class', 'Ident', or 'both'")
 	}
-	
+		
+#	## Use manual validation if it is present
+#	if (isTRUE(MakePredictions)) {
+#		## Use Automatic prediction
+#		Grp <- levels(ZIDat$Ident)	
+#	} else {
+#		## Use manual validation as identification
+#		Grp <- levels(ZIDat$Class)
+#	}
+
+	Grp <- levels(ZIDat$Ident)
+
 	if (is.null(abd.groups)) {
 		## Calculate groups (list with levels to consider)
 		abd.groups <- as.list(c("", Grp))
@@ -134,7 +144,6 @@ spec.use.Dil = TRUE, exportdir = NULL, SemiTab = NULL, Semi = FALSE)
 		SPClist[[Sample]] <- SPC
 		attr(RES, "spectrum") <- SPClist
 	}
-	attr(RES, "metadata") <- attr(ZIDesc, "metadata")
 	class(RES) <- c("ZI3Res", "ZIRes", "data.frame")
 	RES
 }
