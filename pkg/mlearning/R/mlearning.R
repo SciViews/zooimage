@@ -413,8 +413,8 @@ cv.k = 10, cv.strat = TRUE, ...)
 			classes <- classes[notDup]
 			classes <- classes[pos]
 			
-			## Check that both classes are the same!
-			if (any(classes != est$predictions))
+			## Check that both classes levels are the same!
+			if (any(levels(classes) != levels(est$predictions)))
 				warning("cross-validated classes do not match")
 
 			res <- list(class = classes, membership = membership)

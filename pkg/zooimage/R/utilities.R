@@ -79,15 +79,15 @@ makeId <- function (ZIDat)
 	paste(ZIDat$Label, ZIDat$Item, sep = "_")
 
 ## Default list of variables to keep
-keepVars <- function ()
-	c("logECD", "logArea", "logPerim.", "logMajor", "logMinor", "logFeret",
-	  "Mean", "Median", "Mode", "Min", "Max", "StdDev", "Range", "MeanPos",
-	  "SDNorm", "CV", "IntDen", "Transp1", "Transp2", "Skew", "Kurt",
-	  "Circ.", "AspectRatio",  "Elongation", "Compactness", "Roundness",
-	  "CentBoxD", "GrayCentBoxD", "CentroidsD", "logMeanDia", "logMeanFDia")
+#keepVars <- function ()
+#	c("(log)ECD", "(log)Area", "(log)Perim.", "(log)Major", "(log)Minor", "(log)Feret",
+#	  "Mean", "Median", "Mode", "Min", "Max", "StdDev", "Range", "MeanPos",
+#	  "SDNorm", "CV", "IntDen", "Transp1", "Transp2", "Skew", "Kurt",
+#	  "Circ.", "AspectRatio",  "Elongation", "Compactness", "Roundness",
+#	  "CentBoxD", "GrayCentBoxD", "CentroidsD", "(log)MeanDia", "(log)MeanFDia")
 
 ## Calculate derived variables... default function
-calcVars <- function (x, keep.vars = getOption("ZI.keepVars", keepVars))
+calcVars <- function (x)
 {	
 	## This is the calculation of derived variables
 	## Note that you can make your own version of this function for more
@@ -113,18 +113,18 @@ calcVars <- function (x, keep.vars = getOption("ZI.keepVars", keepVars))
 	x$SDNorm <- x$StdDev / x$Range
 	x$CV <- x$StdDev / x$Mean * 100
 	x$Area <- noZero(x$Area)
-	x$logArea <- log(x$Area)
+	#x$logArea <- log(x$Area)
 	x$Perim. <- noZero(x$Perim.)
-	x$logPerim. <- log(x$Perim.)
-	x$logMajor <- log(x$Major)
-	x$logMinor <- log(x$Minor)
-	x$logECD <- log(noZero(x$ECD))
+	#x$logPerim. <- log(x$Perim.)
+	#x$logMajor <- log(x$Major)
+	#x$logMinor <- log(x$Minor)
+	#x$logECD <- log(noZero(x$ECD))
 	x$Feret <- noZero(x$Feret)
-	x$logFeret <- log(x$Feret)
+	#x$logFeret <- log(x$Feret)
 	x$MeanDia <- (x$Major + x$Minor) / 2
 	x$MeanFDia <- (x$Feret + x$Minor) / 2
-	x$logMeanDia <- log(x$MeanDia)
-	x$logMeanFDia <- log(x$MeanFDia)
+	#x$logMeanDia <- log(x$MeanDia)
+	#x$logMeanFDia <- log(x$MeanFDia)
 	x$Transp1 <- 1 - (x$ECD / x$MeanDia)
 	x$Transp1[x$Transp1 < 0] <- 0
 	x$Transp2 <- 1 - (x$ECD / x$MeanFDia)
@@ -134,13 +134,24 @@ calcVars <- function (x, keep.vars = getOption("ZI.keepVars", keepVars))
 	x$Compactness <-  x$Perim.^2/4/pi/x$Area  # env. 1/Circ.
 	x$Roundness <- 4 * x$Area / (pi * sqrt(x$Major))
 	
-	## Select variables to keep
-	if (length(keep.vars)) {
-		## If  keep.vars is a function, evaluate it...
-		if (is.function(keep.vars)) keep.vars <- keep.vars()
-		## Select only variables to keep
-		x <- x[, keep.vars[keep.vars %in% names(x)]]
-	}
+	## Eliminate variables that are not predictors... and use Id as rownames
+	Id <- x$Id
+	if (length(Id)) rownames(x) <- Id
+	x$Id <- NULL
+	x$Label <- NULL
+	x$Item <- NULL
+	x$X <- NULL
+	x$Y <- NULL
+	x$XM <- NULL
+	x$YM <- NULL
+	x$BX <- NULL
+	x$BY <- NULL
+	x$Width <- NULL
+	x$Height <- NULL
+	x$Angle <- NULL
+	x$XStart <- NULL
+	x$YStart <- NULL
+	x$Dil <- NULL
 
 	## Return the recalculated data frame
 	x

@@ -4,7 +4,6 @@
 \alias{trimString}
 \alias{listSamples}
 \alias{makeId}
-\alias{keepVars}
 \alias{calcVars}
 \alias{ecd}
 \alias{parseIni}
@@ -28,8 +27,7 @@ trimString(string)
 
 listSamples(ZIobj)
 makeId(ZIDat)
-keepVars()
-calcVars(x, keep.vars = getOption("ZI.keepVars", keepVars))
+calcVars(x)
 
 ecd(area)
 
@@ -59,8 +57,6 @@ zipNoteGet(zipfile, zimfile = NULL)
   \item{ZIobj}{ a ZooImage object (here, a 'ZIDat', 'ZIDesc' or 'ZITrain' object). }
   \item{ZIDat}{ a 'ZIDat' object, or a data frame with correct column labels. }
   \item{x}{ a data frame, but most probably, a 'ZIDat' object. }
-  \item{keep.vars}{ a list of the variables to keep in the classification, if
-    the argument is not of length 0 (or \code{NULL}). }
   \item{area}{ a numerical vector with areas from which ECDs are calculated
     (Equivalent Circular Diameter, a more suitable term for 2D images than ESD,
 	Equivalent Spherical Diameter). }
@@ -81,8 +77,7 @@ zipNoteGet(zipfile, zimfile = NULL)
   element found.
 
   The data.frame with additional columns for calculated variables with
-  \code{calcVars()}. It uses a list of variables to keep as predictors, and by
-  default, this list is returned by \code{keepVars()}.
+  \code{calcVars()}.
 
   A vector of numerical values for \code{ecd()}.
 

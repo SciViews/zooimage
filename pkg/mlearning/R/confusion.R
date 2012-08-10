@@ -1,7 +1,8 @@
 confusion <- function (x, ...)
 	UseMethod("confusion")
 
-.confusion <- function (classes, labels, weights, ...)
+## TODO: implement weights
+.confusion <- function (classes, labels, prior, ...)
 {
 	res <- table(classes, dnn = labels)
 	total <- sum(res)
@@ -13,28 +14,28 @@ confusion <- function (x, ...)
 	attr(res, "col.freqs") <- colSums(res)
 	attr(res, "levels") <- levels(classes[1, ]) # These are *initial* levels!
 	## Final levels may differ if there are empty levels, or NAs!
-	attr(res, "weights") <- row.freqs # Initial weights are row.freqs
+	attr(res, "prior") <- row.freqs # Initial prior are row.freqs
 	attr(res, "stats") <- c(total = total, truepos = truePos,
 		error = 1 - (truePos / total))
 	
 	## This is a confusion object, inheriting from table
 	class(res) <- c("confusion", "table")
 	
-	## Do we reweight the confusion matrix?
-	if (!missing(weights)) weights(res) <- weights
+	## Do we rescale the confusion matrix?
+	if (!missing(prior)) prior(res) <- prior
 	
 	res
 }
 	
 confusion.default <- function (x, y = NULL, vars = c("Actual", "Predicted"),
-labels = vars, merge.by = "Id", weights, ...)
+labels = vars, merge.by = "Id", prior, ...)
 {	
 	## If the object is already a 'confusion' object, return it
 	if (inherits(x, "confusion")) {
 		if (!missing(y))
 			warning("you cannot provide 'y' when 'x' is a 'confusion' object")
-		## Possibly reweight it
-		if (!missing(weights)) weights(x) <- weights		
+		## Possibly rescale it
+		if (!missing(prior)) prior(x) <- prior		
 		return(x)
 	}
 	
@@ -42,7 +43,7 @@ labels = vars, merge.by = "Id", weights, ...)
 	conf <- attr(x, "confusion")
 	if (!is.null(conf) && missing(y)) {
 		## Possibly reweight it
-		if (!missing(weights)) weights(conf) <- weights
+		if (!missing(prior)) prior(conf) <- prior
 		return(conf)
 	}	
 
@@ -120,15 +121,15 @@ labels = vars, merge.by = "Id", weights, ...)
 	}
 	
 	## Construct the confusion object
-	if (missing(weights)) {
+	if (missing(prior)) {
 		.confusion(classes = clCompa, labels = labels, ...)
 	} else {
-		.confusion(classes = clCompa, labels = labels, weights = weights, ...)
+		.confusion(classes = clCompa, labels = labels, prior = prior, ...)
 	}
 }
 
 confusion.mlearning <- function (x, y = response(x),
-labels = c("Actual", "Predicted"), weights, ...) {
+labels = c("Actual", "Predicted"), prior, ...) {
 	## Check labels
 	labels <- as.character(labels)
 	if (length(labels) != 2)
@@ -150,35 +151,38 @@ labels = c("Actual", "Predicted"), weights, ...) {
 	}
 	
 	## Construct the confusion object
-	if (missing(weights)) {
+	if (missing(prior)) {
 		.confusion(data.frame(class1 = y, class2 = class2),
 			labels = labels, ...)
 	} else {
 		.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, weights = weights, ...)
+			labels = labels, prior = prior, ...)
 	}
 }
 
-weights.confusion <- function (object, ...)
-	attr(object, "weights")
+prior <- function (object, ...)
+	UseMethod("prior")
 
-`weights<-`<- function (object, ..., value)
-	UseMethod("weights<-")
+prior.confusion <- function (object, ...)
+	attr(object, "prior")
 
-`weights<-.confusion`<- function (object, ..., value)
+`prior<-`<- function (object, ..., value)
+	UseMethod("prior<-")
+
+`prior<-.confusion`<- function (object, ..., value)
 {
+	rsums <- rowSums(object)
 	if (!length(value)) { # value is NULL or of zero length
-		## Reset weights to original frequencies
+		## Reset prior to original frequencies
 		value <- attr(object, "row.freqs")
-		attr(object, "weights") <- value
-		round(object / apply(object, 1, sum) * value)
+		res <- round(object / rsums * value)
 	
 	} else if (is.numeric(value)) { # value is numeric
 		
 		if (length(value) == 1) { # value is a single number
 			if (is.na(value) || !is.finite(value) || value <= 0)
 				stop("value must be a finite positive number")
-			res <- object / apply(object, 1, sum) * as.numeric(value)
+			res <- object / rsums * as.numeric(value)
 		
 		} else { # value is a vector of numerics
 			## It must be either of the same length as nrow(object) or of
@@ -207,12 +211,15 @@ weights.confusion <- function (object, ...)
 
 			} else stop("length of 'value' do not match the number of levels in the confusion matrix")	
 			
-			res <- object / apply(object, 1, sum) * as.numeric(value)
+			res <- object / rsums * as.numeric(value)
 		}
-		attr(res, "weights") <- rowSums(res)
-		res
 		
 	} else stop("value must be a numeric vector, a single number or NULL")
+	
+	attr(res, "prior") <- value
+	## Take care to rows with no items! => put back zeros!
+	res[rsums == 0] <- 0
+	res
 }
 
 print.confusion <- function (x, sums = TRUE, error.col = sums, digits = 0,
@@ -225,10 +232,10 @@ sort = "ward", ...)
 		" true positives (error rate = ", Error, "%)\n",
 		sep = "")
 	row.freqs <- attr(x, "row.freqs")
-	if (!all(attr(x, "weights") == row.freqs)) {
-		cat("with initial row weights (frequencies):\n")
+	if (!all(attr(x, "prior") == row.freqs)) {
+		cat("with initial row frequencies:\n")
 		print(row.freqs)
-		cat("Reweighted to:\n")
+		cat("Rescaled to:\n")
 	}
 	
 	## Print the confusion matrix itself

@@ -17,16 +17,17 @@
 }
 
 \usage{
-ZIClass(formula, data, mlearning = getOption("ZI.mlearning", mlRforest),
-    calc.vars = getOption("ZI.calcVars", calcVars), k.xval = 10, \dots,
-    subset, na.action = getOption("ZI.naAction", na.omit))
+ZIClass(formula, data, method = getOption("ZI.mlearning", "mlRforest"),
+    calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10, cv.strat = TRUE,
+    \dots, subset, na.action = na.omit)
 
 \method{print}{ZIClass}(x, \dots)
-\method{summary}{ZIClass}(object, sort.by = NULL, decreasing = FALSE,
+\method{summary}{ZIClass}(object, sort.by = "Fscore", decreasing = TRUE,
     na.rm = FALSE, \dots)
-\method{predict}{ZIClass}(object, ZIDat, calc.vars = TRUE, class.only = FALSE,
-    type = "class", na.rm = FALSE, \dots)
-\method{confusion}{ZIClass}(x, ...)
+\method{predict}{ZIClass}(object, ZIDat, calc = TRUE, class.only = TRUE,
+    type = "class", \dots)
+\method{confusion}{ZIClass}(x, y = response(x), labels = c("Actual", "Predicted"),
+    prior, use.cv = TRUE, \dots)
 }
 
 \arguments{  
@@ -37,15 +38,16 @@ ZIClass(formula, data, mlearning = getOption("ZI.mlearning", mlRforest),
     named \code{Class}, the formula almost always reduces to \code{Class ~ .} }
   \item{data}{ a data frame (a 'ZITrain' object usually), containing both
     measurement and identification (a factor variables usually named 'Class'). }
-  \item{mlearning}{ the machine learning function to use. It should produce
+  \item{method}{ the machine learning method to use. It should produce
     results compatible with \code{mlearning} objects as returned by the various
     \code{mlXXX()} functions in the \code{mlearning} package. By default, the
-    random forest algorithm is use (it is among the ones that give best result
+    random forest algorithm is used (it is among the ones that give best result
     with plankton). }
   \item{calc.vars}{ a function to use to calculate variables from the original
-    data frame. For \code{predict()}, a boolean indicating if variables have
-    to be recalculated or not before prediction. }
-  \item{k.xval}{ the k times for cross-validation. }
+    data frame. }
+  \item{cv.k}{ the k times for cross-validation. }
+  \item{cv.strat}{ do we use a stratified sampling for cross-validation?
+    (recommended). }
   \item{\dots}{ further arguments to pass to the classification algorithm (see
     help of that particular function). }
   \item{subset}{ an expression for subsetting to original data frame. }
@@ -57,15 +59,34 @@ ZIClass(formula, data, mlearning = getOption("ZI.mlearning", mlRforest),
     many \code{NA}s in your dataset! }
   \item{x}{ a 'ZIClass' object. }
   \item{object}{ a 'ZIClass' object. }
-  \item{sort.by}{ the statistics to use to sort the table (by default, FN, the
-    false negative rate). }
+  \item{sort.by}{ the statistics to use to sort the table (by default, F-score). }
   \item{decreasing}{ do we sort in increasing or decreasing order? }
   \item{na.rm}{ do we eliminate entries with missing data first (using
     \code{na.omit()})? }
+  \item{calc}{ a boolean indicating if variables have to be recalculated
+    before running the prediction. }
   \item{ZIDat}{ a 'ZIDat' object where items should be classified. }
-  \item{class.only}{ if TRUE, retrun just a vector with classification,
-    otherwise, return a 'ZIDat' object with 'Ident' column appended to it. }
-  \item{type}{ the type of result to return, \code{"class"} by default. }
+  \item{class.only}{ if TRUE, return just a vector with classification,
+    otherwise, return the 'ZIDat' object with 'Ident' column appended to it. }
+  \item{type}{ the type of result to return, \code{"class"} by default. No other
+    value is permitted if class.only is \code{FALSE}. }
+  \item{y}{ a factor with reference classes. }
+  \item{labels}{ labels to use for, respectively, the reference class and the
+    predicted class. }
+  \item{prior}{ class frequencies to use for first classifier that
+    is tabulated in the rows of the confusion matrix. This is either a single
+    positive numeric to set all class frequencies to this value (use 1 for
+    relative frequencies and 100 for relative freqs in percent), or a vector of
+    positive numbers of the same length as the levels in the object. If the
+    vector is named, names must match levels. Alternatively, providing
+    \code{NULL} or an object of null length resets row class prefencies into
+    their initial values. }
+  \item{use.cv}{ the predicted values extracted from the 'ZIClass' object can
+    either be the predicted values from the training set, or the cross-validated
+    predictions (by default). Most of the time, you want the cross-validated
+    predictions, which allows for not (or less) biased evaluation of the
+    classifier prediction... So, if you don't know, you are probably better
+    leaving the default value. }
 }
 
 \value{

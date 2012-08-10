@@ -15,35 +15,30 @@
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-ZIClass <- function (formula, data, mlearning = getOption("ZI.mlearning",
-mlRforest), calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10, cv.strat,
-..., subset, na.action = getOption("ZI.naAction", na.omit))
+## Create basically a mlearning object, but with predicted and cvpredicted added
+## to it, and the '+other+' level added at the end of all levels
+ZIClass <- function (formula, data, method = getOption("ZI.mlearning",
+"mlRforest"), calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10,
+cv.strat = TRUE, ..., subset, na.action = na.omit)
 {	
 	## Check calc.vars and use it on data
 	if (length(calc.vars))
 		if (!is.function(calc.vars)) {
 			stop("'calc.vars' must be a function or NULL")
 		} else data <- calc.vars(data)
-
-	## Machine learning function
-	mlearning <- match.fun(mlearning)
-	if (!is.function(mlearning))
-		stop("'mlearning' must be a function that produce a 'mlearning' object or a compatible one")
 	
 	## Train the machine learning algorithm
-	if (missing(subset) || !length(subset)) {
-		ZI.class <- mlearning(formula, data = data, ..., na.action = na.action)
-	} else {
-		ZI.class <- mlearning(formula, data = data, ..., subset,
-			na.action = na.action)
-	}
-	
+	ZI.class <- mlearning(formula, data = data, method = method,
+		model.args = list(formula  = formula, data = substitute(data),
+		subset = substitute(subset)), call = match.call(), ...,
+		subset = subset, na.action = substitute(na.action))
+		
 	## Add ZIClass as class of the object
 	class(ZI.class) <- c("ZIClass", class(ZI.class))
 	attr(ZI.class, "calc.vars") <- calc.vars
 
 	## Calculate predictions with full training set
-    attr(ZI.class, "predict") <- predict(ZI.class, data, calc.vars = FALSE)
+    attr(ZI.class, "predict") <- predict(ZI.class, data, calc = FALSE)
 
 	## Possibly make a k-fold cross-validation and check results
 	if (length(cv.k)) {
@@ -52,33 +47,43 @@ mlRforest), calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10, cv.strat,
 		attr(ZI.class, "k") <- cv.k
 		attr(ZI.class, "strat") <- cv.strat
 	}
+	
+	## Make sure the '+other+' group exists
+	lev <- levels(ZI.class)
+	if (!"+other+" %in% lev) attr(ZI.class, "levels") <- c(lev, "+other+")
+	
 	ZI.class
 }
 
 print.ZIClass <- function (x, ...)
 {
 	algorithm <- attr(x, "algorithm")
-	classes <- attr(x, "classes")
+	classes <- attr(x, "response")
 	lclasses <- levels(classes)
     predicted <- attr(x, "predict")
+	if (is.list(predicted)) predicted <- predicted$class
 	k <- attr(x, "k")
+	strat <- attr(x, "strat")
 	cat("A 'ZIClass' object predicting for", length(lclasses), "classes:\n")
 	print(lclasses)
-	Confu <- confusion(classes, predicted)
-	mism <- 100 * (1 - (sum(diag(Confu)) / sum(Confu)))
+	Confu <- table(classes, predicted)
+	SelfConsist <- 100 * (sum(diag(Confu)) / sum(Confu))
 
 	## Change the number of digits to display
 	oldDigits <- options(digits = 4)
 	on.exit(options(oldDigits))
 	cat("\nAlgorithm used:", algorithm, "\n")
-	cat("Mismatch in classification: ", mism, "%\n", sep = "")
+	cat("Self-consistency: ", SelfConsist, "%\n", sep = "")
 	if (!is.null(k)) {
-    	cat("k-fold cross validation error estimation (k = ", k, "):\n")
-		kfold.predict <- attr(x, "kfold.predict")
+		if (isTRUE(strat)) msg <- ", stratified" else msg <- ""
+    	cat("K-fold cross validation error estimation (k = ", k, msg, "):\n",
+			sep = "")
+		cvpredicted <- attr(x, "cvpredict")
+		if (is.list(cvpredicted)) cvpredicted <- cvpredicted$class
 		prior <- table(classes)
-		ok <- diag(table(classes, kfold.predict))
+		ok <- diag(table(classes, cvpredicted))
 		err <- 100 * (1 - (sum(ok) / sum(prior)))
-		cat(err, "%\n", sep = "")
+		cat("Error rate: ", err, "%\n", sep = "")
 		cat("\nError per class:\n")
 		`Error (%)` <- sort(1 - (ok / prior)) * 100
 		print(as.data.frame(`Error (%)`))
@@ -90,12 +95,12 @@ summary.ZIClass <- function(object, sort.by = "Fscore", decreasing = TRUE,
 na.rm = FALSE, ...)
 {
 	## Get the confusion object out of a ZIClass object and calc stats from there
-	summary(confusion(object), sort.by = sort.by, decreasing = decreasing,
-		na.rm = na.rm)
+	summary(confusion(object, response(object)), sort.by = sort.by, decreasing = decreasing,
+		na.rm = na.rm, ...)
 }
 
-predict.ZIClass <- function (object, ZIDat, calc.vars = TRUE,
-class.only = FALSE, type = "class", na.rm = FALSE, ...)
+predict.ZIClass <- function (object, ZIDat, calc = TRUE, class.only = TRUE,
+type = "class", ...)
 {
 	## Make sure we have correct objects
 	if (!inherits(object, "ZIClass"))
@@ -106,72 +111,64 @@ class.only = FALSE, type = "class", na.rm = FALSE, ...)
     class(object) <- class(object)[-1]
 	data <- as.data.frame(ZIDat)
 	
-	if (isTRUE(as.logical(calc.vars)))
+	if (isTRUE(as.logical(calc)))
 		data <- attr(object, "calc.vars")(data)
-	if (isTRUE(as.logical(na.rm))) na.omit(data)
 	
-	algorithm <- attr(object, "algorithm")
-	if (type != "prob") {
-	   # modification to accept algoritms from party package
-	   if (algorithm %in% c("ctree", "cforest")) {
-            Ident <- predict(object, newdata = data, type = "response",
-				OOB = FALSE)
-		} else {
-            Ident <- predict(object, newdata = data, type = type)
-		}
-	} else {
-		if (inherits(object, "randomForest")) {
-			Ident <- predict(object, newdata = data, type = type)
-		} else if (inherits(object, "lda")) {
-			Ident <- predict(object, newdata = data)$posterior
-		} else stop("Cannot calculate yet for other algorithms than Random Forest or LDA")
+	class.only <- isTRUE(as.logical(class.only))
+	type <- as.character(type)[1]
+	if (class.only && type != "class") {
+		warning("with class.only == TRUE, tyep can only be 'class' and is force to it")
+		type <- "class"
 	}
-
-	## Special case for prediction from an LDA (list with $class item)
-	if (inherits(Ident, "list") && "class" %in% names(Ident))
-		Ident <- Ident$class
-	if (!isTRUE(as.logical(class.only))) {
-		res <- cbind(ZIDat, Ident)
-		class(res) <- class(ZIDat)
-	} else res <- Ident
 	
-	## New metadata attribute
-	attr(res, "metadata") <- attr(ZIDat, "metadata")
-	res
+	## Perform the prediction
+	res <- predict(object, newdata = data, ...)
+	
+	## Return either the prediction, or the ZIDat object with Ident column append/replaced
+	if (class.only) res else {
+		ZIDat$Ident <- res
+		ZIDat
+	}
 }
 
-#confusion.ZIClass <- function (x, ...)
-#{
-#	## If the object is ZIClass, calculate 'confusion'
-#	## from attributes 'classes' and 'kfold.predict' 
-#	if (!inherits(x, "ZIClass"))
-#		stop("'x' must be a 'ZIClass' object")
-#	
-#	x <- attr(x, "classes")
-#	y <- attr(x, "kfold.predict")
-#	labels <- c("Class", "Predict")
-#	clCompa <- data.frame(Class = x, Predict = y)
-#	## How many common objects by level?
-#	NbrPerClass1 <- table(clCompa[, 1])
-#	## How many predicted objects
-#	NbrPerClass2 <- table(clCompa[, 2])
-#	## Confusion matrix
-#	Conf <- table(clCompa)
-#	## Further stats: total, true positives, accuracy
-#	Total <- sum(Conf)
-#	TruePos <- sum(diag(Conf))
-#	Stats <- c(total = Total, truepos = TruePos, accuracy = TruePos / Total * 100)
-#
-#	## Change labels to get a more compact presentation
-#	colnames(Conf) <- formatC(1:ncol(Conf), digits = 1, flag = "0")
-#	rownames(Conf) <- paste(colnames(Conf), rownames(Conf))
-#
-#	## Additional data as attributes
-#	attr(Conf, "stats") <- Stats
-#	attr(Conf, "nbr.rows") <- NbrPerClass1
-#	attr(Conf, "nbr.cols") <- NbrPerClass2
-#	
-#	## This is a confusion object
-#	class(Conf) <- c("confusion", "table")
-#	Conf
-#}
+confusion.ZIClass <- function (x, y = response(x),
+labels = c("Actual", "Predicted"), prior, use.cv = TRUE, ...) {
+	## Check labels
+	labels <- as.character(labels)
+	if (length(labels) != 2)
+		stop("You must provide exactly 2 character strings for 'labels'")
+	
+	## Extract class2: cvpredict or predict from the object
+	if (isTRUE(as.logical(use.cv))) {
+		class2 <- attr(x, "cvpredict")
+		if (is.list(class2)) class2 <- class2$class
+		if (is.null(class2))
+			stop("No or wrong cross-validated predictions in this ZIClass object")
+	} else { # Use predict
+		class2 <- attr(x, "predict")
+		if (is.list(class2)) class2 <- class2$class
+	}
+	
+	## Check that both variables are of same length and same levels
+	if (length(y) != length(class2))
+		stop("lengths of 'x' and 'y' are not the same")
+	
+	## Full list of levels is in (cv)predict in class2...
+	## Response in y may have dropped levels! 
+	lev1 <- levels(y)
+	lev2 <- levels(class2)
+	if (!all(lev1  %in% lev2))
+		stop("levels of 'x' and 'y' do not match")
+	
+	## Rework levels in y to make sure they match perfectly thos in class2
+	y <- factor(as.character(y), levels = lev2)
+	
+	## Construct the confusion object
+	if (missing(prior)) {
+		mlearning:::.confusion(data.frame(class1 = y, class2 = class2),
+			labels = labels, ...)
+	} else {
+		mlearning:::.confusion(data.frame(class1 = y, class2 = class2),
+			labels = labels, prior = prior, ...)
+	}
+}

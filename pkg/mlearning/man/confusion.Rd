@@ -10,9 +10,10 @@
 \alias{confusionBarplot}
 \alias{confusionStars}
 \alias{confusionDendrogram}
-\alias{weights.confusion}
-\alias{weights<-}
-\alias{weights<-.confusion}
+\alias{prior}
+\alias{prior.confusion}
+\alias{prior<-}
+\alias{prior<-.confusion}
 
 \title{ Construct and analyze confusion matrices }
 \description{
@@ -25,9 +26,9 @@
 \usage{
 confusion(x, \dots)
 \method{confusion}{default}(x, y = NULL, vars = c("Actual", "Predicted"),
-    labels = vars, merge.by = "Id", weights, \dots)
+    labels = vars, merge.by = "Id", prior, \dots)
 \method{confusion}{mlearning}(x, y = response(x),
-    labels = c("Actual", "Predicted"), weights, \dots)
+    labels = c("Actual", "Predicted"), prior, \dots)
 
 \method{print}{confusion}(x, sums = TRUE, error.col = sums, digits = 0,
     sort = "ward", \dots)
@@ -49,9 +50,10 @@ confusionStars(x, y = NULL, stat1 = "Recall", stat2 = "Precision", names, main,
 confusionDendrogram(x, y = NULL, labels = rownames(x), sort = "ward",
     main = "Groups clustering", \dots)
 
-\method{weights}{confusion}(object, \dots)
-weights(object, \dots) <- value
-\method{weights}{confusion}(object, \dots) <- value
+prior(object, \dots)
+\method{prior}{confusion}(object, \dots)
+prior(object, \dots) <- value
+\method{prior}{confusion}(object, \dots) <- value
 }
 
 \arguments{
@@ -66,7 +68,7 @@ weights(object, \dots) <- value
     the same as \code{vars} or the one in the confusion matrix. }
   \item{merge.by}{ a character string with the name of variables to use to merge
     the two data frames, or \code{NULL}. }
-  \item{weights}{ weights (class frequencies) to use for first classifier that
+  \item{prior}{ class frequencies to use for first classifier that
     is tabulated in the rows of the confusion matrix. For its value, see here
     under, the \code{value} argument. }
   \item{sums}{ is the confusion matrix printed with rows and columns sums? }
@@ -111,19 +113,17 @@ weights(object, \dots) <- value
   \item{names}{ names of the two classifiers to compare. }
   \item{main}{ main title of the graph. }
   \item{min.width}{ minimum bar width required to add numbers. }
-  \item{value}{ a single positive  numeric to set all class frequencies to this
+  \item{value}{ a single positive numeric to set all class frequencies to this
     value (use 1 for relative frequencies and 100 for relative freqs in percent),
     or a vector of positive numbers of the same length as the levels in the
     object. If the vector is named, names must match levels. Alternatively,
-    providing \code{NULL} or an object of null length resets weights into their
-    initial values (here, weights are class frequencies according to the first
-    classifier, and depending on the context, they correspond to actual values,
-    priors, optimal posteriors, etc.). }
+    providing \code{NULL} or an object of null length resets row class
+    frequencies into their initial values. }
 }
 
 \value{
-  A confusion matrix in a 'confusion' object. \code{weights()} returns the
-  current class weights associated with first classification tabulated, i.e.,
+  A confusion matrix in a 'confusion' object. \code{prior()} returns the
+  current class frequencies associated with first classification tabulated, i.e.,
   for rows in the confusion matrix.
 }
 
@@ -168,31 +168,31 @@ plot(glassConf, glassConf2)
 ## the real proportions (so-called, priors), one should first reweight the
 ## confusion matrix before calculating statistics, for instance:
 prior1 <- c(10, 10, 10, 100, 100, 100) # Glass types 1-3 are rare
-weights(glassConf) <- prior1
+prior(glassConf) <- prior1
 glassConf
 summary(glassConf, type = c("Fscore", "Recall", "Precision"))
 plot(glassConf)
 
 ## This is very different than if glass types 1-3 are abundants!
 prior2 <- c(100, 100, 100, 10, 10, 10) # Glass types 1-3 are abundants
-weights(glassConf) <- prior2
+prior(glassConf) <- prior2
 glassConf
 summary(glassConf, type = c("Fscore", "Recall", "Precision"))
 plot(glassConf)
 
 ## Weight can also be used to construct a matrix of relative frequencies
 ## In this case, all rows sum to one
-weights(glassConf) <- 1
+prior(glassConf) <- 1
 print(glassConf, digits = 2)
 ## However, it is easier to work with relative frequencies in percent
 ## and one gets a more compact presentation
-weights(glassConf) <- 100
+prior(glassConf) <- 100
 glassConf
 
-## To reset weights to original propotions, just assign NULL
-weights(glassConf) <- NULL
+## To reset row class frequencies to original propotions, just assign NULL
+prior(glassConf) <- NULL
 glassConf
-weights(glassConf)
+prior(glassConf)
 }
 
 \keyword{ tree }

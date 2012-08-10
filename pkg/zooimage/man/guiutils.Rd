@@ -69,7 +69,7 @@ modalAssistant(title, text, init, options = NULL, check = NULL,
   returned to indicate the user clicked 'Cancel', while an empty string
   (\code{""}) is returned in case there is no corresponding element found.
   
-  \code{createThreshold()} prposes a dialog box to create a threshold on one
+  \code{createThreshold()} proposes a dialog box to create a threshold on one
   variable in a ZIDat object (indicate minimum and maximum value allowed for
   that variable).
   

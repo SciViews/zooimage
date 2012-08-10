@@ -25,7 +25,8 @@ export(summary.lvq)
 export(response)
 export(train)
 
-export("weights<-")
+export(prior)
+export("prior<-")
 
 export(confusion)
 export(confusionImage)
@@ -50,8 +51,8 @@ S3method(cvpredict, mlearning)
 S3method(response, default)
 S3method(train, default)
 
-S3method(weights, confusion)
-S3method("weights<-", confusion)
+S3method(prior, confusion)
+S3method("prior<-", confusion)
 
 S3method(summary, lvq)
 S3method(print, summary.lvq)

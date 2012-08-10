@@ -506,7 +506,7 @@ makeTrain <- function ()
 	## Analyze result
 	#if (res == "ID_CANCEL") return(invisible())
 	res <- dlgList(opts, preselect = defval, multiple = FALSE,
-		title = "Select the default groups to use to initialize your training set:")$res	
+		title = "Select the default classes to use to initialize your training set:")$res	
 	if (!length(res)) return(invisible(NULL))
 
 	## Did we selected "Another config..."?
@@ -539,8 +539,8 @@ makeTrain <- function ()
 	if (!length(zidfiles)) return(invisible(NULL))
 
 	## Prepare the training set
-	prepareTrain(dir, subdir, zidfiles, groups.template = res,
-		start.viewer = TRUE)
+	prepareTrain(file.path(dir, subdir), zidfiles, template = res)
+	imageViewer(file.path(dir, subdir, "_"))
 
 	## Remember the directory...
 	assignTemp("ZI.TrainDir", file.path(dir, subdir))
