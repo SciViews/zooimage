@@ -2,9 +2,15 @@ confusion <- function (x, ...)
 	UseMethod("confusion")
 
 ## TODO: implement weights
-.confusion <- function (classes, labels, prior, ...)
+.confusion <- function (classes, labels, useNA, prior, ...)
 {
-	res <- table(classes, dnn = labels)
+	## useNA can be "no", "always" or "ifany", but with the later value
+	## one takes the risk to get non square matrix if there are NAs in only
+	## on vector of classes => change to "no" or "always", depending if there
+	## are missing data or not
+	if (useNA == "ifany")
+		if (any(is.na(classes))) useNA <- "always" else useNA <- "no"
+	res <- table(classes, dnn = labels, useNA = useNA)
 	total <- sum(res)
 	truePos <- sum(diag(res))
 	row.freqs <- rowSums(res)	
@@ -28,7 +34,7 @@ confusion <- function (x, ...)
 }
 	
 confusion.default <- function (x, y = NULL, vars = c("Actual", "Predicted"),
-labels = vars, merge.by = "Id", prior, ...)
+labels = vars, merge.by = "Id", useNA = "ifany", prior, ...)
 {	
 	## If the object is already a 'confusion' object, return it
 	if (inherits(x, "confusion")) {
@@ -122,14 +128,15 @@ labels = vars, merge.by = "Id", prior, ...)
 	
 	## Construct the confusion object
 	if (missing(prior)) {
-		.confusion(classes = clCompa, labels = labels, ...)
+		.confusion(classes = clCompa, labels = labels, useNA = useNA, ...)
 	} else {
-		.confusion(classes = clCompa, labels = labels, prior = prior, ...)
+		.confusion(classes = clCompa, labels = labels, useNA = useNA,
+			prior = prior, ...)
 	}
 }
 
 confusion.mlearning <- function (x, y = response(x),
-labels = c("Actual", "Predicted"), prior, ...) {
+labels = c("Actual", "Predicted"), useNA = "ifany", prior, ...) {
 	## Check labels
 	labels <- as.character(labels)
 	if (length(labels) != 2)
@@ -153,10 +160,10 @@ labels = c("Actual", "Predicted"), prior, ...) {
 	## Construct the confusion object
 	if (missing(prior)) {
 		.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, ...)
+			labels = labels, useNA = useNA, ...)
 	} else {
 		.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, prior = prior, ...)
+			labels = labels, useNA = useNA, prior = prior, ...)
 	}
 }
 
@@ -284,7 +291,6 @@ sort = "ward", ...)
 	invisible(x)
 }
 
-## TODO: a precision-recall diagram for all groups with F1-score lines
 plot.confusion <- function (x, y = NULL,
 type = c("image", "barplot", "stars", "dendrogram"), stat1 = "Recall",
 stat2 = "Precision", names, ...)
@@ -342,7 +348,7 @@ cex = 1, asp = 1, colfun, ncols = 41, col0 = FALSE, grid.col = "gray", ...)
 	
 	## Recode row and column names for more compact display
 	colnames(x) <- names2 <- formatC(1:n, digits = 1, flag = "0")
-	rownames(x) <- names1 <- paste(names2, rownames(x))
+	rownames(x) <- names1 <- paste(rownames(x), names2)
 	
 	## Transform for better colorization
 	## (use a transfo to get 0, 1, 2, 3, 4, 7, 10, 15, 25+)
@@ -690,15 +696,23 @@ decreasing = TRUE, ...)
 	Fmicro <- 2 * meanRecall * meanPrecision / (meanRecall + meanPrecision)
 	Fmacro <- sum(Fscore, na.rm = TRUE) / Ngp
     
-    res <- data.frame(
+    ## Take care to avoid missing data for data frame rownames!
+	nms <- names(Fscore)
+	nms[is.na(nms)] <- "<NA>"
+	names(Fscore) <- nms
+	
+	## Create a data frame with all results
+	res <- data.frame(
 	   Fscore = Fscore, Recall = Recall, Precision = Precision,
 	   Specificity = Specificity, NPV = NPV, FPR = FPR, FNR = FNR, FDR = FDR,
 	   FOR = FOR, LRPT = LRPT, LRNT = LRNT, LRPS = LRPS, LRNS = LRNS, 
 	   BalAcc = BalAcc, MCC = MCC, Chisq = Chisq, Bray = Bray, Auto = TP_FP,
 	   Manu = TP_FN, A_M = Auto_Manu, TP = TP, FP = FP, FN = FN, TN = TN)
 
-    rownames(res) <- lev <- rownames(object)
-    
+    lev <- rownames(object)
+    lev[is.na(lev)] <- "<NA>"
+	rownames(res) <- lev
+	
 	## Sort the table in function of one parameter... by default Fscore
 	if (length(sort.by) && sort.by != FALSE) {
 		if (sort.by %in% names(res)) {

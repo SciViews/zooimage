@@ -28,7 +28,6 @@
 \alias{calib}
 \alias{optInOutDecimalSep}
 \alias{calib}
-\alias{subpartZIDat}
 
 \title{ The ZooImage GUI (Graphical User Interface) }
 \description{
@@ -64,8 +63,6 @@ listObjects()
 removeObjects()
 calib()
 optInOutDecimalSep()
-
-subpartZIDat()
 }
 
 \arguments{

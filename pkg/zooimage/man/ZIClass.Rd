@@ -24,10 +24,10 @@ ZIClass(formula, data, method = getOption("ZI.mlearning", "mlRforest"),
 \method{print}{ZIClass}(x, \dots)
 \method{summary}{ZIClass}(object, sort.by = "Fscore", decreasing = TRUE,
     na.rm = FALSE, \dots)
-\method{predict}{ZIClass}(object, ZIDat, calc = TRUE, class.only = TRUE,
+\method{predict}{ZIClass}(object, newdata, calc = TRUE, class.only = TRUE,
     type = "class", \dots)
 \method{confusion}{ZIClass}(x, y = response(x), labels = c("Actual", "Predicted"),
-    prior, use.cv = TRUE, \dots)
+    useNA = "ifany", prior, use.cv = TRUE, \dots)
 }
 
 \arguments{  
@@ -37,7 +37,8 @@ ZIClass(formula, data, method = getOption("ZI.mlearning", "mlRforest"),
     \code{calc.vars} and the class variable in 'ZITrain' object is always
     named \code{Class}, the formula almost always reduces to \code{Class ~ .} }
   \item{data}{ a data frame (a 'ZITrain' object usually), containing both
-    measurement and identification (a factor variables usually named 'Class'). }
+    measurement and manual classification (a factor variables usually named
+    'Class'). }
   \item{method}{ the machine learning method to use. It should produce
     results compatible with \code{mlearning} objects as returned by the various
     \code{mlXXX()} functions in the \code{mlearning} package. By default, the
@@ -59,20 +60,25 @@ ZIClass(formula, data, method = getOption("ZI.mlearning", "mlRforest"),
     many \code{NA}s in your dataset! }
   \item{x}{ a 'ZIClass' object. }
   \item{object}{ a 'ZIClass' object. }
+  \item{newdata}{ a 'ZIDat' object, or a 'data.frame' to use for prediction. }
   \item{sort.by}{ the statistics to use to sort the table (by default, F-score). }
   \item{decreasing}{ do we sort in increasing or decreasing order? }
   \item{na.rm}{ do we eliminate entries with missing data first (using
     \code{na.omit()})? }
   \item{calc}{ a boolean indicating if variables have to be recalculated
     before running the prediction. }
-  \item{ZIDat}{ a 'ZIDat' object where items should be classified. }
   \item{class.only}{ if TRUE, return just a vector with classification,
-    otherwise, return the 'ZIDat' object with 'Ident' column appended to it. }
+    otherwise, return the 'ZIDat' object with 'Predicted' column appended to it. }
   \item{type}{ the type of result to return, \code{"class"} by default. No other
     value is permitted if class.only is \code{FALSE}. }
   \item{y}{ a factor with reference classes. }
   \item{labels}{ labels to use for, respectively, the reference class and the
     predicted class. }
+  \item{useNA}{ do we keep NAs as a separate category? The default \code{"ifany"}
+    creates this category only if there are missing values. Other possibilities
+    are \code{"no"}, or \code{"always"}. The default is suitable for test sets
+    because unclassified items (those in the "\_" directory or one of its
+    subdirectories) get \code{NA} for Class. }
   \item{prior}{ class frequencies to use for first classifier that
     is tabulated in the rows of the confusion matrix. This is either a single
     positive numeric to set all class frequencies to this value (use 1 for

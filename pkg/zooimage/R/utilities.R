@@ -55,8 +55,8 @@ trimString <- function (string)
 ## All sample with at least one entry in a given object
 listSamples <- function (ZIobj)
 { 	
-	if (!inherits(ZIobj, c("ZIDat", "ZIDesc","ZITrain"))) {
-		warning("'ZIobj' must be a 'ZIDat', 'ZIDesc', or 'ZITrain' object")
+	if (!inherits(ZIobj, c("ZIDat", "ZIDesc","ZITrain","ZITest"))) {
+		warning("'ZIobj' must be a 'ZIDat', 'ZIDesc', 'ZITrain' or 'ZITest' object")
 		return(character(0))
 	}
 	
@@ -66,7 +66,7 @@ listSamples <- function (ZIobj)
 			type = "sample", ext = "")))
 	} else if (inherits(ZIobj, "ZIDesc")) {
 		res <- sort(unique(as.character(ZIobj$Label)))
-	} else if (inherits(ZIobj, "ZITrain")) {
+	} else if (inherits(ZIobj, c("ZITrain", "ZITest"))) {
     	res <- as.character(ZIobj$Id)
 		res <- sub("_[0-9]*$", "", res)
 		res <- sort(unique(sampleInfo(res, type = "sample", ext = "")))
@@ -77,6 +77,22 @@ listSamples <- function (ZIobj)
 ## Unique identifiers (Ids) are a combination of Label and Item
 makeId <- function (ZIDat)
 	paste(ZIDat$Label, ZIDat$Item, sep = "_")
+
+## Add classes into a ZIDat object, from ZITrain or ZITest objects
+addClass <- function (ZIDat, ZIobj)
+{
+	## Is there a 'Class' variable in ZIobj?
+	Cl <- ZIobj$Class
+	if (!length(Cl))
+		stop("No 'Class' column found in the ZIobj object")
+	## Select only those items that are in ZIDat, in the correct order...
+	Id <- ZIobj$Id
+	if (!length(Id)) Id <- makeId(ZIobj)
+	if (!length(Id)) stop("unable to get particle Ids from 'ZIobj'")
+	names(Cl) <- Id
+	ZIDat$Class <- Cl[makeId(ZIDat)]
+	ZIDat
+}
 
 ## Default list of variables to keep
 #keepVars <- function ()
@@ -152,6 +168,8 @@ calcVars <- function (x)
 	x$XStart <- NULL
 	x$YStart <- NULL
 	x$Dil <- NULL
+	x$Predicted <- NULL
+	x$Predicted2 <- NULL
 
 	## Return the recalculated data frame
 	x

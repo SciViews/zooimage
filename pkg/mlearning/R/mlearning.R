@@ -975,6 +975,112 @@ method = c("direct", "cv"), na.action = na.exclude, ...)
 	.expandFactor(lvqtest(object, newdata), n, ndrop)
 }
 
+## svm from e1071 package
+mlSvm <- function (...)
+	UseMethod("mlSvm")
+
+mlSvm.formula <- function(formula, data, scale = TRUE, type = NULL,
+kernel = "radial", classwt = NULL, ..., subset, na.action)
+	mlearning(formula, data = data, method = "mlSvm", model.args =
+		list(formula  = formula, data = substitute(data),
+		subset = substitute(subset)), call = match.call(),
+		..., subset = subset, na.action = substitute(na.action))
+
+mlSvm.default <- function (train, response, scale = TRUE, type = NULL,
+kernel = "radial", classwt = NULL, ...)
+{
+	dots <- list(...)
+	.args. <- dots$.args.
+	dots$.args. <- NULL
+	if (!length(.args.)) {
+		if (is.factor(response)) {
+			Type <- "classification"
+		} else Type <- "regression"
+		.args. <- list(levels = levels(response),
+		n = c(intial = NROW(train), final = NROW(train)),
+		type = Type, na.action = "na.pass",
+		mlearning.call = match.call(), method = "mlSvm")
+	}
+	dots$scale <- scale
+	dots$type <- type
+	dots$kernel <- kernel
+	dots$class.weigths <- classwt
+	#dots$probability <- TRUE
+	
+	## Return a mlearning object
+	structure(e1071:::svm.default(x = sapply(train, as.numeric), y = response,
+		scale = scale, type = type, kernel = kernel, class.weights = classwt,
+		probability = TRUE, ...), formula = .args.$formula, train = train,
+		response = response, levels = .args.$levels, n = .args.$n, args = dots,
+		optim = .args.$optim, numeric.only = TRUE, type = .args.$type,
+		pred.type = c(class = "class", membership = "raw"),
+		summary = "summary", na.action = .args.$na.action,
+		mlearning.call = .args.$mlearning.call, method = .args.$method,
+		algorithm = "support vector machine",
+		class = c("mlSvm", "mlearning", "svm"))
+}
+
+predict.mlSvm <- function(object, newdata,
+type = c("class", "membership", "both"), method = c("direct", "cv"),
+na.action = na.exclude, ...)
+{
+	if (!inherits(object, "mlSvm"))
+		stop("'object' must be a 'mlSvm' object")
+	
+	## If method == "cv", delegate to cvpredict()
+	method <- as.character(method)[1]
+	if (method == "cv") {
+		if (!missing(newdata))
+			stop("cannot handle new data with method = 'cv'")
+		return(cvpredict(object = object, type = type, ...))	
+	}
+	
+	## Recalculate newdata according to formula...
+	if (missing(newdata)) { # Use train
+		newdata <- attr(object, "train")
+	} else if (attr(object, "optim")) { # Use optimized approach
+		## Just keep vars similar as in train
+		vars <- names(attr(object, "train"))
+		if (!all(vars %in% names(newdata)))
+			stop("One or more missing variables in newdata")
+		newdata <- newdata[, vars]
+	} else { # Use model.frame
+		newdata <- model.frame(formula = attr(object, "formula"),
+			data = newdata, na.action = na.pass)[, names(attr(object, "train"))]
+	}
+	## Only numerical predictors
+	newdata <- sapply(as.data.frame(newdata), as.numeric)
+	
+	## Determine how many data and perform na.action
+	n <- NROW(newdata)
+	newdata <- match.fun(na.action)(newdata)
+	ndrop <- attr(newdata, "na.action")
+	attr(newdata, "na.action") <- NULL
+		
+	## Delegate to the e1071 predict.svm method
+	if (as.character(type)[1] == "class") proba <- FALSE else proba <- TRUE
+	class(object) <- class(object)[-(1:2)]
+	if (attr(object, "type") == "regression")
+		return(predict(object, newdata = newdata, ...))
+	
+	## This is for classification
+	res <- predict(object, newdata = newdata,
+		probability = proba, ...)
+	proba <- attr(res, "probabilities")	
+	
+	## Rework results according to what we want
+	switch(as.character(type)[1],
+		class = .expandFactor(factor(as.character(res), levels = levels(object)),
+			n, ndrop),
+		membership = .expandMatrix(.membership(proba, levels = levels(object)),
+			n, ndrop),
+		both = list(class = .expandFactor(factor(as.character(res),
+			levels = levels(object)), n, ndrop),
+			membership = .expandMatrix(.membership(proba, levels = levels(object)),
+			n, ndrop)),
+		stop("unrecognized 'type' (must be 'class', 'membership' or 'both')"))
+}
+
 ## NaiveBayes from e1071 package
 mlNaiveBayes <- function (...)
 	UseMethod("mlNaiveBayes")

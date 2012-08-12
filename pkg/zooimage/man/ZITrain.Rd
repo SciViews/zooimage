@@ -17,20 +17,22 @@
   'ZITrain' contain a hierarchy of classes (taxonomic or not) and a link to a
   series of items belonging to these classes. It can be obtained after manual or
   automatic classification of various objects from .zid or .zidb files. 'ZITest'
-  objects are almost identical, but with a '+others+' class added.
+  objects are almost identical, but with a constraint on the classes that must
+  match the ones of the reference 'ZItrain' or 'ZIClass' object (a necessity to
+  allow for comparisons)!
 }
 \usage{
 prepareTrain(traindir, zidbfiles, template = c("[Basic]", "[Detailed]",
-    "[Very detailed]"), ident = NULL)
-addToTrain(traindir, zidbfiles, ident = NULL)
+    "[Very detailed]"), classes = NULL, \dots)
+addToTrain(traindir, zidbfiles, classes = NULL, \dots)
 getTrain(traindir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE)
 
-prepareTest(testdir, zidbfiles, template, ident = NULL)
-addToTest(testdir, zidbfiles, ident = NULL)
-getTest(testdir, creator = NULL, desc = NULL, keep_ = FALSE, na.rm = FALSE)
+prepareTest(testdir, zidbfiles, template, classes = NULL, \dots)
+addToTest(testdir, zidbfiles, classes = NULL, \dots)
+getTest(testdir, creator = NULL, desc = NULL, keep_ = NA, na.rm = FALSE)
 
 template(object, \dots)
-\method{template}{default}(object, add.others = TRUE, \dots)
+\method{template}{default}(object, \dots)
 
 recode(object, \dots)
 \method{recode}{ZITrain}(object, new.levels, depth, \dots)
@@ -47,29 +49,34 @@ recode(object, \dots)
     the name of a .zic file, or a template extracted from a 'ZITrain' or 'ZIClass'
     object using \code{template(object)} (with the \code{add.others} argument
     to TRUE for \code{prepareTest()} and to \code{FALSE} for \code{prepareTrain()}) }
-  \item{ident}{ if vignettes are already identified in the zid(b) files, should
+  \item{classes}{ if vignettes are already classified in the zid(b) files, should
     they be sorted that way in the created training or test set? If not \code{NULL},
     indicate the name of the classification column (usually, \code{Class} for
-    manual classification or \code{Ident} for automatic predictions). Not uset yet! }  
+    manual classification or \code{Predicted} for automatic predictions). This
+    can also be a 'ZIClass' or 'mlearning' object that will be used for
+    classification of the particles first, ... or it can be a function that does
+    the classification. }  
   \item{creator}{ name of the author of this classification (or the method,
     if done automatically). }
   \item{desc}{ a short description of this manual classification. }
   \item{keep_}{ do we keep items in the '\_' subdirectory (corresponding to
-    unclassified ones)? Usually not! }
+    unclassified ones)? Default to \code{FALSE} in \code{getTrain()} and to
+    \code{NA} for \code{getTest()}, which transforms all items in the '\_' or
+    one of its subdirectories into missing data. }
   \item{na.rm}{ do we remove item with missing data? By default, not. }
   \item{object}{ a 'ZITrain' or 'ZITest' object. For \code{prepareTest()}, a
     'ZITrain' or 'ZIClass' object to use as reference to determine the
     classes to make. }
-  \item{add.others}{ do we add the '+others+' group if not already in the
-    template? \code{TRUE} (by default) is suitable to create a template for
-    'ZITest' objects, otherwise, use \code{FALSE} for 'ZITrain' objects. }
   \item{new.levels}{ a character string of same length as the levels of
     \code{object$Class} with the labels of the new levels. }
   \item{depth}{ the depth in the hierachy of the classes as in the \code{"path"}
     attribute of the object to use for recoding classes. If this argument is
     provided, \code{new.levels} is ignored and recomputed (and a warning is
     issued if both arguments are provided). }
-  \item{\dots}{ further arguments passed to the method (not used yet). }
+  \item{\dots}{ further arguments passed to the method. For \code{prepareXXX()}
+    and \code{addToXXX()}, it is further arguments passed to the prediction
+    function provided in \code{classes}, or to the \code{predict()} method for
+    'ZIClass' or 'mlearning' objects. }
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }

@@ -26,9 +26,9 @@
 \usage{
 confusion(x, \dots)
 \method{confusion}{default}(x, y = NULL, vars = c("Actual", "Predicted"),
-    labels = vars, merge.by = "Id", prior, \dots)
+    labels = vars, merge.by = "Id", useNA = "ifany", prior, \dots)
 \method{confusion}{mlearning}(x, y = response(x),
-    labels = c("Actual", "Predicted"), prior, \dots)
+    labels = c("Actual", "Predicted"), useNA = "ifany", prior, \dots)
 
 \method{print}{confusion}(x, sums = TRUE, error.col = sums, digits = 0,
     sort = "ward", \dots)
@@ -68,6 +68,9 @@ prior(object, \dots) <- value
     the same as \code{vars} or the one in the confusion matrix. }
   \item{merge.by}{ a character string with the name of variables to use to merge
     the two data frames, or \code{NULL}. }
+  \item{useNA}{ do we keep NAs as a separate category? The default \code{"ifany"}
+    creates this category only if there are missing values. Other possibilities
+    are \code{"no"}, or \code{"always"}. }
   \item{prior}{ class frequencies to use for first classifier that
     is tabulated in the rows of the confusion matrix. For its value, see here
     under, the \code{value} argument. }

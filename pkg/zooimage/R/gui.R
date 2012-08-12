@@ -831,28 +831,30 @@ vignettesClass <- function ()
 	if (!length(zic)) return(invisible(FALSE))
 	zicObj <- get(zic, envir = .GlobalEnv)
 
+	stop("sorry! This function need to be reimplemented")
+	
 	## Classify vignettes  
-	if (length(zid) > 1) {
-		classVignettesAll(zidfiles = zid, Dir = "_manuValidation",
-			ZIClass = zicObj)
-	} else { # Possibly apply a filter		
-		## Give a name for the final directory
-		finalDir <- dlgInput("Name for the automatic classification directory:",
-			default = noExtension(zid), title = "Parameter filter")$res
-		if (!length(finalDir)) return(invisible(NULL))
-		
-		## Read the zid file
-		ZIDat <- zidDatRead(zid)
-    
-		## Select a parameter to use for the threshold
-		threshold <- createThreshold(ZIDat = ZIDat)     
-		if (length(threshold)) {
-			classVignettes(zidfile = zid, Dir = finalDir,ZIClass = zicObj,
-				ZIDat = ZIDat, Filter = threshold)
-		} else {
-			classVignettes(zidfile = zid, Dir = finalDir, ZIClass = zicObj)
-		}
-	}
+#	if (length(zid) > 1) {
+#		classVignettesAll(zidfiles = zid, Dir = "_manuValidation",
+#			ZIClass = zicObj)
+#	} else { # Possibly apply a filter		
+#		## Give a name for the final directory
+#		finalDir <- dlgInput("Name for the automatic classification directory:",
+#			default = noExtension(zid), title = "Parameter filter")$res
+#		if (!length(finalDir)) return(invisible(NULL))
+#		
+#		## Read the zid file
+#		ZIDat <- zidDatRead(zid)
+#    
+#		## Select a parameter to use for the threshold
+#		threshold <- createThreshold(ZIDat = ZIDat)     
+#		if (length(threshold)) {
+#			classVignettes(zidfile = zid, Dir = finalDir,ZIClass = zicObj,
+#				ZIDat = ZIDat, Filter = threshold)
+#		} else {
+#			classVignettes(zidfile = zid, Dir = finalDir, ZIClass = zicObj)
+#		}
+#	}
 }
 
 ## Edit a samples description file... or create a new one!
@@ -972,21 +974,22 @@ processSamples <- function()
 		if (res == "yes") # Note that for modalAsisstant, it was "1"!
 			exportdir <- dirname(zisfile) else exportdir <- NULL
 		
-		## Select the directory where manual validation is done
-		dir <- getTemp("ZI.TrainDir")
-		if (is.null(dir) || !file.exists(dir) || !file.info(dir)$isdir)
-			dir <- getwd()
-		## Ask for a base directory of a training set...
-		dir <- dlgDir(default = dir, title = paste("Select a",
-			getTemp("ZIname"), "Manual validation base dir"))$res
-		if (!length(dir) || !file.exists(dir) || !file.info(dir)$isdir)
-			return(invisible(NULL))
-		## Read the directory
-		ZIManTable <- ZIManRead(dir)
-		message("Read the manual validation directory...\n-- Done --")		
-		ManValid <- TRUE
-	} else {
-		## Classification without any manual validation
+## TODO: change this!
+#		## Select the directory where manual validation is done
+#		dir <- getTemp("ZI.TrainDir")
+#		if (is.null(dir) || !file.exists(dir) || !file.info(dir)$isdir)
+#			dir <- getwd()
+#		## Ask for a base directory of a training set...
+#		dir <- dlgDir(default = dir, title = paste("Select a",
+#			getTemp("ZIname"), "Manual validation base dir"))$res
+#		if (!length(dir) || !file.exists(dir) || !file.info(dir)$isdir)
+#			return(invisible(NULL))
+#		## Read the directory
+#		ZIManTable <- ZIManRead(dir)
+#		message("Read the manual validation directory...\n-- Done --")		
+#		ManValid <- TRUE
+#	} else {
+#		## Classification without any manual validation
 		ManValid <- FALSE
 	} 
 	
@@ -1047,12 +1050,11 @@ processSamples <- function()
 	name <- make.names(name)
 	## Add Kevin for manual validation
 	if (!isTRUE(as.logical(ManValid))) ZIManTable <- NULL 
-	res <- processSampleAll(path = dirname(zisfile), ZidFiles = NULL, ZICobj,
-		ZIDesc = zisRead(zisfile), abd.taxa = NULL, abd.groups = NULL,
-		abd.type = "absolute", bio.taxa = NULL, bio.groups = NULL,
-		bio.conv = conv, headers = c("Abd", "Bio"), spec.taxa = NULL,
-		spec.groups = NULL, spec.breaks = brks, spec.use.Dil = TRUE,
-		exportdir = exportdir, ZIMan = ZIManTable)
+	## TODO: we need at least keep and detail
+	res <- processSampleAll(path = dirname(zisfile), #ZIClass = ...,
+		biomass = conv, breaks = brks)
+	## TODO: possibly export result in a file...
+	
 	
 	## Assign this result to the variable
 	assign(name, res, envir = .GlobalEnv)
@@ -1266,19 +1268,19 @@ optInOutDecimalSep <- function ()
 ###### Not in menus yet! ##################
 ## Subpart of zid file and return a subtable corresponding to the threshold
 ## TODO: is this really a top-menu function... or is it supposed to be used elsewhere?
-subpartZIDat <- function ()
-{
-    ## Select files to use
-    zidFile <- selectFile(type = "Zid", multiple = FALSE, quote = FALSE)
-	if (!length(zidFile)) return(invisible(NULL))
-
-    ## Read the zid file
-    zid <- zidDatRead(zidFile)
-
-    ## Select a parameter to use for the threshold
-    threshold <- createThreshold(ZIDat = zid)    
-
-    ## Apply the thresold
-    res <- subpartThreshold(ZIDat = zid, Filter = threshold)
-    return(res)
-}
+#subpartZIDat <- function ()
+#{
+#    ## Select files to use
+#    zidFile <- selectFile(type = "Zid", multiple = FALSE, quote = FALSE)
+#	if (!length(zidFile)) return(invisible(NULL))
+#
+#    ## Read the zid file
+#    zid <- zidDatRead(zidFile)
+#
+#    ## Select a parameter to use for the threshold
+#    threshold <- createThreshold(ZIDat = zid)    
+#
+#    ## Apply the thresold
+#    res <- subpartThreshold(ZIDat = zid, Filter = threshold)
+#    return(res)
+#}

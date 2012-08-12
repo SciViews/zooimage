@@ -4,6 +4,7 @@
 \alias{trimString}
 \alias{listSamples}
 \alias{makeId}
+\alias{addClass}
 \alias{calcVars}
 \alias{ecd}
 \alias{parseIni}
@@ -27,6 +28,7 @@ trimString(string)
 
 listSamples(ZIobj)
 makeId(ZIDat)
+addClass(ZIDat, ZIobj)
 calcVars(x)
 
 ecd(area)
@@ -54,7 +56,8 @@ zipNoteGet(zipfile, zimfile = NULL)
   \item{ext}{ the pattern to use (regular expression) to eliminate file
     extension from the 'filename'. }
   \item{string}{ a character string to rework, or a vector of character strings. }
-  \item{ZIobj}{ a ZooImage object (here, a 'ZIDat', 'ZIDesc' or 'ZITrain' object). }
+  \item{ZIobj}{ a ZooImage object (here, a 'ZIDat', 'ZIDesc', 'ZITrain' or
+    'ZITest' object; most probably one of the last two for \code{addClass()}). }
   \item{ZIDat}{ a 'ZIDat' object, or a data frame with correct column labels. }
   \item{x}{ a data frame, but most probably, a 'ZIDat' object. }
   \item{area}{ a numerical vector with areas from which ECDs are calculated
@@ -139,7 +142,7 @@ makeId(df__)
 rm(df__)
 ecd(1:10)
 
-### TODO: calibrate(), calcVars(), parseIni(), zipNoteAdd() and zipNoteGet() examples
+### TODO: addClass(), calibrate(), calcVars(), parseIni(), zipNoteAdd() and zipNoteGet() examples
 }
 
 \keyword{ utilities }

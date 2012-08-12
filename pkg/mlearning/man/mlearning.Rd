@@ -28,6 +28,10 @@
 \alias{mlLvq.default}
 \alias{mlLvq.formula}
 \alias{predict.mlLvq}
+\alias{mlSvm}
+\alias{mlSvm.default}
+\alias{mlSvm.formula}
+\alias{predict.mlSvm}
 \alias{mlNaiveBayes}
 \alias{mlNaiveBayes.default}
 \alias{mlNaiveBayes.formula}
@@ -92,6 +96,14 @@ mlLvq(...)
 \method{predict}{mlLvq}(object, newdata, type = "class", method = c("direct", "cv"), 
     na.action = na.exclude,...)
 
+mlSvm(...)
+\method{mlSvm}{default}(train, response, scale = TRUE, type = NULL, kernel = "radial",
+    classwt = NULL, ...)
+\method{mlSvm}{formula}(formula, data, scale = TRUE, type = NULL, kernel = "radial",
+    classwt = NULL, ..., subset, na.action)
+\method{predict}{mlSvm}(object, newdata, type = c("class", "membership", "both"),
+    method = c("direct", "cv"), na.action = na.exclude,...)
+
 mlNaiveBayes(...)
 \method{mlNaiveBayes}{default}(train, response, laplace = 0, ...)
 \method{mlNaiveBayes}{formula}(formula, data, laplace = 0, ..., subset, na.action)
@@ -150,7 +162,8 @@ train(object, ...)
     \code{membership} and \code{both} are almost always available too.
     \code{membership} corresponds to posterior probability, raw results,
     normalized votes, etc., depending on the machine learning algorithm. With
-    \code{both}, class and membership are both returned at once in a list. }
+    \code{both}, class and membership are both returned at once in a list. For
+    \code{mlSvm()}, it is the type of algorithm to use (see \code{?svm}). }
   \item{train}{ a matrix or data frame with predictors. }
   \item{response}{ a vector of factor (classification) or numeric (regression),
     or \code{NULL} (unsupervised classification). }
@@ -177,6 +190,10 @@ train(object, ...)
   \item{k.nn}{ k used for k-NN test of correct classification. Default is 5. }
   \item{algorithm}{ an algorithm among 'olvq1' (default, the optimized lvq1),
     'lvq1', 'lvq2', or 'lvq3'. }
+  \item{scale}{ are all the variables scaled? If a vector is provided, it is
+    applied to variables with recycling. }
+  \item{kernel}{ the kernel used by svm, see \code{?svm}. Can be "radial",
+    "linear", "polynomial" or "sigmoid". }
   \item{laplace}{ positive double controlling Laplace smoothing for the naive
     Bayes classifier. The default (0) disables Laplace smoothing. }
 }
@@ -202,7 +219,7 @@ train(object, ...)
   \code{\link[MASS]{lda}}, \code{\link[MASS]{qda}},
   \code{\link[randomForest]{randomForest}}, \code{\link[class]{olvq1}},
   \code{\link[nnet]{nnet}}, \code{\link[e1071]{naiveBayes}},
-  \code{\link[RWeka]{make_Weka_classifier}}}
+  \code{\link[e1071]{svm}}}
 
 \examples{
 ## Prepare data: split into training set (2/3) and test set (1/3)
@@ -333,6 +350,24 @@ summary(res <- mlLvq(Species ~ ., data = irisTrain))
 predict(res) # This object only returns class
 confusion(res) # Self-consistency
 confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
+
+
+## Supervised classification using support vector machine
+summary(res <- mlSvm(Species ~ ., data = irisTrain))
+predict(res) # Default type is class
+predict(res, type = "membership")
+predict(res, type = "both")
+confusion(res) # Self-consistency
+confusion(predict(res, newdata = irisTest), irisTest$Species) # Test set perfs
+
+## Another dataset
+summary(res <- mlSvm(Class ~ ., data = HouseVotes84, na.action = na.omit))
+confusion(res) # Self-consistency
+
+## Regression using support vector machine
+summary(ozone.svm <- mlSvm(Ozone ~ ., data = airquality, na.action = na.omit))
+plot(na.omit(airquality)$Ozone, predict(ozone.svm))
+abline(a = 0, b = 1)
 
 
 ## Supervised classification using naive Bayes

@@ -11,7 +11,7 @@ Suggests: rJava, mlbench
 Description: ZooImage is a free (open source) solution for analyzing digital
 	images of zooplankton. In combination with ImageJ, a free image analysis
 	system, it processes digital images, measures individuals, trains for
-	automatic identification of taxa, and finally, measures zooplankton samples
+	automatic classification of taxa, and finally, measures zooplankton samples
 	(abundances, total and partial size spectra or biomasses, etc.)
 License: GPL (>= 2)
 URL: http://www.sciviews.org/zooimage

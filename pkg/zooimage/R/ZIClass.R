@@ -52,10 +52,6 @@ cv.strat = TRUE, ..., subset, na.action = na.omit)
 		attr(ZI.class, "strat") <- cv.strat
 	}
 	
-	## Make sure the '+others+' group exists
-	lev <- levels(ZI.class)
-	if (!"+others+" %in% lev) attr(ZI.class, "levels") <- c(lev, "+others+")
-	
 	ZI.class
 }
 
@@ -103,17 +99,17 @@ na.rm = FALSE, ...)
 		na.rm = na.rm, ...)
 }
 
-predict.ZIClass <- function (object, ZIDat, calc = TRUE, class.only = TRUE,
+predict.ZIClass <- function (object, newdata, calc = TRUE, class.only = TRUE,
 type = "class", ...)
 {
 	## Make sure we have correct objects
 	if (!inherits(object, "ZIClass"))
 		stop("'object' must be a 'ZIClass' object")
-	if (!inherits(ZIDat, c("ZIDat", "data.frame")))
-		stop("'ZIDat' must be a 'ZIDat' or 'data.frame' object")
+	if (!inherits(newdata, c("ZIDat", "data.frame")))
+		stop("'newdata' must be a 'ZIDat' or 'data.frame' object")
 	
     class(object) <- class(object)[-1]
-	data <- as.data.frame(ZIDat)
+	data <- as.data.frame(newdata)
 	
 	if (isTRUE(as.logical(calc)))
 		data <- attr(object, "calc.vars")(data)
@@ -128,15 +124,16 @@ type = "class", ...)
 	## Perform the prediction
 	res <- predict(object, newdata = data, ...)
 	
-	## Return either the prediction, or the ZIDat object with Ident column append/replaced
+	## Return either the prediction, or the ZIDat object with Predicted
+	## column append/replaced
 	if (class.only) res else {
-		ZIDat$Ident <- res
-		ZIDat
+		newdata$Predicted <- res
+		newdata
 	}
 }
 
 confusion.ZIClass <- function (x, y = response(x),
-labels = c("Actual", "Predicted"), prior, use.cv = TRUE, ...) {
+labels = c("Actual", "Predicted"), useNA = "ifany", prior, use.cv = TRUE, ...) {
 	## Check labels
 	labels <- as.character(labels)
 	if (length(labels) != 2)
@@ -170,9 +167,9 @@ labels = c("Actual", "Predicted"), prior, use.cv = TRUE, ...) {
 	## Construct the confusion object
 	if (missing(prior)) {
 		mlearning:::.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, ...)
+			labels = labels, useNA = useNA, ...)
 	} else {
 		mlearning:::.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, prior = prior, ...)
+			labels = labels, useNA = useNA, prior = prior, ...)
 	}
 }

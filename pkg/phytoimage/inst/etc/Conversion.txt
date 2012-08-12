@@ -1,4 +1,4 @@
-Group	P1	P2	P3
+Class	P1	P2	P3
 Copepoda	1	0	1
 Cope lateral	1	0	1
 Cope dorsal	1	0	1

@@ -18,21 +18,63 @@
 template <- function (object, ...)
 	UseMethod("template")
 	
-template.default <- function (object, add.others = TRUE, ...)
-{
-	res <- attr(object, "path")
-	if (isTRUE(as.logical(add.others)) &&
-		!"+others+" %in% unlist(strsplit(res, "/", fixed = TRUE)))
-		res <- c(res, "+others+")
-	
+template.default <- function (object, ...)
+	attr(object, "path")
+
+## Get the subpath of vignettes giving their classes
+.getPath <- function (x, rootdir = NULL, ext = "jpg", path, classes, ...) {
+## Possibly get the classification of the particles
+	if (length(classes)) {
+		if (inherits(classes, "function")) {
+			## Run this function for getting classes
+			res <- classes(x, path, ...)
+		} else if (inherits(classes, "mlearning")) {
+			## Use this object to predict classes
+			res <- predict(classes, x, ...)
+		} else if (inherits(classes, "character")) {
+			## Look for one or two columns with these names
+			if (length(classes) > 2) {
+				warning("cannot use more than two columns for classes... using first two only")
+				classes <- classes[1:2]
+			}
+			nms <- names(x)
+			if (any(!classes %in% nms))
+				stop("classes are not existing variable names")
+			res <- x[[classes[1]]]
+			if (length(classes) == 2) {
+				isMissing <- is.na(res)
+				res[isMissing] <- x[[classes[2]]][isMissing]
+			}
+		}
+		res <- as.character(res)
+		
+		## Transform this into a subpath
+		subpath <- unique(c("_", path))
+		while (!all(path == ".")) {
+			path <- unique(dirname(path))
+			subpath <- c(subpath, path)
+		}
+		subpath <- sort(subpath[subpath != "."])
+		names(subpath) <- basename(subpath)
+		res <- subpath[res]
+		
+		## Missing data are transformed into '_'
+		res[is.na(res)] <- "_"
+		names(res) <- NULL
+		
+	} else res <- rep("_", NROW(x)) # Default to put everything in '_'
+			
+	if (!length(rootdir)) rootdir <- "."
+	res <- file.path(rootdir, res, paste(makeId(x), ext, sep = "."))
 	res
 }
 
 ## Prepare 'dir\subdir' for a manual classification by expanding all vignettes
 ## from a given number of zidfiles to the '_' subdir, and making
 ## a template for subdirs
+## TODO: verify that template matches classes if classes is not NULL
 prepareTrain <- function (traindir, zidbfiles,
-template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL)
+template = c("[Basic]", "[Detailed]", "[Very detailed]"), classes = NULL, ...)
 {
 	## First, check that dirname of traindir is valid
 	if (!checkDirExists(dirname(traindir))) return(invisible(FALSE))
@@ -74,46 +116,68 @@ template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL)
 		}
 	}
 
-	## Create '_' subdir and unzip all vignettes there
+	## Create '_' subdir
 	dir_ <- file.path(traindir, "_")
 	if (!forceDirCreate(dir_)) return(invisible(FALSE))
 
-	## Create subdirectories representing classes hierarchy
+	## Create subdirectories representing classes hierarchy as in template
 	message("Making directories...")
-	path <- file.path(traindir, path)
-	for (i in 1:length(path)) {
-		#message(path[i])
-		dir.create(path[i], recursive = TRUE)
+	fullpath <- file.path(traindir, path)
+	for (i in 1:length(fullpath)) {
+		#message(fullpath[i])
+		dir.create(fullpath[i], recursive = TRUE)
 	}
-	
+
 	## Place the vignettes...
 	message("Extracting data and vignettes ...")
+	flush.console()
 	for (i in 1:zmax) {
 		progress(i, zmax)
-        if (dbext != "zidb") {
+		if (dbext != "zidb") {
             ## Using a temporary directory to unzip all files and then copy
     		## the RData files to the train directory
     		td <- tempfile()
     		unzip(zipfile = zidbfiles[i], exdir = td)
     		datafiles <- file.path(td, list.files(td,
     			pattern = extensionPattern(".RData"), recursive = TRUE))
-    		if (length(datafiles)) file.copy(datafiles, traindir)
-    		vignettes <- file.path(td, list.files(td,
+			if (length(datafiles)) file.copy(datafiles, traindir)
+			## Get path for the vignettes and copy them there
+			zidat <- zidDatRead(zidbfiles[i])
+			vigpath <- .getPath(zidat, rootdir = traindir, ext = "jpg",
+				path = path, classes = classes, ...)
+    		names(vigpath) <- basename(vigpath)
+			vignettes <- file.path(td, list.files(td,
     			pattern = extensionPattern(".jpg"), recursive = TRUE))
-    		if (length(vignettes)) file.copy(vignettes, dir_)
+			if (length(vignettes)) {
+				vigpath <- vigpath[basename(vignettes)]
+				isMissing <- is.na(vigpath)
+				vigpath[isMissing] <- file.path(dir_,
+					basename(vignettes))[isMissing]
+				file.copy(vignettes, vigpath)
+			} else warning("no vignettes found for ", zidbfiles[i])
     		unlink(td, recursive = TRUE)
 		} else {  # Use .zidb files
             ## Link .zidb database to R objects in memory
             Zidb <- zidbLink(zidbfiles[i])
             AllItems <- ls(Zidb)
             Vigns <- AllItems[-grep("_dat1", AllItems)]
-            ## Copy all vignettes in the "_" directory
+            ## Extract all vignettes in their class subdirectory
             imgext <- Zidb[[".ImageType"]]
-			for (j in 1:length(Vigns)){
-                From <- Vigns[j]
-                To <- file.path(dir_, paste(From, imgext, sep = "."))
-                writeBin(Zidb[[From]], To)
-            }
+			## Get path for the vignettes and copy them there
+			zidat <- zidbDatRead(zidbfiles[i])
+			vigpath <- .getPath(zidat, rootdir = traindir, ext = imgext,
+				path = path, classes = classes, ...)
+    		names(vigpath) <- sub(paste("\\.", imgext, "$", sep = ""), "",
+				basename(vigpath))
+			if (length(Vigns)) {
+				vigpath <- vigpath[Vigns]
+				for (j in 1:length(Vigns)) {
+				    vigfile <- vigpath[i]
+					if (is.na(vigfile)) vigfile <- file.path(dir_,
+						paste(Vigns[i], imgext, sep = "."))
+					writeBin(Zidb[[Vigns[j]]], vigpath[j])
+				}
+			} else warning("no vignettes found for ", zidbfiles[i])
             ## Save vignettes
             ZI.sample <- Zidb$.Data
             save(ZI.sample, file = file.path(traindir, paste(sub(".zidb", "",
@@ -121,33 +185,26 @@ template = c("[Basic]", "[Detailed]", "[Very detailed]"), ident = NULL)
 		}
 	}
 	progress(101) # Clear progression indicator
-	
-	### TODO: relocate vignettes in subdirectories, if ident is not NULL
-	if (length(ident)) {
-		
-	}
-
 	message(" -- Done! --")
 	invisible(TRUE)
 }
 
-prepareTest <- function (testdir, zidbfiles, template, ident = NULL)
+## TODO: apply selection for active learning by partial validation
+prepareTest <- function (testdir, zidbfiles, template, classes = NULL, ...)
 {
 	if (!is.null(attr(template, "path"))) template <- attr(template, "path")
-	if (!"+others+" %in% unlist(strsplit(template, "/", fixed = TRUE)))
-		template <- c(template, "+others+")
 	tpl <- structure(1, path = template)
 	res <- prepareTrain(testdir, zidbfiles = zidbfiles,
-		template = tpl, ident = ident)
+		template = tpl, classes = classes, ...)
 	## Add a .zic file there to make sure to respect training set classes
 	cat("ZI3\n[path]\n", paste(template, collapse = "\n"), "\n", sep = "",
 		file = file.path(testdir, "_template.zic"))
 	
-	res
+	invisible(res)
 }
 
 ## Function to add new vignettes in a training set
-addToTrain <- function (traindir, zidbfiles, ident = NULL)
+addToTrain <- function (traindir, zidbfiles, classes = NULL, ...)
 {
 	## Check if selected zid(b) files are already classified in the training set
 	Rdata <- list.files(traindir, pattern = "[.]RData$")
@@ -190,11 +247,22 @@ addToTrain <- function (traindir, zidbfiles, ident = NULL)
             Vigns <- AllItems[-grep("_dat1", AllItems)]
             ## Copy all vignettes in the TopPath directory
             imgext <- Zidb[[".ImageType"]]
-			for (j in 1:length(Vigns)){
-                From <- Vigns[j]
-                To <- file.path(ToPath, paste(From, imgext, sep = "."))
-                writeBin(Zidb[[From]], To)
-            }
+			## Get path for the vignettes and copy them there
+			zidat <- zidbDatRead(zidbfile)
+			vigpath <- .getPath(zidat, rootdir = traindir, ext = imgext,
+				path = attr(zidat, "path"), classes = classes, ...)
+    		vigpath[vigpath == "_"] <- ToPath
+			names(vigpath) <- sub(paste("\\.", imgext, "$", sep = ""), "",
+				basename(vigpath))
+			if (length(Vigns)) {
+				vigpath <- vigpath[Vigns]
+				for (j in 1:length(Vigns)) {
+				    vigfile <- vigpath[i]
+					if (is.na(vigfile)) vigfile <- file.path(ToPath,
+						paste(Vigns[i], imgext, sep = "."))
+					writeBin(Zidb[[Vigns[j]]], vigpath[j])
+				}
+			} else warning("no vignettes found for ", zidbfile)
             ## Save RData file
             ZI.sample <- Zidb$.Data
             save(ZI.sample, file = file.path(traindir, paste(sub(".zidb", "",
@@ -209,13 +277,21 @@ addToTrain <- function (traindir, zidbfiles, ident = NULL)
 				pattern = extensionPattern(".RData"), recursive = TRUE))
 			if (length(datafiles))
 				file.copy(datafiles, file.path(traindir, basename(datafiles)))
+			## Get path for the vignettes and copy them there
+			zidat <- zidDatRead(zidbfile)
+			vigpath <- .getPath(zidat, rootdir = traindir, ext = "jpg",
+				path = attr(zidat, "path"), classes = classes, ...)
+    		vigpath[vigpath == "_"] <- ToPath
+			names(vigpath) <- basename(vigpath)
 			vignettes <- file.path(td, list.files(td,
-				pattern = extensionPattern(".jpg"), recursive = TRUE))
-			if (!length(vignettes))
-				vignettes <- file.path(td, list.files(td,
-					pattern = extensionPattern(".png"), recursive = TRUE))
-			if (length(vignettes))
-				file.copy(vignettes, file.path(ToPath, basename(vignettes)))
+    			pattern = extensionPattern(".jpg"), recursive = TRUE))
+			if (length(vignettes)) {
+				vigpath <- vigpath[basename(vignettes)]
+				isMissing <- is.na(vigpath)
+				vigpath[isMissing] <- file.path(ToPath,
+					basename(vignettes))[isMissing]
+				file.copy(vignettes, vigpath)
+			} else warning("no vignettes found for ", zidbfile)
 			unlink(td, recursive = TRUE)	
 		}
 	}
@@ -224,10 +300,13 @@ addToTrain <- function (traindir, zidbfiles, ident = NULL)
 	invisible(TRUE)
 }
 
-addToTest <- function (testdir, zidbfiles, ident = NULL)
-	addToTrain(traindir = testdir, zidbfiles = zidbfiles, ident = ident)
+addToTest <- function (testdir, zidbfiles, classes = NULL, ...)
+	invisible(addToTrain(traindir = testdir, zidbfiles = zidbfiles,
+		classes = classes, ...))
 
 ## Retrieve information from a manual training set in a 'ZITrain' object	
+## TODO: check dir names are unique, check no duplicated vignettes,
+##       check all measurements are there, ... + exhaustive report!
 getTrain <- function (traindir, creator = NULL, desc = NULL, keep_ = FALSE,
 na.rm = FALSE)
 {
@@ -257,7 +336,7 @@ na.rm = FALSE)
 	res <- gsub("[\\]", "/", res)
 
 	## Do we eliminate the '_' directory?
-	if (!isTRUE(as.logical(keep_)))
+	if (!is.na(keep_) && !isTRUE(as.logical(keep_)))
 		res <- grep("^[^_]", res, value = TRUE)
 
 	## 'Id' is the name of the vignettes, minus the extension
@@ -268,6 +347,9 @@ na.rm = FALSE)
 
 	## 'Class' is the last directory where the vignettes are located
 	Class <- basename(Path)
+	
+	## For all items in _ or one of its subdirectories, replace Class by NA
+	if (is.na(keep_)) Class[grepl("^[_]", res)] <- NA
 
 	## Create a  data frame with Id and Class
 	df <- data.frame(Id = Id, Class = Class)
@@ -356,11 +438,12 @@ na.rm = FALSE)
 	df
 }
 
-getTest <- function (testdir, creator = NULL, desc = NULL, keep_ = FALSE,
+getTest <- function (testdir, creator = NULL, desc = NULL, keep_ = NA,
 na.rm = FALSE)
 {
 	## Same as getTrain() but returns a ZITest object... and read _template.zic
 	## to make sure that path and classes do match!
+	zicfile <- file.path(testdir, "_template.zic")
 	if (!file.exists(zicfile) || !zicCheck(zicfile))
 		stop("testdir does not seem to contain a valid test set (may be use getTrain()?)")
 	
@@ -376,9 +459,9 @@ na.rm = FALSE)
 	
 	## Now, make sure to recode res$Class factor in the correct order!
 	lev <- sort(basename(path))
-	res$Class <- factor(as.character(res$Class), levels = lev)
+	res$Class <- factor(as.character(res$Class), levels = lev, exclude = NULL)
 
-	res
+	invisible(res)
 }
 
 .recodeLevels <- function (object, depth = 1)
@@ -414,7 +497,7 @@ recode.ZITrain <- function (object, new.levels, depth, ...)
 	}
 	
 	## Check that new.levels is of the same length as levels(object$Class)
-	## [and object$Ident or Ident2, possibly]
+	## [and object$Predicted or Predicted2, possibly]
 	levels <- levels(object$Class)
 	new.levels <- as.character(new.levels)
 	if (length(new.levels) != length(levels))
@@ -429,10 +512,10 @@ recode.ZITrain <- function (object, new.levels, depth, ...)
 	}
 	
 	object$Class <- relevel(object$Class, levels, new.levels)
-	if (!is.null(object$Ident))
-		object$Ident <- relevel(object$Ident, levels, new.levels)
-	if (!is.null(object$Ident2))
-		object$Ident2 <- relevel(object$Ident2, levels, new.levels)
+	if (!is.null(object$Predicted))
+		object$Predicted <- relevel(object$Predicted, levels, new.levels)
+	if (!is.null(object$Predicted2))
+		object$Predicted2 <- relevel(object$Predicted2, levels, new.levels)
 	
 	## If a new path is given for these new classes, change it
 	path <- attr(new.levels, "path")
