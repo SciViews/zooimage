@@ -18,7 +18,8 @@
 
 \usage{
 ZIClass(formula, data, method = getOption("ZI.mlearning", "mlRforest"),
-    calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10, cv.strat = TRUE,
+    calc.vars = getOption("ZI.calcVars", calcVars), drop.vars = NULL,
+    drop.vars.def = dropVars(), cv.k = 10, cv.strat = TRUE,
     \dots, subset, na.action = na.omit)
 
 \method{print}{ZIClass}(x, \dots)
@@ -46,6 +47,12 @@ ZIClass(formula, data, method = getOption("ZI.mlearning", "mlRforest"),
     with plankton). }
   \item{calc.vars}{ a function to use to calculate variables from the original
     data frame. }
+  \item{drop.vars}{ a character vector with names of variables to drop for the
+    classification, or \code{NULL} (by default) to keep them all. }
+  \item{drop.vars.def}{ a second list of variables to drop contained in a
+    character vector. That list is supposed to match the name of variables that
+    are obviously non informative and are dropped by default. It can be gathered
+    automatically using \code{dropVars()}. See \code{?calcVars} for more details. }
   \item{cv.k}{ the k times for cross-validation. }
   \item{cv.strat}{ do we use a stratified sampling for cross-validation?
     (recommended). }

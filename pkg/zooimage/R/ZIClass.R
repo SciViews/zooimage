@@ -18,14 +18,40 @@
 ## Create basically a mlearning object, but with predicted and cvpredicted added
 ## to it, and the '+other+' level added at the end of all levels
 ZIClass <- function (formula, data, method = getOption("ZI.mlearning",
-"mlRforest"), calc.vars = getOption("ZI.calcVars", calcVars), cv.k = 10,
-cv.strat = TRUE, ..., subset, na.action = na.omit)
+"mlRforest"), calc.vars = getOption("ZI.calcVars", calcVars), drop.vars = NULL,
+drop.vars.def = dropVars(), cv.k = 10, cv.strat = TRUE, ...,
+subset, na.action = na.omit)
 {	
+	## Rework calc.vars to freeze the list of variables to drop
+	## Default (minimal) calc.vars function if none is provided
+	if (!length(calc.vars)) {
+		## Create a simple calc.vars function that just drop variables
+		calc.vars <- function(x, drop.vars = NULL, drop.vars.def = dropVars()) {
+			## Eliminate variables that are not predictors... and use Id as rownames
+			Id <- x$Id
+			if (length(Id)) rownames(x) <- Id
+	
+			## Variables to drop
+			dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
+			for (dropVar in dropAll) x[[dropVar]] <- NULL
+	
+			## Return the recalculated data frame
+			x
+		}
+	}
+	
+	## Freeze data for drop.vars and drop.vars.def arguments of calc.vars
+	if (!length(drop.vars)) drop.vars <- character(0) else
+		drop.vars <- as.character(drop.vars)
+	formals(calc.vars)$drop.vars <- drop.vars
+	if (!length(drop.vars.def)) drop.vars.def <- character(0) else
+		drop.vars.def <- as.character(drop.vars.def)
+	formals(calc.vars)$drop.vars.def <- drop.vars.def
+	
 	## Check calc.vars and use it on data
-	if (length(calc.vars))
-		if (!is.function(calc.vars)) {
-			stop("'calc.vars' must be a function or NULL")
-		} else data <- calc.vars(data)
+	if (!is.function(calc.vars)) {
+		stop("'calc.vars' must be a function or NULL")
+	} else data <- calc.vars(data)
 	
 	## Train the machine learning algorithm
 	ZI.class <- mlearning(formula, data = data, method = method,
@@ -35,9 +61,11 @@ cv.strat = TRUE, ..., subset, na.action = na.omit)
 		
 	## Add ZIClass as class of the object
 	class(ZI.class) <- c("ZIClass", class(ZI.class))
+	
+	## Save our customized calc.vars function in the object
 	attr(ZI.class, "calc.vars") <- calc.vars
 
-	## Get useful attrobutes from ZITrain
+	## Get useful attributes from ZITrain
 	attr(ZI.class, "traindir") <- attr(data, "traindir")
 	attr(ZI.class, "path") <- attr(data, "path")
 
@@ -105,24 +133,30 @@ type = "class", ...)
 	## Make sure we have correct objects
 	if (!inherits(object, "ZIClass"))
 		stop("'object' must be a 'ZIClass' object")
-	if (!inherits(newdata, c("ZIDat", "data.frame")))
-		stop("'newdata' must be a 'ZIDat' or 'data.frame' object")
 	
-    class(object) <- class(object)[-1]
-	data <- as.data.frame(newdata)
-	
-	if (isTRUE(as.logical(calc)))
-		data <- attr(object, "calc.vars")(data)
-	
+	if (!missing(newdata)) {
+		if (!inherits(newdata, c("ZIDat", "data.frame")))
+			stop("'newdata' must be a 'ZIDat' or 'data.frame' object")
+		data <- as.data.frame(newdata)
+		if (isTRUE(as.logical(calc)))
+			data <- attr(object, "calc.vars")(data)
+	}
+    
+	class(object) <- class(object)[-1]
+		
 	class.only <- isTRUE(as.logical(class.only))
+	
 	type <- as.character(type)[1]
+	
 	if (class.only && type != "class") {
-		warning("with class.only == TRUE, tyep can only be 'class' and is force to it")
+		warning("with class.only == TRUE, type can only be 'class' and is force to it")
 		type <- "class"
 	}
 	
 	## Perform the prediction
-	res <- predict(object, newdata = data, ...)
+	if (missing(newdata)) {
+		res <- predict(object, ...)
+	} else res <- predict(object, newdata = data, ...)
 	
 	## Return either the prediction, or the ZIDat object with Predicted
 	## column append/replaced

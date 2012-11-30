@@ -94,16 +94,21 @@ addClass <- function (ZIDat, ZIobj)
 	ZIDat
 }
 
-## Default list of variables to keep
-#keepVars <- function ()
-#	c("(log)ECD", "(log)Area", "(log)Perim.", "(log)Major", "(log)Minor", "(log)Feret",
-#	  "Mean", "Median", "Mode", "Min", "Max", "StdDev", "Range", "MeanPos",
-#	  "SDNorm", "CV", "IntDen", "Transp1", "Transp2", "Skew", "Kurt",
-#	  "Circ.", "AspectRatio",  "Elongation", "Compactness", "Roundness",
-#	  "CentBoxD", "GrayCentBoxD", "CentroidsD", "(log)MeanDia", "(log)MeanFDia")
+## Default list of variables to drop
+dropVars <- function ()
+{
+	res <- try(get("ZI.dropVarsDef"), silent = TRUE)
+	if (inherits(res, "try-error"))
+		res <- getOption("ZI.dropVarsDef",
+			c("Id", "Label", "Item", "X", "Y", "XM", "YM", "BX", "BY", "Width",
+			"Height", "Angle", "XStart", "YStart", "Dil", "Predicted",
+			"Predicted2"))
+	as.character(res)
+}
+
 
 ## Calculate derived variables... default function
-calcVars <- function (x)
+calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 {	
 	## This is the calculation of derived variables
 	## Note that you can make your own version of this function for more
@@ -153,24 +158,11 @@ calcVars <- function (x)
 	## Eliminate variables that are not predictors... and use Id as rownames
 	Id <- x$Id
 	if (length(Id)) rownames(x) <- Id
-	x$Id <- NULL
-	x$Label <- NULL
-	x$Item <- NULL
-	x$X <- NULL
-	x$Y <- NULL
-	x$XM <- NULL
-	x$YM <- NULL
-	x$BX <- NULL
-	x$BY <- NULL
-	x$Width <- NULL
-	x$Height <- NULL
-	x$Angle <- NULL
-	x$XStart <- NULL
-	x$YStart <- NULL
-	x$Dil <- NULL
-	x$Predicted <- NULL
-	x$Predicted2 <- NULL
-
+	
+	## Variables to drop
+	dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
+	for (dropVar in dropAll) x[[dropVar]] <- NULL
+	
 	## Return the recalculated data frame
 	x
 }
