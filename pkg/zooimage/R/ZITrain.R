@@ -372,7 +372,8 @@ na.rm = FALSE)
 			load(Dats[i])
 			ZI.sample <- cbind(Id = makeId(ZI.sample), ZI.sample)
 			ZI.sample <- merge(ZI.sample, df, by = "Id")
-			Dat <- rbind(Dat, ZI.sample)
+			Dat <- merge(Dat, ZI.sample, all = TRUE)
+			Dat$X.Item.1 <- NULL
 		}
 	}
 	rownames(Dat) <- 1:nrow(Dat)

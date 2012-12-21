@@ -1,0 +1,22 @@
+= zooimage News
+
+== Changes in zooimage 3.0-1
+
+* getTrain() was not able to collect data when attributes measured on samples
+  mixed in training set differ slightly. Now, data are more carefully merged.
+  
+* Meaningless FIT_xxx attributes from the FlowCAM are now excluded by default
+  in dropVars().
+  
+* The GUI function vignettesClass(), and thus, the corresponding menu entry
+  were not implemented (the function prepareTest() that is called internally
+  was working properly, but was not reacheable through the menu). Done now.
+  
+* The GUI function analyzeClass() and the corresponding menu entry listed old
+  (version 2) items. The list is now updated with new plots available in
+  zooimage 3 and mlearning 1.
+  
+
+== Changes in zooimage 3.0-0
+
+This is a major refactoring of code from zooimage 1.x and 2.X.

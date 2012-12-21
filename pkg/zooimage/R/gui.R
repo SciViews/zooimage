@@ -778,14 +778,14 @@ makeClass <- function ()
     assignTemp("ZI.ClassName", name)
 }
 
-## New version of confusion matrix analysis v 1.2-2
+## Analyze confusion matrix
 analyzeClass <- function ()
 {
 	## Analyze a classifier, using a ZI1Class object (new version)
 	## Ask for an option of analysis
  	defval <- "Print Confusion Matrix"
-	opts <- c("Print Confusion Matrix", "Plot Confusion Matrix",
-		"Print Precision/recall", "Plot Precision/recall")
+	opts <- c("Print Confusion Matrix", "Summarize", "Plot Confusion Matrix",
+		"Plot F-score", "Plot Dendrogram", "Plot Precision/recall")
 	## Then, show the dialog box
  	#res <- modalAssistant(paste(getTemp("ZIClass"), "Analyze a classifier"),
 	#	c("This is a simplified version of the analysis of classifiers",
@@ -810,18 +810,34 @@ analyzeClass <- function ()
 	conf <- confusion(ZIC)
 	switch(res,
 		`Print Confusion Matrix` = print(conf),
-		`Plot Confusion Matrix` = plot(conf, type = "image2"),
-		`Print Precision/recall` = print(summary(conf)),
-		`Plot Precision/recall` = plot(conf, type = "precision_recall"))
-	return(invisible(res))
+		`Summarize` = print(summary(conf)),
+		`Plot Confusion Matrix` = plot(conf, type = "image"),
+		`Plot F-score` = plot(conf, type = "barplot"),
+		`Plot Dendrogram` = plot(conf, type = "dendrogram"),
+		`Plot Precision/recall` = plot(conf, type = "stars"))
+	return(invisible(conf))
 }
 
 ## Extract vignettes from zid files to respective directories
-## TODO: also allow for .zidb files!
 vignettesClass <- function ()
 {
+	## Ask for the base directory
+    defdir <- getTemp("ZI.BaseDir", default = getwd())
+	basedir <- dlgDir(default = defdir,
+		title = "Select the base directory for the test set")$res
+	if (!length(basedir)) return(invisible(NULL))
+
+	## Ask for a subdir for this training set
+	subdir <- dlgInput("Subdirectory where to create the test set:",
+		default = "_test")$res
+	if (!length(subdir)) return(invisible(NULL))
+	testdir <- file.path(basedir, subdir)
+	if (file.exists(testdir))
+		stop("The directory '", testdir,
+			"' already exists! Please, restart and specify a new one")
+	
 	## Select .zid files to be classified
-	zid <- selectFile(type = "Zid", multiple = TRUE, quote = FALSE)
+	zid <- selectFile(type = "ZidZidb", multiple = TRUE, quote = FALSE)
 	if (!length(zid)) return(invisible(NULL))
 	
 	## Look if we have a classifier object defined
@@ -829,9 +845,20 @@ vignettesClass <- function ()
 	zic <- selectObject("ZIClass", multiple = FALSE, default = zic,
 		title = "Choose a classifier (ZIClass object):")
 	if (!length(zic)) return(invisible(FALSE))
+	## Save this choice for later reuse
+	assignTemp("ZI.ClassName", zic, replace.existing = TRUE)
 	zicObj <- get(zic, envir = .GlobalEnv)
 
-	stop("sorry! This function need to be reimplemented")
+	## Sort vignettes in the different directories, as predicted by the classifier
+	prepareTest(testdir, zid, template = zicObj, classes = zicObj)
+	
+	## Remember the directory...
+	assignTemp("ZI.BaseDir", basedir)
+	assignTemp("ZI.TestDir", testdir)
+	
+	## Explain what to do next...
+	message("Vignettes classified in '", testdir, "'")
+	message("View them in your favorite file browser (and possibly correct classification manually)")
 	
 	## Classify vignettes  
 #	if (length(zid) > 1) {

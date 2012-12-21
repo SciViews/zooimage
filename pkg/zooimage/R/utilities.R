@@ -95,6 +95,7 @@ addClass <- function (ZIDat, ZIobj)
 }
 
 ## Default list of variables to drop
+## Version 3.0-1: added useless FIT variables
 dropVars <- function ()
 {
 	res <- try(get("ZI.dropVarsDef"), silent = TRUE)
@@ -102,7 +103,18 @@ dropVars <- function ()
 		res <- getOption("ZI.dropVarsDef",
 			c("Id", "Label", "Item", "X", "Y", "XM", "YM", "BX", "BY", "Width",
 			"Height", "Angle", "XStart", "YStart", "Dil", "Predicted",
-			"Predicted2"))
+			"Predicted2", "FIT_Cal_Const", "FIT_Avg_Red", "FIT_Avg_Green",
+			"FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF",
+			"FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
+			"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
+			"FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",    
+			"FIT_Source_Image", "FIT_Calibration_Image", "FIT_High_U32",
+			"FIT_Low_U32", "FIT_Total", "FIT_Red_Green_Ratio",
+			"FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio",   
+			"FIT_Ch2_Ch1_Ratio", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Timestamp1",
+			"FIT_Timestamp2", "FIT_Camera", "FIT_FringSize", "FIT_CircleFit",
+			"FIT_Ch1_Area", "FIT_Ch2_Area", "FIT_Ch3_Area",         
+			"FIT_TimeStamp1", "FIT_Source_Image.1"))
 	as.character(res)
 }
 
