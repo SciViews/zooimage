@@ -16,6 +16,8 @@
   (version 2) items. The list is now updated with new plots available in
   zooimage 3 and mlearning 1.
   
+* All the java code (ImageJ + zooimage plugins) are now moved to zooimageJ.
+  
 
 == Changes in zooimage 3.0-0
 
