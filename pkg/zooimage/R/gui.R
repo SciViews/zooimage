@@ -560,13 +560,14 @@ collectTrain <- function ()
 		return(invisible(NULL))
 	
 	## Ask for a name for this ZITrain object
-	name <- dlgInput("Name for the ZITrain object:", default = "ZItrain")$res
+	name <- dlgInput("Name for the ZITrain object to create in the global environment:",
+		default = "ZItrain")$res
 	if (!length(name)) return(invisible(FALSE))
 	name <- make.names(name)	# Make sure it is a valid name!
 	
-	## Get the training set and save it in .GlobalEnv under the given name
+	## Get the training set and save it in .GlobalEnv under the provided name
 	res <- getTrain(dir, creator = NULL, desc = NULL, keep_ = FALSE)
-	assign(name, res, envir = .GlobalEnv)
+	.assignGlobal(name, res)
 	
 	## Remember the object name
 	assignTemp("ZI.TrainName", name)
@@ -659,7 +660,7 @@ makeClass <- function ()
 		if (!length(ZIT) || (length(ZIT) == 1 && ZIT == ""))
 			return(invisible(NULL))
 		## Ask for a name for this ZIClass object
-		name <- dlgInput("Name for the ZIClass object to create:",
+		name <- dlgInput("Name for the ZIClass object to create in the global environment:",
 			default = "ZIclass")$res
 		if (!length(name)) return(invisible(NULL))
 		name <- make.names(name)	# Make sure it is a valid name!
@@ -770,8 +771,9 @@ makeClass <- function ()
 		## Calculate results using formula created by variables selection
 		res <- ZIClass(form, data = get(ZIT, envir = .GlobalEnv), algorithm = algorithm)
 	}
+	## Store the resulting object
+	.assignGlobal(name, res)
 	## Print results
-	assign(name, res, envir = .GlobalEnv)
 	print(res)
 	cat("\n")
 	## Remember that ZIClass object
@@ -1071,7 +1073,7 @@ processSamples <- function()
 	brks <- eval(parse(text = brks))
 
 	## Get a name for the variable containing results
-	name <- dlgInput("Name for the ZIRes object to create:",
+	name <- dlgInput("Name for the ZIRes object to create in the global environment:",
 		default = "ZIres")$res
 	if (!length(name)) return(invisible(NULL))
 	name <- make.names(name)
@@ -1084,7 +1086,7 @@ processSamples <- function()
 	
 	
 	## Assign this result to the variable
-	assign(name, res, envir = .GlobalEnv)
+	.assignGlobal(name, res)
 	## Remember the name of the variable
 	assignTemp("ZI.LastRES", name)
 }

@@ -260,3 +260,9 @@ select.file = NULL, returnValOnCancel = "ID_CANCEL", help.topic = NULL)
 #    tkwait.window(ZIAssist)
 #    return(getTemp("ZIret"))
 }
+
+.assignGlobal <- function (x, value)
+{
+	G <- .GlobalEnv
+	assign(x = x, value = value, envir = G)
+}

@@ -1,8 +1,8 @@
 Package: zooimage
 Type: Package
 Title: Analysis of numerical zooplankton images
-Version: 3.0-1
-Date: 2012-12-21
+Version: 3.0-2
+Date: 2013-02-06
 Author: Ph. Grosjean, K. Denis & R. Francois
 Maintainer: Ph. Grosjean <Philippe.Grosjean@umons.ac.be>
 Depends: R (>= 2.14.0), svMisc (>= 0.9-67), svDialogs (>= 0.9-53), mlearning

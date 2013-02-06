@@ -1,5 +1,12 @@
 = zooimage News
 
+== Changes in zooimage 3.0-2
+
+* Assignment to .GlobalEnv is strictly restricted to GUI operations, and only
+  following direct request by the end-user through an explicit dialog box. The
+  internal function .assignGlobal() is used for that purpose.
+
+
 == Changes in zooimage 3.0-1
 
 * getTrain() was not able to collect data when attributes measured on samples
