@@ -1,5 +1,10 @@
 = zooimage News
 
+== Changes in zooimage 3.0-3
+
+* Minor adaptations to DESCRIPTION file.
+
+
 == Changes in zooimage 3.0-2
 
 * Assignment to .GlobalEnv is strictly restricted to GUI operations, and only
