@@ -1,5 +1,11 @@
 = zooimage News
 
+== Changes in zooimage 3.0-4
+
+* Default dropVars(): adding a few items, including 'Skew', 'Kurt' and
+  'Solidity' that produce NAs in ImageJ for multiple ROIs objects.
+
+
 == Changes in zooimage 3.0-3
 
 * Minor adaptations to DESCRIPTION file.

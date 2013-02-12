@@ -114,7 +114,9 @@ dropVars <- function ()
 			"FIT_Ch2_Ch1_Ratio", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Timestamp1",
 			"FIT_Timestamp2", "FIT_Camera", "FIT_FringSize", "FIT_CircleFit",
 			"FIT_Ch1_Area", "FIT_Ch2_Area", "FIT_Ch3_Area",         
-			"FIT_TimeStamp1", "FIT_Source_Image.1"))
+			"FIT_TimeStamp1", "FIT_Source_Image.1",
+			"X.Item.1", "FeretAngle", "Count",
+			"Skew", "Kurt", "Solidity")) # Last 3: NAs with multiple ROIs
 	as.character(res)
 }
 
