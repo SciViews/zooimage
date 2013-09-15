@@ -281,7 +281,7 @@ path = NULL, replace = FALSE)
 		zimVerify(zimfiles[item]) >= 0
 	}
 	## Batch process all files
-	message("Compression of images...")
+	message("Extraction of ZooImage metadata (.zim) from compressed .zip images...")
 	flush.console()
 	ok <- batch(items, fun = zimExtract, zipfiles = zipfiles,
 		zimfiles = zimfiles, verbose = FALSE)
