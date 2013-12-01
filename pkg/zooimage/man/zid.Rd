@@ -26,8 +26,8 @@ zidDatMake(zidir, type = "ZI3", replace = FALSE)
 zidDatRead(zidfile)
 
 zidUncompress(zidfile, path = dirname(zidfile), delete.source = FALSE)
-zidUncompressAll(path = ".", zidfiles = zidList(path), path.extract = path,
-    skip.existing.dirs = TRUE, delete.source = FALSE)
+zidUncompressAll(path = ".", zidfiles = zidList(path, full.names = TRUE),
+    path.extract = path, skip.existing.dirs = TRUE, delete.source = FALSE)
 
 zidVerify(zidir, type = c("ZI1", "ZI2", "ZI3"), check.vignettes = TRUE)
 zidVerifyAll(path = ".", samples = NULL, type = c("ZI1", "ZI2", "ZI3"),

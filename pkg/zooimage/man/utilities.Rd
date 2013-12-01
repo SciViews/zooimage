@@ -6,6 +6,7 @@
 \alias{makeId}
 \alias{addClass}
 \alias{calcVars}
+\alias{calcVarsVIS}
 \alias{dropVars}
 \alias{ecd}
 \alias{parseIni}
@@ -31,6 +32,7 @@ listSamples(ZIobj)
 makeId(ZIDat)
 addClass(ZIDat, ZIobj)
 calcVars(x, drop.vars = NULL, drop.vars.def = dropVars())
+calcVarsVIS(x, drop.vars = NULL, drop.vars.def = dropVars()) 
 dropVars()
 
 ecd(area)
@@ -89,10 +91,10 @@ zipNoteGet(zipfile, zimfile = NULL)
   element found.
 
   The data.frame with additional columns for calculated variables with
-  \code{calcVars()}. Variables to drop are gathered using \code{dropVars()},
-  altogether with a list provided explicitly in the \code{drop.vars =} argument.
-  The list of variable names to drop automatically and silently can be stored in
-  a variable named \code{ZI.dropVarsDef} or in
+  \code{calcVars()} or \code{calcVarsVIS()}. Variables to drop are gathered
+  using \code{dropVars()}, altogether with a list provided explicitly in the
+  \code{drop.vars =} argument. The list of variable names to drop automatically
+  and silently can be stored in a variable named \code{ZI.dropVarsDef} or in
   \code{options(ZI.dropVarsDef = ....)}.
 
   A vector of numerical values for \code{ecd()}.
