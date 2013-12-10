@@ -30,8 +30,30 @@ check.vignettes = TRUE)
 	## Check the list of _dat1.zim
 	dat1files <- zimDatList(zidir)
 	if (!length(dat1files)) {
-		warning("no '_dat1.zim' file!")
-		return(invisible(FALSE))
+		## Special case for the FlowCAM where the _dat1.zim file is not created
+		## automatically, but all data are there to do so
+		lstfile <- paste(zidir, "lst", sep = ".")
+		zimfile <- paste(zidir, "zim", sep = ".")
+		if (file.exists(lstfile)) {
+			if (!file.exists(zimfile)) {
+				warning("FlowCAM data with no '_dat1.zim' file and no '.zim' file to create it")
+				return(invisible(FALSE))
+			}
+			## Try to create the _dat1.zim file now
+			res <- zimDatMakeFlowCAM(zimfile)
+			if (!res) {
+				warning("cannot create the '_dat1.zim' file from FlowCAM data")
+				return(invisible(FALSE))
+			}
+			dat1files <- zimDatList(zidir)
+			if (!length(dat1files)) {
+				warning("impossible to create '_dat1.zim' file!")
+				return(invisible(FALSE))
+			}
+		} else {
+			warning("no '_dat1.zim' file!")
+			return(invisible(FALSE))
+		}
 	}
 	
     ## Check the content of all these "_dat1.zim" files 
@@ -284,7 +306,7 @@ delete.source = FALSE)
 	message("Unzipping '", zidfile, "' ...")
 	
 	## Uncompress it
-	if (!length(tryCatch(unzip(zidfile, overwrite = FALSE, exdir = "."),
+	if (!length(tryCatch(unzip(zidfile, overwrite = FALSE, exdir = path),
 			error = function (e) warning(e),
 			warning = function (w) return()))) {
 		message("    ... not done!")
@@ -299,8 +321,9 @@ delete.source = FALSE)
 }
 
 ## Uncompress all .zid files in the 'path.extract' directory
-zidUncompressAll <- function (path = ".", zidfiles = zidList(path),
-path.extract = path, skip.existing.dirs = TRUE, delete.source = FALSE)
+zidUncompressAll <- function (path = ".", zidfiles = zidList(path,
+full.names = TRUE), path.extract = path, skip.existing.dirs = TRUE,
+delete.source = FALSE)
 {	
 	## Initial checks
 	if (!length(zidfiles)) {
@@ -547,7 +570,7 @@ zidDatRead <- function (zidfile)
 			tmpd <- tempdir()
 			unzip(zidfile, file, exdir = tmpd, overwrite = TRUE,
 				junkpaths = TRUE)
-			res <- file.path(tmpd, file)
+			res <- file.path(tmpd, basename(file))
 			if (file.exists(res)) res else NULL
 		}		
 		rdata <- zidExtract(rdata, zidfile)

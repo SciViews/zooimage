@@ -1,4 +1,4 @@
-## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+## Copyright (c) 2004-2013, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
 ##
@@ -450,8 +450,10 @@ zimDatMakeFlowCAM <- function (zimfile)
 
 	## Read list file
 	## Read visual spreadsheet data (from the FlowCAM)
-	visdata <- .lstRead(file.path(zidir,
-		paste(basename(zidir), "lst", sep = ".")), skip = 2)
+	#visdata <- .lstRead(file.path(zidir,
+	#	paste(basename(zidir), "lst", sep = ".")), skip = 2)
+	lstfile <- sub("\\.zim$", ".lst", zimfile)
+    visdata <- readFlowCAMlst(lstfile, skip = 2, read.ctx = FALSE)
 	
 	## Read ImageJ results (from FITVis)
 	fitdata <- read.table(file.path(zidir, "results.csv"),
@@ -461,15 +463,16 @@ zimDatMakeFlowCAM <- function (zimfile)
 	alldata <- cbind(visdata, fitdata)
 	
 	## Add Label columns
-	alldata$Label <- rep(basename(zidir), nrow(alldata))
+	sample <- sub("\\.zim$", "", basename(zimfile))
+	alldata$Label <- rep(sample, nrow(alldata))
 	## Transform Id column in !Item column
 	names(alldata)[grep("Id", names(alldata))] <- "!Item"
 	## Select only useful columns
 	alldata$FIT_Filename <- NULL
 	
 	## Create _dat1.zim file
-	zidatfile <- file.path(zidir, basename(zidir),
-		sub("\\.zim$", "_dat1.zim", basename(zimfile)))
+	zidatfile <- file.path(zidir, sample,
+		paste(sample, "dat1.zim", sep = "_"))
 	if (!file.exists(dirname(zidatfile))) {
 		warning("directory ", dirname(zidatfile), " does not exist")
 		return(invisible(FALSE))
@@ -478,8 +481,9 @@ zimDatMakeFlowCAM <- function (zimfile)
 	
 	## Add table of measurements at the end
 	cat("\n[Data]\n", file = zidatfile, append = TRUE)
-	write.table(alldata, file = zidatfile, append = TRUE, quote = FALSE,
-		sep = "\t", col.names = TRUE, row.names = FALSE, dec = ".")
+	suppressWarnings(write.table(alldata, file = zidatfile, append = TRUE,
+		quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
+		dec = ".")) # In R 3.0.2: "appending column names to file" warning
 	
 	invisible(TRUE)
 }
@@ -516,81 +520,81 @@ zimDatMakeFlowCAMAll <- function (path = ".", zimfiles = NULL)
 
 ## FlowCAM special treatment because the plugin doesn't export dat1.zim!
 ## Read list file
-## TODO: avoid duplicated code between versions
-.lstRead <- function (lstfile, skip = 2)
-{
-	## Determine the version of the FlowCAM
-	ncol <- length(read.table(lstfile, header = FALSE, sep = ":", dec = ".",
-		skip = skip, nrows = 1))
-	if (ncol <= 44) {
-		## FlowCAM II with 44 columns
-		## Read the table
-		tab <- read.table(lstfile, header = FALSE, sep = ":", dec = '.',
-			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
-				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
-				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
-				"FIT_Diameter_ABD", "FIT_Length", "FIT_Width",
-				"FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
-				"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
-				"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness",
-				"FIT_Feret_Max_Angle", "FIT_Avg_Red", "FIT_Avg_Green",
-				"FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF",
-				"FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
-				"FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
-				"FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
-				"FIT_CaptureY", "FIT_High_U32", "FIT_Low_U32", "FIT_Total"),
-			skip = skip)
-		## Add columns present in list files from FlowCAM III
-		tab$FIT_Feret_Min_Angle <- NA
-		tab$FIT_Edge_Gradient <- NA
-		tab$FIT_Timestamp1 <- NA
-		tab$FIT_Timestamp2 <- NA
-		tab$FIT_Source_Image <- NA
-		tab$FIT_Calibration_Image <- NA
-		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-		## New variables calc (present in dataexport.csv from the FlowCAM)
-		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
-		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
-		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
-		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
-		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
-		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
-		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
-	} else { # FlowCAM III with 47 columns
-		## Read the table
-		tab <- read.table(lstfile, header = FALSE, sep = ":", dec = '.',
-			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
-				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
-				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
-				"FIT_Diameter_ABD", "FIT_Length", "FIT_Width",
-				"FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
-				"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
-				"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness",
-				"FIT_Feret_Max_Angle", "FIT_Feret_Min_Angle", "FIT_Avg_Red",
-				"FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak",
-				"FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
-				"FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename",
-				"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
-				"FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",
-				"FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image",
-				"FIT_Calibration_Image"),
-			skip = skip)
-		## Add columns present in list files from FlowCAM II
-		tab$FIT_High_U32 <- NA
-		tab$FIT_Low_U32 <- NA
-		tab$FIT_Total <- NA
-		## New variables calcul (present in dataexport.csv from the FlowCAM)
-		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
-		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
-		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
-		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
-		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
-		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
-		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
-		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-	}
-	tab
-}
+## TODO: eliminate this. Code is now in readFlowCAMlst() function!
+#.lstRead <- function (lstfile, skip = 2)
+#{
+#	## Determine the version of the FlowCAM
+#	ncol <- length(read.table(lstfile, header = FALSE, sep = ":", dec = ".",
+#		skip = skip, nrows = 1))
+#	if (ncol <= 44) {
+#		## FlowCAM II with 44 columns
+#		## Read the table
+#		tab <- read.table(lstfile, header = FALSE, sep = ":", dec = '.',
+#			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
+#				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
+#				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
+#				"FIT_Diameter_ABD", "FIT_Length", "FIT_Width",
+#				"FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
+#				"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
+#				"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness",
+#				"FIT_Feret_Max_Angle", "FIT_Avg_Red", "FIT_Avg_Green",
+#				"FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF",
+#				"FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
+#				"FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename", "FIT_SaveX",
+#				"FIT_SaveY", "FIT_PixelW", "FIT_PixelH", "FIT_CaptureX",
+#				"FIT_CaptureY", "FIT_High_U32", "FIT_Low_U32", "FIT_Total"),
+#			skip = skip)
+#		## Add columns present in list files from FlowCAM III
+#		tab$FIT_Feret_Min_Angle <- NA
+#		tab$FIT_Edge_Gradient <- NA
+#		tab$FIT_Timestamp1 <- NA
+#		tab$FIT_Timestamp2 <- NA
+#		tab$FIT_Source_Image <- NA
+#		tab$FIT_Calibration_Image <- NA
+#		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
+#		## New variables calc (present in dataexport.csv from the FlowCAM)
+#		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
+#		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
+#		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
+#		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
+#		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
+#		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
+#		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
+#	} else { # FlowCAM III with 47 columns
+#		## Read the table
+#		tab <- read.table(lstfile, header = FALSE, sep = ":", dec = '.',
+#			col.names = c("Id", "FIT_Cal_Const", "FIT_Raw_Area",
+#				"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
+#				"FIT_Raw_Perim", "FIT_Raw_Convex_Perim", "FIT_Area_ABD",
+#				"FIT_Diameter_ABD", "FIT_Length", "FIT_Width",
+#				"FIT_Diameter_ESD", "FIT_Perimeter", "FIT_Convex_Perimeter",
+#				"FIT_Intensity", "FIT_Sigma_Intensity", "FIT_Compactness",
+#				"FIT_Elongation", "FIT_Sum_Intensity", "FIT_Roughness",
+#				"FIT_Feret_Max_Angle", "FIT_Feret_Min_Angle", "FIT_Avg_Red",
+#				"FIT_Avg_Green", "FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak",
+#				"FIT_Ch1_TOF", "FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak",
+#				"FIT_Ch3_TOF", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Filename",
+#				"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
+#				"FIT_CaptureX", "FIT_CaptureY", "FIT_Edge_Gradient",
+#				"FIT_Timestamp1", "FIT_Timestamp2", "FIT_Source_Image",
+#				"FIT_Calibration_Image"),
+#			skip = skip)
+#		## Add columns present in list files from FlowCAM II
+#		tab$FIT_High_U32 <- NA
+#		tab$FIT_Low_U32 <- NA
+#		tab$FIT_Total <- NA
+#		## New variables calcul (present in dataexport.csv from the FlowCAM)
+#		tab$FIT_Volume_ABD <- (4/3) * pi * (tab$FIT_Diameter_ABD/2)^3
+#		tab$FIT_Volume_ESD <- (4/3) * pi * (tab$FIT_Diameter_ESD/2)^3
+#		tab$FIT_Aspect_Ratio <- tab$FIT_Width / tab$FIT_Length
+#		tab$FIT_Transparency <- 1 - (tab$FIT_Diameter_ABD/tab$FIT_Diameter_ESD)
+#		tab$FIT_Red_Green_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Green
+#		tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
+#		tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
+#		tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
+#	}
+#	tab
+#}
 
 ## Read context file
 ## TODO: avoid duplicated code between versions

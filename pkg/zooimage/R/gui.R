@@ -433,7 +433,7 @@ makeZid <- function ()
 				system.file("imagej", "ij.jar", package = "zooimage"),
 				system.file("imagej", "plugins", "_zooimage.jar",
 					package = "zooimage"), ij.plugin,
-					tools:::file_path_as_absolute(zimfile))
+					tools::file_path_as_absolute(zimfile))
 			return(invisible(system(cmd, intern = TRUE)))
 		}		
 		## TODO: update a progress bar from ImageJ (using sockets ?)

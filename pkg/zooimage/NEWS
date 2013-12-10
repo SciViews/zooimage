@@ -1,5 +1,36 @@
 = zooimage News
 
+== Changes in zooimage 3.0-7
+
+* readFlowCAMlst() can now read Visual Spreadsheet .lst file format 017 where
+  the name of the columns is explicitly provided in the header of the file.
+  
+* zimDatMakeFlowCAM() now uses readFlowCAMlst() instead of the hidden function
+  .lstRead() to avoid duplicated code.
+  
+* zidVerify() now builds automatically the _dat1.zim file from FlowCAM data if
+  it is not there, but corresponding .lst and .zim files are found in the parent
+  directory.
+
+
+== Changes in zooimage 3.0-6
+
+* zidUncompress() unzipped files in current dir., ignoring its path argument.
+  Solved now.
+  
+* zidUncompressAll() now computes full names for zidfiles argument by default.
+
+* calcVarsVIS() added. Specific function to calculate derived variables from
+  FlowCAM's Visualspreadsheet software.
+  
+* Added the extraction of RGB vignettes when importing FlowCAM data.
+
+
+== Changes in zooimage 3.0-5
+
+* Functions to import FlowCAM data directly.
+
+
 == Changes in zooimage 3.0-4
 
 * Default dropVars(): adding a few items, including 'Skew', 'Kurt' and

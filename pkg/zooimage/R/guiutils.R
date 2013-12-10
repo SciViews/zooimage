@@ -138,7 +138,7 @@ imageViewer <- function (dir = getwd(), pgm = getOption("ZI.ImageViewer"))
 {
 	if (isWin()) {
 		startPgm("ImageViewer", sprintf('"%s"',
-			tools:::file_path_as_absolute(dir)))
+			tools::file_path_as_absolute(dir)))
 	} else if (isMac()) {
 		cmd <- sprintf('/Applications/Utilities/XnViewMP.app/Contents/MacOS/xnview "%s"',
 			dir)

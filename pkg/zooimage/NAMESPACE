@@ -7,6 +7,7 @@ import(svDialogs)
 import(filehash)
 import(jpeg)
 import(png)
+import(tiff)
 #import(ipred)
 #import(MASS)
 #import(randomForest)
@@ -94,6 +95,7 @@ export(processSampleAll)
 # Utilities
 export(addClass)
 export(calcVars)
+export(calcVarsVIS)
 export(calibrate)
 export(dropVars)
 export(ecd)
@@ -166,6 +168,11 @@ export(createThreshold)
 export(imageViewer)
 export(startPgm)
 export(modalAssistant)
+
+# Importation
+export(readFlowCAMctx)
+export(readFlowCAMlst)
+export(importFlowCAM)
 
 # S3 methods
 S3method(template, default)

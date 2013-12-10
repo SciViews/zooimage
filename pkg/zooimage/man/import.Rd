@@ -12,7 +12,7 @@
 \usage{
 readFlowCAMctx(ctx, stop.it = TRUE)
 readFlowCAMlst(lst, skip = 2, read.ctx = TRUE)
-importFlowCAM(lst)
+importFlowCAM(lst, rgb.vigs = TRUE)
 }
 
 \arguments{
@@ -24,6 +24,8 @@ importFlowCAM(lst)
   \item{skip}{ the number of lines to skip in the .lst table before reading the
     data. This is usally two lines. }
   \item{read.ctx}{ should we also read the .ctx file with \code{readFlowCAMctx()}? }
+  \item{rgb.vigs}{ do we build color vignettes that mix OD, visual and mask in the
+    three RGB channels? }
 }
 
 \value{
@@ -32,7 +34,7 @@ importFlowCAM(lst)
 
 \details{
   The Visual Spreadsheet software provided with the FlowCAM is constantly
-  changing specifications from version to version. This is mainly testes with
+  changing specifications from version to version. This is mainly tested with
   VS 1.5.14.
 }
 

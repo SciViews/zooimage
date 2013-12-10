@@ -181,6 +181,47 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	x
 }
 
+## Calculate derived variables... FlowCAM's Visual Spreadsheet
+calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars()) 
+{
+    ## A small hack to correct some 0 (which can be problematic in further calcs)
+	noZero <- function(x) {
+        x[x == 0] <- 1e-09
+        x
+    }
+	
+	## Euclidean distance between two points
+	distance <- function (x, y)
+		sqrt(x^2 + y^2)
+	
+    x$FIT_Area_ABD <- noZero(x$FIT_Area_ABD)
+    x$FIT_Perimeter <- noZero(x$FIT_Perimeter)
+    x$FIT_Length <- noZero(x$FIT_Length)
+    x$FIT_Width <- noZero(x$FIT_Width)
+    x$ARFeret <- x$FIT_Width/x$FIT_Length
+    x$EdgeRange <- abs(x$FIT_Intensity - x$FIT_Edge_Gradient)
+    x$CV <- x$FIT_Sigma_Intensity/x$FIT_Intensity * 100
+    x$MeanFDia <- (x$FIT_Length + x$FIT_Width) / 2
+    x$Transp2 <- 1 - (x$FIT_Diameter_ABD/x$MeanFDia)
+    x$Transp2[x$Transp2 < 0] <- 0
+    x$FeretRoundness <- 4 * x$FIT_Area_ABD/(pi * sqrt(x$FIT_Length))
+    x$Circ. <- 4 * pi * x$FIT_Area_ABD / sqrt(x$FIT_Perimeter) # ImageJ calculation
+    x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
+    x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
+    x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter 
+    
+	## Eliminate variables that are not predictors... and use Id as rownames
+	Id <- x$Id
+    if (length(Id)) rownames(x) <- Id
+    
+	## Variables to drop
+	dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
+    for (dropVar in dropAll) x[[dropVar]] <- NULL
+    
+	## Return the recalculated data frame
+	x
+}
+
 ## Calculate equivalent circular diameter (similar to equivalent spherical
 ## diameter, but for 2D images)
 ecd <- function (area)
