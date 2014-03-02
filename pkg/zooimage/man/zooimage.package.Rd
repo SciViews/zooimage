@@ -16,8 +16,8 @@
   \tabular{ll}{
     Package: \tab zooimage\cr
     Type: \tab Package\cr
-    Version: \tab 3.0-7\cr
-    Date: \tab 2013-12-10\cr
+    Version: \tab 4.0-0\cr
+    Date: \tab 2014-02-25\cr
     License: \tab GPL 2 or above at your convenience.\cr
   }
   Everytime you publish results that use ZooImage, you must place a reference

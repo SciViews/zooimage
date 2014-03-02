@@ -17,6 +17,7 @@
 \alias{makeClass}
 \alias{analyzeClass}
 \alias{vignettesClass}
+\alias{validClass}
 \alias{editDescription}
 \alias{processSamples}
 \alias{viewResults}
@@ -53,6 +54,7 @@ addVigsToTrain()
 makeClass()
 analyzeClass()
 vignettesClass()
+validClass()
 editDescription()
 processSamples()
 viewResults()

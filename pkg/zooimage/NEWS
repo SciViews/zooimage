@@ -1,5 +1,17 @@
 = zooimage News
 
+== Changes in zooimage 4.0-0
+
+* Error correction functions added: correctError().
+
+* Plankton sorter interface to manual validation added.
+
+* New dependency on the digest package.
+
+* A new menu entry, Validate classification..., is added for validation and
+  error correction.
+
+
 == Changes in zooimage 3.0-7
 
 * readFlowCAMlst() can now read Visual Spreadsheet .lst file format 017 where

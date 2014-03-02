@@ -1,12 +1,17 @@
 Package: zooimage
 Type: Package
 Title: Analysis of numerical zooplankton images
-Version: 3.0-7
-Date: 2013-12-10
-Author: Ph. Grosjean, K. Denis & R. Francois
+Version: 4.0-0
+Date: 2014-02-23
+Author: Philippe Grosjean [aut, cre],
+  Kevin Denis [aut]
+Authors@R: c(person("Philippe", "Grosjean", role = c("aut", "cre"),
+  email = "phgrosjean@sciviews.org"),
+  person("Kevin", "Denis", role = "aut",
+  email = "kevin.denis@umons.ac.be"))
 Maintainer: Philippe Grosjean <Philippe.Grosjean@umons.ac.be>
 Depends: R (>= 2.14.0), svMisc (>= 0.9-67), svDialogs (>= 0.9-53), mlearning
-Imports: filehash, jpeg, png, tiff, utils
+Imports: filehash, jpeg, png, tiff, utils, digest, tools
 Suggests: rJava, mlbench
 Description: ZooImage is a free (open source) solution for analyzing digital
 	images of zooplankton. In combination with ImageJ, a free image analysis

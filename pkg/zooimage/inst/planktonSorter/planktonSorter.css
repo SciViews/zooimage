@@ -1,0 +1,226 @@
+/****** ZooImage plankton sorter style sheet, v. 1.0-0 ************************/
+
+body {
+  font-family: Trebuchet MS, Lucida Sans Unicode, Arial, sans-serif;
+  background-color: #FFF;
+}
+
+/* Toolbar at the top of the page*/
+#toolbar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 22px;
+  vertical-align: middle;
+  text-align: left;
+  clear: both;
+  padding-right: 3px;
+  background-color: #DDD;
+  margin-top: 0px;
+}
+
+#toolbar form {
+  margin: 0px;
+  margin-top: 0px;
+}
+
+/* Preview floating box */
+#preview {
+  position:   absolute;
+  border: 3px solid #ccc;
+  background: #333;
+  padding:    5px;
+  display:    none;
+  color:  #FFF;
+  font-size: 0.75em;
+  text-align: center;
+  box-shadow: 4px 4px 3px rgba(103, 115, 130, 1);
+}
+
+/* Categories headers */
+#header {
+  top: 22px;
+  left: 0px;
+  height: 16px;
+  position: fixed;
+  background-color: #DDD;
+  color: #000;
+  margin: 0px;
+  padding: 0px;
+  padding-left: 129px;
+  font-size: 0.75em;
+}
+
+#header_box {
+  float: left;
+  margin-top: 0px;
+  border: 1px solid #999;
+  background-color: #DDD;
+  color: #000;
+  margin: 0px;
+  padding: 0px;
+  padding-left: 3px;
+  font-weight: bold;
+  font-size: 1em;
+  width: 91px;            /* IE 5.x */
+  width/* */:/**/89px;    /* Other browsers */
+  width: /**/89px;
+}
+
+/* Main container for this script */
+#dragDropContainer { 
+  height: auto;
+  margin-left: 120px;
+  border: 1px solid #317082;
+  background-color: #FFF;
+  -moz-user-select: none;
+}
+
+/* General rules for all <ul> */
+#dragDropContainer ul { 
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-bottom: 0px;
+  padding: 2px;
+}
+
+/* Movable items, i.e. <LI> */
+#dragDropContainer li, #dragContent li,li#indicateDestination { 
+  list-style-type: none;
+  height: 75px;
+  width: 75px;
+  background-color: #FFF;
+  border: 1px solid #000;
+  padding: 2px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  font-size: 0.5em;   
+  text-align: center;
+  line-height: 75px;
+}
+
+#dragDropContainer li:hover, #dragContent li {
+  border: 2px solid #F00;
+}
+
+#dragDropContainer img, #dragContent img {
+  max-width:  100%;
+  max-height:  100%;
+  margin:  auto;
+  vertical-align: middle;
+}
+
+/* Box indicating where content will be dropped when you don't use arrow */
+li#indicateDestination {    
+  border: 1px dotted #600;
+  background-color: #FFF;
+}
+
+/* Left column section: "Unclassified" */
+div#listOfItems {   
+  position: fixed;
+  left: 0;
+  top: 22px;
+  background-color: #FFD;
+  padding-left: 0px;
+  padding-right: 3px;
+  width: 95px;            /* IE 5.x */
+  width/* */:/**/92px;    /* Other browsers */
+  width: /**/92px;
+}
+
+/* Left(Sources) column <ul> */
+#listOfItems ul {
+  height: 3000px; /* to be large enough to fill screen height completelly */
+}
+
+div#listOfItems div {
+  border: 1px solid #999;
+}
+
+/* Left column <ul> */
+div#listOfItems div ul {
+  margin-left: 3px;   /* Space at the left of list where arrow is positioned */
+}
+
+/* Heading above left column */
+#listOfItems div p {
+  margin: 0px;
+  font-weight: bold;
+  font-size: 0.75em;
+  padding-left: 3px;
+  background-color: #DDD;
+  color: #800;
+  margin-bottom: 5px;
+}
+
+/* Mouse over effect DIV box in right categories columns */
+#dragDropContainer .mouseover { 
+  background-color: #E2EBED;
+  border: 1px solid #317082;
+}
+
+/* Main container CSS (right categories) */
+div#mainContainer {
+  width: 900px;
+  float: left;
+}
+
+/* Parent <div> of small boxes */
+#mainContainer div {
+  float: left;
+  margin-right: 0px;
+  margin-bottom: 3px;
+  margin-top: 0px;
+  border: 1px solid #999;
+  width: 95px;            /* IE 5.x */
+  width/* */:/**/92px;    /* Other browsers */
+  width: /**/92px;
+}
+
+#mainContainer div ul {
+  margin-left: 3px;
+}
+
+/* Heading above category boxes (but should be hidden by headers here) */
+#mainContainer div p {  
+  margin: 0px;
+  padding: 0px;
+  padding-left: 3px;
+  font-weight: bold;
+  font-size: 0.7em;
+  background-color: #DDD;
+  color: #000;
+  margin-bottom: 3px;
+}
+
+/* Small boxes in the categories columns ,i.e <ul> */
+#mainContainer ul {
+  width: 80px;
+  height: 80px;
+  border: 0px;
+  margin-bottom: 0px;
+  overflow: hidden;
+}
+
+/* Drag container */
+#dragContent {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  display: none;
+  margin: 0px;
+  padding: 0px;
+  z-index: 2000;
+}
+
+/* DIV for the small arrow */
+#dragDropIndicator {
+  position: absolute;
+  width: 7px;
+  height: 10px;
+  display: none;
+  z-index: 1000;
+  margin: 0px;
+  padding: 0px;
+}   

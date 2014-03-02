@@ -1,0 +1,3 @@
+= zooimage - TODO list
+
+* There is a calibrate() method in vegan => use a different name here

@@ -47,7 +47,9 @@ ZIDlg <- function ()
 	menuAddItem("Analyze", "Make classifier...", "makeClass()")
 	menuAddItem("Analyze", "Analyze classifier...", "analyzeClass()")
 	menuAddItem("Analyze", "Automatic classification of vignettes...",
-		"vignettesClass()") 
+		"vignettesClass()")
+	menuAddItem("Analyze", "Validate classification...",
+		"validClass()")
 	menuAddItem("Analyze", "--", "")
 	menuAddItem("Analyze", "Edit samples description", "editDescription()")
 	menuAddItem("Analyze", "Process samples...", "processSamples()")
@@ -884,6 +886,36 @@ vignettesClass <- function ()
 #			classVignettes(zidfile = zid, Dir = finalDir, ZIClass = zicObj)
 #		}
 #	}
+}
+
+## Perform classification validation
+validClass <- function ()
+{
+	## Select one .zid or zidb file to be validated
+	zid <- selectFile(type = "ZidZidb", multiple = FALSE, quote = FALSE)
+	if (!length(zid)) return(invisible(NULL))
+	
+	## Look if we have a classifier object defined
+	zic <- getTemp("ZI.ClassName", default = "")
+	zic <- selectObject("ZIClass", multiple = FALSE, default = zic,
+		title = "Choose a classifier (ZIClass object):")
+	if (!length(zic)) return(invisible(FALSE))
+	## Save this choice for later reuse
+	assignTemp("ZI.ClassName", zic, replace.existing = TRUE)
+	zicObj <- get(zic, envir = .GlobalEnv)
+
+	## If we have a zid file, convert it into zidb
+	if (hasExtension(zid, "zid")) {
+		message("Converting data into zidb format...")
+		if (!zidToZidb(zid))
+			stop("problem while converting '", zid, "' into a zidb file")
+		zid <- paste0(zid, "b") # The zidb file
+		if (!file.exists(zid))
+			stop("the created zidb file '", zid, "' is not found")
+	}
+	
+	## Start validation of this sample
+	correctError(zid, zicObj) # This is using default parameters!
 }
 
 ## Edit a samples description file... or create a new one!

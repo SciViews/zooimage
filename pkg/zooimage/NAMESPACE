@@ -1,4 +1,6 @@
+import(digest)
 import(utils)
+import(tools)
 #import(tcltk)
 #import(tcltk2)
 import(svMisc)
@@ -19,6 +21,9 @@ import(tiff)
 #import(RWeka)
 import(mlearning)
 #import(party)
+
+# planktonSorter
+export(correctError)
 
 # Zic
 export(zicCheck)
@@ -152,6 +157,7 @@ export(processImg)
 export(processSamples)
 export(removeObjects)
 export(saveObjects)
+export(validClass)
 export(vignettesClass)
 export(viewManual)
 export(viewResults)
