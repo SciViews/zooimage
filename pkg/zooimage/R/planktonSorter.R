@@ -31,7 +31,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 <head>'
     html <- c(html, sprintf("<title>%s</title>", title))
     html <- c(html, sprintf('<meta http-equiv="Content-Type" content="text/html; charset=%s">',
-		tools:::mime_canonical_encoding("UTF-8"))) 
+		.mimeEncoding("UTF-8"))) 
 	html <- c(html, sprintf(
 '	<script src="../planktonSorter/jquery-1.11.0.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="../planktonSorter/planktonSorter.css">	
@@ -139,7 +139,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 <head>'
     html <- c(html, sprintf("<title>%s</title>", title))
     html <- c(html, sprintf('<meta http-equiv="Content-Type" content="text/html; charset=%s">',
-		tools:::mime_canonical_encoding("UTF-8"))) 
+		.mimeEncoding("UTF-8"))) 
 	html <- c(html, sprintf('	<meta http-equiv="cache-control" content="no-cache">
 	<link rel="stylesheet" type="text/css" href="../planktonSorter/planktonSorter.css">
 	<script language="javascript" type="text/javascript">

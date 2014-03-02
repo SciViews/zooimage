@@ -450,7 +450,7 @@ result = ".last_valid", envir = parent.frame()) {
 		if (mode != "stat") {
 			if (is.null(testdir))
 				testdir <<- file.path(tempdir(),
-					zooimage::noExtension(zidb))
+					noExtension(zidb))
 			if (file.exists(testdir)) {
 				
 				res <- dlgMessage(paste("Temporary validation directory already",
@@ -727,7 +727,7 @@ result = ".last_valid", envir = parent.frame()) {
 ## TODO: change this!
 #			## Read Test set with getTest() from zooimage package
 #			SubDir <- file.path(testdir, paste0("step", step))
-#			TestSetStep <- zooimage::getTest(SubDir)[, c("Id", "Class")]
+#			TestSetStep <- getTest(SubDir)[, c("Id", "Class")]
 			## Id if items validated at step 'i' and included in data
 ## ????
 #			dfId <- data.frame(Id = as.factor(rownames(data))[corr$Step == step])

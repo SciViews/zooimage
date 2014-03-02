@@ -200,10 +200,10 @@ labels = c("Actual", "Predicted"), useNA = "ifany", prior, use.cv = TRUE, ...) {
 	
 	## Construct the confusion object
 	if (missing(prior)) {
-		mlearning:::.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, useNA = useNA, ...)
+		getNamespace("mlearning")$.confusion(data.frame(class1 = y,
+			class2 = class2), labels = labels, useNA = useNA, ...)
 	} else {
-		mlearning:::.confusion(data.frame(class1 = y, class2 = class2),
-			labels = labels, useNA = useNA, prior = prior, ...)
+		getNamespace("mlearning")$.confusion(data.frame(class1 = y,
+			class2 = class2), labels = labels, useNA = useNA, prior = prior, ...)
 	}
 }
