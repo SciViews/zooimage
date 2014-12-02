@@ -1,7 +1,22 @@
 ## ZooImage >= 3 importation routines
+## TODO:
+## - Import data with replicates as subdirs of one common dir
+## - Import grayscale data from a "grey" subdir of common dir, or in a first stage,
+##   do not use any subdir data that do not contain a .lst file (cf, data are
+##   in subdirs of "grey" dir)
+## - Warning: do not allow to mix, say 10x and 4x in the same sample! => check this!
+## - Replicates are AR.B25.2014-05-19.300A4X.01, .02, .03, ... => correct label from there?
+## - Use jpeg format for non color vignettes + check the difference in weight and
+##   speed of loading in R
+## - Calculate default concentration values, using $Fluid$TotalVolumeML assuming
+##   no dilution of the sample... SubPart is TotalVolumeML, SubCell = 1, VolIni = 1
+## - rajouter échelle de taille dans les vignettes
+## - Note: using jpeg instead of png: 10sec instead of 14sec, and 4.9Mb instead of 14.7Mb
+##   loading time for 25 vignettes faster too.
 
 #### Importation of FlowCAM data without image reanalysis ######################
 ## Read a FlowCAM .ctx file
+## TODO: add label everywhere in front of each table
 readFlowCAMctx <- function (ctx, stop.it = TRUE)
 {
 	## Check arguments
@@ -10,6 +25,10 @@ readFlowCAMctx <- function (ctx, stop.it = TRUE)
 	if (!file.exists(ctx))
 		if (stop.it)
 			stop("'ctx' must be an existing (.ctx) file") else return(NULL)
+	
+	## Get the label from the directory containing the data
+	label <- basename(dirname(ctx))
+	if (label == ".") label <- basename(getwd())
 	
 	## Read .ctx data
 	dat <- scan(ctx, what = character(), sep = "\t", skip = 0,
@@ -39,10 +58,12 @@ readFlowCAMctx <- function (ctx, stop.it = TRUE)
 	## We need these keys that may not be present in old .ctx files	
 	if (is.null(V$Fluid$TotalVolumeML)) {
 		## Volume calculation
+		cst <- V$Fluid$CalibConstant
+		if (is.null(cst)) cst <- V$Fluid$CalibrationConstant
 		Height <- (V$CaptureRegion$AcceptableBottom -
-			V$CaptureRegion$AcceptableTop) * V$Fluid$CalibConstant
+			V$CaptureRegion$AcceptableTop) * cst
 		Width <- (V$CaptureRegion$AcceptableRight -
-			V$CaptureRegion$AcceptableLeft) * V$Fluid$CalibConstant
+			V$CaptureRegion$AcceptableLeft) * cst
 		Area <- Height * Width
 		## Volume of one image
 		Volume <- (Area / (1e8)) * (V$Fluid$FlowCellDepth / 10000) # mL
@@ -71,6 +92,36 @@ readFlowCAMctx <- function (ctx, stop.it = TRUE)
 	secs <- V$RunTermination$MaxRunTimeSeconds
 	if (length(secs) == 0) secs <- 0
 	V$RunTermination$MaxRunTime <- mins * 60 + secs
+	
+	## Possibly read also data from _notes.txt
+    notes <- sub("\\.ctx$", "_notes.txt", ctx)
+	if (file.exists(notes)) {
+		## TODO: parse key=value items
+		notesData <- readLines(notes, warn = FALSE)	
+		notesData <- paste(notesData, collapse = "\n") 
+	} else noteData <- ""
+	
+	## TODO: check there is no Fraction, Process and Subsample entries yet!
+	
+	## Add Fraction data
+	V$Fraction <- data.frame(Code = "", Min = -1, Max = -1)
+	
+	## Add Process information
+	useESD <- V$CaptureParameters$UseESDForCapture
+	if (is.null(useESD)) useECD <- FALSE else useECD <- useESD != 1
+	V$Process <- data.frame(Version = "1.0-0", Method = "Direct VS import",
+		MinSize = as.numeric(V$CaptureParameters$MinESD)/1000, # In mm
+		MaxSize = as.numeric(V$CaptureParameters$MaxESD)/1000, # In mm
+		UseECD = useECD)
+	
+	## Add Subsample information
+	## TODO: get this from _notes.txt... Here, assume using 10mL / 1L
+	
+	V$Subsample <- data.frame(SubPart = 0.01, SubMethod = 1,
+		CellPart = 1, Replicates = 1, VolIni = 1, VolPrec = 0.1)
+	
+	## Add Label in front of each table
+	V <- lapply(V, function (x) cbind(data.frame(Label = label), x))
 	
 	## Return the resulting list
 	V	
@@ -125,7 +176,7 @@ readFlowCAMlst <- function (lst, skip = 2, read.ctx = TRUE)
 		cnames <- sub("Esd", "ESD", cnames)
 		cnames <- sub("FIT_Ch([1-9])_Width", "FIT_Ch\\1_TOF", cnames)
 		## We need to replace names by their zooimage equivalent
-		cnames[cnames == "FIT_Id"] <- "Id" # The only one not starting woth FIT_
+		cnames[cnames == "FIT_Id"] <- "Id" # The only one not starting with FIT_
 		cnames[cnames ==  "FIT_ABD_Area"] <-  "FIT_Area_ABD"
 		cnames[cnames == "FIT_ABD_Diameter"] <- "FIT_Diameter_ABD"
 		cnames[cnames == "FIT_ESD_Diameter"] <- "FIT_Diameter_ESD"
@@ -144,6 +195,9 @@ readFlowCAMlst <- function (lst, skip = 2, read.ctx = TRUE)
 		## Note: in comparison to old format, we have in addition:
 		#"FIT_Camera", "FIT_Fringe_Size", "FIT_Circle_Fit", "FIT_Ch1_Area",            
         #"FIT_Ch2_Area", "FIT_Ch3_Area"    
+		#
+		# Plus "FIT_Symmetry", "FIT_Circularity_Hu", "FIT_Intensity_Calimage",
+		# "FIT_Raw_Convex_Hull_Area", "FIT_Raw_Filled_Area"
 		
 		## Read the data in
 		tab <- read.table(lst, header = FALSE, sep = "|", dec = ".", 
@@ -221,15 +275,38 @@ readFlowCAMlst <- function (lst, skip = 2, read.ctx = TRUE)
     tab$FIT_Blue_Green_Ratio <- tab$FIT_Avg_Blue / tab$FIT_Avg_Green
     tab$FIT_Red_Blue_Ratio <- tab$FIT_Avg_Red / tab$FIT_Avg_Blue
     tab$FIT_Ch2_Ch1_Ratio <- tab$FIT_Ch2_Peak / tab$FIT_Ch1_Peak
-    
-    ## Try to extract metadata from .ctx file, if it exists
+	
+	## Need label
+	label <- basename(dirname(lst))
+	if (label == ".") label <- basename(getwd())
+	
+	## Try to extract metadata from .ctx file, if it exists
     ctx <- sub("\\.lst$", ".ctx", lst)
 	if (read.ctx && file.exists(ctx)) {
 		ctxData <- readFlowCAMctx(ctx)
-		## TODO: return data in correct ZooImage format directly
-		attr(tab, "FlowCAM.metadata") <- ctxData
-    }
+    } else { # Use minimum default metadata
+		ctxData <- list(
+			Fraction = data.frame(Label = label, Code = "", Min = -1, Max = -1),
+			Process = data.frame(Label = label, Version = "1.0-0",
+				Method = "Direct VS import", MinSize = NA, MaxSize = NA, UseECD = NA),
+			Subsample = data.frame(Label = label, SubPart = 0.01, SubMethod = 1,
+				CellPart = 1, Replicates = 1, VolIni = 1, VolPrec = 0.1)
+		)
+	}
+	Sub <- ctxData$Subsample
 	
+	## Rework the table by renaming Id by Item, and prepending it with
+	## Label, Item and ECD and postpending it with Dil
+	n <- nrow(tab)
+	items <- tab$Id
+	tab$Id <- NULL
+	dil <- 1/(Sub$SubPart * Sub$CellPart * Sub$Replicates * Sub$VolIni)
+	tab <- cbind(data.frame(Label = rep(label, n), Item = items,
+		ECD = ecd(tab$FIT_Raw_Area)), tab, data.frame(Dil = rep(dil, n)))
+	
+	## Add metadata and change class of the object
+	attr(tab, "metadata") <- ctxData
+	class(tab) <- c("ZI3Dat", "ZIDat", "data.frame")
     tab
 }
 
@@ -240,44 +317,67 @@ readFlowCAMlst <- function (lst, skip = 2, read.ctx = TRUE)
 #res1 <- readFlowCAMlst(lstFile1)
 
 ## Temporary name!
-importFlowCAM <- function (lst, rgb.vigs = TRUE)
+importFlowCAM <- function (lst, rgb.vigs = TRUE,  type = "ZI3", replace = FALSE)
 {
+	## Check arguments
+    rgb.vigs <- isTRUE(as.logical(rgb.vigs))    
+    if (type != "ZI3") {
+        warning("only 'ZI3' is currently supported for 'type'")
+        return(invisible(FALSE))
+    }
+	
+	## Read metadata
 	dat <- readFlowCAMlst(lst, skip = 2, read.ctx = TRUE)
 	## Check results
 	if (!is.data.frame(dat) && NROW(dat) < 1)
 		stop("Problem while importing FlowCAM data, or empty series")
-	if (is.null(attr(dat, "FlowCAM.metadata")))
+	if (is.null(attr(dat, "metadata")))
 		stop("Problem while importing FlowCAM metadata from the .ctx file")
 	
-	## Create metadata from FlowCAM.metadatata
-	## TODO...
+	## Change dir to sample's parent directory
+    sampledir <- dirname(lst)
+    if (sampledir == ".") sampledir <- getwd()
+	label <- basename(sampledir)
+    parentdir <- dirname(sampledir)
+    #odir <- setwd(sampledir)
+    odir <- setwd(parentdir)
+    on.exit(setwd(odir))
 	
-	## ImportVignettes
-	#require(tiff)
-	#require(png)
+	## .zidb file is computed, and check if file already exists
+    zidbfile <- paste(sampledir, "zidb", sep = ".")
+    if (!isTRUE(as.logical(replace)) && file.exists(zidbfile)) {
+        return(invisible(TRUE))
+    }
 	
-	## List all tiff files in the directory (but exclude masks with _bin.tif)
-	sampledir <- dirname(lst)
-	odir <- setwd(sampledir)
-	on.exit(setwd(odir))
+	## Create the .zidb file
+    message("Creating the ZIDB file...")
+    filehashOption(defaultType = "DB1")
+    unlink(zidbfile)
+    dbCreate(zidbfile)
+    db <- dbInit(zidbfile)
+    dbInsert(db, ".ZI", 3)
+	if (isTRUE(rgb.vigs)) {
+		dbInsert(db, ".ImageType", "png")
+	} else {
+		dbInsert(db, ".ImageType", "jpeg")
+	}
+    
+    ## Add vignettes to the .zidb file
+    message("Adding vignettes to ZIDB file...")
 	
-	## Make sure zidbdir exists and is empty
-	## TODO: use a fresh dir, or erase existing one with user's acceptation
-	zidbdir <- file.path(dirname(sampledir), "_import", basename(sampledir))
-	if (file.exists(zidbdir) && dir(zidbdir) != 0)
-		stop("The destination dir already exists and is not empty!")
-	dir.create(zidbdir, recursive = TRUE, showWarnings = FALSE)
-	
-	tif <- dir(sampledir, pattern = "[0-9]\\.tif$", full.names = FALSE)
-	## Separate the list into collages and background calibration images
-	isCal <- grepl("^.*cal_image_[0-9]+\\.tif$", tif)
-	calFiles <- tif[isCal]
-	colFiles <- tif[!isCal]
-	## Check we have at least one image for each set
-	if (length(calFiles) == 0)
-		stop("No background calibration image found")
-	if (length(colFiles) == 0)
-		stop("No collages found")
+#    ## TODO: change this: do not use _import dir
+#    zidbdir <- file.path(dirname(sampledir), "_import", basename(sampledir))
+#    if (file.exists(zidbdir) && dir(zidbdir) != 0) 
+#        stop("The destination dir already exists and is not empty!")
+#    dir.create(zidbdir, recursive = TRUE, showWarnings = FALSE)
+    tif <- dir(sampledir, pattern = "[0-9]\\.tif$", full.names = TRUE)
+    isCal <- grepl("^.*cal_image_[0-9]+\\.tif$", tif)
+    calFiles <- tif[isCal]
+    colFiles <- tif[!isCal]
+    if (length(calFiles) == 0) 
+        stop("No background calibration image found")
+    if (length(colFiles) == 0) 
+        stop("No collages found")
 		
 	## Read all background calibration images into a list
 	cals <- list()
@@ -312,7 +412,7 @@ importFlowCAM <- function (lst, rgb.vigs = TRUE)
 		mat[coords[2]:coords[4], coords[1]:coords[3]]
 	
 	## Determine best gray level for background after substraction
-	gray <- attr(dat, "FlowCAM.metadata")$CaptureParameters$ThresholdLight
+	gray <- attr(dat, "metadata")$CaptureParameters$ThresholdLight
 	if (!length(gray)) {
 		warning("Unknown threshold gray level; using 40")
 		gray <- 40 # Target something like 40
@@ -327,7 +427,7 @@ importFlowCAM <- function (lst, rgb.vigs = TRUE)
 		## Do we need to load the next collage?
 		if (as.character(d$FIT_Filename) != colFile) {
 			filename <- as.character(d$FIT_Filename)
-			collage <- readTIFF(source = filename)
+			collage <- readTIFF(source = file.path(sampledir, filename))
 			colFile <- d$FIT_Filename
 			colFiles <- colFiles[colFiles != filename]
 			## If the image is RGB, we got three dimensions to reduce to two
@@ -373,14 +473,59 @@ importFlowCAM <- function (lst, rgb.vigs = TRUE)
 		}
 		
 		## Write this vignette
-		vigFile <- file.path(zidbdir,
-			sub("\\.tif$", paste0("_", i, ".png"), filename))
-		writePNG(image = vig2, target =  vigFile)
+#		vigFile <- file.path(zidbdir,
+#			sub("\\.tif$", paste0("_", i, ".png"), filename))
+#		writePNG(image = vig2, target =  vigFile)
+		#VigName <- sub("\\.tif$", paste0("_", i), filename)
+        VigName <- paste(label, i, sep = "_")
+		
+		## In case we use grayscale vignettes, use jpeg, otherwise, use png
+		if (isTRUE(rgb.vigs)) {
+			dbInsert(db, VigName, writePNG(image = vig2, target = raw()))
+		} else {
+			dbInsert(db, VigName, writeJPEG(image = vig2, target = raw(),
+				quality = 0.95))
+		}
 	}
 	
 	## Create zidb
 	## TODO...
-	dat
+	#dat
+	    message("Adding data from ZIM files to ZIDB file...")
+#    for (i in 1:length(Zims)) {
+#        Zim <- Zims[i]
+#        ZimName <- sub("\\.zim$", "", basename(Zim))
+#        ZimSize <- file.info(Zim)$size
+#        if (is.na(ZimSize)) {
+#            warning("file '", Zim, "' not found or of null length")
+#            return(invisible(FALSE))
+#        }
+#        dbInsert(db, ZimName, readBin(Zim, "raw", ZimSize + 100))
+#    }
+    
+    ## Adding metadata and particles' attributes to the .zidb file
+    ## TODO: SampleData come from a DESCRIPTION. zis file???
+	## Here, use a default format
+	smpdat <- data.frame(Label = label, Station = NA, Data = NA, Time = NA,
+		TimeZone = NA, Latitude = NA, Longitude = NA, CorrdsPrec = NA,
+		Operator = NA, Note = NA) # TODO: add note from FlowCAM data!!!
+	class(smpdat) <- c("ZIDesc", "data.frame")
+	
+	message("Adding sample data to ZIDB file...")
+    dbInsert(db, ".SampleData", smpdat)
+	
+    message("Adding R data to ZIDB file...")
+#    zidat <- file.path(zidir, paste0(basename(zidir), "_dat1.RData"))
+#    obj <- load(zidat)
+#    if (length(obj) != 1) {
+#        warning("Error loading ", zidat)
+#        return(invisible(FALSE))
+#    }
+    dbInsert(db, ".Data", dat)
+#    if (isTRUE(as.logical(delete.source))) 
+#        unlink(zidir, recursive = TRUE)
+    message("-- Done! --")
+    invisible(TRUE)
 }
 
 ## Example

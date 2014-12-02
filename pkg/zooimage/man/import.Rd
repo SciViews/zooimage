@@ -12,7 +12,7 @@
 \usage{
 readFlowCAMctx(ctx, stop.it = TRUE)
 readFlowCAMlst(lst, skip = 2, read.ctx = TRUE)
-importFlowCAM(lst, rgb.vigs = TRUE)
+importFlowCAM(lst, rgb.vigs = TRUE,  type = "ZI3", replace = FALSE)
 }
 
 \arguments{
@@ -26,6 +26,10 @@ importFlowCAM(lst, rgb.vigs = TRUE)
   \item{read.ctx}{ should we also read the .ctx file with \code{readFlowCAMctx()}? }
   \item{rgb.vigs}{ do we build color vignettes that mix OD, visual and mask in the
     three RGB channels? }
+  \item{type}{ the type of \code{.zidb} file to create. Currently, only supports
+    \code{type = "ZI3"} (defaulf value). }
+  \item{replace}{ a boolean indicating if an existing \code{.zidb} file should
+    be replaced by a new one. }
 }
 
 \value{

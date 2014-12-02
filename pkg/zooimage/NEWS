@@ -1,5 +1,37 @@
 = zooimage News
 
+== Changes in zooimage 5.1-0
+
+* calcVars()/calcVarsVIS() and dropVars() are reworked to used only FIT_xxx
+  variables in case of use of the FlowCAM (and to calculated many derived vars
+  from there). This way, there is no need any more of a second image analysis
+  in ImageJ.
+  
+
+== Changes in zooimage 5.0-0
+
+* importFlowCAM() and readFlowCAMlst() are reworked to create complete .zidb
+  files using all metadata from various version of Fluid Imaging's Visual
+  Spreadsheet software.
+  
+
+== Changes in zooimage 4.0-2
+
+* correctError() has now a mode argument allowing to run the analysis in 'demo'
+  and 'stat' mode, in addition to the default 'validation' mode
+  
+* The internal errorCorrection() function did not intialized ntrusted and
+  nsuspect in 'demo' mode
+  
+* New version of the user manual (explanations of the new functions).
+
+
+== Changes in zooimage 4.0-1
+
+* A bug (non initialisation of the confusion matrix) prevented to use
+  errorCorrection() in demo or stat mode. Corrected.
+
+
 == Changes in zooimage 4.0-0
 
 * Error correction functions added: correctError().

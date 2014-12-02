@@ -6,7 +6,7 @@
   Open a web page for manual validation and error correction of predicted abundances in samples.
 }
 \usage{
-correctError(zidb, classifier, data = zidbDatRead(zidb),
+correctError(zidb, classifier, data = zidbDatRead(zidb), mode = "validation",
 fraction = 0.05, sample.min = 100, grp.min = 2, random.sample = 0.1,
 algorithm = "rf", diff.max = 0.2, prop.bio = NULL, reset = TRUE,
 result = NULL)
@@ -16,6 +16,12 @@ result = NULL)
   \item{zidb}{ Path to a Zidb file. }
   \item{classifier}{ A ZIClass object appropriate for this sample and the desired classification. }
   \item{data}{ A ZIDat or a ZITest object matching that sample (by default, it is the ZIDat object contained in the zidb file). }
+  \item{mode}{ The mode to use for error correction. By default, \code{mode = "validation"},
+    where particles are manually validated. \code{mode = "demo"} is the same one, but it sorts particles
+    according to the Class variable in data, ignoring changes made in the user interface (so that one
+    can explain the logic of the process without care about how particles are manually resorted).
+    Finally, \code{mode = "stat"} do not display the user interface at all and calculates all steps
+    directly to show gain from the process from 0 to 100\% of the particles validated. }
   \item{fraction}{ The fraction of items to validate at each step (1/20th by default). }
   \item{sample.min}{ Minimal number of items to take at each step. }
   \item{grp.min}{ Minimal number of items to take for each group, on average. }

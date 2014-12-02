@@ -357,6 +357,10 @@ result = ".last_valid", envir = parent.frame()) {
 	## data -- the dataset to study
 	if (missing(data) || !inherits(data, "ZIDat"))
 		stop("data must be a ZIdat object")
+## Temporary hack to eliminate possible unwanted columns!
+data$Id.1 <- NULL
+data$X.Item.1 <- NULL
+	
 	## classifier -- the classifier to use to classify particles
 	if (missing(classifier) || !inherits(classifier, "ZIClass"))
 		stop("classifier must be a ZIClass object")
@@ -451,8 +455,7 @@ result = ".last_valid", envir = parent.frame()) {
 			if (is.null(testdir))
 				testdir <<- file.path(tempdir(),
 					noExtension(zidb))
-			if (file.exists(testdir)) {
-				
+			if (file.exists(testdir)) {			
 				res <- dlgMessage(paste("Temporary validation directory already",
 					"exists. Do we erase old data there?"), type = "okcancel")$res
 				if (res == "cancel")
@@ -462,6 +465,7 @@ result = ".last_valid", envir = parent.frame()) {
 			dir.create(testdir, recursive = TRUE)
 			if (!file.exists(testdir))
 				stop("cannot create 'testdir'!")
+			testdir <<- normalizePath(testdir)
 			## Put required files there: create the planktonSorter directory
 			plSort <- file.path(testdir, "planktonSorter")
 			dir.create(plSort)
@@ -593,6 +597,8 @@ result = ".last_valid", envir = parent.frame()) {
 		if (step < 1) {
 			## At first time, take a random subsample
 			## Same as considering everything as suspect
+#PhG			nsuspect <<- nobs
+#PhG			ntrusted <<- 0
 			sample.ids <- sample(1:nobs, size = sample.size)
 			corr$Step[sample.ids] <<- step
 			corr$RdValidated[sample.ids] <<- step
@@ -792,7 +798,8 @@ result = ".last_valid", envir = parent.frame()) {
 		}
 		
 		## Error in the different fractions
-		if (mode != "validation") {
+#PhG		if (mode != "validation") {
+		if (mode == "stat") {
 			error <- validated != corr$Predicted
 			errInFract <- .errorInFractions(suspect = corr$Suspect,
 				error = error, validated = corr$Validated,
@@ -890,8 +897,10 @@ result = ".last_valid", envir = parent.frame()) {
 			step.manual <<- TRUE
 		} else if (testset.validated) {
 			step.manual <<- FALSE
-			#getTest()
-			#correct()
+if (mode == "stat") {
+	getTest()
+	correct()
+}
 			cat(paste("Step", step + 1, "finished \n"))
 			step <<- step + 1
 		} else warning("You have to complete the validation first \n")
@@ -915,8 +924,8 @@ result = ".last_valid", envir = parent.frame()) {
 
 	processDemo <- function () {
 		if (sample.size > 0) {
-			process()
-			validate()
+#PhG			process()
+#PhG			validate()
 			process()
 		} else cat("Correction done!\n")
 	}

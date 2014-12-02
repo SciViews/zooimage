@@ -205,7 +205,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 
 planktonSorterValidate <- function (path, query, body, ...) {
     if (!length(body)) return()
-	
+
 	## Special cases "iterate>>> " or "done>>> "
 	if (substring(body, 1, 11) == "iterate>>> ") {
 		res <- substring(body, 12)
@@ -282,7 +282,7 @@ Waiting for R process...
 #</body>
 #</html>', url, url)
 
-correctError <- function(zidb, classifier, data = zidbDatRead(zidb),
+correctError <- function(zidb, classifier, data = zidbDatRead(zidb), mode = "validation",
 fraction = 0.05, sample.min = 100, grp.min = 2, random.sample = 0.1,
 algorithm = "rf", diff.max = 0.2, prop.bio = NULL, reset = TRUE,
 result = NULL) {
@@ -333,13 +333,16 @@ result = NULL) {
 	}
 	
 	## Create this object in TempEnv()
-	ec <- errorCorrection (data, classifier, zidb = zidb, mode = "validation",
+	ec <- errorCorrection (data, classifier, zidb = zidb, mode = mode,
 		fraction = fraction, sample.min = sample.min, grp.min = grp.min,
 		random.sample = random.sample, algorithm = algorithm,
 		diff.max = diff.max, prop.bio = prop.bio, testdir = testdir, id = Name,
 		result = result, envir = parent.frame())
-	assignTemp(Name, ec)
+	if (mode != "stat") assignTemp(Name, ec)
 	
 	## Start its first iteration...
 	ec$iterate()
+	
+	## Return the object
+	ec
 }
