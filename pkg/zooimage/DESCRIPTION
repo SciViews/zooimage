@@ -11,7 +11,7 @@ Authors@R: c(person("Philippe", "Grosjean", role = c("aut", "cre"),
   email = "kevin.denis@umons.ac.be"))
 Maintainer: Philippe Grosjean <phgrosjean@sciviews.org>
 Depends: R (>= 2.14.0), svMisc (>= 0.9-67), svDialogs (>= 0.9-53), mlearning
-Imports: filehash, jpeg, png, tiff, utils, digest, tools
+Imports: filehash, jpeg, png, tiff, utils, digest, tools, shiny
 Suggests: rJava, mlbench
 Description: ZooImage is a free (open source) solution for analyzing digital
 	images of zooplankton. In combination with ImageJ, a free image analysis

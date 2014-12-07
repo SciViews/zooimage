@@ -380,6 +380,8 @@ na.rm = FALSE)
 
 	## Rename Dat in df
 	df <- Dat
+	## Fix ECD in case of FIT_VIS data
+	if ("FIT_Area_ABD" %in% names(df)) df$ECD <- ecd(df$FIT_Area_ABD)
 	## Problem if there is no remaining row in the data frame
 	if (nrow(df) == 0) {
 		warning("No valid item found (no vignettes with valid measurement data)")

@@ -125,7 +125,10 @@ delete.source = replace)
 		warning("Error loading ", zidat)
 		return(invisible(FALSE))
 	}
-    dbInsert(db, ".Data", get(obj))
+    dat <- get(obj)
+	## Fix ECD in case of FIT_VIS data
+	if ("FIT_Area_ABD" %in% names(dat)) dat$ECD <- ecd(dat$FIT_Area_ABD)
+	dbInsert(db, ".Data", dat)
 
 	## Do we delete sources?
     if (isTRUE(as.logical(delete.source)))
@@ -429,8 +432,12 @@ zidbLink <- function (zidbfile)
 	db2env(dbInit(zidbfile))
 
 ## Read only Rdata file from a .zidb database
-zidbDatRead <- function (zidbfile)
-	zidbLink(zidbfile)$.Data
+zidbDatRead <- function (zidbfile) {
+	res <- zidbLink(zidbfile)$.Data
+	## Fix ECD in case of FIT_VIS data
+	if ("FIT_Area_ABD" %in% names(res)) res$ECD <- ecd(res$FIT_Area_ABD)
+	res
+}
 
 ## Read only the sample data
 zidbSampleRead <- function (zidbfile)

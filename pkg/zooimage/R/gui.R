@@ -27,6 +27,8 @@ ZIDlg <- function ()
 	menuAddItem(ZIname, "List objects", "listObjects()")
 	menuAddItem(ZIname, "Remove objects", "removeObjects()")
 	menuAddItem(ZIname, "-", "")
+	menuAddItem(ZIname, "Interactive UI", "ZIUI()")
+	menuAddItem(ZIname, "--", "")
 	menuAddItem(ZIname, "Online help", 'help("zooimage")')
 	menuAddItem(ZIname, "Manual", "viewManual()")
 	menuAddItem(ZIname,
@@ -1345,3 +1347,16 @@ optInOutDecimalSep <- function ()
 #    res <- subpartThreshold(ZIDat = zid, Filter = threshold)
 #    return(res)
 #}
+
+
+################################################################################
+## New User Interface using Shiny for error correction
+ZIUI <- function () {
+	#appdir <- system.file("gui", "errorcorrection", package = "zooimage")
+	#runApp(appdir)
+	res <- dlgOpen(title = "Select one R method file",
+		filters = dlgFilters[c("R", "All"), ])$res
+	if (length(res)) {
+		source(res, chdir = TRUE)
+	}
+}

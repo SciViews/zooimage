@@ -521,11 +521,18 @@ zidDatMake <- function (zidir, type = "ZI3", replace = FALSE)
     rownames(allmes) <- 1:nrow(allmes)
     Names <- names(allmes)
     
-	## Calculate an ECD from Area if there is not one yet
-    if (!"ECD" %in% Names && "Area" %in% Names) {
-        ECD <- ecd(allmes$Area)
-        allmes <- data.frame(allmes[, 1:2], ECD = ECD, allmes[, 3:ncol(allmes)])
-    }
+	## Calculate an ECD from Area (or FIT_Area_ABD) if there is not one yet
+    if (!"ECD" %in% Names) {
+		if ("FIT_Area_ABD" %in% Names) { # This is FlowCAM data!
+			ECD <- ecd(allmes$FIT_Area_ABD)
+			allmes <- data.frame(allmes[, 1:2], ECD = ECD,
+				allmes[, 3:ncol(allmes)])
+		} else if ("Area" %in% Names) { # All other cases
+			ECD <- ecd(allmes$Area)
+			allmes <- data.frame(allmes[, 1:2], ECD = ECD,
+				allmes[, 3:ncol(allmes)])
+		}
+	}
     attr(allmes, "metadata") <- allmeta
     class(allmes) <- c("ZI3Dat", "ZIDat", "data.frame")
     ZI.sample <- allmes
@@ -584,6 +591,10 @@ zidDatRead <- function (zidfile)
 	## Load that file
 	ZI.sample <- NULL
 	load(rdata)
+	
+	## Fix ECD in case of FIT_VIS data
+	if ("FIT_Area_ABD" %in% names(ZI.sample))
+		ZI.sample$ECD <- ecd(ZI.sample$FIT_Area_ABD)
 	
 	## Delete the file
 	if (deletefile) {

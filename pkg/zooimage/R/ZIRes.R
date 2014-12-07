@@ -106,6 +106,9 @@ rbind.ZIRes <- function (..., deparse.level = 1)
 processSample <- function (x, sample, keep = NULL, detail = NULL, classes = "both",
 header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 {
+	## Fix ECD in case of FIT_VIS data
+	if ("FIT_Area_ABD" %in% names(x)) x$ECD <- ecd(x$FIT_Area_ABD)
+	
 	## Check arguments
 	if (missing(sample)) {
 		sample <- unique(sampleInfo(x$Label, type = "sample", ext = ""))
@@ -208,7 +211,7 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 			x$P2 <- biomass[2]
 			x$P3 <- biomass[3]
 		} else stop("wrong 'biomass', must be NULL, a vector of 3 values or a data frame with Class, P1, P2 and P3")
-		if(!is.numeric(x$ECD)) stop("'ECD' required for biomasses")
+		if (!is.numeric(x$ECD)) stop("'ECD' required for biomasses")
 		x$BioWeight <- (x$P1 * x$ECD^x$P3 + x$P2) * x$Dil
 	}
 	

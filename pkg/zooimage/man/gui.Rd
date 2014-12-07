@@ -29,6 +29,7 @@
 \alias{calib}
 \alias{optInOutDecimalSep}
 \alias{calib}
+\alias{ZIUI}
 
 \title{ The ZooImage GUI (Graphical User Interface) }
 \description{
@@ -65,6 +66,7 @@ listObjects()
 removeObjects()
 calib()
 optInOutDecimalSep()
+ZIUI()
 }
 
 \arguments{
@@ -76,6 +78,8 @@ optInOutDecimalSep()
   \code{ZIDlg()} is called for its side effect of dispalying the main ZooImage dialog box.
   \code{aboutZI()} gives sone information about the current ZooImage version.
   \code{exitZI()} unloads the zooimage package (for instance, to allow updating it).
+  \code{ZIUI()} launches the error correction GUI using Shiny. The working dir
+    must be in _analyze subdirectory of an analysis directory tree.
   
   All the other functions are called for their side-effect and return value,
   if any, is not of primary importance.

@@ -7,6 +7,8 @@
   from there). This way, there is no need any more of a second image analysis
   in ImageJ.
   
+* A new UI for error correction using shiny.
+  
 
 == Changes in zooimage 5.0-0
 

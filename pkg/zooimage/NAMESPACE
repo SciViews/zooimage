@@ -21,6 +21,7 @@ import(tiff)
 #import(RWeka)
 import(mlearning)
 #import(party)
+import(shiny)
 
 # planktonSorter
 export(correctError)
@@ -164,6 +165,7 @@ export(viewResults)
 export(ZIDlg)
 # Not in menus yet!
 #export(subpartZIDat)
+export(ZIUI)
 
 # GUI-Utilities
 export(selectGroups)

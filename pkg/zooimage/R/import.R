@@ -302,7 +302,7 @@ readFlowCAMlst <- function (lst, skip = 2, read.ctx = TRUE)
 	tab$Id <- NULL
 	dil <- 1/(Sub$SubPart * Sub$CellPart * Sub$Replicates * Sub$VolIni)
 	tab <- cbind(data.frame(Label = rep(label, n), Item = items,
-		ECD = ecd(tab$FIT_Raw_Area)), tab, data.frame(Dil = rep(dil, n)))
+		ECD = ecd(tab$FIT_Area_ABD)), tab, data.frame(Dil = rep(dil, n)))
 	
 	## Add metadata and change class of the object
 	attr(tab, "metadata") <- ctxData

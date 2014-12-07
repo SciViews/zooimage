@@ -112,7 +112,7 @@ dropVars <- function ()
 			"FIT_Low_U32", "FIT_Total", "FIT_Red_Green_Ratio",
 			"FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio",   
 			"FIT_Ch2_Ch1_Ratio", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Timestamp1",
-			"FIT_Timestamp2", "FIT_Camera", "FIT_FringSize", "FIT_CircleFit",
+			"FIT_Timestamp2", "FIT_Camera", "FIT_FringSize",
 			"FIT_Ch1_Area", "FIT_Ch2_Area", "FIT_Ch3_Area",         
 			"FIT_TimeStamp1", "FIT_Source_Image.1",
 			"X.Item.1", "FeretAngle", "Count",
@@ -129,7 +129,8 @@ dropVars <- function ()
             ## Found in format 17 of a color FlowCAM (from KAUST)
             ## and not used yet
             "FIT_Symmetry", "FIT_Circularity_Hu", "FIT_Intensity_Calimage",
-            "FIT_Raw_Convex_Hull_Area", "FIT_Raw_Filled_Area"
+            "FIT_Raw_Convex_Hull_Area", "FIT_Raw_Filled_Area",
+			"FIT_CircleFit", "FIT_Edge_Gradient"
 		))
 	as.character(res)
 }
@@ -150,9 +151,8 @@ calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	## ECD, FIT_Area_ABD, FIT_Length, FIT_Width, FIT_Diameter_ESD,
 	## FIT_Perimeter, FIT_Convex_Perimeter, FIT_Intensity, FIT_Sigma_Intensity,
 	## FIT_Compactness, FIT_Elongation, FIT_Sum_Intensity, FIT_Roughness,
-	## FIT_Edge_Gradient, FIT_Volume_ABD, FIT_Volume_ESD, FIT_Aspect_Ratio,
-	## FIT_Transparency, EdgeRange, CV, MeanFDia, Transp2, FeretRoundness,
-	## EdgeCV, EdgeSDNorm & Perim_Ratio 
+	## FIT_Volume_ABD, FIT_Volume_ESD, FIT_Aspect_Ratio, FIT_Transparency,
+	## CV, MeanFDia, Transp2, FeretRoundness & Perim_Ratio 
 	
 	## A small hack to correct some 0 (which can be problematic in further calcs)
 	noZero <- function(x) {
@@ -174,7 +174,7 @@ calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	## (=> all FIT_Raw_xxx should be eliminated in dropVars()!)
 	
 	## (re)calculate ECD from FIT_DIameter_ABD (was once calc from FIT_Raw_Area)
-	x$ECD <- noZero(x$FIT_Diameter_ABD)
+	x$ECD <- noZero(ecd(x$FIT_Area_ABD))
 	x$FIT_Area_ABD <- noZero(x$FIT_Area_ABD)
     x$FIT_Length <- noZero(x$FIT_Length)
     x$FIT_Width <- noZero(x$FIT_Width)
@@ -191,20 +191,20 @@ calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	x$FIT_Volume_ABD <- noZero(x$FIT_Volume_ABD)
 	x$FIT_Volume_ESD <- noZero(x$FIT_Volume_ESD)
 	x$FIT_Transparency <- noZero(x$FIT_Transparency)
-	x$FIT_Edge_Gradient <- noZero(x$FIT_Edge_Gradient)
-	
 	
 	## Additional calculated variables
     # This is FIT_Aspect_Ratio! x$ARFeret <- x$FIT_Width/x$FIT_Length
-    x$EdgeRange <- abs(x$FIT_Intensity - x$FIT_Edge_Gradient)
+    ## For later on:
+	#x$EdgeRange <- abs(x$FIT_Intensity - x$FIT_Edge_Gradient)
     x$CV <- x$FIT_Sigma_Intensity/x$FIT_Intensity * 100
     x$MeanFDia <- (x$FIT_Length + x$FIT_Width) / 2
     x$Transp2 <- 1 - (x$FIT_Diameter_ABD/x$MeanFDia)
     x$Transp2[x$Transp2 < 0] <- 0
     x$FeretRoundness <- 4 * x$FIT_Area_ABD/(pi * sqrt(x$FIT_Length))
     x$Circ. <- 4 * pi * x$FIT_Area_ABD / sqrt(x$FIT_Perimeter) # ImageJ calculation
-    x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
-    x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
+    ## For later on:
+	#x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
+    #x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
     x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter 
     
 	## Eliminate variables that are not predictors... and use Id as rownames
