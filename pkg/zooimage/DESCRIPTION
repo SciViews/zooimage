@@ -1,7 +1,7 @@
 Package: zooimage
 Type: Package
 Title: Analysis of numerical zooplankton images
-Version: 5.1-0
+Version: 5.1-1
 Date: 2014-12-02
 Author: Philippe Grosjean [aut, cre],
   Kevin Denis [aut]
