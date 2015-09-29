@@ -16,25 +16,32 @@
   \tabular{ll}{
     Package: \tab zooimage\cr
     Type: \tab Package\cr
-    Version: \tab 5.1-0\cr
-    Date: \tab 2014-12-02\cr
+    Version: \tab 5.4-1\cr
+    Date: \tab 2015-09-29\cr
     License: \tab GPL 2 or above at your convenience.\cr
   }
-  Everytime you publish results that use ZooImage, you must place a reference
-  to the ZooImage web site (http://www.sciviews.org/zooimage) in your
-  publication. For papers, please, send also a reprint to
-  Philippe.Grosjean@umons.ac.be, preferrably as a PDF file.
 }
 
 \author{
-  Philippe Grosjean & Kevin Denis, Numerical Ecology of Aquatic Systems,
-  Mons University, Belgium.
-  Xabier Irigoien, Guillermo Boyra & Igor Arregi, AZTI Technalia, Spain (PVA,
-  whose a part of ZooImage is inspired from).
-  Angel Lopez-Urrutia, Centro Oceanografico de Gijon, IEO, Spain (initial idea).
-  Mike Sieracki, Ben Tupper et al for the FIT VIS plugin (FlowCAM images process).
+  Philippe Grosjean, Kevin Denis & Guillaume Wacquet, Numerical Ecology of
+  Aquatic Systems, Mons University, Belgium.
+  A part of the early concepts of ZooImage are inspired from PVA by Xabier Irigoien,
+  Guillermo Boyra & Igor Arregi, AZTI Technalia, Spain, with their autorization.
+  Angel Lopez-Urrutia, Centro Oceanografico de Gijon, IEO, Spain, also contributed
+  to the initial concept during early discussions. No code come from them, however.
+  Mike Sieracki, Ben Tupper et al for the FIT VIS plugin (FlowCAM images
+  process in ImageJ -FitVIS-, but this pulgin is not used any more by default in
+  the current version).
 
   Maintainer: Philippe Grosjean <Philippe.Grosjean@umons.ac.be>
+  
+  The software was funded, and is the property of:
+  
+  - The University of Mons, Belgium,
+  - Belgian Scientific Policy (BelSpo), Belgium, that contributed by funding the
+    AMORE III project.
+  - IFREMER, France, through a co-funded research collaboration with the
+    University of Mons.
 }
 
 %\references{

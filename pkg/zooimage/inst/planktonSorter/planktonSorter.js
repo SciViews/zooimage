@@ -79,7 +79,7 @@ var verticalSpaceBetweenListItems = 3;	// Pixels space between a <li> and next
                                         // Same value or higher as margin bottom
                                         // in CSS for #dragDropContainer ul li,
                                         // and #dragContent li
-var indicateDestionationByUseOfArrow = false;	// Display arrow to indicate where
+var indicateDestinationByUseOfArrow = false;	// Display arrow to indicate where
                                               // object will be dropped
                                               // (false = use rectangle)
 var cloneSourceItems = false;	// Items picked from main container will be cloned
@@ -232,7 +232,7 @@ function moveDragContent (e) {
 
         for (var liIndex = 0; liIndex < subLi.length; liIndex++) {
           var tmpTop = getTopPos(subLi[liIndex]);
-          if (!indicateDestionationByUseOfArrow) {
+          if (!indicateDestinationByUseOfArrow) {
             if (y < tmpTop) {
               destinationObj = subLi[liIndex];
               indicateDestinationBox.style.display = 'block';
@@ -251,7 +251,7 @@ function moveDragContent (e) {
           }
         }
 
-        if (!indicateDestionationByUseOfArrow) {
+        if (!indicateDestinationByUseOfArrow) {
           if (indicateDestinationBox.style.display == 'none') {
             indicateDestinationBox.style.display = 'block';
             ulPositionArray[no]['obj'].appendChild(indicateDestinationBox);
@@ -324,6 +324,11 @@ function dragDropEnd (e) {
   mouseoverObj = false;
 }
 
+// React to keyboard events
+//function keypressed (e) {
+//  alert("Key pressed!");
+//}
+
 // Preparing data to be saved
 function saveDragDropNodes () {
   var results = document.getElementById('results');
@@ -391,7 +396,7 @@ function initDragDropScript () {
     ulPositionArray[no]['obj'] = ulArray[no];
   }
 
-  if (!indicateDestionationByUseOfArrow) {
+  if (!indicateDestinationByUseOfArrow) {
     indicateDestinationBox = document.createElement('LI');
     indicateDestinationBox.id = 'indicateDestination';
     indicateDestinationBox.style.display='none';

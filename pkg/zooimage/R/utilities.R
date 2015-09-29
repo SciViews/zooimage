@@ -1,4 +1,4 @@
-## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
 ## 
@@ -126,6 +126,9 @@ dropVars <- function ()
 			"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
 			"FIT_Diameter_ABD", # This one is indeed ECD
 			
+      ## Changes in variables names
+			"FIT_Ppc", "FIT_Fringe_Size", "FIT_Circle_Fit",
+			
             ## Found in format 17 of a color FlowCAM (from KAUST)
             ## and not used yet
             "FIT_Symmetry", "FIT_Circularity_Hu", "FIT_Intensity_Calimage",
@@ -143,97 +146,97 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	## Note that you can make your own version of this function for more
 	## calculated variables!
 
-## calcVarsVIS() also included here to keep track of it in the ZIClass object!
-## Calculate derived variables... FlowCAM's Visual Spreadsheet
-calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars()) 
-{
-    ## Use only FIT_xxx vars, andderived attributes (26 attributes in total):
-	## ECD, FIT_Area_ABD, FIT_Length, FIT_Width, FIT_Diameter_ESD,
-	## FIT_Perimeter, FIT_Convex_Perimeter, FIT_Intensity, FIT_Sigma_Intensity,
-	## FIT_Compactness, FIT_Elongation, FIT_Sum_Intensity, FIT_Roughness,
-	## FIT_Volume_ABD, FIT_Volume_ESD, FIT_Aspect_Ratio, FIT_Transparency,
-	## CV, MeanFDia, Transp2, FeretRoundness & Perim_Ratio 
-	
-	## A small hack to correct some 0 (which can be problematic in further calcs)
-	noZero <- function(x) {
-        x[x == 0] <- 1e-09
-        x
-    }
-	
-	## Euclidean distance between two points
-	distance <- function (x, y)
-		sqrt(x^2 + y^2)
-	
-    ## All FIT_Raw_xxx vars have their counterpart resized in um:
-	## FIT_Raw_Area -> FIT_Diameter_ABD
-	## FIT_Raw_Feret_Max -> FIT_Length
-	## FIT_Raw_Feret_Min -> FIT_Width
-	## FIT_Raw_Feret_Mean -> FIT_Diameter_ESD
-	## FIT_Raw_Perim -> FIt_Perimeter
-	## FIT_Raw_Convex_Perim -> FIt_Convex_Perimeter
-	## (=> all FIT_Raw_xxx should be eliminated in dropVars()!)
-	
-	## (re)calculate ECD from FIT_DIameter_ABD (was once calc from FIT_Raw_Area)
-	x$ECD <- noZero(ecd(x$FIT_Area_ABD))
-	x$FIT_Area_ABD <- noZero(x$FIT_Area_ABD)
-    x$FIT_Length <- noZero(x$FIT_Length)
-    x$FIT_Width <- noZero(x$FIT_Width)
-	x$FIT_Diameter_ESD <- noZero(x$FIT_Diameter_ESD)
-	x$FIT_Perimeter <- noZero(x$FIT_Perimeter)
-	x$FIT_Convex_Perimeter <- noZero(x$FIT_Convex_Perimeter)
-	x$FIT_Intensity <- noZero(x$FIT_Intensity)
-	x$FIT_Sigma_Intensity <- noZero(x$FIT_Sigma_Intensity)
-	x$FIT_Sum_Intensity <- noZero(x$FIT_Sum_Intensity)
-	x$FIT_Compactness <- noZero(x$FIT_Compactness)
-	x$FIT_Elongation <- noZero(x$FIT_Elongation)
-	x$FIT_Roughness <- noZero(x$FIT_Roughness)
-	x$FIT_Aspect_Ratio <- noZero(x$FIT_Aspect_Ratio)
-	x$FIT_Volume_ABD <- noZero(x$FIT_Volume_ABD)
-	x$FIT_Volume_ESD <- noZero(x$FIT_Volume_ESD)
-	x$FIT_Transparency <- noZero(x$FIT_Transparency)
-	
-	## Additional calculated variables
-    # This is FIT_Aspect_Ratio! x$ARFeret <- x$FIT_Width/x$FIT_Length
-    ## For later on:
-	#x$EdgeRange <- abs(x$FIT_Intensity - x$FIT_Edge_Gradient)
-    x$CV <- x$FIT_Sigma_Intensity/x$FIT_Intensity * 100
-    x$MeanFDia <- (x$FIT_Length + x$FIT_Width) / 2
-    x$Transp2 <- 1 - (x$FIT_Diameter_ABD/x$MeanFDia)
-    x$Transp2[x$Transp2 < 0] <- 0
-    x$FeretRoundness <- 4 * x$FIT_Area_ABD/(pi * sqrt(x$FIT_Length))
-    x$Circ. <- 4 * pi * x$FIT_Area_ABD / sqrt(x$FIT_Perimeter) # ImageJ calculation
-    ## For later on:
-	#x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
-    #x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
-    x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter 
-    
-	## Eliminate variables that are not predictors... and use Id as rownames
-	Id <- x$Id
-    if (length(Id)) rownames(x) <- Id
-    
-	## Variables to drop
-	## For those samples treated with FIT_VIS in ImageJ, we need to get rid of
-	## the ImageJ variables
-	x$Area <- NULL
-	x$Mean <- NULL
-	x$StdDev <- NULL
-	x$Mode <- NULL
-	x$Min <- NULL
-	x$Max <- NULL
-	x$Perim. <- NULL
-	x$Major <- NULL
-	x$Minor <- NULL
-	x$Circ. <- NULL
-	x$Feret <- NULL
-	x$IntDen <- NULL
-	x$Median <- NULL
-	
-	dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
-    for (dropVar in dropAll) x[[dropVar]] <- NULL
-    
-	## Return the recalculated data frame
-	x
-}
+	## Calculate derived variables... FlowCAM's Visual Spreadsheet
+	calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars()) 
+	{
+		## Use only FIT_xxx vars, andderived attributes (26 attributes in total):
+		## ECD, FIT_Area_ABD, FIT_Length, FIT_Width, FIT_Diameter_ESD,
+		## FIT_Perimeter, FIT_Convex_Perimeter, FIT_Intensity, FIT_Sigma_Intensity,
+		## FIT_Compactness, FIT_Elongation, FIT_Sum_Intensity, FIT_Roughness,
+		## FIT_Volume_ABD, FIT_Volume_ESD, FIT_Aspect_Ratio, FIT_Transparency,
+		## CV, MeanFDia, Transp2, FeretRoundness & Perim_Ratio 
+		
+		## A small hack to correct some 0 (which can be problematic in further calcs)
+		noZero <- function(x) {
+			x[x == 0] <- 1e-09
+			x
+		}
+		
+		## Euclidean distance between two points
+		distance <- function (x, y)
+			sqrt(x^2 + y^2)
+		
+		## All FIT_Raw_xxx vars have their counterpart resized in um:
+		## FIT_Raw_Area -> FIT_Diameter_ABD
+		## FIT_Raw_Feret_Max -> FIT_Length
+		## FIT_Raw_Feret_Min -> FIT_Width
+		## FIT_Raw_Feret_Mean -> FIT_Diameter_ESD
+		## FIT_Raw_Perim -> FIt_Perimeter
+		## FIT_Raw_Convex_Perim -> FIt_Convex_Perimeter
+		## (=> all FIT_Raw_xxx should be eliminated in dropVars()!)
+		
+		## (re)calculate ECD from FIT_DIameter_ABD (was once calc from FIT_Raw_Area)
+		x$ECD <- noZero(ecd(x$FIT_Area_ABD))
+		x$FIT_Area_ABD <- noZero(x$FIT_Area_ABD)
+		x$FIT_Length <- noZero(x$FIT_Length)
+		x$FIT_Width <- noZero(x$FIT_Width)
+		x$FIT_Diameter_ESD <- noZero(x$FIT_Diameter_ESD)
+		x$FIT_Perimeter <- noZero(x$FIT_Perimeter)
+		x$FIT_Convex_Perimeter <- noZero(x$FIT_Convex_Perimeter)
+		x$FIT_Intensity <- noZero(x$FIT_Intensity)
+		x$FIT_Sigma_Intensity <- noZero(x$FIT_Sigma_Intensity)
+		x$FIT_Sum_Intensity <- noZero(x$FIT_Sum_Intensity)
+		x$FIT_Compactness <- noZero(x$FIT_Compactness)
+		x$FIT_Elongation <- noZero(x$FIT_Elongation)
+		x$FIT_Roughness <- noZero(x$FIT_Roughness)
+		x$FIT_Aspect_Ratio <- noZero(x$FIT_Aspect_Ratio)
+		x$FIT_Volume_ABD <- noZero(x$FIT_Volume_ABD)
+		x$FIT_Volume_ESD <- noZero(x$FIT_Volume_ESD)
+		x$FIT_Transparency <- noZero(x$FIT_Transparency)
+		x$FIT_Edge_Gradient <- noZero(x$FIT_Edge_Gradient)
+		
+		## Additional calculated variables
+		# This is FIT_Aspect_Ratio! x$ARFeret <- x$FIT_Width/x$FIT_Length
+		## For later on:
+		x$EdgeRange <- abs(x$FIT_Intensity - x$FIT_Edge_Gradient)
+		x$CV <- x$FIT_Sigma_Intensity/x$FIT_Intensity * 100
+		x$MeanFDia <- (x$FIT_Length + x$FIT_Width) / 2
+		x$Transp2 <- 1 - (x$FIT_Diameter_ABD/x$MeanFDia)
+		x$Transp2[x$Transp2 < 0] <- 0
+		x$FeretRoundness <- 4 * x$FIT_Area_ABD/(pi * sqrt(x$FIT_Length))
+		x$Circ. <- 4 * pi * x$FIT_Area_ABD / sqrt(x$FIT_Perimeter) # ImageJ calculation
+		## For later on:
+		x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
+		x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
+		x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter 
+		
+		## Eliminate variables that are not predictors... and use Id as rownames
+		Id <- x$Id
+		if (length(Id)) rownames(x) <- Id
+		
+		## Variables to drop
+		## For those samples treated with FIT_VIS in ImageJ, we need to get rid of
+		## the ImageJ variables
+		x$Area <- NULL
+		x$Mean <- NULL
+		x$StdDev <- NULL
+		x$Mode <- NULL
+		x$Min <- NULL
+		x$Max <- NULL
+		x$Perim. <- NULL
+		x$Major <- NULL
+		x$Minor <- NULL
+		x$Circ. <- NULL
+		x$Feret <- NULL
+		x$IntDen <- NULL
+		x$Median <- NULL
+		
+		dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
+		for (dropVar in dropAll) x[[dropVar]] <- NULL
+		
+		## Return the recalculated data frame
+		x
+	}
 	
 	## For data from the FlowCAM, we use a specific function
 	if (any(names(x) == "FIT_Length"))
@@ -292,102 +295,10 @@ calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	x
 }
 
-## Calculate derived variables... FlowCAM's Visual Spreadsheet
-calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars()) 
-{
-    ## Use only FIT_xxx vars, andderived attributes (26 attributes in total):
-	## ECD, FIT_Area_ABD, FIT_Length, FIT_Width, FIT_Diameter_ESD,
-	## FIT_Perimeter, FIT_Convex_Perimeter, FIT_Intensity, FIT_Sigma_Intensity,
-	## FIT_Compactness, FIT_Elongation, FIT_Sum_Intensity, FIT_Roughness,
-	## FIT_Edge_Gradient, FIT_Volume_ABD, FIT_Volume_ESD, FIT_Aspect_Ratio,
-	## FIT_Transparency, EdgeRange, CV, MeanFDia, Transp2, FeretRoundness,
-	## EdgeCV, EdgeSDNorm & Perim_Ratio 
-	
-	## A small hack to correct some 0 (which can be problematic in further calcs)
-	noZero <- function(x) {
-        x[x == 0] <- 1e-09
-        x
-    }
-	
-	## Euclidean distance between two points
-	distance <- function (x, y)
-		sqrt(x^2 + y^2)
-	
-    ## All FIT_Raw_xxx vars have their counterpart resized in um:
-	## FIT_Raw_Area -> FIT_Diameter_ABD
-	## FIT_Raw_Feret_Max -> FIT_Length
-	## FIT_Raw_Feret_Min -> FIT_Width
-	## FIT_Raw_Feret_Mean -> FIT_Diameter_ESD
-	## FIT_Raw_Perim -> FIt_Perimeter
-	## FIT_Raw_Convex_Perim -> FIt_Convex_Perimeter
-	## (=> all FIT_Raw_xxx should be eliminated in dropVars()!)
-	
-	## (re)calculate ECD from FIT_DIameter_ABD (was once calc from FIT_Raw_Area)
-	x$ECD <- noZero(x$FIT_Diameter_ABD)
-	x$FIT_Area_ABD <- noZero(x$FIT_Area_ABD)
-    x$FIT_Length <- noZero(x$FIT_Length)
-    x$FIT_Width <- noZero(x$FIT_Width)
-	x$FIT_Diameter_ESD <- noZero(x$FIT_Diameter_ESD)
-	x$FIT_Perimeter <- noZero(x$FIT_Perimeter)
-	x$FIT_Convex_Perimeter <- noZero(x$FIT_Convex_Perimeter)
-	x$FIT_Intensity <- noZero(x$FIT_Intensity)
-	x$FIT_Sigma_Intensity <- noZero(x$FIT_Sigma_Intensity)
-	x$FIT_Sum_Intensity <- noZero(x$FIT_Sum_Intensity)
-	x$FIT_Compactness <- noZero(x$FIT_Compactness)
-	x$FIT_Elongation <- noZero(x$FIT_Elongation)
-	x$FIT_Roughness <- noZero(x$FIT_Roughness)
-	x$FIT_Aspect_Ratio <- noZero(x$FIT_Aspect_Ratio)
-	x$FIT_Volume_ABD <- noZero(x$FIT_Volume_ABD)
-	x$FIT_Volume_ESD <- noZero(x$FIT_Volume_ESD)
-	x$FIT_Transparency <- noZero(x$FIT_Transparency)
-	x$FIT_Edge_Gradient <- noZero(x$FIT_Edge_Gradient)
-	
-	
-	## Additional calculated variables
-    # This is FIT_Aspect_Ratio! x$ARFeret <- x$FIT_Width/x$FIT_Length
-    x$EdgeRange <- abs(x$FIT_Intensity - x$FIT_Edge_Gradient)
-    x$CV <- x$FIT_Sigma_Intensity/x$FIT_Intensity * 100
-    x$MeanFDia <- (x$FIT_Length + x$FIT_Width) / 2
-    x$Transp2 <- 1 - (x$FIT_Diameter_ABD/x$MeanFDia)
-    x$Transp2[x$Transp2 < 0] <- 0
-    x$FeretRoundness <- 4 * x$FIT_Area_ABD/(pi * sqrt(x$FIT_Length))
-    x$Circ. <- 4 * pi * x$FIT_Area_ABD / sqrt(x$FIT_Perimeter) # ImageJ calculation
-    x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
-    x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
-    x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter 
-    
-	## Eliminate variables that are not predictors... and use Id as rownames
-	Id <- x$Id
-    if (length(Id)) rownames(x) <- Id
-    
-	## Variables to drop
-	## For those samples treated with FIT_VIS in ImageJ, we need to get rid of
-	## the ImageJ variables
-	x$Area <- NULL
-	x$Mean <- NULL
-	x$StdDev <- NULL
-	x$Mode <- NULL
-	x$Min <- NULL
-	x$Max <- NULL
-	x$Perim. <- NULL
-	x$Major <- NULL
-	x$Minor <- NULL
-	x$Circ. <- NULL
-	x$Feret <- NULL
-	x$IntDen <- NULL
-	x$Median <- NULL
-	
-	dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
-    for (dropVar in dropAll) x[[dropVar]] <- NULL
-    
-	## Return the recalculated data frame
-	x
-}
-
 ## Calculate equivalent circular diameter (similar to equivalent spherical
 ## diameter, but for 2D images)
-ecd <- function (area)
-	2 * sqrt(area / pi)
+ecd <- function (area, cells = 1)
+	2 * sqrt(area / cells / pi)
 
 ## Parse an ini file (.zim, .zie, etc. are .ini files!)
 ### TODO: manage the case where there is no '=' in the data!

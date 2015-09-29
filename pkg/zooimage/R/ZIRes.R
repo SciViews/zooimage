@@ -1,4 +1,4 @@
-## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
 ## 
@@ -103,12 +103,33 @@ rbind.ZIRes <- function (..., deparse.level = 1)
 }
 
 ## Calculate abundances, biomasses and size spectra per class in a sample
+#processSample <- function (x, sample, keep = NULL, detail = NULL, classes = "both",
+#header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 processSample <- function (x, sample, keep = NULL, detail = NULL, classes = "both",
 header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 {
 	## Fix ECD in case of FIT_VIS data
 	if ("FIT_Area_ABD" %in% names(x)) x$ECD <- ecd(x$FIT_Area_ABD)
 	
+	## Do we compute the number of cells and the ECD per cell?
+	## But see version hereunder!
+#### TODO: compute ECD using number of cells per colonies!
+####	if (!is.null(cells)) {
+####		x$Nb_cells <- computeNbCells(x, cells)
+####		x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
+####	}
+#### PhG: here, computation before argument checking is not good!
+#### PhG: cells points to a file. Not good! We ask for a specific object instead
+		
+	## Do we compute the number of cells and the ECD per cell?
+	## PhG: should not rely on a filehere!
+####	if (!is.null(cells) && file.exists(cells)) {
+####		## Must be a ZICell model here! predict() iterates on all items
+####		## of the list to compute cells for all classes!
+####		x$Nb_cells <- predict(cells, x)
+####		x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
+####}
+		
 	## Check arguments
 	if (missing(sample)) {
 		sample <- unique(sampleInfo(x$Label, type = "sample", ext = ""))
@@ -172,6 +193,7 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 		}
 		x <- x[x$Cl %in% keep, ] # Select keep levels
 	}
+	Cl <- as.character(x$Cl)
 	if (NROW(x) == 0) {
 		warning("no data left for this sample in 'x' when 'keep' is applied")
 		return(NULL)
@@ -211,12 +233,16 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 			x$P2 <- biomass[2]
 			x$P3 <- biomass[3]
 		} else stop("wrong 'biomass', must be NULL, a vector of 3 values or a data frame with Class, P1, P2 and P3")
-		if (!is.numeric(x$ECD)) stop("'ECD' required for biomasses")
-		x$BioWeight <- (x$P1 * x$ECD^x$P3 + x$P2) * x$Dil
+		## Prefer using ECD_cells and Nb_cells if it exists
+		if (is.numeric(x$ECD_cells)) {
+			x$BioWeight <- (x$P1 * x$ECD_cells^x$P3 + x$P2) * x$Dil * x$Nb_cells
+		} else {
+			if (!is.numeric(x$ECD)) stop("'ECD' required for biomasses")
+			x$BioWeight <- (x$P1 * x$ECD^x$P3 + x$P2) * x$Dil
+		}
 	}
 	
 	## Split among detail, if provided
-	Cl <- as.character(x$Cl)
 	if (length(detail)) {
 		# We want more details for one ore more groups...
 		detail <- as.character(detail)
@@ -225,9 +251,15 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 		
 		Cl[!Cl %in% detail] <- "[other]"
 		x$Cl <- Cl
-		res <- tapply(x$Dil, Cl, sum, na.rm = TRUE)
-		res <- res[c(detail, "[other]")]
-		res <- c(res, '[total]' = sum(x$Dil, na.rm = TRUE))
+		if (is.numeric(x$Nb_cells)) {
+			res <- tapply(x$Dil * x$Nb_cells, Cl, sum, na.rm = TRUE)
+			res <- res[c(detail, "[other]")]
+			res <- c(res, '[total]' = sum(x$Dil  * x$Nb_cells, na.rm = TRUE))
+		} else {
+			res <- tapply(x$Dil, Cl, sum, na.rm = TRUE)
+			res <- res[c(detail, "[other]")]
+			res <- c(res, '[total]' = sum(x$Dil, na.rm = TRUE))
+		}
 		names(res) <- paste(header[1], names(res))
 		
 		if (!missing(biomass)) {
@@ -239,7 +271,11 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 		}
 		
 	} else { # Total abundance (and biomass) only
-		res <- sum(x$Dil, na.rm = TRUE)
+		if (is.numeric(x$Nb_cells)) {
+			res <- sum(x$Dil * x$Nb_cells, na.rm = TRUE)
+		} else {
+			res <- sum(x$Dil, na.rm = TRUE)
+		}
 		if (!missing(biomass))
 			res <- c(res, sum(x$BioWeight, na.rm = TRUE))
 		names(res) <- paste(header, "[total]")
@@ -250,7 +286,7 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 	res <- structure(data.frame(Id = sample, t(res), check.names = FALSE),
 		class = c("ZI3Res", "ZIRes", "data.frame"))
 	
-	## Do we calculate size spectra?
+	## Do we calculate size spectra? (always by colonies, only)!
 	if (length(breaks)) {
 		if (!is.numeric(breaks) || length(breaks) < 2)
 			stop("'breaks' must be a vector of two or more numerics or NULL")

@@ -1,3 +1,20 @@
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
+
 ## TODO: disable next button when in last fraction
 ## TODO: save temporary and final results in the zidb file
 ## TODO: correct bugs with the back button
@@ -96,7 +113,6 @@ dissimilarity <- function (x, y, na.rm = FALSE) {
 		sum(abs(x - y), na.rm = na.rm) / sum(x, y, na.rm = na.rm) 
 	}
 }
-
 
 #### Functions used only by errorCorrection() ##################################
 ## Calculation of the global error based on validated items
@@ -348,9 +364,9 @@ algorithm = "rf", knn.k = 3, svm.kernel = "polynomial", svm.degree = 5, ...) {
 ## and how to retrieve class then???
 ## Group options in a single object too
 errorCorrection <- function (data, classifier, mode = "validation",
-fraction = 0.05, sample.min = 100, grp.min = 2, random.sample = 0.1,
-algorithm = "rf", diff.max = 0.2, prop.bio = NULL,
-zidb = NULL, testdir = NULL, id = NULL,
+fraction = 0.05, sample.min = 100, sample.max = 200, grp.min = 2,
+random.sample = 0.1, algorithm = "rf", diff.max = 0.2, prop.bio = NULL,
+rare = 0.01, zidb = NULL, testdir = NULL, id = NULL,
 result = ".last_valid", envir = parent.frame()) {
 	#### Parameters explanations
 	#### Data and classifier
@@ -379,6 +395,12 @@ data$X.Item.1 <- NULL
 	sample.min <- as.integer(sample.min)[1]
 	if (sample.min < 1)
 		stop("sample.min must be a positive integer")
+	## sample.max -- maximum number of particles to validate ate each step
+	sample.max <- as.integer(sample.max)[1]
+	if (sample.max < 1)
+		stop("sample.max must be a positive integer")
+	if (sample.max < sample.min)
+		stop("sample.max must be higher or equal than sample.min")
 	## grp.min -- minimum number of particles of each group to validate
 	grp.min <- as.integer(grp.min)[1]
 	if (grp.min < 1 || grp.min > sample.min)
@@ -390,13 +412,17 @@ data$X.Item.1 <- NULL
 	
 	#### Parameters for the detection of suspects
 	## algorithm -- algorithm used to detect suspect particles
-	## diff.max -- maximum toalerated difference in probabilities for class identification
+	## diff.max -- maximum tolerated difference in probabilities for class identification
 	diff.max <- as.numeric(diff.max)[1]
 	if (diff.max < 0)
 		stop("diff.max must be a positive number or zero")
 	## proba.bio -- groups probabilities, using biological information
 	if (length(prop.bio) && (!is.numeric(prop.bio) || is.null(names(prop.bio))))
 		stop("prop.bio must be a named vector (groups) of numbers")
+	## rare -- detection of rare items
+    rare <- as.numeric(rare)[1]
+    if (rare < 0 || rare > 0.2)
+		stop("rare must be between 0 and 0.2")
 	
 	## zidb -- path to the zidbfile to manually validate
 	## testdir -- path of the directory used for manual validation
@@ -431,7 +457,12 @@ data$X.Item.1 <- NULL
 	manual.history <- NULL		# history of the manual confusion matrix
 	manual2.history <- NULL		# history of manual + 2nd ident confusion matrix
 	corr.confusion <- NULL 		# corrected confusion matrix
+	classRare <- NULL			# String with the list of classes considered as rare
+	cell.confusion <- NULL   	# corrected confusion matrix for cells
+    bioweight.confusion <- NULL # corrected confusion matrix for bioweight
 	correction.history <- NULL 	# history of the correction confusion matrix
+	correctionCell.history <- NULL   # history of the correction confusion matrix for cells
+    correctionBio.history <- NULL   # history of the correction confusion matrix for bioweight
 	error.estim.data <- NULL 	# data used to estimate the error
 	error.estim <- NULL			# history of the error estimation
 	error.estim.history <- NULL # evolution of the error estimation
@@ -523,11 +554,16 @@ data$X.Item.1 <- NULL
 		}
 		predicted2 <- secondIdent(levels(predicted))
 		
+		predTable <- table(predicted)
+		prop <- predTable / sum(predTable)
+		classRare <<- names(which(prop < rare))
+		
 		## Creation of corr object
 		corr <<- data.frame(Actual = predicted, Actual2 = predicted2,
 			Predicted = predicted, Predicted2 = predicted2, Validated = FALSE,
 			Error = error, Step = step, Suspect = rep(TRUE, nobs),
-			RdValidated = rep(Inf, nobs), OtherGp = rep(FALSE, nobs))
+			Rare = predicted %in% classRare, RdValidated = rep(Inf, nobs),
+			OtherGp = rep(FALSE, nobs))
     
 		## Confusion matrix of original classifier
 		train.validated <- attr(classifier, "response")
@@ -575,18 +611,23 @@ data$X.Item.1 <- NULL
 	
 		## Increment step (should be 0 now, because initial value is -1)
 		step <<- step + 1
+		
 		## Determine the number of vignettes to manually validate
 		setSampleSize()
 	}
 
 	## Compute the size of the next subsample: update sample.size
 	setSampleSize <- function () {
-		sample.size <<- round(min(nrow(corr[!corr$Validated, ]), # How much remains?
-			## Or number of items we want to take
-			max(nrow(data) * fraction, # Items to take
-				sample.min, # Minimum items we can take
-				## TODO: check the following one!
-				grp.min * length(table(predicted))))) # Minimum from groups
+		## Number of items we want to take
+		sample.size <<- ceiling(nrow(data) * fraction)
+		## No less than sample.min
+		sample.size <<- max(sample.size, sample.min)
+		## According to complexity of the training set, take possibly more
+		sample.size <<- max(sample.size, grp.min * length(levels(predicted)))
+		## ... but no more than sample.max
+		sample.size <<- min(sample.size, sample.max)
+		## Or how much remains?
+		sample.size <<- min(sample.size, nrow(corr[!corr$Validated, ]))
 	}	
 	
 	## Determine the subsample to validate
@@ -628,7 +669,7 @@ data$X.Item.1 <- NULL
 			newstep[newstep == -1] <- step
 			corr$Step[randomsample.ids] <<- newstep
 			notvalid.ids <- ids[!corr$Validated & corr$RdValidated == step]
-			## Number of items to valid in order to acheive sample.size
+			## Number of items to valid in order to achieve sample.size
 			numSample <- sample.size - length(notvalid.ids) 
 			if (numSample > 0) {
 				## Randomly select suspect items not validated
@@ -650,7 +691,63 @@ data$X.Item.1 <- NULL
 						corr$Step[trustsample.ids] <<- step
 					}
 				}
-			} 
+			}
+					            
+      ############### stratified random sampling ############### 
+#       if (numSample > 0) {
+#     		## Select the same number of suspect items not validated in each class
+#   			suspnotval.ids <- ids[!corr$Validated & corr$Suspect &
+#   			  is.infinite(corr$RdValidated) & corr$Step == -1]
+#   		  if (length(suspnotval.ids)) {
+#   		    splitGp <- split(suspnotval.ids, list(corr[suspnotval.ids,]$Predicted))
+#   		    strat.samples <- lapply(splitGp, function(x) x[sample(1:NROW(x), 
+#   		                      min(NROW(x), round(numSample/length(unique(corr$Predicted[as.numeric(suspnotval.ids)])))), 
+#   		                      replace = FALSE)])
+#   		    suspsample.ids <- as.numeric(do.call(c, strat.samples))
+#   			  corr$Step[suspsample.ids] <<- step
+#   			  numSample <- numSample - length(suspsample.ids)        
+#   			}
+#         
+#         if (numSample > 0) {
+#           ## If not completed, randomly select suspects items not validated
+#           suspnotval.ids <- ids[!corr$Validated & corr$Suspect &
+#                                   is.infinite(corr$RdValidated) & corr$Step == -1]
+#           if (length(suspnotval.ids)) {
+#             suspsample.ids <- as.numeric(sample(suspnotval.ids,
+#                        size = min(numSample, length(suspnotval.ids))))
+#             corr$Step[suspsample.ids] <<- step
+#             numSample <- numSample - length(suspsample.ids)        
+#           }
+#         }
+#         
+#   			if (numSample > 0) {
+#   			  ## If not completed, Select the same number of trusted items not validated in each class
+#   			  trustnotval.ids <- ids[!corr$Validated & !corr$Suspect  &
+#   			    is.infinite(corr$RdValidated) & corr$Step == -1]
+#   			  if (length(trustnotval.ids)) {
+#   			    splitGp <- split(trustnotval.ids, list(corr[trustnotval.ids,]$Predicted))
+#   			    strat.samples <- lapply(splitGp, function(x) x[sample(1:NROW(x), 
+#   			                          min(NROW(x), round(numSample/length(unique(corr$Predicted[as.numeric(trustnotval.ids)])))), 
+#   			                          replace = FALSE)])
+#   			    trustsample.ids <- as.numeric(do.call(c, strat.samples))
+#   			    corr$Step[trustsample.ids] <<- step
+#   			    numSample <- numSample - length(trustsample.ids)
+#   			  }
+#   			}
+#         
+#   			if (numSample > 0) {
+#           ## If not completed, randomly select trusted items not validated
+#   			  trustnotval.ids <- ids[!corr$Validated & !corr$Suspect &
+#   			                          is.infinite(corr$RdValidated) & corr$Step == -1]
+#   			  if (length(trustnotval.ids)) {
+#   			    trustsample.ids <- as.numeric(sample(trustnotval.ids,
+#   			                                        size = min(numSample, length(trustnotval.ids))))
+#   			    corr$Step[trustsample.ids] <<- step
+#   			    numSample <- numSample - length(trustsample.ids)        
+#   			  }
+#   			}
+      ############### ############### ###############
+			
 			nsuspect.tovalid <- length(ids[corr$Step == step & corr$Suspect])
 			ntrusted.tovalid <- length(ids[corr$Step == step & !corr$Suspect])
 			nsuspect.history <<- c(nsuspect.history, nsuspect)
@@ -662,7 +759,11 @@ data$X.Item.1 <- NULL
 		if (mode != "stat") {
 			## Make sure the R Httpd server is started
 			tools <- getNamespace("tools")
-			port <- tools$httpdPort
+			if (R.Version()$`svn rev` >= 67550) {
+				port <- tools::startDynamicHelp(NA)
+			} else {
+				port <- tools$httpdPort
+			}
 			if (port == 0) port <- startDynamicHelp(TRUE)
 			if (port == 0) stop("Impossible to start the R httpd server")
 			
@@ -817,6 +918,27 @@ data$X.Item.1 <- NULL
 				error.estim.data$Actual, useNA = "no") # remove NAs
 			corr.confusion <<- error.conf / sum(error.conf) *
 				(nrow(data) - sum(corr$OtherGp)) # remove NAs
+				
+			## For cells
+			if ("Nb_cells" %in% names(data)) {
+				error.conf.cell <- xtabs(data$Nb_cells[corr$Step==step] ~
+                    error.estim.data$Actual + error.estim.data$Predicted,
+					exclude = c(NA, NaN))
+				cell.confusion <<- error.conf.cell /
+					sum(error.conf.cell) * (sum(data$Nb_cells) -
+					sum(data$Nb_cells[corr$OtherGp])) # remove NAs
+			}
+
+			## For biovolumes
+			if ("BioWeight" %in% names(data)) {
+				error.conf.bioweight <- xtabs(data$BioWeight[corr$Step==step] ~
+			        error.estim.data$Actual + error.estim.data$Predicted,
+					exclude = c(NA, NaN))
+				bioweight.confusion <<- error.conf.bioweight /
+					sum(error.conf.bioweight) * (sum(data$BioWeight) -
+					sum(data$BioWeight[corr$OtherGp])) # remove NAs
+			}	
+				
 			## Calculate error in valid data and in both suspect and trusted parts
 			error.valid.history[[step + 1]] <<-
 				error.estim.data$Actual != error.estim.data$Predicted 
@@ -841,6 +963,45 @@ data$X.Item.1 <- NULL
 				corr$Actual[notValTrustIdx]) 
 			corr.confusion <<- confSusp.w + confTrustVal + confNotValTrust
 
+			## For cells
+			if ("Nb_cells" %in% names(data)) {
+				nCellSuspTot <- sum(data$Nb_cells[corr$Suspect &
+					!corr$OtherGp])
+				nCellSuspVal <- sum(data$Nb_cells[valSuspIdx])
+				nCellTrustVal <- sum(data$Nb_cells[valTrustIdx])
+				confSuspValCell <- xtabs(data$Nb_cells[valSuspIdx] ~
+			        corr$Actual[valSuspIdx] + corr$Predicted[valSuspIdx],
+					exclude = c(NA, NaN))
+				confTrustValCell <- xtabs(data$Nb_cells[valTrustIdx] ~
+			        corr$Actual[valTrustIdx] + corr$Predicted[valTrustIdx],
+					exclude = c(NA, NaN))
+				confSuspCell.w <- confSuspValCell / nCellSuspVal * nCellSuspTot
+				confNotValTrustCell <- xtabs(data$Nb_cells[notValTrustIdx] ~
+			        corr$Actual[notValTrustIdx] + corr$Predicted[notValTrustIdx],
+					exclude = c(NA, NaN))
+				cell.confusion <<-
+					confSuspCell.w + confTrustValCell + confNotValTrustCell
+			}
+
+			## For biovolumes
+			if ("BioWeight" %in% names(data)) {
+				nBioSuspTot <- sum(data$BioWeight[corr$Suspect & !corr$OtherGp])
+				nBioSuspVal <- sum(data$BioWeight[valSuspIdx])
+				nBioTrustVal <- sum(data$BioWeight[valTrustIdx])
+				confSuspValBio <- xtabs(data$BioWeight[valSuspIdx] ~
+			        corr$Actual[valSuspIdx] + corr$Predicted[valSuspIdx],
+					exclude = c(NA, NaN))
+				confTrustValBio <- xtabs(data$BioWeight[valTrustIdx] ~
+			        corr$Actual[valTrustIdx] + corr$Predicted[valTrustIdx],
+					exclude = c(NA, NaN))
+				confSuspBio.w <- confSuspValBio / nBioSuspVal * nBioSuspTot
+				confNotValTrustBio <- xtabs(data$BioWeight[notValTrustIdx] ~
+					corr$Actual[notValTrustIdx] + corr$Predicted[notValTrustIdx],
+					exclude = c(NA, NaN))
+				bioweight.confusion <<-
+					confSuspBio.w + confTrustValBio + confNotValTrustBio
+			}
+			
 			error.valid.history[[step + 1]] <<- testset$Actual != testset$Predicted 
 			if  (nsuspect > 0) {
 				error.suspect.history[[step + 1]] <<-
@@ -855,6 +1016,32 @@ data$X.Item.1 <- NULL
 		}
 	}
 
+	## Compute the corrected coefficients for particles, cells, biovolume
+#   estimateCoeffs <- function () {
+#     ## For particles (colonies)
+#     col.confusion <- table(corr$Predicted[corr$Validated], corr$Actual[corr$Validated], useNA = "no") # remove NAs
+#     corr.coeffs <- ifelse(!colSums(col.confusion), rowSums(col.confusion), 
+#                           rowSums(col.confusion)/colSums(col.confusion))
+#     ## For cells
+#     if ("Nb_cells" %in% names(data)) {
+#       cell.confusion <- xtabs(data$Nb_cells[corr$Validated] ~ 
+#                                 corr$Predicted[corr$Validated] + 
+#                                 corr$Actual[corr$Validated], exclude = c(NA, NaN))
+#       corr.coeffs <- cbind(corr.coeffs, ifelse(!colSums(cell.confusion), rowSums(cell.confusion), 
+#                                              rowSums(cell.confusion)/colSums(cell.confusion)))
+#     }
+#
+#     ## For biovolumes
+#     if ("BioWeight" %in% names(data)) {
+#       bioweight.confusion <- xtabs(data$BioWeight[corr$Validated] ~ 
+#                                      corr$Predicted[corr$Validated] + 
+#                                      corr$Actual[corr$Validated], exclude = c(NA, NaN))
+#       corr.coeffs <- cbind(corr.coeffs, ifelse(!colSums(bioweight.confusion), rowSums(bioweight.confusion), 
+#                                              rowSums(bioweight.confusion)/colSums(bioweight.confusion)))
+#     }
+#     corr.coeffs
+#   }
+	
 	## Estimate error and abundance
 	## Update Validated, training set and histories
 	correct <- function () {
@@ -872,10 +1059,20 @@ data$X.Item.1 <- NULL
 
 		estimateError()
 		estimateAbundance()
+		#estimateCoeffs()
 		
 		validated.fracs <<- c(validated.fracs, sample.size)
 		correction.history <<- cbind(correction.history,
 			rowSums(corr.confusion))
+		if ("Nb_cells" %in% names(data)) {
+			correctionCell.history <<- cbind(correctionCell.history,
+		        rowSums(cell.confusion))
+		}
+		if ("BioWeight" %in% names(data)) {
+			correctionBio.history <<- cbind(correctionBio.history,
+		        rowSums(bioweight.confusion))
+		}
+		
 		manual.history <<- cbind(manual.history, table(corr$Actual))
 		manual2.history <<- cbind(manual2.history, table(corr$Actual2))
 		setSampleSize() # Set the next subsample size
@@ -999,7 +1196,8 @@ if (mode == "stat") {
 		print(abd)
 		
 		## Create an object with these results...
-		test <- data.frame(Id = makeId(data), data, Class = corr$Actual)
+		test <- data.frame(Id = makeId(data), data, Class = corr$Actual, Validated = corr$Validated, Suspect = corr$Suspect)
+		#test <- data.frame(Id = makeId(data), data, Class = corr$Actual)
 		attr(test, "path") <- attr(classifier, "path")
 		class(test) <- unique(c("ZI3Test", "ZITest", class(data)))
 		assign(result, test, envir = envir)
@@ -1054,6 +1252,7 @@ if (mode == "stat") {
 			}
 			error1 <- dissimilarity(abundances, manual.history, na.rm = TRUE) * 100
 			error3 <- dissimilarity(abundances, correction.history, na.rm = TRUE) * 100
+			par(mar = c(5, 4, 4, 4) + 0.1)
 			plot(cumsum(validated.fracs) / nrow(corr) * 100, error1,
 				type = "l", xlab = "Validated fraction (%)",
 				ylab = "Dissimilarity (%)", col = "green", xlim = c(0, 100),
@@ -1074,6 +1273,7 @@ if (mode == "stat") {
 				validated.fracs[-1]
 			suspByFrac <- nsuspect.tovalid.history / validated.fracs[-1]
 			suspByFrac[1] <- 0
+			par(mar = c(5, 4, 4, 4) + 0.1)
 			plot(fracs * 100, errByFrac * 100, type = "l", xlab = "Validated fraction (%)",
 				ylab = "Suspect and error (%)", xlim = c(0, 100), ylim = c(0, 100), col = "red",
 				main = "Suspects and error at each iteration")
@@ -1083,30 +1283,109 @@ if (mode == "stat") {
 				col = c("black", "red"), cex = 0.8, lwd = 2)
 		
 		} else { # Should be type == "barplot"
-			fracs <- cumsum(validated.fracs[-1]) / nrow(corr)
+			thresholdDiffDiss <- 5  # Differential dissimilarity <= 5%
+			nbStep <- ceiling(nrow(data) / validated.fracs[-1][1])
 			errByFrac <- sapply(error.valid.history, sum, na.rm = TRUE) /
 				validated.fracs[-1]
 			suspByFrac <- nsuspect.tovalid.history / validated.fracs[-1]
 			#suspByFrac[1] <- 0
 			## case 1 item => projection, case more => another projection...
 			dat <- rbind(suspByFrac * 100, errByFrac * 100)
-			barplot(dat, xlab = "Validated fraction", beside = TRUE,
-				ylab = "Suspect and corrected error (%)", xlim = c(1, (1/fraction + 1)*2),
-				ylim = c(0, 100), col = c("#dddddd", "#dd0000"),
-				main = "Suspects and error corrected at each iteration")
-			#par(new = TRUE)
-			#barplot(suspByFrac * 100, xlab = "",
-			#	ylab = "", xlim = c(0, 1/fraction + 1), ylim = c(0, 100), col = "#dddddd88",
-			#	main = "", xaxt = "n", yaxt = "n")
-			#lines(fracs * 100, suspByFrac * 100, col = "black")
-			box(lty = '1111', col = "darkgray")
-			grid()
-			legend("topright", legend = c("Nbr of suspect", "Corrected error"),
-				col = c("black", "red"), cex = 0.8, lwd = 2)
 			
-			#plot(rnorm(5), rnorm(5), xlab = "Validated fraction (%)", ylab = "Suspect and error (%)",
-			#	main = "Suspects and error at each iteration")
-			#grid()
+			diffDiss <- sapply(2:ncol(correction.history), function (x)
+				dissimilarity(correction.history[, x - 1], correction.history[, x],
+				na.rm = TRUE) * 100
+			)
+			xcoord <-
+				seq(0.7, ceiling(nrow(data) / validated.fracs[-1][1]) * 1.2, by = 1.2)
+			if (step < 1) {
+				suspRemain <- NA
+				stepSD <- round((errByFrac*nsuspect.history -
+					errByFrac*nsuspect.tovalid.history) / 
+                    nsuspect.tovalid.history) + (step+1)
+				idxStepSD <- stepSD
+				coordStepSD <- mean(c(xcoord[idxStepSD], xcoord[idxStepSD + 1]))
+			} else {
+				suspRemain <- c(NA, nsuspect.history[2:(step+1)] -
+					nsuspect.tovalid.history[2:(step+1)])
+				stepSD <- round(suspRemain / nsuspect.tovalid.history) + 1:(step+1)
+				if (length(which(suspRemain == 0)) > 0) {
+					idxStepSD <- which(suspRemain == 0)[1]
+				} else {
+					idxStepSD <- tail(stepSD,1)
+				}
+				coordStepSD <- mean(c(xcoord[idxStepSD], xcoord[idxStepSD + 1]))
+			}
+      		      
+			par(mfrow = c(2, 1), mar = c(4, 4, 1, 4) + 0.1)
+			bp1 <- barplot(suspRemain, #xlab = "Validation step",
+			    ylab = "Nb remaining suspects", xlim = c(0.2,
+				xcoord[ceiling(idxStepSD + (length(xcoord) - idxStepSD) / 3)]),
+			    ylim = c(0, max(suspRemain, diffDiss, na.rm = TRUE)), yaxs = "r",
+                col = "grey10", cex.axis = .7, cex.main = 1, ann = FALSE,
+				yaxt = "n", #main = "Remaining suspects and differential dissimilarity")
+			)
+			title(expression(bold("Remaining suspects") *
+				phantom("\tand\tdifferential dissimilarity")), 
+				col.main = "grey10", cex.main = 1)
+			title(expression(phantom("Remaining suspects\t") * "and" *
+				phantom("\tdifferential dissimilarity")), 
+				col.main = "black", cex.main = 1)
+			title(expression(phantom("Remaining suspects\tand\t") *
+				bold("differential dissimilarity")), 
+				col.main = "blue", cex.main = 1)
+# 			legend("top", legend = c("Remaining suspects","Diff dissimilarity"),
+# 			     fill = c("grey20","blue"), cex = .6, bty = "n", adj = c(0,0))
+			axis(side = 1, at = seq(bp1[1], by = 1.2, length.out = nbStep),
+				labels = 1:nbStep, cex.axis = .7)
+			if (step > 0) axis(side = 2, cex.axis = .7)
+      
+			par(new = TRUE)
+			plot(bp1, diffDiss, type = "o", col = "blue", ylim = c(0, 100), 
+				xlim = c(0.2, xcoord[ceiling(idxStepSD + (length(xcoord) -
+				## TODO: why '+' at the end of next line???
+				idxStepSD) / 3)]), lwd = 3, axes = FALSE, ann = FALSE) +
+			## TODO: why '+' at the end of next line???
+			axis(side = 4, col = "blue", col.axis = "blue", cex.axis = .7) + 
+			mtext("Differential dissimilarity (%)", side = 4, line = 3,
+				col = "blue")
+			abline(v = coordStepSD, lwd = 2, lty = 2, col = "dimgrey")
+			text(x = coordStepSD + .5, y = 90, "SD", srt = -90, pos = 4,
+				cex = 0.6, col = "dimgrey")
+			if (length(which(diffDiss < thresholdDiffDiss)) > 0) {
+				coordStepEC <- mean(c(xcoord[which(diffDiss < thresholdDiffDiss)[1]],
+					xcoord[which(diffDiss < thresholdDiffDiss)[1]+1]))
+				abline(v = coordStepEC, lwd = 2, lty = 2, col = "darkgoldenrod")
+				text(x = coordStepEC + .5, y = 90, "EC", srt = -90, pos = 4,
+					cex = 0.6, col = "darkgoldenrod")
+			}
+			grid()
+			box()
+			
+			bp2 <- barplot(dat, xlab = "Validated step", beside = TRUE,
+				ylab = "Suspect and corrected error (%)",
+				xlim = c(0.2, xcoord[ceiling(idxStepSD + (length(xcoord) -
+					idxStepSD) / 3)]),
+				ylim = c(0, 100), col = c("#dddddd", "#dd0000"),
+				cex.axis = .7, cex.main = 1, width = .5, space = c(0, .4),
+				#main = "Suspects and error corrected at each iteration")
+			)
+			title(expression(bold("Nbr of suspects") *
+				phantom("\tand\tcorrected error")),
+				col.main = "gray40", cex.main = 1)
+			title(expression(phantom("Nbr of suspects\t") * "and" *
+				phantom("\tcorrected error")), 
+				col.main = "black", cex.main = 1)
+			title(expression(phantom("Nbr of suspects\tand\t") *
+				bold("corrected error")), 
+				col.main = "#dd0000", cex.main = 1)
+# 			legend("topright", legend = c("Nbr of suspect", "Corrected error"),
+# 			    fill = c("#dddddd", "#dd0000"), cex = .6, bty = "n", adj = c(0, 0))
+			axis(side = 1, at = seq(mean(bp2[, 1]), by = 1.2, length.out = nbStep),
+				labels = 1:nbStep, cex.axis = .7)
+			axis(side = 4, cex.axis = .7)
+			grid()
+			box()
 		}
 	}
 	

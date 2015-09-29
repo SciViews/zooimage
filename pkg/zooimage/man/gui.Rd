@@ -11,8 +11,13 @@
 \alias{importImg}
 \alias{processImg}
 \alias{makeZid}
+\alias{makeZidb}
+\alias{makeZidbFlowCAM}
 \alias{makeTrain}
+\alias{countCellsGUI}
+\alias{activeLearningGUI}
 \alias{collectTrain}
+\alias{compTrain}
 \alias{addVigsToTrain}
 \alias{makeClass}
 \alias{analyzeClass}
@@ -49,8 +54,13 @@ acquireImg()
 importImg()
 processImg()
 makeZid()
+makeZidb()
+makeZidbFlowCAM()
 makeTrain()
+countCellsGUI()
+activeLearningGUI()
 collectTrain()
+compTrain()
 addVigsToTrain()
 makeClass()
 analyzeClass()

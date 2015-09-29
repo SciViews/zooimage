@@ -1,4 +1,4 @@
-## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
 ## 
@@ -160,7 +160,7 @@ template = c("[Basic]", "[Detailed]", "[Very detailed]"), classes = NULL, ...)
             ## Link .zidb database to R objects in memory
             Zidb <- zidbLink(zidbfiles[i])
             AllItems <- ls(Zidb)
-            Vigns <- AllItems[-grep("_dat1", AllItems)]
+            Vigns <- AllItems[!grepl("_dat1", AllItems)]
             ## Extract all vignettes in their class subdirectory
             imgext <- Zidb[[".ImageType"]]
 			## Get path for the vignettes and copy them there
@@ -244,7 +244,7 @@ addToTrain <- function (traindir, zidbfiles, classes = NULL, ...)
 			## Link .zidb database to R objects in memory
             Zidb <- zidbLink(zidbfile)
             AllItems <- ls(Zidb)
-            Vigns <- AllItems[-grep("_dat1", AllItems)]
+            Vigns <- AllItems[!grepl("_dat1", AllItems)]
             ## Copy all vignettes in the TopPath directory
             imgext <- Zidb[[".ImageType"]]
 			## Get path for the vignettes and copy them there

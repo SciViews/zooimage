@@ -6,7 +6,6 @@
 \alias{makeId}
 \alias{addClass}
 \alias{calcVars}
-\alias{calcVarsVIS}
 \alias{dropVars}
 \alias{ecd}
 \alias{parseIni}
@@ -32,10 +31,9 @@ listSamples(ZIobj)
 makeId(ZIDat)
 addClass(ZIDat, ZIobj)
 calcVars(x, drop.vars = NULL, drop.vars.def = dropVars())
-calcVarsVIS(x, drop.vars = NULL, drop.vars.def = dropVars()) 
 dropVars()
 
-ecd(area)
+ecd(area, cells = 1)
 
 parseIni(data, label = "1")
 
@@ -74,6 +72,9 @@ zipNoteGet(zipfile, zimfile = NULL)
   \item{area}{ a numerical vector with areas from which ECDs are calculated
     (Equivalent Circular Diameter, a more suitable term for 2D images than ESD,
 	Equivalent Spherical Diameter). }
+  \item{cells}{ the number of cells in the particle (colony). If different from 1,
+    the area is first divided by the number of cells bevore calculating the cell
+	individual ECD. }
   \item{data}{ a vector containing the data to parse. }
   \item{label}{ a label to include for the parsed data. }
   \item{ODfile}{ an image file of O.D. calibrated items that can be used to
@@ -91,11 +92,10 @@ zipNoteGet(zipfile, zimfile = NULL)
   element found.
 
   The data.frame with additional columns for calculated variables with
-  \code{calcVars()} or \code{calcVarsVIS()}. Variables to drop are gathered
-  using \code{dropVars()}, altogether with a list provided explicitly in the
-  \code{drop.vars =} argument. The list of variable names to drop automatically
-  and silently can be stored in a variable named \code{ZI.dropVarsDef} or in
-  \code{options(ZI.dropVarsDef = ....)}.
+  \code{calcVars()}. Variables to drop are gathered using \code{dropVars()},
+  altogether with a list provided explicitly in the \code{drop.vars =} argument.
+  The list of variable names to drop automatically and silently can be stored in
+  a variable named \code{ZI.dropVarsDef} or in \code{options(ZI.dropVarsDef = ....)}.
 
   A vector of numerical values for \code{ecd()}.
 
@@ -219,6 +219,8 @@ df__ <- data.frame(Label = c("Alabel", "AnotherLabel"), Item = c("01", "02"))
 makeId(df__)
 rm(df__)
 ecd(1:10)
+ecd(1:10, cells = 2)
+ecd(1:10, cells = 1:10)
 
 ### TODO: addClass(), calibrate(), calcVars(), parseIni(), zipNoteAdd() and zipNoteGet() examples
 }

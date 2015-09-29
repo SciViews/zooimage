@@ -1,5 +1,22 @@
 ## Zoo/PhytoImage simplified analysis UI (server code)
-## Copyright (c) 2014, Philippe Grosjean (Philippe.Grosjean@umons.ac.be)
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
+## & Guillaume Wacquet <guillaume.wacquet@umons.ac.be>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
+
 ## TODO: allow for placing samples in subdirs + use tree view
 ## TODO: add "Stat" button for fully validated samples 
 ## TODO: translate server messages (English and French interfaces)
@@ -39,7 +56,7 @@ shinyServer(function (input, output, session) {
         }
         
         if (input$goButton == 0)
-            return(generalMessage("(Auncun échantillon n'a encore été analysé au cours de cette session)."))
+            return(generalMessage("(Aucun échantillon n'a encore été analysé au cours de cette session)."))
         isolate({
             Sample <- substring(input$sample, 5)
             ZIDB <- file.path(inidir, paste(Sample, "zidb", sep = "."))
@@ -57,6 +74,16 @@ shinyServer(function (input, output, session) {
             ValidData <- paste(Sample, "valid", sep = "_")
             ResData <- paste(Sample, "res", sep = "_")
             if (exists(ValidData, inherits = FALSE)) rm(list = ValidData)
+#             CtxSmp <- contextSelection()
+#             if (length(CtxSmp) < 1) {
+#                 warning("No contextual samples selected! Initial training set will be used.")
+#             } else {
+#                 ## TODO: merge with activeLearningGUI
+#                 .ZI$Train <- addItemsToTrain(.ZI$Train, CtxSmp,
+#                     dropItemsToTrain = dropItemsToTrain)
+#             }
+            .ZI$Train <- activeLearning(.ZI$Train)
+            assign(.ZIClass, eval(parse(text = .ZI$classifcmd)))
             if (file.exists(DemoFile)) { # Run in demo mode
                 res <- load(DemoFile)
                 DemoData <- get(res)
@@ -100,7 +127,7 @@ shinyServer(function (input, output, session) {
                     silent = TRUE)
             }
             ## Save associated metadata
-            cat("zooimage version: 5.1.0\n", file = MetaFile)
+            cat("zooimage version: 5.4-0\n", file = MetaFile)
             cat("method: ", .ZI$method, "\n", sep = "",
                 file = MetaFile, append = TRUE)
             cat("user: ", .ZI$user, "\n", sep = "",
@@ -109,6 +136,11 @@ shinyServer(function (input, output, session) {
                 file = MetaFile, append = TRUE)
             cat("training set: ", .ZI$train, "\n", sep = "",
                 file = MetaFile, append = TRUE)
+            if("AddedItems" %in% names(.ZITrain)) {
+                cat("contextual samples: ",
+                    as.character(unique(.ZITrain$Label[.ZITrain$AddedItems == TRUE])),
+                    sep = "\n", file = MetaFile, append = TRUE)
+            }
             ## should be../ more
             #cat("training file: ", .ZI$trainfile, "\n", sep = "",
             #    file = MetaFile, append = TRUE)
@@ -138,7 +170,10 @@ shinyServer(function (input, output, session) {
             ## TODO: correct the bug with keep = cl => replacement has different number of rows
             #assign(ResData, processSample(dat2, keep = cl, detail = detail,
             #    biomass = .ZI$biovolume, breaks = .ZI$breaks, classes = "Class"))
-            assign(ResData, processSample(dat2, keep = NULL, detail = detail,
+            #assign(ResData, processSample(dat2, keep = NULL, detail = detail,
+            #    biomass = .ZI$biovolume, breaks = .ZI$breaks, classes = "Class"))
+            ## With cellModels...
+            assign(ResData, processSample(dat2, keep = NULL, detail = detail, cellModels = .ZI$cellModelsfile,
                 biomass = .ZI$biovolume, breaks = .ZI$breaks, classes = "Class"))
             ## Save it
             save(list = ResData, file = ResFile)

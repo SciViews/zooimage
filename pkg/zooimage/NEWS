@@ -1,5 +1,89 @@
 = zooimage News
 
+== Changes in zooimage 5.4-1
+
+* Correction of various bugs by Guillaume Wacquet.
+
+
+== Changes in zooimage 5.4-0
+
+* Functions to count cells in a particle (colony): countCells() and the
+  corresponding countCellsGUI() function for an access through the menu.
+
+* Function to build predictive models for cells in particles (colonies) after
+  counting: cellModel().
+
+* Function to compute the number of cells in particles in a new sample:
+  cellCompute().
+  
+* Function to make zidb file for FlowCAM data through the menu:
+  makeZidbMakeFlowCAM().
+
+* Correct makeClass() function in the menu (missing formula).
+  
+* Functions to process active learning: contextSelection(), the associated
+  addItemsToTrain() and dropItemsToTrain() functions to complete the training
+  set with validated items, and the corresponding activeLearningGUI() function
+  for an access through the menu. Integration in the classification process.
+  
+* Function compTrain() to compare two training sets and highlight differences.
+
+* Translation of the user manual in French and update to include all changes.
+
+* Adaptation of menus to include also the new features.
+
+
+== Changes in zooimage 5.3-0
+
+* calcVarsVIS() now included in calcVars() and not accessible any more as top
+  function (to avoid duplicate code).
+
+* ecd() and ecdCell() are now merged in ecd() using arguments cells = 1.
+
+* errorCorrection() and planktonSorterPage() functions now use the new interface
+  to get R httpd server port, for R svn rev >= 67550.
+  
+* In the shiny app, dataTableOutput is now called from the DT package.
+  Dependency to DT is now added.
+  
+* The planktonSorter html page was sometimes too small, with the last group
+  being wrapped consequently. Solved by increasing the page by 1 pixel * groups.
+  
+* A bug in processSample() prevented for calculation with both 'keep=' and a
+  data frame for 'biomass=' provided simultaneously.
+
+
+== Changes in zooimage 5.2-0
+
+* importFlowCAM() now can deal with color FlowCAM images (but they are first
+  converted into grayscale because background calibration images are recorded
+  as grayscale by Visual Spreadsheet -at least, the tested version 3.2.3-, hence
+  we cannot subtract the background of the vignettes in color mode)!
+  
+* importFlowCAM() now iterates a message to indicate progression of vignettes
+  importation.
+  
+* For importFlowCAM(), the default value of the argument 'rgb.vigs' is changed
+  from 'TRUE' to 'FALSE'.
+  
+* Functions to count cells in a particle (colony): cellCount() and the
+  corresponding cellCountGUI() function for an access through the menu.
+
+* New utility function ecdCell() to calculate the ECD for one cell in a colony.
+
+## TODO:
+* Functions to build predictive models for cells in particles (colonies) after counting:   
+  cellModel().
+
+* Function to compute the number of cells in particles in a new sample: cellCompute().
+  
+
+
+* Function to make zidb file for FlowCAM data through the menu: zidbMakeFlowCAMGUI().
+
+* Correct makeClass() function in the menu (missing formula).
+
+
 == Changes in zooimage 5.1-0
 
 * calcVars()/calcVarsVIS() and dropVars() are reworked to used only FIT_xxx

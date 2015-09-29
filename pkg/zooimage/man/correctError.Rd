@@ -1,5 +1,7 @@
 \name{correctError}
 \alias{correctError}
+\alias{addItemsToTrain}
+\alias{dropItemsToTrain}
 
 \title{ The ZooImage error correction (manual validation) tools }
 \description{
@@ -7,9 +9,13 @@
 }
 \usage{
 correctError(zidb, classifier, data = zidbDatRead(zidb), mode = "validation",
-fraction = 0.05, sample.min = 100, grp.min = 2, random.sample = 0.1,
-algorithm = "rf", diff.max = 0.2, prop.bio = NULL, reset = TRUE,
-result = NULL)
+fraction = 0.05, sample.min = 100, sample.max = 200, grp.min = 2,
+random.sample = 0.1, algorithm = "rf", diff.max = 0.2, prop.bio = NULL,
+reset = TRUE, result = NULL)
+
+addItemsToTrain(train, CtxSmp, add.mode = "SV+NSV", threshold = NA,
+    dropItemsToTrain = dropItemsToTrain)
+dropItemsToTrain(train, cl, drop.nb)
 }
 
 \arguments{
@@ -24,6 +30,11 @@ result = NULL)
     directly to show gain from the process from 0 to 100\% of the particles validated. }
   \item{fraction}{ The fraction of items to validate at each step (1/20th by default). }
   \item{sample.min}{ Minimal number of items to take at each step. }
+  \item{sample.max}{ Maximal number of items to take at each step. In case the
+    sample contains a very large number of items, the number of particles that
+    are validated at each step are constrained by this parameter, and consequently,
+    the total number of steps becomes large than 1/fraction, but usually, error
+    correction allows to stop earlier. }
   \item{grp.min}{ Minimal number of items to take for each group, on average. }
   \item{random.sample}{ Fraction of random sample considered, when validating suspect items. }
   \item{algorithm}{ Machine learning algorithm used to detect suspect items. }
@@ -33,10 +44,21 @@ result = NULL)
   \item{result}{ Name of the object in the calling environment where the results will be stored (ZITest object).
     If not provided or \code{NULL}, it is the basename of the zidb file without extension plus
     \code{_valid}. }
+  \item{train}{ the training set to complete. }
+  \item{CtxSmp}{ the contextual samples containing validated items.}
+  \item{add.mode}{ the mode for adding items, \code{"SV"}: Validated Suspects,
+    \code{"NSV"}: Validated Non-Suspects, or \code{"SV+NSV"}: both (by default)). }
+  \item{threshold}{ the maximal number of items in each class of training set.
+    This is used to decide when to drop items for the reworked training set. } 
+  \item{dropItemsToTrain}{ the function to use to drop items in the training set
+    (depending on threshold). By default, it is \code{dropItemsToTrain()}, but it
+    could also be a custom function that has the same arguments. }
+  \item{cl}{ the class to consider. }
+  \item{drop.nb}{ the number of items to drop. }
 }
 
 \value{
-  Returns nothing. It is called for its side-effect to install a web interface
+  \code{correctError()} returns nothing. It is called for its side-effect to install a web interface
   for manual validation of samples.
   
 }

@@ -88,11 +88,11 @@ dir() # .zim files are never deleted!
 unlink(zimFile)
 
 ## Unzip first zip file...
-(unzipImg(zipFiles[1]))
+#####(unzipImg(zipFiles[1]))
 ## The image and .zim file are recreated
 dir()
 ## Check extracted .zim file
-all(readLines(zimFile) == zimData)
+#####all(readLines(zimFile) == zimData)
 
 ## Unzip all images...
 (unzipImgAll(zipDir, replace = TRUE, delete.source = TRUE))

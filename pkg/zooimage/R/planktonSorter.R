@@ -1,3 +1,20 @@
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
+
 ## Get the directory containing the plankton sorter files
 planktonSorterDir <- function ()
 	system.file("planktonSorter", package = "zooimage")
@@ -8,7 +25,11 @@ id = title, step = 1, port = NULL, file = NULL) {
     if (is.null(port)) {
 		## Make sure the R Httpd server is started
 		tools <- getNamespace("tools")
-		port <- tools$httpdPort
+		if (R.Version()$`svn rev` >= 67550) {
+			port <- tools::startDynamicHelp(NA)
+		} else {
+			port <- tools$httpdPort
+		}
 		if (port == 0) port <- startDynamicHelp(TRUE)
 		if (port == 0) stop("Impossible to start the R httpd server")
 			
@@ -31,7 +52,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 <head>'
     html <- c(html, sprintf("<title>%s</title>", title))
     html <- c(html, sprintf('<meta http-equiv="Content-Type" content="text/html; charset=%s">',
-		.mimeEncoding("UTF-8"))) 
+		.mimeEncoding("UTF-8")))  # .mimeEncoding() = zooimage:::.mimeEncoding()
 	html <- c(html, sprintf(
 '	<script src="../planktonSorter/jquery-1.11.0.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="../planktonSorter/planktonSorter.css">	
@@ -48,7 +69,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 	## Create the toolbar with the hidden submission form in it
 	if (step <= 1) disabled <- "disabled" else disabled <- "disabled" #disabled <- ""
 	html <- c(html, sprintf('<body>
-<div id="toolbar" style="width:10000px;">
+<div id="toolbar" style="width:20000px;">
 	<form id="submitForm" action="http://127.0.0.1:%s/custom/planktonSorterValidate" method="post">
 		<input id="results" type="hidden" name="%s" value="">
 		<input type="button" onclick="back()" value="<< Back" %s>
@@ -57,7 +78,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 </div>', as.character(round(port)[1]), id, disabled))
 
     ## Create headers for all categories
-    html <- c(html, '<div id="header" style="width:10000px;">',
+    html <- c(html, '<div id="header" style="width:20000px;">',
         sprintf('	<span id="header_box" title="%s">%s</span>', paths, groups),
         '</div>'
     )
@@ -92,8 +113,8 @@ id = title, step = 1, port = NULL, file = NULL) {
         )
     }
 	
-    ## Size of main container is 210 + 90*nGroups
-	size <- 210 + 90 * length(groups)
+    ## Size of main container is 210 + 91*nGroups
+	size <- 210 + 91 * length(groups) # PHG: with 90, the [other] group sometimes is wrapped!
     html <- c(html,
 		sprintf('	<div id="mainContainer" style="width:%spx;">	
 		<!-- ONE <UL> for each "group" -->', as.character(size)))
@@ -125,9 +146,13 @@ id = title, step = 1, port = NULL, file = NULL) {
 planktonSorterReport <- function (title = "Plankton sorter/Step1 - Results",
 id = title, step = 1, port = NULL, file = NULL) {
     if (is.null(port)) {
-		## Make sure the R Httpd server is started
+		## Make sure the R Httpd server is started	
 		tools <- getNamespace("tools")
-		port <- tools$httpdPort
+		if (R.Version()$`svn rev` >= 67550) {
+			port <- tools::startDynamicHelp(NA)
+		} else {
+			port <- tools$httpdPort
+		}
 		if (port == 0) port <- startDynamicHelp(TRUE)
 		if (port == 0) stop("Impossible to start the R httpd server")
 	}
@@ -139,7 +164,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 <head>'
     html <- c(html, sprintf("<title>%s</title>", title))
     html <- c(html, sprintf('<meta http-equiv="Content-Type" content="text/html; charset=%s">',
-		.mimeEncoding("UTF-8"))) 
+		.mimeEncoding("UTF-8")))   # .mimeEncoding() = zooimage:::.mimeEncoding()
 	html <- c(html, sprintf('	<meta http-equiv="cache-control" content="no-cache">
 	<link rel="stylesheet" type="text/css" href="../planktonSorter/planktonSorter.css">
 	<script language="javascript" type="text/javascript">
@@ -172,7 +197,7 @@ id = title, step = 1, port = NULL, file = NULL) {
 	
 	## Create the toolbar with the hidden submission form in it
 	html <- c(html, sprintf('<body>
-<div id="toolbar" style="width:10000px;">
+<div id="toolbar" style="width:20000px;">
 	<form id="submitForm" action="http://127.0.0.1:%s/custom/planktonSorterValidate" method="post">
 		<input id="results" type="hidden" name="%s" value="">
 		<input type="button" onclick="back()" value="<< Back" disabled>
@@ -282,10 +307,34 @@ Waiting for R process...
 #</body>
 #</html>', url, url)
 
+activeLearning <- function (train, add.mode = "SV+NSV", threshold = NA)
+{
+  ## Active learning (adaptation of the training set with contextual items)
+  if (!inherits(train, "ZITrain"))
+    stop("'train' does not appear to be a valid training set, or problem when reading the training set")
+  
+  ## Call contextSelection (for selection of contextual samples)
+  CtxSmp <- contextSelection()
+  if (length(CtxSmp) < 1) {
+    warning("No contextual samples selected! Initial training set will be used...")
+  } else {
+    ## Call addItemsToTrain (for augmentation of the training set)
+    train <- addItemsToTrain(train = train, CtxSmp = CtxSmp, add.mode = add.mode, 
+                             threshold = threshold, dropItemsToTrain = dropItemsToTrain)
+  }
+  #.assignGlobal(ZIT, train)
+  classifier <- ZIClass(Class ~ ., data = train[!(names(train) %in% "AddedItems")], 
+                        method = "mlRforest", calc.vars = calcVars, ntree = 200, cv.k = 10)
+  attr(classifier, "path") <- attr(train, "path")
+  
+  ## Return the augmented training set
+  train
+}
+
 correctError <- function(zidb, classifier, data = zidbDatRead(zidb), mode = "validation",
-fraction = 0.05, sample.min = 100, grp.min = 2, random.sample = 0.1,
-algorithm = "rf", diff.max = 0.2, prop.bio = NULL, reset = TRUE,
-result = NULL) {
+fraction = 0.05, sample.min = 100, sample.max = 200, grp.min = 2,
+random.sample = 0.1, algorithm = "rf", diff.max = 0.2, prop.bio = NULL,
+reset = TRUE, result = NULL) {
 	## Default value for result
 	if (is.null(result))
 		result <- paste(sub("\\.[zZ][iI][dD][bB]$", "",
@@ -334,8 +383,8 @@ result = NULL) {
 	
 	## Create this object in TempEnv()
 	ec <- errorCorrection (data, classifier, zidb = zidb, mode = mode,
-		fraction = fraction, sample.min = sample.min, grp.min = grp.min,
-		random.sample = random.sample, algorithm = algorithm,
+		fraction = fraction, sample.min = sample.min, sample.max = sample.max,
+		grp.min = grp.min, random.sample = random.sample, algorithm = algorithm,
 		diff.max = diff.max, prop.bio = prop.bio, testdir = testdir, id = Name,
 		result = result, envir = parent.frame())
 	if (mode != "stat") assignTemp(Name, ec)

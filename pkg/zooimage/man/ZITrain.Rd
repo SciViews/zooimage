@@ -1,6 +1,9 @@
 \name{ZITrain}
 \alias{prepareTrain}
 \alias{addToTrain}
+\alias{cellModel}
+\alias{cellCompute}
+\alias{cellCount}
 \alias{getTrain}
 \alias{prepareTest}
 \alias{addToTest}
@@ -10,6 +13,7 @@
 \alias{recode}
 \alias{recode.ZITrain}
 \alias{recode.ZITest}
+\alias{contextSelection}
 
 \title{ Manipulate training and testsets 'ZITrain'/'ZITest' objects }
 
@@ -31,12 +35,18 @@ prepareTest(testdir, zidbfiles, template, classes = NULL, \dots)
 addToTest(testdir, zidbfiles, classes = NULL, \dots)
 getTest(testdir, creator = NULL, desc = NULL, keep_ = NA, na.rm = FALSE)
 
+cellModel(train, traindir, class, method = "mda")
+cellCompute(data, cellModels)
+cellCount(traindir, class, reset = FALSE)
+
 template(object, \dots)
 \method{template}{default}(object, \dots)
 
 recode(object, \dots)
 \method{recode}{ZITrain}(object, new.levels, depth, \dots)
 \method{recode}{ZITest}(object, new.levels, depth, \dots)
+
+contextSelection()
 }
 
 \arguments{
@@ -64,6 +74,13 @@ recode(object, \dots)
     \code{NA} for \code{getTest()}, which transforms all items in the '\_' or
     one of its subdirectories into missing data. }
   \item{na.rm}{ do we remove item with missing data? By default, not. }
+  \item{train}{ a ZITrain file to use for building the model. }
+  \item{class}{ a character string with the name of the class to process. }
+  \item{method}{ a character string with the nazme of the predictive method to
+    use: \code{"lm"}, \code{"lda"} or \code{"mda"} (by default). }
+  \item{data}{ a sample containing the particles to count. }
+  \item{cellModels}{ the file containing the models for cells countings. }
+  \item{reset}{ do we reset excisting counts for that class? By default, no. }
   \item{object}{ a 'ZITrain' or 'ZITest' object. For \code{prepareTest()}, a
     'ZITrain' or 'ZIClass' object to use as reference to determine the
     classes to make. }

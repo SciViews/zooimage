@@ -1,3 +1,20 @@
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
+
 ## ZooImage >= 3 importation routines
 ## TODO:
 ## - Import data with replicates as subdirs of one common dir
@@ -10,7 +27,7 @@
 ##   speed of loading in R
 ## - Calculate default concentration values, using $Fluid$TotalVolumeML assuming
 ##   no dilution of the sample... SubPart is TotalVolumeML, SubCell = 1, VolIni = 1
-## - rajouter échelle de taille dans les vignettes
+## - Add size scale in vignettes
 ## - Note: using jpeg instead of png: 10sec instead of 14sec, and 4.9Mb instead of 14.7Mb
 ##   loading time for 25 vignettes faster too.
 
@@ -317,7 +334,7 @@ readFlowCAMlst <- function (lst, skip = 2, read.ctx = TRUE)
 #res1 <- readFlowCAMlst(lstFile1)
 
 ## Temporary name!
-importFlowCAM <- function (lst, rgb.vigs = TRUE,  type = "ZI3", replace = FALSE)
+importFlowCAM <- function (lst, rgb.vigs = FALSE,  type = "ZI3", replace = FALSE)
 {
 	## Check arguments
     rgb.vigs <- isTRUE(as.logical(rgb.vigs))    
@@ -422,7 +439,11 @@ importFlowCAM <- function (lst, rgb.vigs = TRUE,  type = "ZI3", replace = FALSE)
 	threshold <- 1 - 2 * gray
 	
 	## Proceed with each vignette
-	for (i in 1:nrow(dat1)) {
+	nmax <- nrow(dat1)
+	for (i in 1:nmax) {
+		
+		progress(i, nmax + 1)
+
 		d <- dat1[i, ]
 		## Do we need to load the next collage?
 		if (as.character(d$FIT_Filename) != colFile) {

@@ -1,5 +1,21 @@
 ## Zoo/PhytoImage simplified analysis UI (run the application)
-## Copyright (c) 2014, Philippe Grosjean (Philippe.Grosjean@umons.ac.be)
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
+
 ## TODO: allow for placing samples in subdirs + use tree view 
 
 ## Get the working directory
@@ -30,7 +46,7 @@ smallHeaderPanel <- function (title, windowTitle = title) {
 ## Define UI for default process using a config .R script in zooimage
 ## TODO: change the title according to actual name and version of the software
 ## TODO: translate UI strings (English and French interfaces)
-uiTitle <- paste0("Zoo/PhytoImage version 5.1-0 (UMONS/IFREMER rephy release) - ",
+uiTitle <- paste0("Zoo/PhytoImage version 5.4-0 (UMONS/IFREMER rephy release) - ",
     .ZI$method, " - ", .ZI$user)
 
 

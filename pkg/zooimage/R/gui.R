@@ -1,4 +1,4 @@
-## Copyright (c) 2004-2012, Ph. Grosjean <phgrosjean@sciviews.org>
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
 ##
@@ -30,7 +30,8 @@ ZIDlg <- function ()
 	menuAddItem(ZIname, "Interactive UI", "ZIUI()")
 	menuAddItem(ZIname, "--", "")
 	menuAddItem(ZIname, "Online help", 'help("zooimage")')
-	menuAddItem(ZIname, "Manual", "viewManual()")
+	menuAddItem(ZIname, "Manual (English version)", "viewManual()")
+	menuAddItem(ZIname, "Manual (French version)", "viewFrenchManual()")
 	menuAddItem(ZIname,
 		"Web site", 'browseURL("http://www.sciviews.org/zooimage")')
 	menuAddItem(ZIname, "--", "")
@@ -41,17 +42,21 @@ ZIDlg <- function ()
 	menuAddItem("Analyze", "Acquire images...", "acquireImg()")
 	menuAddItem("Analyze", "Import images...", "importImg()")
 	menuAddItem("Analyze", "Process images...", "processImg()")
-	menuAddItem("Analyze", "Make .zid files...", "makeZid()")
+	#menuAddItem("Analyze", "Make .zid files...", "makeZid()")
+	menuAddItem("Analyze", "Make .zidb files...", "makeZidb()")
+	menuAddItem("Analyze", "Make .zidb files from FlowCAM data...", "makeZidbFlowCAM()")
 	menuAddItem("Analyze", "-", "")
 	menuAddItem("Analyze", "Make training set...", "makeTrain()")
 	menuAddItem("Analyze", "Add vignettes to training set", "addVigsToTrain()")
+ 	menuAddItem("Analyze", "Differences between two training sets", "compTrain()")
+	menuAddItem("Analyze", "Count cells in colonies...", "countCellsGUI()")
 	menuAddItem("Analyze", "Read training set...", "collectTrain()")
 	menuAddItem("Analyze", "Make classifier...", "makeClass()")
 	menuAddItem("Analyze", "Analyze classifier...", "analyzeClass()")
 	menuAddItem("Analyze", "Automatic classification of vignettes...",
 		"vignettesClass()")
-	menuAddItem("Analyze", "Validate classification...",
-		"validClass()")
+	menuAddItem("Analyze", "Validate classification...", "validClass()")
+	menuAddItem("Analyze", "Active learning...", "activeLearningGUI()")
 	menuAddItem("Analyze", "--", "")
 	menuAddItem("Analyze", "Edit samples description", "editDescription()")
 	menuAddItem("Analyze", "Process samples...", "processSamples()")
@@ -227,6 +232,20 @@ viewManual <- function ()
 				wait = FALSE)
 		}
 	} else browseURL(manual)
+}
+
+viewFrenchManual <- function ()
+{
+  manual <- file.path(getTemp("ZIetc"), "ZooImageManual_french.pdf")
+  pdfviewer <- getOption( "pdfviewer" )
+  if (!is.null(pdfviewer)) {
+    if (.Platform$OS.type == "windows") {
+      shell.exec(manual)
+    } else {
+      system(paste(shQuote(getOption("pdfviewer")), shQuote(manual)),
+             wait = FALSE)
+    }
+  } else browseURL(manual)
 }
 
 focusR <- function ()
@@ -476,6 +495,38 @@ makeZid <- function ()
 		replace = TRUE, delete.source = TRUE)
 }
 
+makeZidb <- function ()
+{
+	## Get the sample directory
+	dir <- getwd()
+	smpdir <- dlgDir(default = dir, title = paste("Select a sample base dir"))$res
+	if (!length(smpdir) || !file.exists(smpdir) || !file.info(smpdir)$isdir) 
+		return(invisible(NULL))
+
+	## Call zidbMake function with default args
+	#### TODO: create zim et _dat1.zim files
+	zidbMake(smpdir, type = "ZI3", check = TRUE,
+		check.vignettes = TRUE, replace = FALSE, delete.source = replace)
+}
+
+makeZidbFlowCAM <- function ()
+{
+	## Get the sample directory
+	dir <- getwd()
+	smpdir <- dlgDir(default = dir, title = paste("Select a sample base dir"))$res
+	if (!length(smpdir) || !file.exists(smpdir) || !file.info(smpdir)$isdir) 
+		return(invisible(NULL))
+
+	## Get .lst file first
+	Lst <- dir(file.path(smpdir), pattern = "\\.lst$", full.names = TRUE)[1]
+	if (length(Lst)) {
+		res <- try(importFlowCAM(Lst, rgb.vigs = FALSE, replace = FALSE),
+            silent = TRUE)
+		if (inherits(res, "try-error"))
+			stop("Error importing sample", basename(smpdir))
+	} else stop("No .lst file found in this directory... Is this really a FlowCAM sample dir?")
+}
+
 makeTrain <- function ()
 {
 	## Select samples, and a grouping template... and prepare
@@ -539,7 +590,7 @@ makeTrain <- function ()
 	if (!length(subdir)) return(invisible(NULL))
 
 	## Ask for the .zid files
-    zidfiles <- selectFile(type = "Zid", multiple = TRUE, quote = FALSE)
+    zidfiles <- selectFile(type = "ZidZidb", multiple = TRUE, quote = FALSE)
 	if (!length(zidfiles)) return(invisible(NULL))
 
 	## Prepare the training set
@@ -548,6 +599,55 @@ makeTrain <- function ()
 
 	## Remember the directory...
 	assignTemp("ZI.TrainDir", file.path(dir, subdir))
+}
+
+## Count cells in particles (colonies)
+countCellsGUI <- function ()
+{
+    ## Get the training set directory
+    dir <- getTemp("ZI.TrainDir")
+    if (is.null(dir) || !file.exists(dir) || !file.info(dir)$isdir) 
+        dir <- getwd()
+    traindir <- dlgDir(default = dir, title = paste("Select a", getTemp("ZIname"), 
+        "training set base dir"))$res
+    if (!length(traindir) || !file.exists(traindir) || !file.info(traindir)$isdir) 
+        return(invisible(NULL))
+    
+    ## Select one class
+    res <- jpgList(traindir, recursive = TRUE)
+    if (!length(res)) 
+        res <- pngList(traindir, recursive = TRUE)
+    if (!length(res)) {
+        warning("no PNG or JPEG vignettes found in this directory tree")
+        return(invisible(FALSE))
+    }
+    res <- gsub("[\\]", "/", res)
+    Id <- noExtension(res)
+    Paths <- unique(dirname(res))
+    Classes <- sort(basename(Paths))
+    Class <- dlgList(Classes, multiple = FALSE,
+		title = "Select one class:")$res
+	if (!length(Class)) return(invisible(NULL))
+        
+    ## Ask to reset (if something is already set)
+    countPath <- file.path(traindir, "_count.RData")
+    reset <- FALSE
+    if (file.exists(countPath)) {
+        train2 <- readRDS(countPath)
+        ncount <- sum(!is.na(train2$Nb_cells[train2$Class == Class]))
+        if (ncount > 0) {
+            if (ncount == 1) {
+                msg <- "There is one vignette processed. Do you want to keep its count?"
+            } else msg <- paste("There are", ncount,
+                "vignettes already processed. Do you want to keep these counts?")
+            res <- dlgMessage(msg, type = "yesnocancel")$res
+            if (res == "cancel") return(invisible(NULL))
+            reset = (res == "no")    
+        }        
+    }
+    
+    ## Call cellCount
+    invisible(cellCount(traindir = traindir, class = Class, reset = reset))
 }
 
 ## Read a training set and create a ZITrain object
@@ -604,6 +704,113 @@ addVigsToTrain <- function ()
 	## Extract vignettes in the training set in a _NewVignettesX directory
 	message("Adding vignettes from these files to _ subdir...")
 	addToTrain(traindir = dir, zidbfiles = zidb)
+}
+
+## Compute differences between two training sets in a text file
+compTrain <- function ()
+{
+	## Get the first training set directory
+	dir <- getwd()
+	traindir1 <- dlgDir(default = dir, title =
+		paste("Select a first", getTemp("ZIname"), "training set base dir"))$res
+	if (!length(traindir1) || !file.exists(traindir1) ||
+		!file.info(traindir1)$isdir) 
+		return(invisible(NULL))
+   
+	## Get the second training set directory
+	traindir2 <- dlgDir(default = dir, title =
+		paste("Select a second (modified)", getTemp("ZIname"),
+			"training set base dir"))$res
+	if (!length(traindir2) || !file.exists(traindir2) ||
+		!file.info(traindir2)$isdir) 
+		return(invisible(NULL))
+   
+	## TODO: could be PNG too!
+	## List all vignettes (with paths) in train1 and train2
+	list1 <- jpgList(traindir1, recursive = TRUE)
+	list2 <- jpgList(traindir2, recursive = TRUE)
+   
+	## Extract vignette ID and corresponding path from list1 et list2
+	PathsVigs1 <- strsplit(list1[grepl(".jpg", basename(list1))],
+		"/(?=[^/]+$)", perl = TRUE)
+	PathsVigs2 <- strsplit(list2[grepl(".jpg", basename(list2))],
+		"/(?=[^/]+$)", perl = TRUE)
+	Vigs1 <- unlist(lapply(PathsVigs1, `[[`, 2))
+	Vigs2 <- unlist(lapply(PathsVigs2, `[[`, 2))
+	Paths1 <- unlist(lapply(PathsVigs1, `[[`, 1))
+	Paths2 <- unlist(lapply(PathsVigs2, `[[`, 1)) 
+   
+	## Search redundant vignettes
+	RedundantVigs1 <- Vigs1[duplicated(Vigs1)]
+	RedundantVigs2 <- Vigs2[duplicated(Vigs2)]
+   
+	## Differences between list 1 and list2 (symmetric difference)
+	Chg <- union(setdiff(list1, list2), setdiff(list2, list1))
+	ChgVigs <- unique(c(RedundantVigs1, RedundantVigs2, basename(Chg)))
+   
+	if (length(ChgVigs) < 1) {
+		warning("No differences between these two training sets...")
+	} else {
+		ChgToSave <- NULL
+		for (i in 1:length(ChgVigs)) {
+			nameChg <- sub(".jpg", "", ChgVigs[i])
+			
+			if (ChgVigs[i] %in% RedundantVigs1) {
+				status <- "Redundant"
+				pathTrain1 <- Paths1[which(Vigs1 == ChgVigs[i])]
+				athTrain2 <- ""
+				ChgToSave <- rbind(ChgToSave, cbind(nameChg, status,
+					pathTrain1, pathTrain2))
+			}
+			
+			if (ChgVigs[i] %in% RedundantVigs2) {
+				status <- "Redundant"
+				pathTrain1 <- ""
+				pathTrain2 <- Paths2[which(Vigs2 == ChgVigs[i])]
+				ChgToSave <- rbind(ChgToSave, cbind(nameChg, status,
+					pathTrain1, pathTrain2))
+			}
+			
+			if (!(ChgVigs[i] %in% RedundantVigs1) &
+				!(ChgVigs[i] %in% RedundantVigs2)) {
+				if (length(Paths1[which(Vigs1 == ChgVigs[i])]) < 1) {
+					status <- "Added"
+					pathTrain1 <- "Not found"
+					pathTrain2 <- Paths2[which(Vigs2 == ChgVigs[i])]
+				} else if (length(Paths2[which(Vigs2 == ChgVigs[i])]) < 1) {
+					status <- "Deleted"
+					pathTrain1 <- Paths1[which(Vigs1 == ChgVigs[i])]
+					pathTrain2 <- "Not found"
+				} else {
+					status <- "Moved"
+					pathTrain1 <- Paths1[which(Vigs1 == ChgVigs[i])]
+					pathTrain2 <- Paths2[which(Vigs2 == ChgVigs[i])]
+				}
+				ChgToSave <- rbind(ChgToSave, cbind(nameChg, status,
+					pathTrain1, pathTrain2))
+			}
+		}
+		
+		colnames(ChgToSave) <- c("Vignette", "Status", 
+            paste("Path in ", basename(traindir1), sep = ""), 
+            paste("Path in ", basename(traindir2), sep = ""))
+		ChgToSave <- ChgToSave[order(ChgToSave[,
+			which(colnames(ChgToSave) == "Status")]), ]
+		compFile <- paste(traindir2, "/", basename(traindir1), " VS ",
+			basename(traindir2), ".txt", sep = "")
+     
+		cat(paste("First training set: ", basename(traindir1), "\n", sep = ""), 
+			file = compFile, append = TRUE)
+		cat(paste("Second training set: ", basename(traindir2), "\n", sep = ""), 
+			file = compFile, append = TRUE)
+		cat("\nSummary of changes:\n", file = compFile, append = TRUE)
+		ChgSummary <- table(ChgToSave[, which(colnames(ChgToSave) == "Status")])
+		write.table(ChgSummary, file = compFile, sep = "\t", 
+			row.names = FALSE, col.names = FALSE, append = TRUE)
+		cat("\n", file = compFile, append = TRUE)
+		write.table(ChgToSave, file = compFile, col.names = FALSE,
+			sep = "\t", row.names = FALSE, append = TRUE)
+	}
 }
 
 ## New version to accept variables selection and/or new formula 1.2-2
@@ -669,9 +876,10 @@ makeClass <- function ()
 		if (!length(name)) return(invisible(NULL))
 		name <- make.names(name)	# Make sure it is a valid name!
 		## Calculate results
-		res <- ZIClass(data = get(ZIT, envir = .GlobalEnv), algorithm = algorithm)
+		res <- ZIClass(Class ~ ., data = get(ZIT, envir = .GlobalEnv),
+			algorithm = algorithm)
 	} else {
-		## Options if 'Variables Selection is selected v 1.2-2
+		## Options if 'Variables Selection' is selected v. 1.2-2
 		opts <- c("linear discriminant analysis",
 				"recursive partitioning (tree)",
 				"k-nearest neighbour",
@@ -918,6 +1126,55 @@ validClass <- function ()
 	
 	## Start validation of this sample
 	correctError(zid, zicObj) # This is using default parameters!
+}
+
+## Augmentation of the training set by active learning
+activeLearningGUI <- function ()
+{
+	## Active learning (adaptation of the training set with contextual items)
+	## Select one .zid or zidb file to be validated
+	zid <- selectFile(type = "ZidZidb", multiple = FALSE, quote = FALSE)
+	if (!length(zid)) return(invisible(NULL))
+  
+	## Look if we have a training set object defined
+	ZIT <- getTemp("ZI.TrainName")
+	if (is.null(ZIT)) ZIT <- ""
+	## Ask for a ZITrain object
+	ZIT <- selectObject("ZITrain", multiple = FALSE, default = ZIT,
+        title = "Choose one ZITrain objects:")
+	if (!length(ZIT) || (length(ZIT) == 1 && ZIT == ""))
+		return(invisible(NULL))
+  
+	## Call activeLearning (for augmentation of training set)
+	train <- activeLearning(train = get(ZIT, envir = .GlobalEnv),
+	                        add.mode = "SV+NSV", threshold = NA)
+# 	## Call contextSelection (for selection of contextual samples)
+# 	CtxSmp <- contextSelection()
+# 	if (length(CtxSmp) < 1) {
+# 		warning("No contextual samples selected! Initial training set will be used...")
+# 	} else {
+# 		## Call addItemsToTrain (for augmentation of the training set)
+# 		train <- addItemsToTrain(train = get(ZIT, envir = .GlobalEnv),
+# 			CtxSmp = CtxSmp, add.mode = "SV+NSV", threshold = NA,
+# 			dropItemsToTrain = dropItemsToTrain)
+# 	}
+	#.assignGlobal(ZIT, train)
+	classifier <- ZIClass(Class ~ ., data = train[!(names(train) %in% "AddedItems")], 
+        method = "mlRforest", calc.vars = calcVars, ntree = 200, cv.k = 10)
+	attr(classifier, "path") <- attr(train, "path")
+  
+	## If we have a zid file, convert it into zidb
+	if (hasExtension(zid, "zid")) {
+		message("Converting data into zidb format...")
+		if (!zidToZidb(zid))
+			stop("problem while converting '", zid, "' into a zidb file")
+		zid <- paste0(zid, "b") # The zidb file
+		if (!file.exists(zid))
+			stop("the created zidb file '", zid, "' is not found")
+	}
+  
+	## Start validation of this sample
+	correctError(zid, classifier) # This is using default parameters!
 }
 
 ## Edit a samples description file... or create a new one!
