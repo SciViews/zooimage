@@ -28,6 +28,7 @@ importFrom(DT, dataTableOutput, renderDataTable)
 
 # planktonSorter
 export(correctError)
+export(activeLearning)
 
 # Zic
 export(zicCheck)
@@ -176,6 +177,7 @@ export(saveObjects)
 export(validClass)
 export(vignettesClass)
 export(viewManual)
+export(viewFrenchManual)
 export(viewResults)
 export(ZIDlg)
 # Not in menus yet!

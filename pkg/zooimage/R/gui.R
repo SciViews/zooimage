@@ -758,7 +758,7 @@ compTrain <- function ()
 			if (ChgVigs[i] %in% RedundantVigs1) {
 				status <- "Redundant"
 				pathTrain1 <- Paths1[which(Vigs1 == ChgVigs[i])]
-				athTrain2 <- ""
+				pathTrain2 <- ""
 				ChgToSave <- rbind(ChgToSave, cbind(nameChg, status,
 					pathTrain1, pathTrain2))
 			}

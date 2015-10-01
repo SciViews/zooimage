@@ -2,6 +2,7 @@
 \alias{correctError}
 \alias{addItemsToTrain}
 \alias{dropItemsToTrain}
+\alias{activeLearning}
 
 \title{ The ZooImage error correction (manual validation) tools }
 \description{
@@ -16,6 +17,8 @@ reset = TRUE, result = NULL)
 addItemsToTrain(train, CtxSmp, add.mode = "SV+NSV", threshold = NA,
     dropItemsToTrain = dropItemsToTrain)
 dropItemsToTrain(train, cl, drop.nb)
+
+activeLearning(train, add.mode = "SV+NSV", threshold = NA)
 }
 
 \arguments{

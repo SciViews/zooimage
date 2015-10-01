@@ -1,5 +1,13 @@
 = zooimage News
 
+== Changes in zooimage 5.4-2
+
+* Correction of one bug in the function addVigsToTrain().
+
+* The functions activeLearning() and viewFrenchManual() were not exported in
+  the NAMESPACE, but are required for the menus. Fixed.
+
+
 == Changes in zooimage 5.4-1
 
 * Correction of various bugs by Guillaume Wacquet.

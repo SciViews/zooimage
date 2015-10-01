@@ -5,6 +5,7 @@
 \alias{closeAssistant}
 \alias{closeZooImage}
 \alias{viewManual}
+\alias{viewFrenchManual}
 \alias{focusR}
 \alias{focusGraph}
 \alias{acquireImg}
@@ -48,6 +49,7 @@ exitZI()
 closeAssistant()
 closeZooImage()
 viewManual()
+viewFrenchManual()
 focusR()
 focusGraph()
 acquireImg()
