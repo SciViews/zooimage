@@ -1,5 +1,10 @@
 = zooimage News
 
+== Changes in zooimage 5.4-3
+
+* Cells counting per colonies (per particles) is now provided.
+
+
 == Changes in zooimage 5.4-2
 
 * Correction of one bug in the function addVigsToTrain().

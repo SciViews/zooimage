@@ -60,6 +60,7 @@ ZIDlg <- function ()
 	menuAddItem("Analyze", "--", "")
 	menuAddItem("Analyze", "Edit samples description", "editDescription()")
 	menuAddItem("Analyze", "Process samples...", "processSamples()")
+	menuAddItem("Analyze", "Process samples with cells counting...", "processSamplesWithCells()")
 	menuAddItem("Analyze", "View results...", "viewResults()")
 	menuAddItem("Analyze", "Export results...", "exportResults()")
 	
@@ -1219,10 +1220,47 @@ editDescription <- function ()
     assignTemp("ZI.LastZIS", zisfile)
 }
 
-processSamples <- function()
+processSamplesWithCells <- function()
+{
+	## Ask for a "cells" file with data required to compute the number of cells
+	## per colonies (per particles)
+	cells <- getTemp("ZI.LastCells")
+	if (is.null(cells) || !file.exists(cells))
+		cells <- ""
+	## Ask for the cells file
+	if (cells != "") {	
+		cells <- dlgOpen(default = cells, title = "Select a cells counting RDS file",
+			filters = matrix(c("Cells counting RDS file", ".rds"),
+			ncol = 2, byrow = TRUE))$res	
+	} else if (file.exists(file.path(getwd(), "cells.rds"))) {
+		zisfile <- dlgOpen(default = file.path(getwd(), "cells.RData"),
+			title = "Select a cells counting RDS file",
+			filters = matrix(c("Cells counting file", ".rds"),
+			ncol = 2, byrow = TRUE))$res	
+	} else {
+		zisfile <- dlgOpen(title = "Select a cells counting RDS file",
+			filters = matrix(c("Cells counting file", ".rds"),
+			ncol = 2, byrow = TRUE))$res	
+	}
+	if (!length(cells)) return(invisible(NULL))
+	
+	## Remember last file used
+	assignTemp("ZI.LastCells", cells)
+		
+	## Call .processSamples() using this file...
+	.processSamples(cells)
+}
+
+## Just delegate to .processSamples() without providing a cells file to do
+## the computation without cells counting
+processSamples <- function ()
+	.processSamples()
+
+.processSamples <- function(cells = NULL)
 {
 	## Ask for a description.zis file, look at all samples described there
-	## Calculate abundances, total and partial size spectra and possibly biomasses
+	## Calculate abundances, total and partial size spectra and possibly number
+	## of cells per colonies (per particles) and biomasses
 	## Get the last edited description.zis file
 	## Get a possibly saved directory as default one
 	zisfile <- getTemp("ZI.LastZIS")

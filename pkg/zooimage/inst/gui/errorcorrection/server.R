@@ -82,7 +82,7 @@ shinyServer(function (input, output, session) {
 #                 .ZI$Train <- addItemsToTrain(.ZI$Train, CtxSmp,
 #                     dropItemsToTrain = dropItemsToTrain)
 #             }
-            .ZI$Train <- activeLearning(.ZI$Train)
+            .ZITrain <- activeLearning(.ZITrain)
             assign(.ZIClass, eval(parse(text = .ZI$classifcmd)))
             if (file.exists(DemoFile)) { # Run in demo mode
                 res <- load(DemoFile)
@@ -173,7 +173,7 @@ shinyServer(function (input, output, session) {
             #assign(ResData, processSample(dat2, keep = NULL, detail = detail,
             #    biomass = .ZI$biovolume, breaks = .ZI$breaks, classes = "Class"))
             ## With cellModels...
-            assign(ResData, processSample(dat2, keep = NULL, detail = detail, cellModels = .ZI$cellModelsfile,
+            assign(ResData, processSample(dat2, keep = NULL, detail = detail, cells = .ZI$cellModelsfile,
                 biomass = .ZI$biovolume, breaks = .ZI$breaks, classes = "Class"))
             ## Save it
             save(list = ResData, file = ResFile)

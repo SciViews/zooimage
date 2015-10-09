@@ -11,10 +11,12 @@
   and they collect them together in a 'ZIRes' object.
 }
 \usage{
-processSample(x, sample, keep = NULL, detail = NULL, classes = "both",
-    header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
-processSampleAll(path = ".", zidbfiles, ZIClass = NULL, keep = NULL, detail = NULL,
-    classes = "both", header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
+processSample(x, sample, keep = NULL,
+    detail = NULL, classes = "both", header = c("Abd", "Bio"),
+    cells = NULL, biomass = NULL, breaks = NULL)
+processSampleAll(path = ".", zidbfiles, ZIClass = NULL, keep = NULL,
+    detail = NULL, classes = "both", header = c("Abd", "Bio"),
+    cells = NULL, biomass = NULL, breaks = NULL)
 
 \method{print}{ZIRes}(x, \dots)
 \method{rbind}{ZIRes}(\dots, deparse.level = 1)
@@ -38,6 +40,8 @@ processSampleAll(path = ".", zidbfiles, ZIClass = NULL, keep = NULL, detail = NU
     defined. One can also specify the name of another factor variable in \code{x}. }
   \item{header}{ a character vector with one or two strings to use as headers for,
     respectively, abundances and biomasses. }
+  \item{cells}{ the path to an .rds file containing cells counting models, as used
+    by \code{cellCompute()}. }
   \item{biomass}{ a specification for biomass conversion. Can be \code{NULL} (by
     default) for turning off biomass calculation, or a numeric vector of three
     values P1, P2 and P3 (same biomass for all classes with Bio = P1 * ECD^P3 + P2),

@@ -103,33 +103,12 @@ rbind.ZIRes <- function (..., deparse.level = 1)
 }
 
 ## Calculate abundances, biomasses and size spectra per class in a sample
-#processSample <- function (x, sample, keep = NULL, detail = NULL, classes = "both",
-#header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 processSample <- function (x, sample, keep = NULL, detail = NULL, classes = "both",
-header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
+header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 {
 	## Fix ECD in case of FIT_VIS data
 	if ("FIT_Area_ABD" %in% names(x)) x$ECD <- ecd(x$FIT_Area_ABD)
-	
-	## Do we compute the number of cells and the ECD per cell?
-	## But see version hereunder!
-#### TODO: compute ECD using number of cells per colonies!
-####	if (!is.null(cells)) {
-####		x$Nb_cells <- computeNbCells(x, cells)
-####		x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
-####	}
-#### PhG: here, computation before argument checking is not good!
-#### PhG: cells points to a file. Not good! We ask for a specific object instead
-		
-	## Do we compute the number of cells and the ECD per cell?
-	## PhG: should not rely on a filehere!
-####	if (!is.null(cells) && file.exists(cells)) {
-####		## Must be a ZICell model here! predict() iterates on all items
-####		## of the list to compute cells for all classes!
-####		x$Nb_cells <- predict(cells, x)
-####		x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
-####}
-		
+			
 	## Check arguments
 	if (missing(sample)) {
 		sample <- unique(sampleInfo(x$Label, type = "sample", ext = ""))
@@ -155,6 +134,16 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 	if (!length(x$Dil) || !is.numeric(x$Dil)) {
 		warning("'Dil' column is missing or not numeric in 'x'")
 		return(NULL)
+	}
+	
+	## Do we compute the number of cells and the ECD per cell?
+	## TODO: should not rely on a file here (use a predict() method of a ZICell object)!
+	if (!is.null(cells) && file.exists(cells)) {
+####		## Must be a ZICell model here! predict() iterates on all items
+####		## of the list to compute cells for all classes!
+####		x$Nb_cells <- predict(cells, x)
+		x$Nbr_cells <- cellCompute(x, cells) 
+		x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
 	}
 	
 	## Extract only data for a given sample
@@ -330,7 +319,7 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 			'[total]' = apply(spectrum, 2, sum))	
 		}
 		
-		## Eliminate all ine except total if detail is not provided
+		## Eliminate all lines except total if detail is not provided
 		if (!length(detail))
 			spectrum <- spectrum[NROW(spectrum), , drop = FALSE]
 
@@ -344,8 +333,8 @@ header = c("Abd", "Bio"), biomass = NULL, breaks = NULL)
 }
 
 processSampleAll <- function (path = ".", zidbfiles, ZIClass = NULL, keep = NULL,
-detail = NULL, classes = "both", header = c("Abd", "Bio"), biomass = NULL,
-breaks = NULL)
+detail = NULL, classes = "both", header = c("Abd", "Bio"), cells = NULL,
+biomass = NULL, breaks = NULL)
 {
 	## First, switch to that directory                                       
 	if (!checkDirExists(path)) return(invisible(FALSE))
@@ -382,8 +371,8 @@ breaks = NULL)
 
 		## Process that one sample and merge with the rest
 		res <- rbind(res, processSample(dat, keep = keep, detail = detail,
-			classes = classes, header = header, biomass = biomass,
-			breaks = breaks))
+			classes = classes, header = header, cells = cells,
+			biomass = biomass, breaks = breaks))
 	}
 	progress(101) # Clear progression indicator
 	message(" -- Done! --")

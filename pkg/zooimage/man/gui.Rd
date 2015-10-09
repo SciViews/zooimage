@@ -26,6 +26,7 @@
 \alias{validClass}
 \alias{editDescription}
 \alias{processSamples}
+\alias{processSamplesWithCells}
 \alias{viewResults}
 \alias{exportResults}
 \alias{loadObjects}
@@ -70,6 +71,7 @@ vignettesClass()
 validClass()
 editDescription()
 processSamples()
+processSamplesWithCells()
 viewResults()
 exportResults
 loadObjects()

@@ -1,3 +1,5 @@
 = zooimage - TODO list
 
 * There is a calibrate() method in vegan => use a different name here
+
+* Check authors everywhere and adjust (in particular for Guillaume Wacquet)
