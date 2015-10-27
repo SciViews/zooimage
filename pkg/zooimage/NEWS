@@ -4,6 +4,8 @@
 
 * Cells counting per colonies (per particles) is now provided.
 
+* processSamples() now look for .zidb files instead of .zid files.
+
 
 == Changes in zooimage 5.4-2
 

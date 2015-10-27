@@ -79,7 +79,7 @@ shinyServer(function (input, output, session) {
 #                 warning("No contextual samples selected! Initial training set will be used.")
 #             } else {
 #                 ## TODO: merge with activeLearningGUI
-#                 .ZI$Train <- addItemsToTrain(.ZI$Train, CtxSmp,
+#                 .ZITrain <- addItemsToTrain(.ZITrain, CtxSmp,
 #                     dropItemsToTrain = dropItemsToTrain)
 #             }
             .ZITrain <- activeLearning(.ZITrain)

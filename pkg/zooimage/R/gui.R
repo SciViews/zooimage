@@ -1357,13 +1357,13 @@ processSamples <- function ()
 	if (!length(smplist) || smplist == "")
 		stop("No sample found in the description file!")
 	
-	## Are there corresponding .zid files for all samples?
+	## Are there corresponding .zidb files for all samples?
 	zisdir <- dirname(zisfile)
 	if (zisdir == ".") zisdir <- getwd()
-	zidfiles <- file.path(zisdir, paste(smplist, ".zid", sep = ""))
-	if (!all(file.exists(zidfiles)) ||
-		!all(regexpr("[.][zZ][iI][dD]$", zidfiles) > 0))
-		stop("One or more .zid files do not exist or is invalid!")
+	zidbfiles <- file.path(zisdir, paste(smplist, ".zidb", sep = ""))
+	if (!all(file.exists(zidbfiles)) ||
+		!all(regexpr("[.][zZ][iI][dD][bB]$", zidbfiles) > 0))
+		stop("One or more .zidb files do not exist or is invalid!")
 	
 	## Get a classifier
 	ZIC <- getTemp("ZI.ClassName")
@@ -1412,7 +1412,6 @@ processSamples <- function ()
 	res <- processSampleAll(path = dirname(zisfile), #ZIClass = ...,
 		biomass = conv, breaks = brks)
 	## TODO: possibly export result in a file...
-	
 	
 	## Assign this result to the variable
 	.assignGlobal(name, res)
