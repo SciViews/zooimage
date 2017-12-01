@@ -1,0 +1,429 @@
+/* Body */
+BODY {
+	margin: 0px 0px 0px 0px;
+	background-color : #FFFFFF ;
+	color : #000000;
+	}
+
+td,tr,p,div {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	color: #333333;
+	}
+
+/* Styles for dhtml tabbed-pages */
+.ontab {
+	background-color: #ffae00;
+	border-left: outset 2px #ff9900;
+	border-right: outset 2px #808080;
+	border-top: outset 2px #ff9900;
+	border-bottom: solid 1px #d5d5d5;
+	text-align: center;
+	cursor: hand;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+.offtab {
+	background-color : #e5e5e5;
+	border-left: outset 2px #E0E0E0;
+	border-right: outset 2px #E0E0E0;
+	border-top: outset 2px #E0E0E0;
+	border-bottom: solid 1px #d5d5d5;
+	text-align: center;
+	cursor: hand;
+	font-weight: normal;
+}
+.tabpadding {
+}
+
+.tabheading {
+	background-color: #ffae00;
+	text-align: left;
+}
+
+.pagetext {
+	visibility: hidden;
+	display: none;
+	position: relative;
+	top: 0;
+}
+h4 {
+	color: #FF9900; font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 16px; font-weight: bold;
+	}
+
+h5 {
+	color: #FF9900; font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 14px; font-weight: bold;
+	}
+
+h6 {
+	color: #FF9900; font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px; font-weight: bold;
+	}
+
+/* Links */
+a:link, a:visited {
+	font-size: 11px; color: #808080; text-decoration: none;
+	font-family:  Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	}
+
+a:hover {
+	color: #FF6600;	text-decoration: none;
+	}
+
+/* For content item titles that are hyperlink instead of Read On */
+a.contentpagetitle:link, a.contentpagetitle:visited {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+ 	color: #808080;
+	text-align:left;
+	}
+
+a.contentpagetitle:hover {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+	text-align:left;
+	color: #FF6600;
+	text-decoration: underline;
+	font-weight: bold;
+	}
+
+/* Horizontal Line */
+hr {
+	background: #C0C0C0; height:2px; border: 1px inset;
+	}
+
+hr.separator {
+	background: #C0C0C0;
+	height: 1px;
+	width: 75px;
+	border: 0px;
+}
+
+/* --Default Class Settings-- */
+
+a.mainmenu:link, a.mainmenu:visited, a.mainlevel:link, a.mainlevel:visited {
+	color: #808080; font-family: Trebuchet MS, Verdana, Geneva, Arial, Helvetica, serif;
+	font-weight: normal;
+	}
+
+a.mainmenu:hover, a.mainlevel:hover {
+	color: #FF9900; text-decoration: underline;
+	}
+
+a.sublevel:hover {
+	color: #FF0000; text-decoration: underline;
+	}
+
+a.sublevel:link, a.sublevel:visited {
+	color: #0000c0; font-family: Trebuchet MS, Verdana, Geneva, Arial, Helvetica, serif;
+	font-weight: normal;
+}
+
+/* Content - Sections & Categories */
+.contentpane {
+	background-color : #FFFFFF;
+	}
+
+.contentpaneopen {
+	border : 0px ridge #DCDCDC;
+	}
+
+.contentheading {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+ 	color: #333333;
+	text-align:left;
+	}
+
+.contentpagetitle {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+ 	color: #333333;
+	text-align:left;
+	}
+
+table.contenttoc {
+        color: #333300;
+		background-color: #e0e0e0;
+        }
+
+table.contenttoc td {
+        font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+        font-size: 8pt;
+        font-weight: normal;
+        text-align:left;
+}
+
+a.toclink:hover, a.toclink:visited, a.toclink:link {
+	font-size: 9px;
+	}
+
+.contentdescription {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	color: #808080;
+	text-align: left;
+	}
+
+/* Links */
+a.blogsection:link, a.blogsection:visited {
+	color: #FF9900; text-decoration: none; font-weight: normal;
+	font-family:  Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	}
+
+a.blogsection:hover {
+	color: #999999;	text-decoration: underline;
+	}
+
+a.weblinks:link, a.weblinks:visited {
+	color: #FF9900; text-decoration: none; font-weight: normal;
+	font-family:  Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	}
+
+a.weblinks:hover {
+	color: #999999;	text-decoration: underline;
+	}
+
+a.readon:link, a.readon:visited {
+	color: blue; text-decoration: none; font-weight: normal;
+	font-family:  Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	}
+
+a.readon:hover {
+	color: #999999;	text-decoration: underline;
+	}
+
+table.moduletable {
+	margin: 0px 0px 0px 0px;
+	width: 95%;
+	border-left: solid 0px #000000;
+	border-right: solid 0px #000000;
+	border-top: solid 0px #000000;
+	border-bottom: solid 0px #000000;
+	}
+
+table.moduletable th {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	font-weight: bold;
+	color: #FFFFFF;
+	text-align: left;
+	height: 18px;
+	line-height: 18px;
+	white-space: nowrap;
+	width: 100%;
+	background-color: #8a8a8a;
+	}
+	
+table.moduletable td {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	font-weight: normal;
+	}
+	
+.componentheading {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	font-weight: bold;
+ 	color: #333333;
+	text-align:left;
+	}
+
+.button {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-style: normal;
+	font-weight: bold;
+	font-size: 10px;
+	color: #000000;
+	border-style: solid;
+	border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;
+	}
+
+.inputbox {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	color: #666666;
+	background: #FFFFFF;
+	border: 1px solid;
+	}
+
+/** category text format and links **/
+.category {
+	color: #999999; font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 11px; font-weight: bold; text-decoration: none;
+	}
+
+a.category:link, a.category:visited {
+	color: #999999; font-weight: bold;
+	}
+
+a.category:hover {
+	color: #FF9900;
+	}
+
+.poll {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #666666;
+	line-height: 14px
+	}
+
+.sectiontableentry1, .contentpane {
+	background-color : #FFFFFF;
+	}
+
+.sectiontableentry2 {
+	background-color : #EBEBEB;
+	}
+
+.sectiontableheader {
+	background-color : #999999;
+	color : #FFFFFF;
+	font-weight : bold;
+	}
+
+.frontpageheader {
+	font-size: 13px;
+    color : #0077aa;
+    font-weight : bold;
+    }
+
+.small {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #FF6600;
+	text-decoration: none;
+	font-weight: normal;
+	}
+
+.smalldark {
+        font-family: Verdana, Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        color: #333333;
+        text-decoration: none;
+        font-weight: normal;
+        }
+
+
+.newsfeedheading {
+        font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        font-weight: bold;
+        color: #333333;
+        text-align:left;
+        }
+
+.newsfeeddate {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #FF6600;
+	font-weight: normal;
+}
+
+.createdate {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #FF6600;
+	text-decoration: none;
+	font-weight: normal;
+	}
+
+.modifydate {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #808080;
+	text-decoration: none;
+	font-weight: normal;
+	}
+
+ul {
+	margin: 0px 0px 0px 0px;
+	}
+
+li {
+	list-style: inside url(arrow.png) 3px;
+	list-style-image: url(arrow.png);
+	}
+
+.fase4rdf {
+	font-family: Trebuchet MS, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 11px; color: #000000; font-weight: normal;
+	}
+
+a.fase4rdf:link {
+	font-size: 11px; font-weight: normal; color: #FF9900;
+	}
+
+a.fase4rdf:hover {
+	font-weight: bold; color: #808080;
+	}
+
+table.searchintro {
+  	background-color: #FFFFFF;
+	border: solid 1px #777777;
+	}
+
+table.contact {
+	background-color: #FFFFFF;
+	}
+
+table.contact td.icons {
+	background-color: #C6CBCE;
+	}
+
+table.contact td.details {
+	background-color: #EEEEEE;
+	font-size: 10px;
+	font-weight: bold;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	}
+
+.pagenav {
+	font-weight: normal;
+	color: #386593;
+}
+
+a.pagenav, a.pagenav:visited {
+	color: #FF6600;
+}
+
+a.pagenav:hover {
+	color: #386593;
+}
+
+.pagenavbar {
+	
+}
+
+/* Content voting */
+.content_rating {
+	font-weight: normal;
+	font-size: 8pt;
+}
+
+.content_vote {
+	font-weight: normal;
+	font-size: 8pt;
+}
+
+/* for modifying {moscode} output.  Don't set the colour! */
+.moscode {
+	background-color: #f0f0f0;
+}
+
+/* Text passed with mosmsg url parameter */
+.message {
+	font-family : Verdana, Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	font-size : 10pt;
+	color : #ff6600;
+	text-align: center;
+}
