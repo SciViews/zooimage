@@ -1,0 +1,25 @@
+ZI1
+[Image]
+Author=
+Hardware=EPSON 4870
+Software=VueScan 8.0.10
+ImageType=trans 16bits gray 2400dpi
+
+[Fraction]
+Code=A
+Min=-1
+Max=-1
+
+[Subsample]
+SubPart=1
+SubMethod=volumetry
+CellPart=1.00
+Replicates=1
+VolIni=
+VolPrec=
+
+[Calibration]
+PixelSize=0.0106
+PixelUnit=mm
+WhitePoint=2000
+BlackPoint=53000

@@ -1,0 +1,129 @@
+## ZooImage Tk menu
+## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
+##
+## This file is part of ZooImage
+## 
+## ZooImage is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+## 
+## ZooImage is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
+
+# Create a Tk menu (intended for a window called 'ZIDlgWin')
+$Tk.ZIDlgWin
+|$Analyze
+||&Acquire images...	Ctrl+A			~~ acquireImg()
+||&Import images...	Ctrl+I			~~ importImg()
+||&Process images...	Ctrl+J			~~ processImg()
+||Make .&zid files...	Ctrl+Z			~~ makeZid()
+||-
+||&Make training set...	Ctrl+M			~~ makeTrain()
+||Add vignettes to training set         	~~ addToTrain()
+||Count cells in colonies         	~~ cellCountGUI()
+||&Read training set..	Ctrl+T			~~ collectTrain()
+||Make &classifier...	Ctrl+C			~~ makeClass()
+||A&nalyze classifier...	Ctrl+N		~~ analyzeClass()
+||Automatic classification of vignettes 	~~ vignettesClass()
+||--
+||Edit samples &description...	Ctrl+D		~~ editDescription()
+||Process &samples...	Ctrl+S			~~ processSamples()
+||&View results...	Ctrl+V			~~ viewResults()
+||&Export results...	Ctrl+E			~~ exportResults()
+||---
+||$E&xit
+|||From the &assistant	Ctrl+X			~~ closeAssistant()
+|||From &ZooImage				~~ closeZooImage()
+|$Objects
+||&Load						~~ loadObjects()
+||&Save						~~ saveObjects()
+||-
+||&List						~~ listObjects()
+||&Remove					~~ removeObjects()
+|$Apps
+||&R Console	Ctrl+R				~~ focusR()
+||Active R &Graph	Ctrl+G			~~ focusGraph()
+||-
+||Image &viewer (XnView)			~~ startPgm("ImageViewer")
+||Image &analyzer (ImageJ)			~~ startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)
+||&Metadata editor      			~~ fileEdit(selectFile("ZimZis"))
+||--
+||Simple acquisition (&VueScan)			~~ startPgm("VueScan", switchdir = TRUE)
+|$Functions
+||$ZooImage &Metadata (zim)
+|||zimCreate()                          	~~ guiDlgFunction("zimCreate")
+|||zimEdit()                            	~~ guiDlgFunction("zimEdit")
+|||-
+|||zimMake()                            	~~ guiDlgFunction("zimMake")
+|||zimVerify()                          	~~ guiDlgFunction("zimVerify")
+|||--
+|||zimE&xtractAll()                     	~~ guiDlgFunction("zimExtractAll")
+|||zimUpdateAll()                      	        ~~ guiDlgFunction("zimUpdateAll")
+||$ZooImage &Picture (zip)
+|||zipImg()	    				~~ guiDlgFunction("zipImg")
+|||zipImg&All()	    				~~ guiDlgFunction("zipImgAll")
+|||-
+|||unzipImg()					~~ guiDlgFunction("unzipImg")
+|||u&nzipImgAll()				~~ guiDlgFunction("unzipImgAll")
+||$ZooImage &Data (zid)
+|||zidDatMake()					~~ guiDlgFunction("zidDatMake")
+|||zidDatRead()					~~ guiDlgFunction("zidDatRead")
+|||-
+|||zidVerify()					~~ guiDlgFunction("zidVerify")
+|||zidVerifyAll()	    			~~ guiDlgFunction("zidVerifyAll")
+|||--
+|||zidCompress()				~~ guiDlgFunction("zidCompress")
+|||zidC&ompressAll()				~~ guiDlgFunction("zidCompressAll")
+|||---
+|||zidUncompress()				~~ guiDlgFunction("zidUncompress")
+|||zidU&ncompressAll()		    		~~ guiDlgFunction("zidUncompressAll")
+||$ZooImage &Samples Metadata (zis)
+|||zisCreate()                          	~~ guiDlgFunction("zisCreate")
+|||zisEdit()                            	~~ guiDlgFunction("zisEdit")
+|||-
+|||zisRead()                    	        ~~ guiDlgFunction("zisRead")
+||--
+||$ZooImage &Training set
+|||prepareTrain()				~~ guiDlgFunction("prepareTrain")
+|||getTrain()				        ~~ guiDlgFunction("getTrain")
+|||addToTrain()                                 ~~ guiDlgFunction("addToTrain")
+|||-
+|||re&code.ZITrain()				~~ guiDlgFunction("recode.ZITrain")
+|||ZIRecodeLevels()			        ~~ guiDlgFunction("ZIRecodeLevels")
+||$ZooImage &Classifier
+|||ZIClass()					~~ guiDlgFunction("ZIClass")
+|||predict()					~~ guiDlgFunction("predict.ZIClass")
+|||-
+|||confu()					~~ guiDlgFunction("confu")
+|||confusion&Map()				~~ guiDlgFunction("confusionMap")
+||$ZooImage &Results
+|||sampleProcess()				~~ guiDlgFunction("sampleProcess")
+|||sampleP&rocessAll()				~~ guiDlgFunction("sampleProcessAll")
+|||-
+|||sampleAbd()					~~ guiDlgFunction("sampleAbd")
+|||sampleBio()					~~ guiDlgFunction("sampleBio")
+|||sampleSpectrum()	    			~~ guiDlgFunction("sampleSpectrum")
+|$Utilities
+||Calibrate grayscale (16bit)			~~ calib()
+||Biomass conversion specification      	~~ fileEdit(file.path(getTemp("ZIetc"), "Conversion.txt"))
+||-
+||$R Graphs
+|||&New						~~ dev.new()
+|||&Activate next				~~ {dev.set(); if (isRgui()) bringToTop()}
+|||&Close all					~~ graphics.off()
+|$Options
+||Change &active dir...                 	~~ setwd(dlgDir()$res)
+||-
+||Define decimal separator...			~~ optInOutDecimalSep()
+|$Help
+||&Online help					~~ help("zooimage")
+||&Manual	Ctrl+H				~~ viewManual()
+||&Web site...					~~ browseURL("http://www.sciviews.org/zooimage")
+||-
+||&About ZooImage...				~~ aboutZI(graphical = TRUE)

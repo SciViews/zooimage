@@ -1,9 +1,0 @@
-Class	P1	P2	P3
-Copepoda	1	0	1
-Cope lateral	1	0	1
-Cope dorsal	1	0	1
-marine snow	1	0	1
-Chaetognatha	1	0	1
-Salpida	1	0	1
-Crustacea other	1	0	1
-[other]	1	0	1

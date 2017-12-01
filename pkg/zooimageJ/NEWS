@@ -1,7 +1,0 @@
-= zooimage News
-
-== Changes in zooimageJ 3.0-0
-
-* This package collects code from RImageJ 0.2-146 and all java code (ImageJ and
-  zooimage plugins) out of zooimage. That way, zooimage becomes compatible with
-  CRAN specifications (no compiled code).
