@@ -497,15 +497,22 @@ recode.ZITrain <- function (object, new.levels, depth, ...)
 		if (!missing(new.levels))
 			warning("depth is provided, so, new.levels is ignored and recomputed")
 		new.levels <- .recodeLevels(object, depth)
+		levels <- basename(attr(object, "path"))
+		## Check that levels match those defined in the Class variable
+		levels2 <- levels(object$Class)
+		if (length(levels) != length(levels2))
+			stop("length of levels in 'path' attribute must match levels in object$Class")
+		if (any(!levels %in% levels2))
+			stop("levels in the 'path' attribute do not match levels in object$Class")
+	} else {
+		## If new.levels is provided, just assume they match levels(object$Class)
+		levels <- levels(object$Class)
+		if (length(new.levels) != length(levels))
+			stop("length of new.levels must match levels in object$Class")
 	}
-	
-	## Check that new.levels is of the same length as levels(object$Class)
-	## [and object$Predicted or Predicted2, possibly]
-	levels <- levels(object$Class)
 	new.levels <- as.character(new.levels)
-	if (length(new.levels) != length(levels))
-		stop("length of new.levels must match levels in object$Class")
 	
+	## Change levels now
 	relevel <- function (x, levels, new.levels) {
 		x <- as.character(x)
 		for (i in 1:length(levels))

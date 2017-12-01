@@ -82,8 +82,11 @@ shinyServer(function (input, output, session) {
 #                 .ZITrain <- addItemsToTrain(.ZITrain, CtxSmp,
 #                     dropItemsToTrain = dropItemsToTrain)
 #             }
-            .ZITrain <- activeLearning(.ZITrain)
-            assign(.ZIClass, eval(parse(text = .ZI$classifcmd)))
+            
+            # PhG: This is problematic with scanner data, so, inactivate it for now
+            #.ZITrain <- activeLearning(.ZITrain)
+            assign(.ZI$classif, eval(parse(text = .ZI$classifcmd)))
+            .ZIClass <- get(.ZI$classif)
             if (file.exists(DemoFile)) { # Run in demo mode
                 res <- load(DemoFile)
                 DemoData <- get(res)
@@ -127,7 +130,7 @@ shinyServer(function (input, output, session) {
                     silent = TRUE)
             }
             ## Save associated metadata
-            cat("zooimage version: 5.4-0\n", file = MetaFile)
+            cat("zooimage version: 5.4-3\n", file = MetaFile)
             cat("method: ", .ZI$method, "\n", sep = "",
                 file = MetaFile, append = TRUE)
             cat("user: ", .ZI$user, "\n", sep = "",

@@ -44,8 +44,8 @@ checkDirExists(dir, message = 'Path "\%s" does not exist or is not a directory')
 checkEmptyDir(dir, message = 'dir "\%s" is not empty')
 forceDirCreate(dir)
 
-checkFirstLine(file, expected = c("ZI1", "ZI2", "ZI3"), 
-    message = 'file "\%s" is not a valid ZooImage version <= 3 file')
+checkFirstLine(file, expected = c("ZI1", "ZI2", "ZI3", "ZI4", "ZI5"), 
+    message = 'file "\%s" is not a valid ZooImage version <= 5 file')
 }
 
 \arguments{
@@ -112,7 +112,7 @@ checkEmptyDir(tmpDir)   # yes
 file.remove(tmpDir)
 file.exists(tmpDir)
 
-# Every .zis file must start with ZI1-3 => check this...
+# Every .zis file must start with ZI1-5 => check this...
 checkFirstLine(zisFile)
 
 # Clean up

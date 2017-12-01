@@ -142,8 +142,9 @@ header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 ####		## Must be a ZICell model here! predict() iterates on all items
 ####		## of the list to compute cells for all classes!
 ####		x$Nb_cells <- predict(cells, x)
-		x$Nbr_cells <- cellCompute(x, cells) 
-		x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
+		## Fixed by G. Wacquet: x$Nb_cells -> x, because cellCompute() returns the whole df
+		x <- cellCompute(x, cells)
+    x$ECD_cells <- ecd(x$FIT_Area_ABD, x$Nb_cells)
 	}
 	
 	## Extract only data for a given sample
@@ -172,6 +173,12 @@ header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 		warning("problem while retrieving classes (are they defined?)")
 		return(NULL)
 	} else x$Cl <- Cl
+	
+	## By default, only keep taxa starting with uppercase
+	if (is.null(keep)) {
+    keep <- levels(x$Cl)
+    keep <- keep[grepl("[A-Z]", keep)]
+  }
 	
 	## Subsample, depending on which classes we keep
 	if (length(keep)) {
@@ -231,6 +238,9 @@ header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 		}
 	}
 	
+	## By default, give detail for all kept classes
+  if (is.null(detail)) detail <- keep
+	
 	## Split among detail, if provided
 	if (length(detail)) {
 		# We want more details for one ore more groups...
@@ -240,22 +250,27 @@ header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 		
 		Cl[!Cl %in% detail] <- "[other]"
 		x$Cl <- Cl
+		if (any(Cl == "[other]")) {
+      sel <- c(detail, "[other]")
+    } else sel <- detail
+    abdnames <- paste(header[1], c(sel, "[total]"))
+    bionames <- paste(header[2], c(sel, "[total]"))
 		if (is.numeric(x$Nb_cells)) {
 			res <- tapply(x$Dil * x$Nb_cells, Cl, sum, na.rm = TRUE)
-			res <- res[c(detail, "[other]")]
+			res <- res[sel]
 			res <- c(res, '[total]' = sum(x$Dil  * x$Nb_cells, na.rm = TRUE))
 		} else {
 			res <- tapply(x$Dil, Cl, sum, na.rm = TRUE)
-			res <- res[c(detail, "[other]")]
+			res <- res[sel]
 			res <- c(res, '[total]' = sum(x$Dil, na.rm = TRUE))
 		}
-		names(res) <- paste(header[1], names(res))
+		names(res) <- abdnames
 		
 		if (!missing(biomass)) {
 			resbio <- tapply(x$BioWeight, Cl, sum, na.rm = TRUE)
-			resbio <- resbio[c(detail, "[other]")]
+			resbio <- resbio[sel]
 			resbio <- c(resbio, '[total]' = sum(x$BioWeight, na.rm = TRUE))
-			names(resbio) <- paste(header[2], names(resbio))
+			names(resbio) <- bionames
 			res <- c(res, resbio)
 		}
 		
@@ -269,6 +284,7 @@ header = c("Abd", "Bio"), cells = NULL, biomass = NULL, breaks = NULL)
 			res <- c(res, sum(x$BioWeight, na.rm = TRUE))
 		names(res) <- paste(header, "[total]")
 	}
+	res[is.na(res)] <- 0
 	
 	## Make the result a data frame with first column being Id, and make it
 	## a ZIRes object inheriting from data frame
@@ -370,9 +386,10 @@ biomass = NULL, breaks = NULL)
 		if (length(ZIClass)) dat <- predict(ZIClass, dat, class.only = FALSE)
 
 		## Process that one sample and merge with the rest
-		res <- rbind(res, processSample(dat, keep = keep, detail = detail,
-			classes = classes, header = header, cells = cells,
-			biomass = biomass, breaks = breaks))
+		res0 <- processSample(dat, keep = keep, detail = detail, 
+      classes = classes, header = header, cells = cells, 
+      biomass = biomass, breaks = breaks)
+    res <- rbind(res, res0)
 	}
 	progress(101) # Clear progression indicator
 	message(" -- Done! --")

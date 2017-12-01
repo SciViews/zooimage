@@ -1,3 +1,10 @@
+importFrom("grDevices", "dev.cur", "dev.list", "dev.new", "dev.off",
+           "dev.size", "png")
+importFrom("graphics", "abline", "axis", "barplot", "box", "grid",
+           "hist", "legend", "lines", "locator", "mtext", "par",
+           "plot", "points", "rasterImage", "text", "title")
+importFrom("stats", "anova", "as.formula", "coef", "lm", "lowess",
+           "na.omit", "predict", "runif", "xtabs")
 import(digest)
 import(utils)
 import(tools)
@@ -126,6 +133,7 @@ export(trimString)
 export(underscoreToSpace)
 export(zipNoteAdd)
 export(zipNoteGet)
+export(makeZIVignettes)
 
 # File-Utilities
 export(extensionPattern)

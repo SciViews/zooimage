@@ -20,12 +20,12 @@
 }
 
 \usage{
-zidbMake(zidir, zidbfile = paste0(zidir, ".zidb"), zisfile =
-    file.path(dirname(zidir), "Description.zis"), type = "ZI3", check = TRUE,
-    check.vignettes = TRUE, replace = FALSE, delete.source = replace)
+zidbMake(zidir, zidbfile = paste0(sub("[/\\\\]+$", "", zidir), ".zidb"), zisfile =
+    file.path(dirname(zidir), "Description.zis"), type = "ZI5", smptime = "",
+    check = TRUE, check.vignettes = FALSE, replace = FALSE, delete.source = replace)
 zidbMakeAll(path = ".", samples, zisfiles = file.path(dirname(samples),
-    "Description.zis"), type = "ZI3", check = TRUE,
-    check.vignettes = TRUE, replace = FALSE, delete.source = replace)
+    "Description.zis"), type = "ZI5", check = TRUE,
+    check.vignettes = FALSE, replace = FALSE, delete.source = replace)
     
 zidToZidb(zidfile, zisfile = file.path(dirname(zidfile),
     "Description.zis"), replace = FALSE, delete.source = replace)
@@ -54,11 +54,18 @@ zidbDrawVignette(rawimg, type = "jpg", item, nx = 5, ny = 5, vmar = 0.01)
     sample. }
   \item{zisfiles}{ the path of a series of .zis files that contain description
     of the processed samples. }
-  \item{type}{ the ZI file format, currently only 'ZI3' type is supported. For
+  \item{type}{ the ZI file format, currently only 'ZI5' type is supported. For
     \code{zidbDrawVignette(), it is the type of vignette image. Currently, it
     can be either "jpg", or "png". }}
+  \item{smptime}{ the time the sample was collected. This value will replace a
+    \code{<<<TIME>>>} placeholder in the metadata. You can also use
+    \code{<<<SMP>>>} and \code{<<<DATE>>>} placeholders in corresponding metadata
+    and they will be replaced by values computed from the sample name. }
   \item{check}{ do we check the files in this directory before/after compression? }
-  \item{check.vignettes}{ do we check if the future .zidb file contains all vignettes? }
+  \item{check.vignettes}{ do we check if the future .zidb file contains all
+    vignettes? This is \code{FALSE} by default because they may not exist yet.
+    This is the case when they are generated on the fly, like in the new version
+    5.5 processes. }
   \item{replace}{ do we replace existing files? }
   \item{delete.source}{ do we delete source files after compression? }
   \item{path}{ look for files in this path. }

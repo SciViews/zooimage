@@ -16,8 +16,8 @@
   \tabular{ll}{
     Package: \tab zooimage\cr
     Type: \tab Package\cr
-    Version: \tab 5.4-3\cr
-    Date: \tab 2015-10-09\cr
+    Version: \tab 5.4-11\cr
+    Date: \tab 2017-10-31\cr
     License: \tab GPL 2 or above at your convenience.\cr
   }
 }
@@ -34,9 +34,9 @@
   the current version).
 
   Maintainer: Philippe Grosjean <Philippe.Grosjean@umons.ac.be>
-  
+
   The software was funded, and is the property of:
-  
+
   - The University of Mons, Belgium,
   - Belgian Scientific Policy (BelSpo), Belgium, that contributed by funding the
     AMORE III project.

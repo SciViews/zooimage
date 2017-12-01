@@ -55,7 +55,10 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	})
 	names(readData) <- sections
 	Samples <- readData[["Samples"]]
-	Samples$Date <- as.Date(Samples$Date)
+	# I may have <<<DATE>>> indicator too!
+    res <- try(Samples$Date <- as.Date(Samples$Date), silent = TRUE)
+	if (inherits(res, "try-error"))
+		warning(res)
 	Series <- readData[["Series"]]
 	Cruises <- readData[["Cruises"]]
 	Cruises$Start <- as.Date(Cruises$Start)

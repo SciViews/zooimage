@@ -42,33 +42,6 @@ $(document).ready(function () {
   imagePreview();
 });
 
-/*******************************************************************************
-(C) www.dhtmlgoodies.com, November 2005
-
-Update log:
-
-December 20th, 2005 : Version 1.1: Added support for rectangle indicating where
-  object will be dropped
-January 11th, 2006: Support for cloning, i.e. "copy & paste" items instead of
-  "cut & paste"
-January 18th, 2006: Allowing multiple instances to be dragged to same box
-  (applies to "cloning mode")
-
-This is a script from www.dhtmlgoodies.com. You will find this and a lot of
-other scripts at our website.
-
-    Terms of use:
-You are free to use this script as long as the copyright message is kept
-intact. However, you may not redistribute, sell or repost it without our
-permission.
-
-Thank you!
-
-www.dhtmlgoodies.com
-Alf Magne Kalleland
-
-*******************************************************************************/
-
 /* VARIABLES YOU COULD MODIFY */
 var boxSize = 200;  // Allow for 200 places for each group
 var arrow_offsetX = -5;	// Offset X - position of small arrow

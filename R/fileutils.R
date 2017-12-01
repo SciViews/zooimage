@@ -1,21 +1,21 @@
 ## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
-## 
+##
 ## ZooImage is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 2 of the License, or
 ## (at your option) any later version.
-## 
+##
 ## ZooImage is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
-## Transforms a file extension to a pattern for ignore.case matching of the  
+## Transforms a file extension to a pattern for ignore.case matching of the
 ## extension: extension (with or without the dot at the beginning)
 ## returns a regular expression pattern that can be used
 ## to match files with this extension
@@ -24,10 +24,10 @@ add.dot = !grepl("[.]", extension))
 {
 	extensionLetters <- substring(extension, 1:nchar(extension),
 		1:nchar(extension))
-	parts <- ifelse(extensionLetters %in% c(letters, LETTERS), 
+	parts <- ifelse(extensionLetters %in% c(letters, LETTERS),
 		paste("[", extensionLetters, casefold(extensionLetters, upper = TRUE),
 		"]", sep = ""), extensionLetters)
-	pattern <- paste(parts, collapse = "") 
+	pattern <- paste(parts, collapse = "")
 	if (isTRUE(as.logical(add.dot)))
 		pattern <- paste(".", pattern, sep = "")
 	pattern <- gsub( "[.]", "[.]", pattern)
@@ -55,20 +55,20 @@ zimList <- function (dir, ...)
 	listFilesExt(dir, extension = "zim", ...)
 
 zimDatList <- function (dir, ...)
-	listFilesExt(dir, extension = "_dat1.zim", ...)
+	listFilesExt(dir, extension = "_dat[135].zim", ...)
 
 zipList <- function (dir, ...)
 	listFilesExt(dir, extension = "zip", ...)
 
 zidList <- function (dir, ...)
 	listFilesExt(dir, extension = "zid", ...)
-	
+
 zidbList <- function (dir, ...)
 	listFilesExt(dir, extension = "zidb", ...)
 
 jpgList <- function (dir, ...)
 	listFilesExt(dir, extension = "jpg", ...)
-	
+
 pngList <- function (dir, ...)
 	listFilesExt(dir, extension = "png", ...)
 
@@ -81,19 +81,19 @@ force.file = FALSE)
 		warning(sprintf(message, file))
 		return(FALSE)
 	}
-	
+
 	## Make sure it is not a directory
 	if (force.file && any(file.info(file)$isdir)) {
 		warning("one or more files are directories")
-		return(FALSE)	
+		return(FALSE)
 	}
-	
+
 	## Check its extension
 	if (!missing(extension) && !all(hasExtension(file, extension))) {
 		warning(sprintf("one or more files are not '%s' file", extension))
 		return(FALSE)
 	}
-	
+
 	## Everything is fine!
 	return(TRUE)
 }
@@ -104,16 +104,16 @@ message = 'Path "%s" does not exist or is not a directory')
 {
 	if (!all(file.exists(dir)) || !all(file.info(dir)$isdir)) {
 		warning(sprintf(message, dir))
-		return(FALSE)
+		FALSE
+	} else {
+		## Everything is fine...
+		TRUE
 	}
-	
-	## Everything is fine...
-	return(TRUE)
 }
 
 ## Check if a directory is empty (used in prepareTrain())
 checkEmptyDir <- function (dir, message = 'dir "%s" is not empty')
-{	
+{
 	## Works only on a single dir (not vectorized code)
 	dir <- as.character(dir)[1]
 	if (file.exists(dir)) {
@@ -123,12 +123,12 @@ checkEmptyDir <- function (dir, message = 'dir "%s" is not empty')
 			warning(sprintf(message, dir))
 			return(FALSE)
 		} else return(TRUE)
-	} else forceDirCreate(dir)	
+	} else forceDirCreate(dir)
 }
 
 ## Force creation of a directory
 forceDirCreate <- function (dir)
-{	
+{
 	## If it exists, make sure it is a directory
 	if (file.exists(dir)) {
 		if (!file.info(dir)$isdir) {
@@ -142,17 +142,17 @@ forceDirCreate <- function (dir)
 }
 
 ## Checks the first line of a file against some expected content
-checkFirstLine <- function (file, expected = c("ZI1", "ZI2", "ZI3"), 
-message = 'file "%s" is not a valid ZooImage version <= 3 file')
+checkFirstLine <- function (file, expected = c("ZI1", "ZI2", "ZI3", "ZI4", "ZI5"),
+message = 'file "%s" is not a valid ZooImage version <= 5 file')
 {
 	Line1 <- scan(as.character(file)[1], character(), nmax = 1, quiet = TRUE)
 	res <- Line1 %in% expected
 	if (!res) warning(sprintf(message, file))
-	return(res) 
+	return(res)
 }
 
-## This is a copy of the unexporter function tools:::mime_canonical_encoding
-.mimeEncoding <- function (encoding) 
+## This is a copy of the unexported function tools:::mime_canonical_encoding
+.mimeEncoding <- function (encoding)
 {
     encoding[encoding %in% c("", "unknown")] <- utils::localeToCharset()[1L]
     encoding <- tolower(encoding)

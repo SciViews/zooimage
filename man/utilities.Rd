@@ -13,6 +13,7 @@
 \alias{getDec}
 \alias{zipNoteAdd}
 \alias{zipNoteGet}
+\alias{makeZIVignettes}
 
 \title{ Various utility functions used by ZooImage }
 \description{
@@ -22,7 +23,7 @@
 
 \usage{
 sampleInfo(filename, type = c("sample", "fraction", "image", "scs",
-    "date", "id", "frac", "imgnbr"), ext = "_dat1[.]zim$")
+    "date", "id", "frac", "imgnbr"), ext = "_dat[135][.]zim$")
 
 underscoreToSpace(string)
 trimString(string)
@@ -43,6 +44,8 @@ getDec()
 
 zipNoteAdd(zipfile, zimfile)
 zipNoteGet(zipfile, zimfile = NULL)
+
+makeZIVignettes(orig.dir = getwd(), target.dir = dirname(orig.dir), clean.work = FALSE)
 }
 
 \arguments{
@@ -82,6 +85,11 @@ zipNoteGet(zipfile, zimfile = NULL)
   \item{zipfile}{ a zip archive. }
   \item{zimfile}{ a .zim file to use, or to create. If \code{NULL} (default)
     in \code{zipNoteGet()}, the data are not written in a file, but returned. }
+  \item{orig.dir}{ the directory containing the data (current directory by
+    default) }
+  \item{target.dir}{ where to place the results, by defaut, the parent directory
+    of \code{orig.dir}}
+  \item{clean.work}{ should we clean intermediary items (\code{FALSE}, by default)}
 }
 
 \value{
@@ -108,11 +116,11 @@ zipNoteGet(zipfile, zimfile = NULL)
   corresponding value passed by the 'label' argument. That way, one can easily
   keep track of entries when data frames originated from various different ini
   files are merged together.
-  
+
   \code{calibrate()} returns a vector of two numbers with white and black point
   calibration (gray levels corresponding, respectively to O.D. = 0 and
   O.D. = 1.024), plus a "msg" attribute with some explanation in case of problem.
-  
+
   \code{zipNoteAdd()} returns \code{TRUE} or \code{FALSE} depending if the data
   from the zimfile was successfully added to the zip archive or not. Problem is
   returned in a warning.
@@ -126,12 +134,12 @@ zipNoteGet(zipfile, zimfile = NULL)
   As these functions are not made to be directly used by end-users, We don't
   give more details here. Developers interested to use these functions are
   encouraged to look at their code in the zooimage package source!
-  
+
   Here is the list of all variables you got after running the standard version
   of \code{calcVars()} on ZIDat objects made by one of the ZooImage ImageJ
   plugins (you can provide your own version for, e.g., calculating
   more features):
-  
+
   \tabular{lll}{
     Variable    \tab Description                                                       \tab Origin \cr
         Area \tab Area of the region of interest (ROI)                                 \tab ImageJ \cr
@@ -184,7 +192,7 @@ GrayCentBoxD \tab Distance between the center of mass and the center of the BR  
   Predicted* \tab Automatic identification of the vignette for that ROI                \tab zooimage \cr
  Predicted2* \tab Second automatic identification of the vignette for that ROI         \tab zooimage
   }
-  
+
   For the origin, ImageJ = measured during image ananlysis plugin in ImageJ,
   zooimage = calculated either during importation of data, or by
   \code{calcVars()}. Variables whose name ends with an asterisk are dropped by

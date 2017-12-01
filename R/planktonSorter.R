@@ -322,10 +322,12 @@ activeLearning <- function (train, add.mode = "SV+NSV", threshold = NA)
     train <- addItemsToTrain(train = train, CtxSmp = CtxSmp, add.mode = add.mode, 
                              threshold = threshold, dropItemsToTrain = dropItemsToTrain)
   }
-  #.assignGlobal(ZIT, train)
-  classifier <- ZIClass(Class ~ ., data = train[!(names(train) %in% "AddedItems")], 
-                        method = "mlRforest", calc.vars = calcVars, ntree = 200, cv.k = 10)
-  attr(classifier, "path") <- attr(train, "path")
+
+### PhG: this classifier object does not seem to be used afterward => commented out!
+###  #.assignGlobal(ZIT, train)
+###  classifier <- ZIClass(Class ~ ., data = train[!(names(train) %in% "AddedItems")], 
+###                        method = "mlRforest", calc.vars = calcVars, ntree = 200, cv.k = 10)
+###  attr(classifier, "path") <- attr(train, "path")
   
   ## Return the augmented training set
   train

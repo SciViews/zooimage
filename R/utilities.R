@@ -1,27 +1,27 @@
 ## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
-## 
+##
 ## ZooImage is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 2 of the License, or
 ## (at your option) any later version.
-## 
+##
 ## ZooImage is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
 
 ## Get information about a sample, given its name
 sampleInfo <- function (filename,  type = c("sample", "fraction", "image",
-"scs", "date", "id", "frac", "imgnbr"), ext = "_dat1[.]zim$")
-{	
+"scs", "date", "id", "frac", "imgnbr"), ext = "_dat[135][.]zim$")
+{
 	base <- basename(as.character(filename))
 	if (ext != "") base <- sub(ext, "", base)
-	
+
 	## Filename without extension is supposed to follow the convention:
 	## scs.date.id+f[img] with scs.date.id forming an unique sample identifier
 	## Note: not all verifications are conducted. So, it sometimes returns a
@@ -54,12 +54,12 @@ trimString <- function (string)
 
 ## All sample with at least one entry in a given object
 listSamples <- function (ZIobj)
-{ 	
+{
 	if (!inherits(ZIobj, c("ZIDat", "ZIDesc","ZITrain","ZITest"))) {
 		warning("'ZIobj' must be a 'ZIDat', 'ZIDesc', 'ZITrain' or 'ZITest' object")
 		return(character(0))
 	}
-	
+
 	## List all samples represented in a given object
 	if (inherits(ZIobj, "ZIDat")) {
     	res <- sort(unique(sampleInfo(as.character(ZIobj$Label),
@@ -107,33 +107,37 @@ dropVars <- function ()
 			"FIT_Avg_Blue", "FIT_PPC", "FIT_Ch1_Peak", "FIT_Ch1_TOF",
 			"FIT_Ch2_Peak", "FIT_Ch2_TOF", "FIT_Ch3_Peak", "FIT_Ch3_TOF",
 			"FIT_SaveX", "FIT_SaveY", "FIT_PixelW", "FIT_PixelH",
-			"FIT_CaptureX", "FIT_CaptureY", # Keep this one?"FIT_Edge_Gradient",    
+			"FIT_CaptureX", "FIT_CaptureY", # Keep this one?"FIT_Edge_Gradient",
 			"FIT_Source_Image", "FIT_Calibration_Image", "FIT_High_U32",
 			"FIT_Low_U32", "FIT_Total", "FIT_Red_Green_Ratio",
-			"FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio",   
+			"FIT_Blue_Green_Ratio", "FIT_Red_Blue_Ratio",
 			"FIT_Ch2_Ch1_Ratio", "FIT_Ch4_Peak", "FIT_Ch4_TOF", "FIT_Timestamp1",
 			"FIT_Timestamp2", "FIT_Camera", "FIT_FringSize",
-			"FIT_Ch1_Area", "FIT_Ch2_Area", "FIT_Ch3_Area",         
+			"FIT_Ch1_Area", "FIT_Ch2_Area", "FIT_Ch3_Area",
 			"FIT_TimeStamp1", "FIT_Source_Image.1",
 			"X.Item.1", "FeretAngle", "Count",
 			"Skew", "Kurt", "Solidity", # Last 3: NAs with multiple ROIs
-			
+
+			"MinFeret", "AR", "Round", # Problems with these variables at IFREMER!?
+
 			## Added in zooimage v.5:
             "FIT_Filename", "FIT_Feret_Min_Angle", "FIT_Feret_Max_Angle",
-			
+
 			## This is somehow redundant with other variables
 			"FIT_Raw_Area", "FIT_Raw_Perim", "FIT_Raw_Convex_Perim",
 			"FIT_Raw_Feret_Max", "FIT_Raw_Feret_Min", "FIT_Raw_Feret_Mean",
 			"FIT_Diameter_ABD", # This one is indeed ECD
-			
+
       ## Changes in variables names
 			"FIT_Ppc", "FIT_Fringe_Size", "FIT_Circle_Fit",
-			
+
             ## Found in format 17 of a color FlowCAM (from KAUST)
             ## and not used yet
             "FIT_Symmetry", "FIT_Circularity_Hu", "FIT_Intensity_Calimage",
             "FIT_Raw_Convex_Hull_Area", "FIT_Raw_Filled_Area",
 			"FIT_CircleFit", "FIT_Edge_Gradient"
+
+			## TODO: should we drop also Id.1, Class, Validated and Suspect???
 		))
 	as.character(res)
 }
@@ -141,31 +145,31 @@ dropVars <- function ()
 
 ## Calculate derived variables... default function
 calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
-{	
+{
 	## This is the calculation of derived variables
 	## Note that you can make your own version of this function for more
 	## calculated variables!
 
 	## Calculate derived variables... FlowCAM's Visual Spreadsheet
-	calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars()) 
+	calcVarsVIS <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	{
 		## Use only FIT_xxx vars, andderived attributes (26 attributes in total):
 		## ECD, FIT_Area_ABD, FIT_Length, FIT_Width, FIT_Diameter_ESD,
 		## FIT_Perimeter, FIT_Convex_Perimeter, FIT_Intensity, FIT_Sigma_Intensity,
 		## FIT_Compactness, FIT_Elongation, FIT_Sum_Intensity, FIT_Roughness,
 		## FIT_Volume_ABD, FIT_Volume_ESD, FIT_Aspect_Ratio, FIT_Transparency,
-		## CV, MeanFDia, Transp2, FeretRoundness & Perim_Ratio 
-		
+		## CV, MeanFDia, Transp2, FeretRoundness & Perim_Ratio
+
 		## A small hack to correct some 0 (which can be problematic in further calcs)
 		noZero <- function(x) {
 			x[x == 0] <- 1e-09
 			x
 		}
-		
+
 		## Euclidean distance between two points
 		distance <- function (x, y)
 			sqrt(x^2 + y^2)
-		
+
 		## All FIT_Raw_xxx vars have their counterpart resized in um:
 		## FIT_Raw_Area -> FIT_Diameter_ABD
 		## FIT_Raw_Feret_Max -> FIT_Length
@@ -174,7 +178,7 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 		## FIT_Raw_Perim -> FIt_Perimeter
 		## FIT_Raw_Convex_Perim -> FIt_Convex_Perimeter
 		## (=> all FIT_Raw_xxx should be eliminated in dropVars()!)
-		
+
 		## (re)calculate ECD from FIT_DIameter_ABD (was once calc from FIT_Raw_Area)
 		x$ECD <- noZero(ecd(x$FIT_Area_ABD))
 		x$FIT_Area_ABD <- noZero(x$FIT_Area_ABD)
@@ -194,7 +198,7 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 		x$FIT_Volume_ESD <- noZero(x$FIT_Volume_ESD)
 		x$FIT_Transparency <- noZero(x$FIT_Transparency)
 		x$FIT_Edge_Gradient <- noZero(x$FIT_Edge_Gradient)
-		
+
 		## Additional calculated variables
 		# This is FIT_Aspect_Ratio! x$ARFeret <- x$FIT_Width/x$FIT_Length
 		## For later on:
@@ -208,12 +212,12 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 		## For later on:
 		x$EdgeCV <- x$FIT_Sigma_Intensity/x$FIT_Edge_Gradient * 100
 		x$EdgeSDNorm <- x$FIT_Intensity/x$EdgeRange
-		x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter 
-		
+		x$Perim_Ratio <- x$FIT_Convex_Perimeter / x$FIT_Perimeter
+
 		## Eliminate variables that are not predictors... and use Id as rownames
 		Id <- x$Id
 		if (length(Id)) rownames(x) <- Id
-		
+
 		## Variables to drop
 		## For those samples treated with FIT_VIS in ImageJ, we need to get rid of
 		## the ImageJ variables
@@ -230,18 +234,18 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 		x$Feret <- NULL
 		x$IntDen <- NULL
 		x$Median <- NULL
-		
+
 		dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
 		for (dropVar in dropAll) x[[dropVar]] <- NULL
-		
+
 		## Return the recalculated data frame
 		x
 	}
-	
+
 	## For data from the FlowCAM, we use a specific function
 	if (any(names(x) == "FIT_Length"))
 		return(calcVarsVIS(x, drop.vars = drop.vars, drop.vars.def = drop.vars.def))
-	
+
 	## A small hack to correct some 0 (which can be problematic in further calcs)
 	noZero <- function (x) {
 		x[x == 0] <- 0.000000001
@@ -250,10 +254,10 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	## Euclidean distance between two points
 	distance <- function (x, y)
 		sqrt(x^2 + y^2)
-	
+
 	x$Minor <- noZero(x$Minor)
-	x$Major <- noZero(x$Major) 
-	x$AspectRatio <- x$Minor / x$Major 
+	x$Major <- noZero(x$Major)
+	x$AspectRatio <- x$Minor / x$Major
 	x$CentBoxD <- distance(x$BX + x$Width/2 - x$X, x$BY + x$Height/2 - x$Y)
 	x$GrayCentBoxD <- distance(x$BX + x$Width/2 - x$XM, x$BY + x$Height/2 - x$YM)
 	x$CentroidsD <- distance(x$X - x$XM, x$Y - x$YM)
@@ -282,15 +286,15 @@ calcVars <- function (x, drop.vars = NULL, drop.vars.def = dropVars())
 	x$Elongation <- ifelse(PA <= 0, 1, x$Area / (x$Perim./4 - PA^.5)^2)
 	x$Compactness <-  x$Perim.^2/4/pi/x$Area  # env. 1/Circ.
 	x$Roundness <- 4 * x$Area / (pi * sqrt(x$Major))
-	
+
 	## Eliminate variables that are not predictors... and use Id as rownames
 	Id <- x$Id
 	if (length(Id)) rownames(x) <- Id
-	
+
 	## Variables to drop
 	dropAll <- unique(as.character(c(drop.vars, drop.vars.def)))
 	for (dropVar in dropAll) x[[dropVar]] <- NULL
-	
+
 	## Return the recalculated data frame
 	x
 }
@@ -306,7 +310,7 @@ parseIni <- function (data, label = "1")
 {
 	## Parse an ini file (tag=value => 'tag', 'value')
 	## and make a list with different sections
-	
+
 	# Is str a section?
 	is.section <- function (str)
 		as.logical(length(grep("^\\[.+\\]$", trimString(str)) > 0))
@@ -322,13 +326,13 @@ parseIni <- function (data, label = "1")
 
 	if (!length(data) || !inherits(data, "character"))
 		return(character(0))
-	
+
 	## Trim leading and trailing white spaces
 	data <- trimString(data)
-	
+
 	## Convert underscore to space
 	data <- underscoreToSpace(data)
-	
+
 	## Eliminate empty lines
 	data <- data[data != ""]
 	data <- paste(data, " ", sep = "")
@@ -336,24 +340,24 @@ parseIni <- function (data, label = "1")
 	## Substitute the first '=' sign by another separator unlikely to appear in
 	## the argument
 	data <- sub("=", "&&&&&", data)
-	
+
 	## Split the strings according to this separator
 	data <- strsplit(data, "&&&&&")
-	
+
 	## Get a matrix
 	data <- t(as.data.frame(data))
 	rownames(data) <- NULL
-	
+
 	## Make sure we have a section for the first entries (otherwise, use [.])
 	if (!is.section(data[1, 1]))
 		data <- rbind(c("[.]", "[.]"), data)
 	Names <- as.vector(trimString(data[, 1]))
 	Dat <- as.vector(trimString(data[, 2]))
-	
+
 	## Determine which is a section header
 	Sec <- grep("\\[.+\\]$", Names)
 	SecNames <- get.section.name(Names[Sec])
-	
+
 	## Make a vector of sections
 	if (length(Sec) == 1) {
 		SecNames <- rep(SecNames, length(Names))
@@ -361,27 +365,27 @@ parseIni <- function (data, label = "1")
 		SecNames <- rep(SecNames, c(Sec[2:length(Sec)],
 			length(Names) + 1) - Sec)
 	}
-	
+
 	## Replace section headers from all vectors
 	Names[Sec] <- "Label"
 	Dat[Sec] <- label
 	names(Dat) <- Names
-	
+
 	## Transform SecNames in a factor
 	SecNames <- as.factor(SecNames)
-	
+
 	## Split Dat on sections
 	DatSec <- split(Dat, SecNames)
-	
+
 	## For each section, transform the vector in a data frame and possibly
 	## convert its content
 	DatSec <- lapply(DatSec, vector.convert)
-	
+
 	## Eliminate "Label" if it is ""
 	if (label == "")
 		DatSec <- lapply(DatSec, function(x) x[-1])
-	
-	DatSec	
+
+	DatSec
 }
 
 ## Garyscale calibration in O.D. scale
@@ -392,7 +396,7 @@ calibrate <- function (ODfile)
 	## (with a black circle around the center of the image)
 	## and check also other characteristics, especially the sharpness
 
-    cal <- c(NA, NA)
+  cal <- c(NA, NA)
 	names(cal) <- c("WhitePoint", "BlackPoint")
 	msg <- character(0)
 
@@ -403,58 +407,65 @@ calibrate <- function (ODfile)
 	}
 
 	## Is it a test file?
-	if (.isTestFile(ODfile)) {
-		## We behave like if the file was correct and return fake calibration data!
-        cal <- c(1000, 50000)
-		names(cal) <- c("WhitePoint", "BlackPoint")
-		attr(cal, "msg") <- character(0)
-		return(cal)
-	}
+	#if (.isTestFile(ODfile)) {
+	#	## We behave like if the file was correct and return fake calibration data!
+  #      cal <- c(1000, 50000)
+	#	names(cal) <- c("WhitePoint", "BlackPoint")
+	#	attr(cal, "msg") <- character(0)
+	#	return(cal)
+	#}
 
-	filedir <- dirname(ODfile)
-	if (filedir != ".") {
-		## Temporary change directory to the one where the file is located
-		inidir <- setwd(filedir)
-		on.exit(setwd(inidir))
-		ODfile <- basename(ODfile)
-	}
-	
+	#filedir <- dirname(ODfile)
+	#if (filedir != ".") {
+	#	## Temporary change directory to the one where the file is located
+	#	inidir <- setwd(filedir)
+	#	on.exit(setwd(inidir))
+	#	ODfile <- basename(ODfile)
+	#}
+
 	## The command to use depends on the format of the image (determined on the
 	## extension)
-	ext <- tolower(rev(strsplit(ODfile, "\\.")[[1]])[1])
-	pgmfile <- ODfile
-	if (ext == "tif") {
-		## First, convert into a .pgm file
-		pgmfile <- paste(ODfile, "pgm", sep = ".")
+	#ext <- tolower(rev(strsplit(ODfile, "\\.")[[1]])[1])
+	#pgmfile <- ODfile
+	#if (ext == "tif") {
+	#	## First, convert into a .pgm file
+	#	pgmfile <- paste(ODfile, "pgm", sep = ".")
 ####		netpbm_tifftopnm( ODfile, pgmfile )
-		delfile <- TRUE
-		ext <- "pgm"
-	} else delfile <- FALSE
-	if (ext != "pgm")
-		return(paste("Unrecognized image format for '", ODfile, "'", sep = ""))
+	#	delfile <- TRUE
+	#	ext <- "pgm"
+	#} else delfile <- FALSE
+	#if (ext != "pgm")
+	#	return(paste("Unrecognized image format for '", ODfile, "'", sep = ""))
 ####	OD <- netpbm_pgmhist(pgmfile, delete = delfile)
-	
+
 	## Make sure we work with 16bit images
-	if (max(OD$Gray) < 256) {
-		msg <- c(msg, "O.D. seems to be a 8bit image (16bit required)")	
-	} else {
-		## Eliminate values with low number of points
-		OD <- OD[OD$Count > 100, ]
-		
+	#if (max(OD$Gray) < 256) {
+	#	msg <- c(msg, "O.D. seems to be a 8bit image (16bit required)")
+	#} else {
+	#	## Eliminate values with low number of points
+	#	OD <- OD[OD$Count > 100, ]
+
+		## PhG: new code... fully implemented in R
+		grays <- readTIFF(ODfile, as.is = TRUE)
+		grays <- sort.int(as.integer(grays), method = "quick")
+		grays <- as.data.frame(unclass(rle(grays)))
+		OD <- grays[grays$lengths > 200, ]
+		names(OD) <- c("Count", "Gray")
+
 		## Look at range: should be widespread enough, but without saturation
 		rngOD <- range(OD$Gray)
 		if (rngOD[2] > 65500) msg <-
 			c(msg, "Images are overexposed, or whitepoint is already calibrated")
 		if (rngOD[2] < 55000)
 			msg <- c(msg, "Images are underexposed")
-		
+
 		## Saturation on the left-side of the histogram is not much a problem!
 		if (rngOD[2] - rngOD[1] < 40000)
 			msg <- c(msg, "Images lack contrast")
 		## We should end up with four segments
 		graylev <- OD$Gray
 		gap <- (diff(graylev) > 500)
-		
+
 		## There are not *exactly* four gaps => problem with the image!
 		if (sum(gap) != 4) {
 			msg <- c(msg, "Impossible to calibrate O.D.: wrong image")
@@ -464,11 +475,11 @@ calibrate <- function (ODfile)
 			peaks <- as.factor(cumsum(c(0, gap)) + 1)
 			peaksgray <- split(graylev, peaks)
 			names(peaksgray) <- c("Black", "NDx8", "NDx4", "NDx2", "White")
-			
+
 			## These are supposed to be all narrow peaks... check this
 			peakspan <- sapply(peaksgray, range)
 			peaksrange <- peakspan[2, ] - peakspan[1, ]
-			
+
 			## 1.2-2: width of black peak is much larger for Epson 4990
 			## => be more tolerant for that peak
 			if (any(peaksrange > c(20000, rep(5000, 4)))) {
@@ -477,68 +488,67 @@ calibrate <- function (ODfile)
 				msg <- c(msg, paste("Wrong O.D. image: lack of homogeneity for",
 					wrongpeaks))
 			}
-			
+
 			## Look for the gray levels at the top of the peaks
 			peaksheight <- split(OD$Count, peaks)
 			names(peaksheight) <- c("Black", "NDx8", "NDx4", "NDx2", "White")
 			findmax <- function(x) which.max(lowess(x, f = 0.05, iter = 1)$y)
 			peaksval <- sapply(peaksheight, findmax)
-			
+
 			## Get the number of pixels in the white peak
 			nbrwhite <- peaksheight$White[peaksval["White"]]
-            
+
 			## Replace the location by the actual gray level
 			for (i in 1:5)
 				peaksval[i] <- peaksgray[[i]][peaksval[i]]
 			## If the number of pixels for pure white is larger than the white
 			## peak found, replace it by pure white (65535)
-			nbrpurewhite <- OD[nrow(OD), 2] 
+			nbrpurewhite <- OD[nrow(OD), 2]
 			if (nbrpurewhite > nbrwhite)
 				peaksval["White"] <- 65535
-			
+
 			## Now, we need to calibrate the black and white points
 			WhitePoint <- 65535 - peaksval["White"]
-			
+
 			## Perform a correction for the white point
 			peaksval <- peaksval + WhitePoint
-			
+
 			## Transform those gray levels into O.D.
 			peaksOD <- log(peaksval) * 65535 / log(65535)
-			
+
 			## Create a data frame with gray levels and corresponding OD for
 			## White, NDx2, NDx4 and NDx8
 			calib <- data.frame(Gray = peaksOD[5:2], OD = c(0, 0.3, 0.6, 0.9))
-			
+
 			## Fit a line on these data
 			calib.lm <- lm(OD ~ Gray, data = calib)
-			
+
 			## Check that calibration line is fine (i.e., the ANOVA should
 			## reject H0 at alpha = 5%)
 			if (anova(calib.lm)[["Pr(>F)"]][1] > 0.01)
 				msg <- c(msg, "Wrong OD calibration: not a straight line relation at alpha level = 0.01")
-			
+
 			## Check also that R squared is at least 0.98
 			rsq <- summary(calib.lm)$r.squared
 			if (rsq < 0.98)
 				msg <- c(msg, paste("Bad OD calibration (R squared = ",
 					formatC(rsq, digits = 3), ")", sep = ""))
-			
+
 			## Check linearity of the relationship by fitting a second order
 			## polynome and by looking at the t-test for the x square parameter
 			calib2.lm <- lm(OD ~ I(Gray^2) + Gray, data = calib)
 			if (summary(calib2.lm)$coefficients["I(Gray^2)", "Pr(>|t|)"] < 0.01)
 				msg <- c(msg, "Nonlinear OD calibration at alpha level = 0.01")
-			
+
 			## Calculate the value of the black point to get 0.004 OD per gray
 			## level after conversion (see the manual)
 			ccoef <- coef(calib.lm)
 			BlackPoint <- (1.024 - ccoef[1]) / ccoef[2]
-			
+
 			## Get the calibration data
 			cal[1] <- round(WhitePoint)
-			cal[2] <- round(BlackPoint)						
+			cal[2] <- round(BlackPoint)
 		}
-	}
 	attr(cal, "msg") <- msg
 	return(cal)
 }
@@ -567,7 +577,7 @@ zipNoteAdd <- function (zipfile, zimfile)
 		warning("'zipfile' not found: '", basename(zipfile), "'")
 		return(FALSE)
 	}
-	
+
 	zimfile <- as.character(zimfile)
 	if (length(zimfile) != 1) {
 		warning("exactly one 'zimfile' must be provided")
@@ -577,7 +587,7 @@ zipNoteAdd <- function (zipfile, zimfile)
 		warning("'zimfile' not found: '", basename(zimfile), "'")
 		return(FALSE)
 	}
-	
+
 	if (isWin()) {
 		cmd <- sprintf('%s /c type "%s" | "%s" -zq "%s" ', Sys.getenv("COMSPEC"),
 			zimfile, Sys.getenv("R_ZIPCMD", "zip"), zipfile)
@@ -586,13 +596,13 @@ zipNoteAdd <- function (zipfile, zimfile)
 	} else {
 		cmd <- sprintf('zip -zq "%s" < "%s" ', zipfile, zimfile)
 		res <- try(system(cmd, ignore.stdout = TRUE, ignore.stderr = TRUE,
-			intern = FALSE), silent = TRUE)		
+			intern = FALSE), silent = TRUE)
 	}
 	if (inherits(res, "try-error")) {
 		warning(as.character(res)) # Turn error into warning
 		return(FALSE)
 	}
-	
+
 	if (res != 0) {
 		warning("error while adding .zim data to '", basename(zipfile), "'")
 		FALSE
@@ -611,7 +621,7 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 		warning("'zipfile' not found: '", basename(zipfile), "'")
 		return(NULL)
 	}
-	
+
 	if (length(zimfile)) {
 		zimfile <- as.character(zimfile)
 		if (length(zimfile) != 1) {
@@ -621,7 +631,7 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 	}
 	## Make sure old data do not remain in zimfile
 	unlink(zimfile)
-	
+
 	## We use unzip... and assume it is located at the same place as zip!
 	if (isWin()) {
 		zippgm <- Sys.getenv("R_ZIPCMD", "zip")
@@ -641,7 +651,7 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 		warning(as.character(res))
 		return(NULL)
 	}
-	
+
 	if (length(res) < 2) {
 		warning("no comment data found in '", basename(zipfile), "'")
 		return(character(0))
@@ -651,5 +661,216 @@ zipNoteGet <- function (zipfile, zimfile = NULL)
 	if (length(zimfile)) {
 		cat(res, file = zimfile, sep = "\n")
 		invisible(res)
-	} else res	
+	} else res
 }
+
+makeZIVignettes <- function(orig.dir = getwd(), target.dir = dirname(orig.dir),
+clean.work = FALSE) {
+  # The orig.dir is supposed to be "_work" subdir of where we did image analysis
+  # List
+  odir <- setwd(orig.dir)
+  on.exit(setwd(odir))
+
+  # List of _dat1|3|5.zim files
+  zims <- dir(pattern = "_dat[135]\\.zim$")
+  # List of _col1|3|5.zim files
+  cols <- dir(pattern = "_col[135]\\.tif$")
+  # Check that both lists agree, and there are such files
+  if (!length(zims))
+    stop("No '_dat[135].zim' files in 'orig.dir'")
+  if (!length(cols))
+    stop("No '_col[135].tif' files in 'orig.dir'")
+  if (length(zims) != length(cols) ||
+      any(sub("_dat[135]\\.zim$", "", zims) != sub("_col[135]\\.tif$", "", cols)))
+    stop("You must have pairs of '_dat[135].zim' and '_col[135].tif' files in 'orig.dir'")
+
+  # Read the three scale files (0.3, 0.5 and 1mm)
+  scale0.3 <- readPNG(file.path(getTemp('ZIetc'),"Scale2400_0.3mm.png"))
+  if (!is.matrix(scale0.3)) scale0.3 <- scale0.3[, , 1]
+  scale0.5 <- readPNG(file.path(getTemp('ZIetc'),"Scale2400_0.5mm.png"))
+  if (!is.matrix(scale0.5)) scale0.5 <- scale0.5[, , 1]
+  scale1 <- readPNG(file.path(getTemp('ZIetc'),"Scale2400_1mm.png"))
+  if (!is.matrix(scale1)) scale1 <- scale1[, , 1]
+
+  # For each _dat[135].zim file, create the directory with vignettes and _dat[135].zim files
+  # (renamed _dat1.zim after transforming them into ZI1-compatibles files)
+  # as one got it directly from ZI1-5 processes
+  l <- length(zims)
+  for (i in 1:l) {
+    zim <- zims[i]
+    col <- cols[i]
+    # Compute the directory name
+    smp <- sub("\\+[A-Z][0-9]+_dat5\\.zim$", "", zim)
+    smpdir <- file.path(target.dir, smp)
+    message("Processing image ", i, "/", l, ", for sample ", smp, "... ", sep = "")
+    #flush.console()
+
+    # If the directory exists, check it is really a dir, not a file!
+    if (file.exists(smpdir)) {
+      if (!file.info(smpdir)$isdir)
+        stop("Sample directory exists for ", smp, " but does not appear to be a directory!")
+      #cat("skipping (file already exists)\n")
+    }
+    dir.create(smpdir, showWarnings = FALSE)
+
+    # Read the zim file and do some corrections in it
+    zimdat <- readLines(zim)
+    if (length(zimdat) < 10 || substring(zimdat[1], 1, 2) != "ZI")
+      stop("The following .zim file seems corrupted: ", zim)
+    # Correct ZI1, ZI3 or ZI5 into ZI1 (we'll make it compatible with v.1!)
+    zimdat[1] <- "ZI1"
+    # Determine where the table of data is starting in the file
+    dpos <- (1:length(zimdat))[zimdat == "[Data]"]
+    if (length(dpos) != 1)
+      stop("Data section not found or multiple Data sections in ", zim)
+    # Code, Min, Max, SubPart, SubMethod contain all values for all images
+    getKeyValue <- function(dat, key, multiple = FALSE) {
+      l <- length(dat)
+      regexp <- paste0("^", key, "=")
+      position <- (1:l)[grepl(regexp, dat)]
+      if (!length(position)) return(list(pos = integer(0), value = character(0)))
+      value <- trimws(sub(regexp, "", dat[position]))
+      if (isTRUE(multiple)) {
+        # Split items according to comas
+        value <- trimws(strsplit(value, ",")[[1]])
+      }
+      list(pos = position, value = value)
+    }
+
+    # Just keep the one that suits this particular image
+    code <- getKeyValue(zimdat, "Code", multiple = TRUE)
+    if (length(code$pos) != 1)
+      stop("Error in zim file '", zim, "': no or several 'Code=' entries")
+    # Add number to code
+    code$label <-code$value
+    lcodes <- length(code$value)
+    ucodes <- unique(code$value)
+    for (ucode in ucodes) {
+      upos <- (1:lcodes)[code$value == ucode]
+      code$label[upos] <- paste0(ucode, 1:length(upos))
+    }
+    # Get the code for the current image
+    icode <- sub("^.+\\+([A-Z][0-9]+)\\_dat[135]\\.zim$", "\\1", zim)
+    if (!icode %in% code$label)
+      stop("Code ", icode, " not found in the .zim file for ", zim)
+    # Determine the position of image in the codes
+    ipos <- (1:lcodes)[code$label == icode]
+    # Keep only corresponding code
+    zimdat[code$pos] <- paste0("Code=", code$value[ipos])
+    # Do the same for Min, Max, SubPart and SubMethod
+    # Min
+    Min <- getKeyValue(zimdat, "Min", multiple = TRUE)
+    if (length(Min$pos) != 1)
+      stop("Error in zim file '", zim, "': no or several 'Min=' entries")
+    if (length(Min$value) != lcodes)
+      stop("Non matching number of items for Code= and Min= entries in ", zim)
+    zimdat[Min$pos] <- paste0("Min=", Min$value[ipos])
+    # Max
+    Max <- getKeyValue(zimdat, "Max", multiple = TRUE)
+    if (length(Max$pos) != 1)
+      stop("Error in zim file '", zim, "': no or several 'Max=' entries")
+    if (length(Max$value) != lcodes)
+      stop("Non matching number of items for Code= and Max= entries in ", zim)
+    zimdat[Max$pos] <- paste0("Max=", Max$value[ipos])
+    # SubPart
+    SubPart <- getKeyValue(zimdat, "SubPart", multiple = TRUE)
+    if (length(SubPart$pos) != 1)
+      stop("Error in zim file '", zim, "': no or several 'SubPart=' entries")
+    if (length(SubPart$value) != lcodes)
+      stop("Non matching number of items for Code= and SubPart= entries in ", zim)
+    zimdat[SubPart$pos] <- paste0("SubPart=", SubPart$value[ipos])
+    # SubMethod
+    SubMethod <- getKeyValue(zimdat, "SubMethod", multiple = TRUE)
+    if (length(SubMethod$pos) != 1)
+      stop("Error in zim file '", zim, "': no or several 'SubMethod=' entries")
+    if (length(SubMethod$value) != lcodes)
+      stop("Non matching number of items for Code= and SubMethod= entries in ", zim)
+    zimdat[SubMethod$pos] <- paste0("SubMethod=", SubMethod$value[ipos])
+    # Special treatment for 'Time' (get it and take it out of there!)
+    smptime <- getKeyValue(zimdat, "Time")
+    zimdat <- zimdat[-smptime$pos]
+    smptime <- smptime$value
+    # Just in case CellPart is missing, add it before Replicates with default value 0.73
+    # Hey, Lovina, this to correct something for you!
+    if (!any(grepl("^CellPart=", zimdat))) {
+      reppos <- (1:length(zimdat))[grepl("^Replicates=", zimdat)]
+      if (length(reppos)) zimdat[reppos] <- paste0("CellPart=0.73\n", zimdat[reppos])
+    }
+    # Write the modified zim file in the destination directory
+    writeLines(zimdat, file.path(smpdir, sub("_dat[135]\\.zim$", "_dat1.zim", basename(zim))))
+
+    # Read the color image
+    pic <- readTIFF(col)
+    idat <- read.delim(zim, skip = dpos)
+    idat$name <- paste(idat$Label, idat$X.Item, sep = "_")
+    # Size of one pixel
+    pixsize <- as.numeric(getKeyValue(zimdat, "PixelSize")$value[1])
+    if (is.na(pixsize))
+      stop("Impossible to find the size of a pixel in the image ", col, " from ", zim)
+    # Transform coordinates into pixel sizes
+    idat$BX <- round(idat$BX/pixsize)
+    idat$BY <- round(idat$BY/pixsize)
+    idat$Width <- round(idat$Width/pixsize)
+    idat$Height <- round(idat$Height/pixsize)
+    # Create vignettes
+    pl <- dim(pic)[2]
+    ph <- dim(pic)[1]
+    for (j in 1:nrow(idat)) {
+      Width <- idat$Width[j]
+      Height <- idat$Height[j]
+      BX <- round(idat$BX[j] - Width / 4)
+      BY <- round(idat$BY[j] - Height / 4)
+      BX2 <- round(BX + (Width * 1.5))
+      BY2 <- round(BY + (Height * 1.5))
+      # Constrain bounding box inside the picture
+      if (BX < 1) BX <- 0
+      if (BY < 1) BY <- 1
+      if (BX2 > pl) BX2 <- pl
+      if (BY2 > ph) BY2 <- ph
+      # Crop the picture into a new image
+      vig <- pic[BY:BY2, BX:BX2, ]
+      # Add the scale at the top-left
+      if (Width * 1.5 < 50) { # Use the 0.3mm scale
+        xmax <- min(30, dim(vig)[2])
+        ymax <- min(16, dim(vig)[1])
+        scale <- scale0.3[1:ymax, 1:xmax]
+        vig[1:ymax, 1:xmax, 2][scale < 1] <- scale[scale < 1]
+        sel <- scale < 1 & vig[1:ymax, 1:xmax, 3] > 0.2
+        vig[1:ymax, 1:xmax, 3][sel] <- scale[sel]/2
+      } else if (Width * 1.5 < 100) { # Use the 0.5mm scale
+        xmax <- min(50, dim(vig)[2])
+        ymax <- min(16, dim(vig)[1])
+        scale <- scale0.5[1:ymax, 1:xmax]
+        vig[1:ymax, 1:xmax, 2][scale < 1] <- scale[scale < 1]
+        sel <- scale < 1 & vig[1:ymax, 1:xmax, 3] > 0.2
+        vig[1:ymax, 1:xmax, 3][sel] <- scale[sel]/2
+      } else { # Use the 1mm scale
+        xmax <- min(100, dim(vig)[2])
+        ymax <- min(16, dim(vig)[1])
+        scale <- scale1[1:ymax, 1:xmax]
+        vig[1:ymax, 1:xmax, 2][scale < 1] <- scale[scale < 1]
+        sel <- scale < 1 & vig[1:ymax, 1:xmax, 3] > 0.2
+        vig[1:ymax, 1:xmax, 3][sel] <- scale[sel]/2
+      }
+      # Write this into a png file
+      writePNG(vig, file.path(smpdir, paste(idat$name[j], "png", sep = ".")))
+    }
+    # Delete _work files if required
+    if (isTRUE(clean.work)) {
+      unlink(zim)
+      unlink(col)
+    }
+    # Done
+    #cat("OK\n")
+    #flush.console()
+    # Before switching to another picture, or at the end, create the .zidb file
+    if (i == l) {
+      zidbMake(smpdir, smptime = smptime, replace = TRUE, delete.source = TRUE)
+    } else {
+      nextsmp <- sub("\\+[A-Z][0-9]+_dat[135]\\.zim$", "", zims[i + 1])
+      if (nextsmp != smp)
+        zidbMake(smpdir, smptime = smptime, replace = TRUE, delete.source = TRUE)
+    }
+  }
+}
+

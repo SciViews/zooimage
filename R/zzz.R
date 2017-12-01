@@ -78,7 +78,18 @@
 	assignTemp("ZIguiPackage", ZIguiPackage)
 
 	## The directory that contains binary executables
-	bindir <- system.file("bin", package = "zooimage")
+	#bindir <- system.file("bin", package = "zooimage")
+	## PhG: executables are not provided anymore with zooimage (not allowed by
+	## CRAN where it is distributed now), but you must install them manually
+	## in a given directory...
+	if (isWin()) {
+		bindir <- "c:/progra~1/Zooimage/bin"
+		if (!file.exists(bindir))
+			bindir <- "c:/progra~2/Zooimage/bin"
+		if (!file.exists(bindir)) {
+			bindir <- ""
+		} else options(zooimage.bindir = bindir)
+	}
 
 	## Determine where to find ImageJ
 	## TODO... currently, it is in a fixed position
@@ -86,7 +97,9 @@
 	## bat file with java -jar ij.jar -ijpath=./plugins
 	if (interactive()) {
 		if (isWin()) {
-			ImageJExe <- file.path(bindir, "ImageJ", "ImageJ.exe")
+			ImageJExe <- file.path(bindir, "Fiji.app", "ImageJ.exe")
+			if (!file.exists(ImageJExe))
+				ImageJExe <- file.path(bindir, "ImageJ", "ImageJ.exe")
 		} else if (isMac()) {
 			#ImageJExe <- "/Applications/Fiji/Fiji.app/Contents/MacOS/fiji-macosx"
 			ImageJExe <- "open /Applications/Fiji/Fiji.app"
@@ -123,6 +136,20 @@
 		}
 		if (file.exists(VueScanExe)) options(VueScan = VueScanExe)
 	} else options(VueScan = "")
+	
+	## Under Windows, define the metadata editor
+	if (interactive()) {
+		if (isWin()) {
+			Metaeditor <- file.path(bindir, "MetaEditor", "Sc1.exe")
+		} else if (isMac()) {
+			## TODO: which one to use?
+			Metaeditor <- ""
+		} else {
+			## TODO: other locations for Linux?!
+			Metaeditor <- ""
+		}
+		if (file.exists(Metaeditor)) options(fileEditor = Metaeditor)
+	} else options(fileEditor = "")
 	
 	## Possibly load the ZooImage assistant
 	LoadIt <- getOption("ZIAssistant")

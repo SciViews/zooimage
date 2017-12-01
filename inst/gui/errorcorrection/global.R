@@ -46,7 +46,7 @@ smallHeaderPanel <- function (title, windowTitle = title) {
 ## Define UI for default process using a config .R script in zooimage
 ## TODO: change the title according to actual name and version of the software
 ## TODO: translate UI strings (English and French interfaces)
-uiTitle <- paste0("Zoo/PhytoImage version 5.4-0 (UMONS/IFREMER rephy release) - ",
+uiTitle <- paste0("Zoo/PhytoImage version 5.4-6 (UMONS/IFREMER rephy release) - ",
     .ZI$method, " - ", .ZI$user)
 
 

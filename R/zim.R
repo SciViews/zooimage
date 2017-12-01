@@ -27,11 +27,12 @@
 isZim <- function (zimfile)
 {
 	## Check if the file does not exist or is a directory
-	if (!checkFileExists(zimfile, force.file = TRUE, extension = "zim"))
-		return(FALSE)
-
-	## Check the first line
-	return(checkFirstLine(zimfile))
+	if (!checkFileExists(zimfile, force.file = TRUE, extension = "zim")) {
+		FALSE
+	} else {
+		## Check the first line
+		checkFirstLine(zimfile)
+	}
 }
 
 ## Make required .zim files for one or more images

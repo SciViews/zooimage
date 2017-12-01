@@ -275,7 +275,9 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 		}
 				
 		## Write the zim file
+		cat("\n")
 		message("Writing .zim file for sample '", Smp, "'")
+		cat("\n")
 		cat(paste(c("ZI1", zimD), collapse = "\n"), file = zimFile)
 		return(TRUE)
 	}
@@ -285,7 +287,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	UpdateZim <- function (dat, zimData) {
 		### TODO: Strip out comments (not done here, because we want to process
 		### strings with '#' correctly!
-		if (length(grep("^[-][>]", dat)) == 0) return(NULL)
+		if (length(grep("^[-][>]", dat)) == 0) return(FALSE)
 		## This line starts with "->" => we update zimData
 		Key <- sub("^[-][>]([^ =]+).*$", "\\1", dat)
 		## Special treatment if Key == "Sample"
@@ -647,7 +649,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 	for (i in 1:nrow(Data)) {
         ## Get calibration data
         CalibBF <- Data$CalibBF[i]
-        if (!is.na(CalibBF) && !is.null(CalibBF) && CalibBF != "" &&
+        if (!is.null(CalibBF) && !is.na(CalibBF) && CalibBF != "" &&
 			CalibBF != CBF) {
 			CBFNum <- CBFNum + 1
 			text <- paste(CalibBF, sprintf("_CalibBF%3.3d", CBFNum), sep = "=")
@@ -655,7 +657,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 			CBF <- CalibBF
         }
         CalibOD <- Data$CalibOD[i]
-        if (!is.na(CalibOD) && !is.null(CalibOD) && CalibOD != "" &&
+        if (!is.null(CalibOD) && !is.na(CalibOD) && CalibOD != "" &&
 			CalibOD != COD) {
 			CODNum <- CODNum + 1
 			text <- paste(CalibOD, sprintf("_CalibOD%3.3d", CODNum), sep = "=")
@@ -664,7 +666,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
         }
 		
         CalibSp <- Data$CalibSP[i]
-        if (!is.na(CalibSp) && !is.null(CalibSp) && CalibSp != "" &&
+        if (!is.null(CalibSp) && !is.na(CalibSp) && CalibSp != "" &&
 			CalibSp != CSp) {
 			CSpNum <- CSpNum + 1
 			text <- paste(CalibSp, sprintf("_CalibSP%3.3d", CSpNum), sep = "=")
