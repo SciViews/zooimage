@@ -427,3 +427,14 @@ a.pagenav:hover {
 	color : #ff6600;
 	text-align: center;
 }
+
+pre {
+    display: block;
+    font-family: monospace;
+    width: 99%;
+    overflow: auto;
+    border: 1px solid #aaa;
+    padding: 1em;
+    margin: 1em 0;
+    background-color: #f0f0f0; 
+}
