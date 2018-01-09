@@ -369,10 +369,10 @@ importImg <- function ()
 			Template = zieTemplate, check.names = FALSE)
 		return(invisible(res))
 
-	} else if (has(".tif")) {
+	} else if (has(Images[1], "[.][tT][iI][fF]$")) {
 		pattern <- extensionPattern(".tif")
 
-	} else if (has("jpg")) {
+	} else if (has(Images[1], "[.][jJ][pP][gG]$")) {
         pattern <- extensionPattern("jpg")
 
 	} else {
