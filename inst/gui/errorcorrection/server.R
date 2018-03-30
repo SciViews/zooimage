@@ -3,22 +3,22 @@
 ## & Guillaume Wacquet <guillaume.wacquet@umons.ac.be>
 ##
 ## This file is part of ZooImage
-## 
+##
 ## ZooImage is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 2 of the License, or
 ## (at your option) any later version.
-## 
+##
 ## ZooImage is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage. If not, see <http://www.gnu.org/licenses/>.
 
 ## TODO: allow for placing samples in subdirs + use tree view
-## TODO: add "Stat" button for fully validated samples 
+## TODO: add "Stat" button for fully validated samples
 ## TODO: translate server messages (English and French interfaces)
 ## TODO: allow downloading the data with something like:
 ## In server.R:
@@ -33,7 +33,7 @@
 #
 ## In ui.R:
 #downloadLink('downloadData', 'Download')
-## 
+##
 ## - Use includeMarkdown()
 ##
 ## - Use renderDataTable(), e.g.,
@@ -44,19 +44,19 @@
 #))
 
 shinyServer(function (input, output, session) {
-    
+
     doAnalysis <- reactive({
         generalMessage <- function(message) {
             paste0("______________________________________________________________________",
-                #"\nÉchantillons totaux:    ", length(AllSamples$names),
-                "\nÉchantillons à traiter: ", sum(!AllSamples$analyzed),
-                "\nÉchantillons analysés:  ", sum(AllSamples$analyzed),
+                #"\nTotal samples:     ", length(AllSamples$names),
+                "\nSamples to process: ", sum(!AllSamples$analyzed),
+                "\nProcessed samples:  ", sum(AllSamples$analyzed),
                 "\n\n", message, "\n",
                 "______________________________________________________________________\n")
         }
-        
+
         if (input$goButton == 0)
-            return(generalMessage("(Aucun échantillon n'a encore été analysé au cours de cette session)."))
+            return(generalMessage("(No samples have been analyzed yet during this session)."))
         isolate({
             Sample <- substring(input$sample, 5)
             ZIDB <- file.path(inidir, paste(Sample, "zidb", sep = "."))
@@ -70,7 +70,7 @@ shinyServer(function (input, output, session) {
                 paste(Sample, "valid.txt", sep = "_"))
             ResFile <- file.path(inidir, "_analyses", .ZI$method, #input$method,
                 paste(Sample, "res.RData", sep = "_"))
-            
+
             ValidData <- paste(Sample, "valid", sep = "_")
             ResData <- paste(Sample, "res", sep = "_")
             if (exists(ValidData, inherits = FALSE)) rm(list = ValidData)
@@ -82,7 +82,7 @@ shinyServer(function (input, output, session) {
 #                 .ZITrain <- addItemsToTrain(.ZITrain, CtxSmp,
 #                     dropItemsToTrain = dropItemsToTrain)
 #             }
-            
+
             # PhG: This is problematic with scanner data, so, inactivate it for now
             #.ZITrain <- activeLearning(.ZITrain)
             assign(.ZI$classif, eval(parse(text = .ZI$classifcmd)))
@@ -106,10 +106,10 @@ shinyServer(function (input, output, session) {
                 } else { # Nothing available: start from scratch
                     ce <- correctError(zidb = ZIDB, classifier = .ZIClass)
                 }
-                
+
             } #x <- "Demo found" else x <- "Demo not found"
-            
-            
+
+
             ## Backup sample and metadata files if they exist
             if (file.exists(SampleFile))
                 file.copy(SampleFile, paste(SampleFile, "bak", sep = "."))
@@ -120,7 +120,7 @@ shinyServer(function (input, output, session) {
             if (file.exists(ResFile))
                 file.copy(ResFile, paste(ResFile, "bak", sep = "."))
             unlink(ResFile)
-            
+
             ## The following code fails while we are still validating items...
             ## TODO: associate name of validator + date
             res <- try(save(list = ValidData, file = SampleFile), silent = TRUE)
@@ -130,7 +130,7 @@ shinyServer(function (input, output, session) {
                     silent = TRUE)
             }
             ## Save associated metadata
-            cat("zooimage version: 5.4-3\n", file = MetaFile)
+            cat("zooimage version: 5.4-12\n", file = MetaFile)
             cat("method: ", .ZI$method, "\n", sep = "",
                 file = MetaFile, append = TRUE)
             cat("user: ", .ZI$user, "\n", sep = "",
@@ -160,7 +160,7 @@ shinyServer(function (input, output, session) {
                 file = MetaFile, append = TRUE)
             write.table(.ZI$biovolume, sep = "\t", dec = ".", row.names = FALSE,
                 col.names = TRUE, file = MetaFile, append = TRUE)
-                        
+
             ## Calculate results for this sample
             dat2 <- get(ValidData)
             cl <- levels(dat2$Class) # All classes
@@ -181,20 +181,20 @@ shinyServer(function (input, output, session) {
             ## Save it
             save(list = ResData, file = ResFile)
 
-            ## Report success            
-            x <- paste("(L'échantillon", Sample, "vient d'être analysé).")
-            
+            ## Report success
+            x <- paste("The sample", Sample, "had just been analyzed).")
+
             Method <- .ZI$method #input$method
             AllSamples <- listSamples(inidir, method = Method)
-            
+
             if (file.exists(file.path(inidir, "_analyses", Method,
                 paste(Sample, "valid.RData", sep = "_")))) {
                 tag <- "[A]"
             } else tag <- "[I]"
-                    
+
             updateSelectInput(session, "sample", choices = AllSamples$names,
                 selected = paste(tag, Sample))
-            
+
             return(generalMessage(x))
         })
     })
@@ -220,21 +220,21 @@ shinyServer(function (input, output, session) {
     #        try(system("osascript -e 'tell application \"Terminal\" to activate'",
     #            ignore.stdout = TRUE, ignore.stderr = TRUE), silent = TRUE)
     #    }
-    #    
+    #
     #    ## Stop the application, returning a short report of what was done
     #    report <- structure("Content of my report here...", class = "reportObj")
     #    stopApp(report)
-    #    
+    #
     #    ## Indicate the app is disconnected
     #    paste(strong(em("Application déconnectée!")))
-    #  
+    #
     #  } else { # Indicate number of samples to process and number analyzed
     #    ## TODO: make this reactive to the change to the list of samples
     #    paste(em("A traiter:"), strong(em(sum(!AllSamples$analyzed))),
     #      em(" -  analysés:"), strong(em(sum(AllSamples$analyzed))))
     #  }
     #})
-    
+
     output$sampleSummary <- renderPrint(width = 80, {
       if (input$stopButton) {
         #updateTabsetPanel(session, "mainTabset", selected = "Résumé")
@@ -248,7 +248,7 @@ shinyServer(function (input, output, session) {
             cat("===", Sample, "===\n")
             ZIDB <- file.path(inidir, paste(Sample, "zidb", sep = "."))
             Dat <- zidbDatRead(ZIDB)
-            cat("Échantillon contenant", nrow(Dat), "particules numérisées.\n")
+            cat("Sample containing", nrow(Dat), "digitized particules.\n")
             if (substr(input$sample, 1, 3) == "[A]") {
                 ## Get analysis statistics about this sample
                 #if (!exists("SampleData")) {
@@ -263,8 +263,8 @@ shinyServer(function (input, output, session) {
                 #}
                 res <- try(print(table(SampleData$Class)), silent = TRUE)
                 if (inherits(res, "try-error"))
-                    cat("\nStatistiques d'analyse pour l'échantillon non disponibles\n")
-            } else cat("\nCet échantillon n'est pas encore analysé avec la méthode '", .ZI$method, "'.", sep = "")
+                    cat("\nStatistical analysis not available for the sample\n")
+            } else cat("\nThis sample is not yet analyzed with the method '", .ZI$method, "'.", sep = "")
             #head(Dat)
             #print(summary(Dat[, c("ECD")]))
             #print(attr(Dat, "metadata"))
@@ -273,10 +273,10 @@ shinyServer(function (input, output, session) {
             cat("\n", doAnalysis())
         }
     })
-    
+
     output$sampleTable <- renderDataTable(options = list(pageLength = 50), {  #renderTable({
         if (input$stopButton) {
-            updateTabsetPanel(session, "mainTabset", selected = "Résumé")
+            updateTabsetPanel(session, "mainTabset", selected = "Summary")
         } else {
             doAnalysis()
             Sample <- substring(input$sample, 5)
@@ -284,7 +284,7 @@ shinyServer(function (input, output, session) {
             ## Link to the .zidb file and provide a summary of this sample
             #cat("===", Sample, "===\n")
             ZIDB <- file.path(inidir, paste(Sample, "zidb", sep = "."))
-            
+
             ## Depending if the file is analyzed or not, we look at the
             ## ZITest or ZIDat object
             if (substr(input$sample, 1, 3) == "[A]") {
@@ -334,12 +334,12 @@ shinyServer(function (input, output, session) {
             }
         }
     })
-    
+
     output$samplePlot <- renderPlot({
         if (input$stopButton) {
             updateTabsetPanel(session, "mainTabset", selected = "Résumé")
         } else {
-            
+
             ## This is only in shiny 0.10.2!!
             #withProgress(message = 'Calculation in progress',
             #    detail = '...', value = 0, {
@@ -348,7 +348,7 @@ shinyServer(function (input, output, session) {
             #        Sys.sleep(0.25)
             #    }
             #})
-            
+
             Sample <- substring(input$sample, 5)
             calcSample(Sample, input, output, session)
             ## Link to the .zidb file and provide a summary of this sample
@@ -356,14 +356,14 @@ shinyServer(function (input, output, session) {
             ZIDB <- file.path(inidir, paste(Sample, "zidb", sep = "."))
             Dat <- zidbDatRead(ZIDB)
             hist(Dat$ECD, col = "cornsilk", breaks = "FD",
-                main = "Distribution de la taille des particules",
-                xlab = "ECD", ylab = "Fréquences")
+                main = "Particule size distribution",
+                xlab = "ECD", ylab = "Frequency")
         }
     })
-    
+
     output$vignettesPlot <- renderPlot({
         if (input$stopButton) {
-            updateTabsetPanel(session, "mainTabset", selected = "Résumé")
+            updateTabsetPanel(session, "mainTabset", selected = "Summary")
         } else {
             Sample <- substring(input$sample, 5)
             calcSample(Sample, input, output, session)
@@ -383,10 +383,10 @@ shinyServer(function (input, output, session) {
                     nx = 6, ny = 5)
         }
     })
-    
+
     output$sampleResults <- renderPrint({
         if (input$stopButton) {
-            updateTabsetPanel(session, "mainTabset", selected = "Résumé")
+            updateTabsetPanel(session, "mainTabset", selected = "Summary")
         } else {
             ## Also update the list of samples, depending on both method and newonlyCheck
          #   AllSamples <- listSamples(inidir, method = .ZI$method, input$newonlyCheck)
@@ -397,7 +397,7 @@ shinyServer(function (input, output, session) {
             cat("===", Sample, "===\n")
             ZIDB <- file.path(inidir, paste(Sample, "zidb", sep = "."))
             Dat <- zidbDatRead(ZIDB)
-            cat("Échantillon contenant", nrow(Dat), "particules numérisées.\n")
+            cat("Sample containing", nrow(Dat), "digitized particules.\n")
             if (substr(input$sample, 1, 3) == "[A]") {
                 ## Get analysis statistics about this sample
                 #if (!exists("SampleData")) {
@@ -410,7 +410,7 @@ shinyServer(function (input, output, session) {
                         rm(list = res)
                     }
                 #}
-                 
+
                 # Show results for this sample...
                 ResFile <- file.path(inidir, "_analyses", .ZI$method, #input$method,
                     paste(Sample, "res.RData", sep = "_"))
@@ -421,14 +421,14 @@ shinyServer(function (input, output, session) {
                     ## Print results
                     print(ResData)
                 } else {
-                    cat("Aucuns résultats trouvés pour cet échantillon!\n")
-                }                
-            } else cat("\nCet échantillon n'est pas encore analysé avec la méthode '", .ZI$method, "'.", sep = "")
+                    cat("No results found for this samples!\n")
+                }
+            } else cat("\nThis sample is not yet analyzed with the method '", .ZI$method, "'.", sep = "")
             #head(Dat)
             #print(summary(Dat[, c("ECD")]))
             #print(attr(Dat, "metadata"))
             #plot(Dat$Area, Dat$Perim.)
-            #cat("Ici, le résumé de", Sample)
+            #cat("Here, summary of", Sample)
             cat("\n", doAnalysis())
         }
     })

@@ -1,5 +1,10 @@
 # zooimage News
 
+## Changes in zooimage 5.4-12
+
+* Shiny interface translated to English (thanks to Teresa Sofia Giesta da Silva).
+
+
 ## Changes in zooimage 5.4-11
 
 * Vignettes can now be created from within R, using the new `makeZIVignettes()`
