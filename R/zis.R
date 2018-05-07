@@ -1,22 +1,22 @@
 ## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
-## 
+##
 ## ZooImage is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 2 of the License, or
 ## (at your option) any later version.
-## 
+##
 ## ZooImage is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
 ## Read data from a .zis file
-zisRead <- function (zisfile = "Description.zis", 
+zisRead <- function (zisfile = "Description.zis",
 expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples"))
 {
     if (!checkFileExists(zisfile, extension = "zis", force.file = TRUE))
@@ -38,7 +38,7 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	readData <- lapply(1:length(start), function (i) {
 		if (sections[i] == "Description") {
 			rx <- "^(.*?)=(.*)$"
-			txt <- rl[start[i] : end[i]] 
+			txt <- rl[start[i] : end[i]]
 			variables <- sub(rx, "\\1", txt)
 			values <- sub(rx, "\\2", txt)
 			out <- data.frame(matrix(values, nrow = 1))
@@ -56,9 +56,11 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	names(readData) <- sections
 	Samples <- readData[["Samples"]]
 	# I may have <<<DATE>>> indicator too!
-    res <- try(Samples$Date <- as.Date(Samples$Date), silent = TRUE)
-	if (inherits(res, "try-error"))
-		warning(res)
+    if (Samples$Date != "<<<DATE>>>") {
+         res <- try(Samples$Date <- as.Date(Samples$Date), silent = TRUE)
+         if (inherits(res, "try-error"))
+             warning(res)
+    }
 	Series <- readData[["Series"]]
 	Cruises <- readData[["Cruises"]]
 	Cruises$Start <- as.Date(Cruises$Start)
@@ -67,9 +69,9 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	Stations$Start <- as.Date(Stations$Start)
 	Stations$End <- as.Date(Stations$End)
 	Description <- readData[["Description"]]
-	
+
 	## Combine all this in a data frame + metadata
-	structure(Samples, 
+	structure(Samples,
 		metadata =  list(Desc = Description, Series = Series, Cruises = Cruises,
 		Stations = Stations), class = c("ZIDesc", "data.frame"))
 }
@@ -77,7 +79,7 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 ## Create a .zis file
 zisCreate <- function (zisfile, template = NULL,
 edit = TRUE, editor = getOption("fileEditor"), wait = FALSE)
-{	
+{
 	## Use a ui to get the file name
 	if (missing(zisfile) || !length(zisfile) || zisfile == "") {
 		zisfile <- dlgInput("Give a name for the new ZIS file:",
@@ -86,13 +88,13 @@ edit = TRUE, editor = getOption("fileEditor"), wait = FALSE)
 		if (!hasExtension(zisfile, "zis"))
 			zisfile <- paste(zisfile, ".zis", sep = "")
 	}
-	
+
     ## If the file already exists, edit current version
 	if (file.exists(zisfile))
 		if (isTRUE(edit)) {
 			return(zisEdit(zisfile, editor = editor, wait = wait))
 		} else return(invisible(TRUE))
-	
+
 	## Look for the template
 	if (is.null(template))
 		template <- file.path(getOption("ZITemplates"), "Description.zis")

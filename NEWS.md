@@ -1,8 +1,14 @@
 # zooimage News
 
+## Changes in zooimage 5.5.0
+
+* Reconcile the new process introduced in ZooImage 5.4-10 (ZI5 files with
+  colored vignettes) with the previous ones that produced ZI1 & ZI3 files.
+
+
 ## Changes in zooimage 5.4-12
 
-* Shiny interface translated to English (thanks to Teresa Sofia Giesta da Silva).
+* Shiny part translated to English (thanks to Teresa Sofia Giesta da Silva).
 
 
 ## Changes in zooimage 5.4-11
@@ -16,8 +22,8 @@
 
 ## Changes in zooimage 5.4-10
 
-* `sampleInfo()` now can process `_dat3.zim` and `_dat5.zim` files as well as the
-  original `_dat1.zim` files.
+* `sampleInfo()` now can process `_dat3.zim` and `_dat5.zim` files as well as
+  the original `_dat1.zim` files.
 
 * `checkFirstLine()` can now deal with ZI1 - ZI5 files.
 
@@ -25,65 +31,67 @@
 
 * `zidDatMake()` now creates ZI5 files.
 
-* `zisRead()` now tries to convert date, but if it fails, it continues leaving the
-  unmodified string and issues a warning.
+* `zisRead()` now tries to convert date, but if it fails, it continues leaving
+  the unmodified string and issues a warning.
 
 * `zidbMake()` now creates ZI5 files and can replace `<<<SMP>>>` in label,
-  `<<<DATE>>>` in date, and `<<<TIME>>>` in time metadata fields with appropriate
-  values. Note that time must be provided in the new `smptime =` argument. In
-  case `CellPart` is missing, the default value of `0.73` is assumed. Similarly, if
-  `Replicates` is missing, a value of `1` is assumed by default. The
-  `check.vignettes =` is now `FALSE` by default, since we may generate them on the
-  fly.
+  `<<<DATE>>>` in date, and `<<<TIME>>>` in time metadata fields with
+  appropriate values. Note that time must be provided in the new `smptime =`
+  argument. In case `CellPart` is missing, the default value of `0.73` is
+  assumed. Similarly, if `Replicates` is missing, a value of `1` is assumed by
+  default. The `check.vignettes =` is now `FALSE` by default, since we may
+  generate them on the fly.
 
 
 ## Changes in zooimage 5.4-9
 
 * A bug in `errorCorrection()` led to fail with message telling it is impossible
-to replace `GpFPDiff` because replacement has 0 rows and data has xxx.
+  to replace `GpFPDiff` because replacement has 0 rows and data has xxx.
 
 * Plankton sorter pages used file://<path>/planktonSorter.html?v=xxxx, but the
-argument v= is falsely interpretted as part of the file path in Linux. So, the
-version information of the page is now dropped.
+  argument v= is falsely interpretted as part of the file path in Linux. So, the
+  version information of the page is now dropped.
 
 * Function imported from grDevices, graphics and stats are now declared in
-NAMESPACE.
+  NAMESPACE.
 
 
 ## Changes in zooimage 5.4-8
 
 * A bug in `processSamplesWithCells()` failed to select another "cells.rds" file
-when a default one is recorded.
+  when a default one is recorded.
 
 * `recode.ZITrain()` and `recode.ZITest()` mangled completely the classes when
-`depth =` argument was provided. Corrected.
+  `depth =` argument was provided. Corrected.
 
 * Warnings were issued when `zieCompile()` did not found calibration images.
-Corrected.
+  Corrected.
 
-* The `processSamples()` function was not able to deal with `.zid` files any more.
-Now, it can use both `.zid` and `.zidb` files, but not a mix of them simultaneously.
+* The `processSamples()` function was not able to deal with `.zid` files any
+  more. Now, it can use both `.zid` and `.zidb` files, but not a mix of them
+  simultaneously.
 
 * A regression prevented `zieMake()` to finialize the `.zim` files from a `.zie`
-template. Corrected.
+  template. Corrected.
 
 * In `errorCorrection()`, a table with items not sorted alphabetically led to a
-mix in the correction/validation of the vignettes. Corrected.
+  mix in the correction/validation of the vignettes. Corrected.
 
 
 ## Changes in zooimage 5.4-7
 
 * Correction of a bug that prevented the calculation of cells per colonies to
-work (changes in `cellCompute()` not taken into account here).
+  work (changes in `cellCompute()` not taken into account here).
 
 * The `calibration()` function to calibrate grayscale for flat-bed scanner
   is rewritten to use only R code.
 
-* A wrong default argument in `makeZidb()` is replaced with a more sensible value.
+* A wrong default argument in `makeZidb()` is replaced with a more sensible
+  value.
 
-* `processSample()` and `processSampleAll()`: new defaults for `keep =` and `detail =`
-  arguments (takes classes with uppercase first character), and a couple of minor
-  bug corrections.
+* `processSample()` and `processSampleAll()`: new defaults for `keep =` and
+  `detail =` arguments (takes classes with uppercase first character), and a
+  couple of minor bug corrections.
 
 * Several bugs corrected in `viewResults()` and `exportResults()`.
 
@@ -93,7 +101,8 @@ work (changes in `cellCompute()` not taken into account here).
   Applications folder), and under Windows where it looks for a `/Zooimage/bin`
   folder into the Program Files (64bit first, then 32bit).
 
-* Correction of a bug in `zidbMake()` in the computation of the `.zidb` file name.
+* Correction of a bug in `zidbMake()` in the computation of the `.zidb` file
+  name.
 
 
 ## Changes in zooimage 5.4-6
@@ -151,9 +160,10 @@ work (changes in `cellCompute()` not taken into account here).
 * Correct `makeClass()` function in the menu (missing formula).
 
 * Functions to process active learning: `contextSelection()`, the associated
-  `addItemsToTrain()` and `dropItemsToTrain()` functions to complete the training
-  set with validated items, and the corresponding `activeLearningGUI()` function
-  for an access through the menu. Integration in the classification process.
+  `addItemsToTrain()` and `dropItemsToTrain()` functions to complete the
+  training set with validated items, and the corresponding `activeLearningGUI()`
+  function for an access through the menu. Integration in the classification
+  process.
 
 * Function `compTrain()` to compare two training sets and highlight differences.
 
@@ -164,13 +174,13 @@ work (changes in `cellCompute()` not taken into account here).
 
 ## Changes in zooimage 5.3-0
 
-* `calcVarsVIS()` now included in `calcVars()` and not accessible any more as top
-  function (to avoid duplicate code).
+* `calcVarsVIS()` now included in `calcVars()` and not accessible any more as
+  top function (to avoid duplicate code).
 
 * `ecd()` and `ecdCell()` are now merged in `ecd()` using arguments `cells = 1`.
 
-* `errorCorrection()` and `planktonSorterPage()` functions now use the new interface
-  to get R httpd server port, for R svn rev >= 67550.
+* `errorCorrection()` and `planktonSorterPage()` functions now use the new
+  interface to get R httpd server port, for R svn rev >= 67550.
 
 * In the shiny app, dataTableOutput is now called from the DT package.
   Dependency to DT is now added.
@@ -192,46 +202,49 @@ work (changes in `cellCompute()` not taken into account here).
 * `importFlowCAM()` now iterates a message to indicate progression of vignettes
   importation.
 
-* For `importFlowCAM()`, the default value of the argument `rgb.vigs =` is changed
-  from `TRUE` to `FALSE`.
+* For `importFlowCAM()`, the default value of the argument `rgb.vigs =` is
+  changed from `TRUE` to `FALSE`.
 
 * Functions to count cells in a particle (colony): `cellCount()` and the
   corresponding `cellCountGUI()` function for an access through the menu.
 
-* New utility function `ecdCell()` to calculate the ECD for one cell in a colony.
+* New utility function `ecdCell()` to calculate the ECD for one cell in a
+  colony.
 
 
-* Functions to build predictive models for cells in particles (colonies) after counting:
-  `cellModel()`.
+* Functions to build predictive models for cells in particles (colonies) after
+  counting: `cellModel()`.
 
-* Function to compute the number of cells in particles in a new sample: `cellCompute()`.
+* Function to compute the number of cells in particles in a new sample:
+  `cellCompute()`.
 
-* Function to make zidb file for FlowCAM data through the menu: `zidbMakeFlowCAMGUI()`.
+* Function to make zidb file for FlowCAM data through the menu:
+  `zidbMakeFlowCAMGUI()`.
 
 * Correct `makeClass()` function in the menu (missing formula).
 
 
 ## Changes in zooimage 5.1-0
 
-* `calcVars()`/`calcVarsVIS()` and `dropVars()` are reworked to use only `FIT_xxx`
-  variables in case of FlowCAM data (and to calculated many derived vars
-  from there). This way, there is no need any more of a second image analysis
-  in ImageJ.
+* `calcVars()`/`calcVarsVIS()` and `dropVars()` are reworked to use only
+  `FIT_xxx` variables in case of FlowCAM data (and to calculated many derived
+  vars from there). This way, there is no need any more of a second image
+  analysis in ImageJ.
 
 * A new UI for error correction using shiny.
 
 
 ## Changes in zooimage 5.0-0
 
-* `importFlowCAM()` and `readFlowCAMlst()` are reworked to create complete `.zidb`
-  files using all metadata from various version of Fluid Imaging's Visual
-  Spreadsheet software.
+* `importFlowCAM()` and `readFlowCAMlst()` are reworked to create complete
+  `.zidb` files using all metadata from various version of Fluid Imaging's
+  Visual Spreadsheet software.
 
 
 ## Changes in zooimage 4.0-2
 
-* `correctError()` has now a mode argument allowing to run the analysis in 'demo'
-  and 'stat' mode, in addition to the default 'validation' mode
+* `correctError()` has now a mode argument allowing to run the analysis in
+  'demo' and 'stat' mode, in addition to the default 'validation' mode
 
 * The internal `errorCorrection()` function did not intialized ntrusted and
   nsuspect in 'demo' mode
@@ -259,23 +272,25 @@ work (changes in `cellCompute()` not taken into account here).
 
 ## Changes in zooimage 3.0-7
 
-* `readFlowCAMlst()` can now read Visual Spreadsheet `.lst` file format 017 where
-  the name of the columns is explicitly provided in the header of the file.
+* `readFlowCAMlst()` can now read Visual Spreadsheet `.lst` file format 017
+  where the name of the columns is explicitly provided in the header of the
+  file.
 
-* `zimDatMakeFlowCAM()` now uses `readFlowCAMlst()` instead of the hidden function
-  `.lstRead()` to avoid duplicated code.
+* `zimDatMakeFlowCAM()` now uses `readFlowCAMlst()` instead of the hidden
+  function `.lstRead()` to avoid duplicated code.
 
-* `zidVerify()` now builds automatically the `_dat1.zim` file from FlowCAM data if
-  it is not there, but corresponding `.lst` and `.zim` files are found in the parent
-  directory.
+* `zidVerify()` now builds automatically the `_dat1.zim` file from FlowCAM data
+  if it is not there, but corresponding `.lst` and `.zim` files are found in the
+  parent directory.
 
 
 ## Changes in zooimage 3.0-6
 
-* `zidUncompress()` unzipped files in current directory, ignoring its `path =` argument.
-  Solved now.
+* `zidUncompress()` unzipped files in current directory, ignoring its `path =`
+  argument. Solved now.
 
-* `zidUncompressAll()` now computes full names for `.zid` files argument by default.
+* `zidUncompressAll()` now computes full names for `.zid` files argument by
+  default.
 
 * `calcVarsVIS()` added. Specific function to calculate derived variables from
   FlowCAM's Visual Spreadsheet software.

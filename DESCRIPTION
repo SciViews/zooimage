@@ -1,8 +1,8 @@
 Package: zooimage
 Type: Package
 Title: Analysis of Numerical Zooplankton Images
-Version: 5.4-12
-Date: 2018-03-30
+Version: 5.5.0
+Date: 2018-04-30
 Author: Philippe Grosjean [aut, cre],
   Kevin Denis [aut], Guillaume Wacquet [aut]
 Authors@R: c(person("Philippe", "Grosjean", role = c("aut", "cre"),

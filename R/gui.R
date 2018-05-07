@@ -516,7 +516,7 @@ makeZidb <- function ()
   } else {
     ## Old ZI1-3 approach: call zidbMake() function
     #### TODO: create zim and _dat1.zim files
-    zidbMake(smpdir, type = "ZI3", check = TRUE,
+    zidbMake(smpdir, type = "ZI1", check = TRUE,
       check.vignettes = TRUE, replace = FALSE, delete.source = FALSE)
 	}
 }
