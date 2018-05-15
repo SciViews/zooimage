@@ -1,17 +1,17 @@
 ## Copyright (c) 2004-2015, Ph. Grosjean <phgrosjean@sciviews.org>
 ##
 ## This file is part of ZooImage
-## 
+##
 ## ZooImage is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 2 of the License, or
 ## (at your option) any later version.
-## 
+##
 ## ZooImage is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with ZooImage.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -35,7 +35,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 		#checkCapable("ppmtopgm")
 		#checkCapable("zip")
 	}
-	
+
 	## First, switch to the root directory
 	if (!checkDirExists(path)) return(invisible(FALSE))
 	initdir <- setwd(path)
@@ -43,25 +43,27 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	path <- getwd()	# Indicate we are now in the right path
 	### TODO If last subdir of path is "_raw", then, work with parent dir
 	## and do not move files in _raw subdir
-	
+
 	## Read the Filemap
 	cat("Reading Filemap...\n")
 	if (!checkFileExists(Filemap, extension = "zie", force.file = TRUE))
 		return(invisible(FALSE))
-	
-	## Check first line for ZI1-3
+
+	## Check first line for ZI1-5
 	if (!checkFirstLine(Filemap)) return(invisible(FALSE))
-	
+
 	## Read the file and check it is not empty
 	## Note: we don't use comment.char = '#' because we want to read and rewrite
 	## those comments!
-	Lines <- scan(Filemap, character(), sep = "\t", skip = 1,
-		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "") 
-	if (!length(Lines)) {
+	Lines <- scan(Filemap, character(), sep = "\t", skip = 0,
+		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
+	if (length(Lines) < 2) {
 		warning('filemap empty or corrupted!')
 		return(invisible(FALSE))
 	}
-	
+	ZImark <- Lines[1]
+	Lines <- Lines[-1]
+
 	## Get the position of a section
 	getSectionPos <- function (section = "Map",
 		message = "section '[%s]' found") {
@@ -72,18 +74,18 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			NULL
 		} else out
 	}
-	
+
 	getSection <- function (section = "Map", to = c("next","end"),
 		message = "The [Map] section is empty!") {
 		to <- match.arg(to)
 		start <- getSectionPos(section)[1]
 		if (!length(start)) return(NULL)
-		end <- switch(to, 
+		end <- switch(to,
 			"next" = {
 				ends <- getSectionPos(".*")
 				if (!length(ends)) return(NULL)
 				ends[ends > start][1] - 1
-			}, 
+			},
 			"end" = length(Lines)
 		)
 		out <- Lines[seq.int(from = start + 1, to = end)]
@@ -92,19 +94,19 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			NULL
 		} else out
 	}
-	
+
 	## Get everything before '[Map]' as template data for the .zim file
 	posMap <- getSectionPos("Map",
 		"The file is corrupted: no or duplicated [Map] section found!")
 	if (!length(posMap)) return(invisible(FALSE))
-		
+
 	## Setup the zim data
 	zimData <- Lines[1:(posMap - 1)]
 	attr(zimData, "Sample") <- NULL	# Currently, there is no sample!
 	attr(zimData, "MakeZim") <- FALSE
-	
-	## Extract various properties 
-	
+
+	## Extract various properties
+
 	## Property extractor
 	property <- function (property = "FilenamePattern", default = "") {
 		rx <- sprintf("^%s[[:space:]]*=[[:space:]]*(.*)", property)
@@ -112,7 +114,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			sub(rx, "\\1", Lines[gl][1])
 		} else default
 	}
-	
+
 	FilePat <- property("FilenamePattern")
 	FracPat <- property("FractionPattern")
 	SubPat <- property("SubsamplePattern")
@@ -124,32 +126,32 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	MoveToWork <- tolower(property("MoveToWork")) %in% c("true", "yes", "1")
 	Exif <- property("[<]exif[>]") != ""
 	attr(zimData, "Exif") <- "" # Nothing yet here
-	
+
 	## Get the [Map] section
 	Lines <- getSection("Map", to = "end", "The [Map] section is empty!")
 	if (!length(Lines)) return(invisible(FALSE))
-	
+
 	message("Reading Filemap... OK!")
-	
+
 	## Make sure _raw, and _work subdirectories exists and have write access
 	if (!forceDirCreate("_raw")) return(invisible(FALSE))
 	if (Convert != "" || MoveToWork)
 		if (!forceDirCreate("_work")) return(invisible(FALSE))
-	
+
 	## This function constructs image filename using possibly a FilenamePattern
 	MakeImageName <- function(x, pattern = FilePat) {
 		if (pattern == "") return(x)
-		
+
 		## Do we need to format a number?
 		Format <- sub("^.*[<]([1-9]?)[>].*$", "\\1", pattern)
 		if (Format != "")
 			x <- formatC(as.integer(x), width = as.integer(Format), flag = "0")
-		
+
 		## Make the replacement according to the pattern
 		File <- gsub("[<][1-9]?[>]", x, pattern) # Do we have to use FilePattern?
 		return(File)
 	}
-	
+
 	## Make sure that all image files are there, and there is no duplicated use
 	## of the same image
 	### TODO: indicate progression with exact line number in the zie file!
@@ -158,7 +160,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	allImages <- character(0)
 	nLines <- length(Lines)
 	for (i in 1:nLines) {
-		### TODO: allow restarting from a given point and eliminate previous 
+		### TODO: allow restarting from a given point and eliminate previous
 		###       lines for which there are no images (considered as already
 		###       processed!)
 		progress(i, nLines)
@@ -170,34 +172,34 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 					File))
 				return(invisible(FALSE))
 			}
-			allImages <- c(allImages, File)		
+			allImages <- c(allImages, File)
 		}
 	}
 	progress(101) # Clear progression indicator
 	message("...OK!")
-	
+
 	## Now that we know all image files are there, process the [Map] section
-	## line-by-line	
+	## line-by-line
 	message("Processing all lines in the ZIE file (import images and make ZIM files)...")
 	ok <- TRUE
-	
+
 	## BuildZim : This function builds the zim file and check it
-	BuildZim <- function (zimData, FracPat, SubPat) {	
+	BuildZim <- function (zimData, FracPat, SubPat, ZImark) {
 		## Calculate the name of the zim file
 		zimFileName <- paste(Smp, "zim", sep = ".")
 		zimFile <- file.path(getwd(), zimFileName)
-		
+
 		## If the zim file already exists, skip this
 		if (!replace && file.exists(zimFile)) {
 			warning(".zim file already exists for '", Smp, "'")
 			return(TRUE)
 		}
-		
+
 		## Make necessary replacement in Fraction and Subsample
 		Smp <- attr(zimData, "Sample")
 		if (is.null(Smp) || Smp == "") return(FALSE)
 		zimD <- zimData
-		
+
 		## Clear a whole section, starting from its header to the next header
 		ClearSection <- function (Data, fromLine) {
 			n <- length(Data)
@@ -212,7 +214,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			## Strip out this section
 			return(Data[-(fromLine:toLine)])
 		}
-		
+
 		## Deal with FracPat
 		if (FracPat != "") {
 			## This is the header to consider
@@ -220,14 +222,14 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				stop( paste("Sample '", Smp,
 					"' is incompatible\nwith FractionPattern '", FracPat, "'",
 					sep = ""))
-			}				
+			}
 			Frac <- paste("[[]Fraction_", sub(FracPat, "\\1", Smp), "\\]",
 				sep = "")
 			posFrac <- grep(Frac, zimD)
 			if (length(posFrac) < 1) {
 				warning("[Fraction] section not found (", Frac, ")!")
-				return(FALSE) 
-			}			
+				return(FALSE)
+			}
 			if (length(posFrac) > 1) {
 				warning("multiple", Frac, "sections for sample '", Smp, "'")
 				return(FALSE)
@@ -235,11 +237,11 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			zimD[posFrac] <- "[Fraction]"
 			## Strip out all other [Fraction_XXX] sections
 			otherFrac <- grep("[[]Fraction_", zimD)
-			if (length(otherFrac) > 0) 
+			if (length(otherFrac) > 0)
 				for (i in 1:length(otherFrac))
 					zimD <- ClearSection(zimD, otherFrac[i])
 		}
-		
+
 		if (SubPat != "") {
 			## This is the header to consider
 			if (!length(grep(SubPat, Smp))) {
@@ -261,7 +263,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			zimD[posSub] <- "[Subsample]"
 			## Strip out all other [Subsample_XXX] sections
 			otherSub <- grep("[[]Subsample_", zimD)
-			if (length(otherSub) > 0) 
+			if (length(otherSub) > 0)
 				for (i in 1:length(otherSub))
 					zimD <- ClearSection(zimD, otherSub[i])
 		}
@@ -273,15 +275,15 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				zimD <- c(zimD[1:(pos - 1)], attr(zimData, "Exif"),
 					zimD[(pos+1):length(zimD)])
 		}
-				
+
 		## Write the zim file
-		cat("\n")
-		message("Writing .zim file for sample '", Smp, "'")
-		cat("\n")
-		cat(paste(c("ZI1", zimD), collapse = "\n"), file = zimFile)
+		#cat("\n")
+		#message("Writing .zim file for sample '", Smp, "'")
+		#cat("\n")
+		cat(paste(c(ZImark, zimD), collapse = "\n"), file = zimFile)
 		return(TRUE)
 	}
-	
+
 	## UpdateZim ; This function looks if the line asks for updating zimData and
 	## does it (returns TRUE), or it returns FALSE
 	UpdateZim <- function (dat, zimData) {
@@ -302,9 +304,9 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			if (length(MatchLines > 0))
 				zimData[MatchLines] <- sub("^[-][>]", "", dat)
 		}
-		return(zimData)	
+		return(zimData)
 	}
-	
+
 	## SetCalib : Add or change an entry in [Calibration] section
 	SetCalib <- function (Data, Key, Entry) {
 		Line <- paste(Key, Entry, sep = "=")
@@ -331,7 +333,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 		}
 		return(Data)
 	}
-	   
+
 	## Main Loop
 	BlankField <- NULL  # The name of the blank-field image to use
 	for (i in 1:nLines) {
@@ -341,11 +343,11 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			warning("problem while updating .zim files")
 			return(invisible(FALSE))
 		}
-		
+
 		## This is not a state change command
-		if (length(res) == 1 && res == FALSE) {	
+		if (length(res) == 1 && res == FALSE) {
 			File <- MakeImageName(trimString(sub("[=].*$", "", Lines[i])))
-			
+
 			## Determine the name of the converted file
 			if (Convert != "") {
 				if (FileC == "") { # Construct the name of the converted file
@@ -358,7 +360,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 			} else {
 				FileConv <- File
 			}
-			
+
 			## Determine the final name to give to this converted file,
 			## and check if it is a calibration file
 			FileConvExt <- tolower(sub("^.*[.]", "", FileConv))
@@ -395,7 +397,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				Smp <- attr(zimData, "Sample")
 				if (is.null(Smp)) Smp <- ""
 				FileConvName <- paste(Smp, NewFile, ".", FileExt2, sep = "")
-			} 
+			}
 
 			## Possibly read Exif data and place it in the zim file
 			## (or check correspondance)
@@ -412,17 +414,17 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				    attr(zimData, "Exif") <- ExifData2
 				}
 			}
-			
+
 			## Possibly write a zim file?
 			MakeZim <- attr(zimData, "MakeZim")
 			if (!is.null(MakeZim) && MakeZim) {
-				if (BuildZim(zimData, FracPat, SubPat)) {
+				if (BuildZim(zimData, FracPat, SubPat, ZImark)) {
 					attr(zimData, "MakeZim") <- FALSE
 				} else {
-					return(invisible(FALSE))		
+					return(invisible(FALSE))
 				}
 			}
-			
+
 			## Possibly convert this file
 			if (Convert != "") {
 				if (zip.images != "" &&
@@ -432,7 +434,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 						sep = ".")
 				} else finalname <- FileConvName
 				message("Converting image '", File, "' into '", finalname, "'")
-				if (replace || !file.exists(FileExt)) { 
+				if (replace || !file.exists(FileExt)) {
 					## Create variables Rawbase and Rawnoext
 					Rawbase <- File
 					Rawnoext <- noExtension(File)
@@ -470,7 +472,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				Size <- 0  ### TODO: calculate this differently!
 				Size2 <- round(Size / 10) # size of the resized image
 ####				imagemagick_convert(FileConv, Size, Size2)
-				
+
 			} else { # make blank-field correction
 			    if (!is.null(BlankField)) {
 					tryCatch({
@@ -478,10 +480,10 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 						}, error = function (e) {
 							warning(as.character(e))
 						})
-					
+
 					## Delete the uncorrected file
 					unlink(FileConv)
-					
+
 					## Now, FileConv is the same file, but with a .tif extension
 					FileConv <- paste(noExtension(FileConv), "tif", sep = ".")
 					if (!file.exists(FileConv)) {
@@ -491,7 +493,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 					}
 			    }
 			}
-			
+
 			## If this is an optical density calibration, proceed with it
 			if (length(grep("^_CalibOD", NewFile)) > 0) {
 				Cal <- calibrate(FileConv)
@@ -499,13 +501,13 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				## Report the problem
 				if (!is.null(Msg) && length(Msg) > 0 && Msg != "") {
 					warning(paste(c("problem(s) detected with O.D. calibration image:",
-						attr(Cal, "msg")), collapse = "\n\t"))  
+						attr(Cal, "msg")), collapse = "\n\t"))
 				}
 				## Put calibration data in the .zim file
 				zimData <- SetCalib(zimData, "WhitePoint", round(Cal[1]))
                 zimData <- SetCalib(zimData, "BlackPoint", round(Cal[2]))
 			}
-			
+
 			### TODO: do the same for the spatial calibration image...
 			if (Convert == "") {
 				## If a second extention is provided, we need to rename and
@@ -561,39 +563,42 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 							## we don't care about not adding .zim data
 							if (!zipNoteAdd(zipfile,
 								file.path(curdir, zimfile))) {}
-	
+
 							setwd(curdir)
 							## Verify that the .zip file is created
 							if (!file.exists(zipfile)) {
 								warning(sprintf(
 									"problem creating the file : '%s' !",
 									zipfile))
-								return(invisible(FALSE)) 
+								return(invisible(FALSE))
 							}
 						} else {
-							### TODO: what do we have to do here???? 
+							### TODO: what do we have to do here????
 						}
 		    		}
 				}
 			}
 		} else zimData <- res
 		## Update zimData with value returned by UpdateZim()
-	} 
+	}
 	progress(101) # Clear progression indicator
-	
+
 	## Possibly remove latest blank-field from root directory (not needed any more!)
 	if (!is.null(BlankField)) {
 		## Delete blank-field images (.pgm and .img) in the root directory
 		unlink(BlankField)
 		unlink(paste(noExtension(BlankField), "img", sep = "."))
 	}
-	
+
 	if (ok) {
+	  message("...OK!")
 		if (move.to.raw)
 			file.rename(Filemap, file.path(getwd(), "_raw", Filemap))
 		## There is a bug: a 'fileconv.tif' file is created,
 		## delete it for the moment
 		unlink("fileconv.tif")
+	} else {
+	  message("...There were error: not all .zim files are correctly created")
 	}
 	invisible(TRUE)
 }
@@ -604,48 +609,48 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 zieCompile <- function (path = ".", Tablefile = "Table.txt",
 Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefile),
 ".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE)
-{		
+{
 	message("Creating .zie file...")
-	
+
 	## Full path for Filemap
 	FilemapPath <- file.path(path, Filemap)
-	
+
 	## First, switch to the root directory
 	if (!checkDirExists(path)) return(NULL)
 	initdir <- setwd(path)
 	on.exit(setwd(initdir))
 	path <- getwd() # Indicate we are now in the right path
-	
+
     ## Check if needed files exist
     if (!checkFileExists(Tablefile)) return(NULL)
 	if (!checkFileExists(Template)) return(NULL)
-	
+
 	## Check if the zie file already exists
     if (!isTRUE(as.logical(replace)) && file.exists(Filemap)) {
 		warning("'", Filemap,
 			"' already exists and is not replaced (replace = FALSE)!")
 		return(FilemapPath)
 	}
-	
+
 	## Read the data from the table
     Data <- read.table(Tablefile, header = TRUE, sep = "\t", dec = getDec(),
 		as.is = TRUE)
-    
+
 	## Possibly get Nmin and Nmax from the template file
 	Nmin <- Nrange[1] # Min number of images for each sample
 	Nmax <- Nrange[2] # Max number of images for each sample
-    
+
 	## We start from the template
     file.copy(Template, Filemap, overwrite = TRUE)
     Cat <- function (...) cat(..., sep = "", file = Filemap, append = TRUE)
-    
+
 	Cat("\n")
     Cat("[Map]\n")
-	
+
 	CBF <- -1; CBFNum <- 0
 	COD <- -1; CODNum <- 0
 	CSp <- -1; CSpNum <- 0
-    
+
 	for (i in 1:nrow(Data)) {
         ## Get calibration data
         CalibBF <- Data$CalibBF[i]
@@ -664,7 +669,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 			Cat(text, "\n")
 			COD <- CalibOD
         }
-		
+
         CalibSp <- Data$CalibSP[i]
         if (!is.null(CalibSp) && !is.na(CalibSp) && CalibSp != "" &&
 			CalibSp != CSp) {
@@ -673,7 +678,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 			Cat(text, "\n")
 			CSp <- CalibSp
         }
-		
+
         ## Calculate list of all images
         num <- Data$Image[i]
         num <- gsub(";", ",", num, fixed = TRUE)
@@ -687,13 +692,13 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 				Data$Sample[i], "!")
 			return(NULL)
 		}
-		
+
 		## Update several fields according to definitions in the samples table
 		###TODO: add the other fields + define this option
 		Fields <- c("Sample", "SubPart", "PixelSize", "VolIni", "VolPrec")
         Cols <- names(Data)
         for (j in 1:length(Fields)) {
-            if (Fields[j] %in% Cols) { 
+            if (Fields[j] %in% Cols) {
                 value <- Data[i, Fields[j]]
                 if (!is.null(value) && !is.na(value) && value != "") {
                     text <- paste("->", Fields[j], "=", value, sep = "")
@@ -701,14 +706,14 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
                 }
             }
         }
-		
+
         ## Insert corresponding images
         for (j in 1:length(num)) {
             text <- paste(num[j], "=.", j, sep = "")
             Cat(text, "\n")
         }
     }
-	
+
 	## Do we make it also?
 	if (isTRUE(make.it)) {
 		res <- zieMake(path = path, Filemap = Filemap, check = TRUE)
@@ -723,7 +728,7 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 			file.rename(Template, file.path(path, "_raw", basename(Template)))
 		}
 	}
-	
+
 	## Everything is fine, return the path of the vcreated filemap file
 	FilemapPath
 }
@@ -740,13 +745,13 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 		warning("You must select a path containing text file for FlowCAM images")
 		return(invisible(FALSE))
 	}
-	
+
 	Tablefile <- file.path(path, basename(Tablefile))
 	if (!checkFileExists(Tablefile, "txt", force.file = TRUE)) {
 		warning("Tablefile not found: '", basename(Tablefile), "'")
 		return(invisible(FALSE))
 	}
-	
+
 	## Read this file
 	ImportFile <- read.table(Tablefile, header = TRUE, sep = "\t", dec = ".")
 
@@ -766,14 +771,14 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 			return(invisible(FALSE))
 		}
 	}
-  
+
 	## Check if the ImportTemplate.zie is present in the directory
 	Zie <- file.path(dirname(path), basename(Template))
 	if (!file.exists(Zie)) {
 		warning("Your directory must contain an 'ImportTemplate.zie' file")
-		return(invisible(FALSE))	
+		return(invisible(FALSE))
 	}
-  
+
 	## Check if all samples are in the directory and export missing files
 	notThere <- character(0)
 	for (i in 1:length(ImportFile$Exp_Name))
@@ -781,7 +786,7 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 			notThere <- c(notThere, as.character(ImportFile$Exp_Name[i]))
 			warning(ImportFile$Exp_Name[i], " is not in the process directory")
 		}
-  
+
 	## Select only samples present in the process directory
 	if (length(notThere)) {
 		ImportFile <- ImportFile[!ImportFile$Exp_Name %in% notThere, ]
@@ -813,11 +818,11 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 	## Read the "ImportTemplate.zie" file
 	ZieFileOrig <- scan(Zie, character(), sep = "\t", skip = 0,
 		blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE, comment.char = "")
-	
+
 	## Loop to create a .zim file
 	for (i in 1:nrow(CtxFile)) {
 		ZieFile <- ZieFileOrig
-		
+
 		## Complete fields using ImportTxt
 		ImageLine <- grep("^Sample", ZieFile)
 		Sample <- as.numeric(sub("[ ]*$", "", sub("^Sample[ ]*[=][ ]*", "",
@@ -869,7 +874,7 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 			ZieFile[ImageLine[1]])))
 		if (is.na(PixSize)) ZieFile[ImageLine[1]] <-
 			paste(ZieFile[ImageLine[1]], ImportTxt$PixelSize[i], sep = "")
-		
+
 		## Read all context file
 		ContextFile <- scan(Ctx[i], character(), sep = "\t", skip = 0,
 			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE,
@@ -881,26 +886,26 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 		NoteFile <- scan(Note, character(), sep = "\t", skip = 0,
 			blank.lines.skip = FALSE, flush = TRUE, quiet = TRUE,
 			comment.char = "")
-		
+
 		## Write the resulting table in the sample directory
 		Tab <- c(ZieFile, "", ContextFile, "", "[Notes]", NoteFile)
 		Export <- file.path(dirname(path), CtxFile$Sample_Name[i],
 			paste(CtxFile$Sample_Name[i], "zim", sep = "."))
 		write(Tab, file = Export)
 	}
-	
+
 	## Create a batch file for FlowCAM image analysis using FitVis
 
 	## Select a directory containing a series of FlowCAM runs
 	ContextList <- .ctxReadAll(path = path, fill = FALSE, largest = FALSE,
 		vignettes = TRUE, scalebar = TRUE, enhance = FALSE, outline = FALSE,
 		masks = FALSE, verbose = TRUE)
-	
+
 	## Write the table of importation in that directory
-	write.table(ContextList, sep = ",", dec = ".", row.names = FALSE, 
+	write.table(ContextList, sep = ",", dec = ".", row.names = FALSE,
 		file = file.path(path, "FitVisParameters.csv"), quote = TRUE,
 		col.names = TRUE)
-	
+
 	message("Import data table has been created in FitVisParameters.csv")
 
 	invisible(TRUE)
@@ -911,7 +916,7 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 ZIE <- function (title, filter, description, pattern, command, author,
 version, date, license, url, depends = "R (>= 2.4.0), zooimage (>= 1.0-0)",
 type = c("import", "export"))
-{	
+{
 	if (!is.character(title) || !is.character(filter) ||
 		!is.character(description) || !is.character(pattern) ||
 		!is.character(command) || !is.character(author) ||
@@ -919,7 +924,7 @@ type = c("import", "export"))
 		!is.character(license) || !is.character(url) ||
 		!is.character(depends))
 		stop("All arguments must be character strings!")
-	obj <- list(title = title[1], filter = filter[1], 
+	obj <- list(title = title[1], filter = filter[1],
 		description = paste(description, collapse = "\n"), pattern = pattern[1],
 		command = paste(command, collapse = "\n"), author = author[1],
 		version = version[1], license = license[1], depends = depends[1])
@@ -966,7 +971,7 @@ print.ZIE <- function (x, ...)
 	url         = "",
 	depends     = "R (>= 2.4.0), zooimage (>= 1.1-0)",
 	type        = "import")
- 
+
 ## Import plain .jpg files, with manual creation of associated .zim files
 .ZIEimportJpg <- ZIE(
 	title       = "Jpeg image files (*.jpg)",
@@ -1023,10 +1028,10 @@ print.ZIE <- function (x, ...)
 
 ## Read most important EXIF data from a Digicam RAW file
 .readExifRaw <- function (rawfile, full = FALSE, check = TRUE)
-{	
+{
 	## Make sure dc_raw is available and rawfile exists
 	if (!checkFileExists(rawfile)) return(NULL)
-	
+
 	## Temporary change directory to the one where the file is located
 	filedir <- dirname(rawfile)
 	if (filedir != ".") {
@@ -1035,19 +1040,19 @@ print.ZIE <- function (x, ...)
 		on.exit(setwd(inidir))
 		rawfile <- basename(rawfile)
 	}
-	
+
 	temp <- "exifdata.txt"
-####	misc_dcraw(rawfile, '-i -v ', temp) 
+####	misc_dcraw(rawfile, '-i -v ', temp)
 	if (!checkFileExists(temp, message = "Error while reading exif data for '%s'"))
 		return(NULL)
-	
+
 	res <- scan(temp, character(), sep = "\n", quiet = TRUE)
 	if (length(res) < 6)
 		return("Error getting EXIF data from '", rawfile, "'")
-	
+
 	## We replace ": " with "="
 	res <- sub(": ", "=", res)
-	
+
 	## We replace all spaces by '_' (except for Filename and Timestamp,
 	## first two lines!)
 	res[-2] <- gsub(" ", "_", res[-2])
@@ -1076,7 +1081,7 @@ print.ZIE <- function (x, ...)
 {
 	dif <- character(0)
 	## Need same 'Camera', 'ISO_speed', 'Shutter', 'Aperture', 'Focal_Length'
-	### TODO: make it work for larger Exif dataset. Currently requires that the 
+	### TODO: make it work for larger Exif dataset. Currently requires that the
 	###       fields are restricted to strict equal data
 	if (length(Exif1) != length(Exif2)) {
 	    dif <- "Not same size for both Exif data!"
@@ -1095,16 +1100,16 @@ print.ZIE <- function (x, ...)
 	checkFirstLine(File, "ZItest")
 }
 
-## Check a blank-field image, either in .pgm or in .tif format	
+## Check a blank-field image, either in .pgm or in .tif format
 .checkBF <- function (BFfile)
-{	
+{
 	if (!checkFileExists(BFfile, message = "Blank-field file '%s' not found!"))
 		return(NULL)
 
 	## Is it a test file?
 	if (.isTestFile(BFfile))
 		return(character(0)) # We behave like if the file was correct!
-	
+
 	msg <- character(0)
 	filedir <- dirname(BFfile)
 	if (filedir != ".") {
@@ -1114,7 +1119,7 @@ print.ZIE <- function (x, ...)
 		on.exit(setwd(inidir))
 		BFfile <- basename(BFfile)
 	}
-	
+
 	## The command to use depends on the format of the image (determined on the
 	## extension)
 	ext <- tolower(rev(strsplit(BFfile, "\\.")[[1]])[1])
@@ -1126,23 +1131,23 @@ print.ZIE <- function (x, ...)
 		delfile <- TRUE
 		ext <- "pgm"
 	} else delfile <- FALSE
-	
+
 	if (ext != "pgm")
 		return(paste("Unrecognized image format for '", BFfile, "'", sep = ""))
-	
+
 ####	BF <- netpbm_pgmhist(pgmfile, delete = delfile)
-	
+
 	## Make sure we work with 16bit images
 	if (max(BF$Gray) < 256) {
-		msg <- c(msg, "Blank-field seems to be a 8bit image (16bit required)")	
+		msg <- c(msg, "Blank-field seems to be a 8bit image (16bit required)")
 	} else {
 		## Look at darkest value with at least 10 points
 		BF <- BF[BF$Count >= 10, ]
 		darkpart <- min(BF$Count)
-		
+
 		## Eliminate values with low number of points
 		BF <- BF[BF$Count >= 100, ]
-		
+
 		## Check range for these values
 		rngBF <- range(BF$Gray)
 		if (rngBF[2] > 65500)
@@ -1161,7 +1166,7 @@ print.ZIE <- function (x, ...)
 ## .checkBF("test.pgm")
 ## .checkBF("test.tif")
 
-## Make a blank-field correction on File, given a BFfile (blank-field) 
+## Make a blank-field correction on File, given a BFfile (blank-field)
 ## Both files must be 16bit gray PGM images
 ## The resulting file has same name as File, but with a .tif extension instead
 ## of .pgm
@@ -1175,13 +1180,13 @@ print.ZIE <- function (x, ...)
 	if (!checkFileExists(File, "pgm")) return(NULL)
 	if (!checkFileExists(BFfile, "pgm", message = "Blank-field file '%s' not found"))
 		return(NULL)
-	
+
 	## Check that the various scripts are available
 	#checkCapable("pnm2biff")
 	#checkCapable("statistics")
 	#checkCapable("divide")
 	#checkCapable("biff2tiff")
-	
+
 	## Switch to the directory of File
 	filedir <- dirname(File)
 	if (filedir != ".") {
@@ -1191,7 +1196,7 @@ print.ZIE <- function (x, ...)
 		on.exit(setwd(inidir), add = TRUE)
 		File <- basename(File)
 	}
-	
+
 	## Determine the name of the various files
 	fileNoExt <- noExtension(File)
 	imgFile <- paste(fileNoExt, "img", sep = ".")
@@ -1204,7 +1209,7 @@ print.ZIE <- function (x, ...)
 		## We behave like if the file was corrected, but just copy the content
 		## of File into tifFile
 		file.copy(File, tifFile)
-		
+
 		## Simulate creation of the .img blank-field
 		if (!deleteBF) file.copy(BFfile, imgBFfile)
 		return(TRUE)
@@ -1213,19 +1218,19 @@ print.ZIE <- function (x, ...)
 	## Convert PGM files into BIFF
 ####	xite_pnm2biff(File, imgFile)
 ####	xite_pnm2biff(BFfile, imgBFfile)
-	
+
 	## Get the mean gray level of the blank-field
 ####	meangray <- xite_statistics(imgBFfile)
-	
+
 	## Eliminate the blank field
 ####	res <- xite_divide(meangray, imgFile, imgBFfile, imgcorrFile)
-	
+
 	## Make the tiff file
 ####	xite_biff2tiff(imgcorrFile, tifFile)
-	
+
 	return(TRUE) # Everything is fine!
 }
-## example: 
+## example:
 ## setwd("g:/zooplankton/madagascar2macro")
 ## .BFcorrection("_CalibOD03.pgm", "_CalibBF03.pgm")
 
@@ -1234,29 +1239,29 @@ print.ZIE <- function (x, ...)
 .rawConvert <- function (RawFile, OutputFile = "fileconv.pgm",
 DcRawArgs = "-v -c -4 -q 3 -t 0 -k 0", fake = FALSE, replace = FALSE,
 check = TRUE)
-{	
+{
 	## Check if the output file already exists
 	if (file.exists(OutputFile)) {
 		## If we want to replace existing file, delete it, otherwise, we are done
 		if (replace) unlink(OutputFile) else return(TRUE)
 	}
-	
+
 	## Check if RawFile exists
 	if (!checkFileExists(RawFile)) return(FALSE)
-	
+
 	## Do a fake convert
 	if (fake) { # Create a test file with just ZItest in it
 		cat("ZItest\n", file = OutputFile)
 		return(TRUE)
 	}
-	
+
 	## Do the conversion using dc_raw
 	## Check that the system is capable of doing the conversion
 	if (check) {
 		#checkCapable("dc_raw")
 		#checkCapable("ppmtopgm")
 	}
-	
+
 	if (isWin()) {
 		## Convert the RAW file into PPM file (48bit color)
 		## We have to do it in two steps because windows lack of proper piping
@@ -1266,13 +1271,13 @@ check = TRUE)
 ####		netpbm_ppmtopgm("RAWTEMP.PPM", OutputFile)
 	} else {
 		## One step conversion (no tempfile)
-		cmd <- sprintf('dcraw %s %s | ppmtopgm > "%s"' , 
+		cmd <- sprintf('dcraw %s %s | ppmtopgm > "%s"' ,
 			DcRawArgs, RawFile, OutputFile)
 		res <- try(system(cmd), silent = TRUE)
 		if (!checkFileExists(OutputFile, message = "Error while converting"))
 			return(FALSE)
 	}
-	
+
 	## Everything was fine
 	return(TRUE)
 }

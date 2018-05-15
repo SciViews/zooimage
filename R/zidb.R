@@ -77,7 +77,8 @@ delete.source = replace)
     if (zisData$Label == "<<<SMP>>>")
       zisData$Label <- basename(zidir)
     if (zisData$Date == "<<<DATE>>>")
-      zisData$Date <- as.Date(sub("^.+\\.([0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9])\\..+$", "\\1", basename(zidir)))
+      zisData$Date <- sampleInfo(basename(zidir),  type = "date")
+      #zisData$Date <- as.Date(sub("^.+\\.([0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9])\\..+$", "\\1", basename(zidir)))
     if (zisData$Time == "<<<TIME>>>")
       zisData$Time <- smptime
 	isSample <- (zisData$Label == basename(zidir))
@@ -162,7 +163,7 @@ delete.source = replace)
 ## Make all .zidb files for data in the corresponding directory
 zidbMakeAll <- function (path = ".", samples,
 zisfiles = file.path(dirname(samples), "Description.zis"), type = "ZI5",
-check = TRUE, check.vignettes = FALSE, replace = FALSE, delete.source = replace)
+check = FALSE, check.vignettes = FALSE, replace = FALSE, delete.source = replace)
 {
 	if (type != "ZI5")
 		stop("only 'ZI5' is currently supported for 'type'")
@@ -473,10 +474,12 @@ zidbPlotNew <- function (main = "ZooImage collage", ...)
 
 ## Function to get a vignette from the database, rescale it and draw it in its
 ## corresponding vignette item
-zidbDrawVignette <- function (rawimg, type = "jpg", item, nx = 5, ny = 5,
+zidbDrawVignette <- function(rawimg, type, item, nx = 5, ny = 5,
 vmar = 0.01)
 {
-	## Centers for each vignette, on a graph area of [0, 1] on x and y
+	if (missing(type)) type <- "guess"
+
+  ## Centers for each vignette, on a graph area of [0, 1] on x and y
 	nv <- nx * ny
 	## Coordinates for centers of each vignette area
 	xc <- (1:nx) / nx - 1/(nx * 2)
@@ -506,7 +509,11 @@ vmar = 0.01)
 	## processing, use native format, but 16bit not accepted for PNG and there
 	## is a problem in case of transparency channel (if any) in PNG images on
 	## windows devices
-	if (type == "png") {
+	if (type == "guess") {
+	  vigimg <- try(readPNG(rawimg, native = TRUE), silent = TRUE)
+	  if (inherits(vigimg, "try-error"))
+	    vigimg <- readJPEG(rawimg, native = TRUE)
+	} else if (type == "png") {
 		vigimg <- readPNG(rawimg, native = TRUE)
 	} else vigimg <- readJPEG(rawimg, native = TRUE)
 	vigdim <- dim(vigimg) # Dimensions of the image in pixels

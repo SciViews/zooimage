@@ -63,11 +63,27 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
     }
 	Series <- readData[["Series"]]
 	Cruises <- readData[["Cruises"]]
-	Cruises$Start <- as.Date(Cruises$Start)
-	Cruises$End <- as.Date(Cruises$End)
+	res <- try(Cruises$Start <- as.Date(Cruises$Start), silent = TRUE)
+	if (inherits(res, "try-error")) {
+	  warning("Cruise start is not interpretable as a valid date")
+	  Cruises$Start <- as.Date(NA)
+	}
+	res <- try(Cruises$End <- as.Date(Cruises$End), silent = TRUE)
+	if (inherits(res, "try-error")) {
+	  warning("Cruise end is not interpretable as a valid date")
+	  Cruises$End <- as.Date(NA)
+	}
 	Stations <- readData[["Stations"]]
-	Stations$Start <- as.Date(Stations$Start)
-	Stations$End <- as.Date(Stations$End)
+	res <- try(Stations$Start <- as.Date(Stations$Start), silent = TRUE)
+	if (inherits(res, "try-error")) {
+	  warning("Station start is not interpretable as a valid date")
+	  Stations$Start <- as.Date(NA)
+	}
+	res <- try(Stations$End <- as.Date(Stations$End), silent = TRUE)
+	if (inherits(res, "try-error")) {
+	  warning("Station end is not interpretable as a valid date")
+	  Stations$End <- as.Date(NA)
+	}
 	Description <- readData[["Description"]]
 
 	## Combine all this in a data frame + metadata

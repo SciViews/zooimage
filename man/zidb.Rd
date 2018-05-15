@@ -22,11 +22,11 @@
 \usage{
 zidbMake(zidir, zidbfile = paste0(sub("[/\\\\]+$", "", zidir), ".zidb"), zisfile =
     file.path(dirname(zidir), "Description.zis"), type = "ZI5", smptime = "",
-    check = TRUE, check.vignettes = FALSE, replace = FALSE, delete.source = replace)
+    check = FALSE, check.vignettes = FALSE, replace = FALSE, delete.source = replace)
 zidbMakeAll(path = ".", samples, zisfiles = file.path(dirname(samples),
-    "Description.zis"), type = "ZI5", check = TRUE,
+    "Description.zis"), type = "ZI5", check = FALSE,
     check.vignettes = FALSE, replace = FALSE, delete.source = replace)
-    
+
 zidToZidb(zidfile, zisfile = file.path(dirname(zidfile),
     "Description.zis"), replace = FALSE, delete.source = replace)
 zidToZidbAll(path = ".", zidfiles, zisfiles = file.path(dirname(zidfiles),
@@ -35,13 +35,13 @@ zidbToZid(zidbfile, zisfile = file.path(dirname(zidbfile),
     "Description.zis"), replace = FALSE, delete.source = replace)
 zidbToZidAll(path = ".", zidbfiles, zisfiles = file.path(dirname(zidbfiles),
     "Description.zis"), replace = FALSE, delete.source = replace)
-    
+
 zidbLink(zidbfile)
 zidbDatRead(zidbfile)
 zidbSampleRead(zidbfile)
 
 zidbPlotNew(main = "ZooImage collage", ...)
-zidbDrawVignette(rawimg, type = "jpg", item, nx = 5, ny = 5, vmar = 0.01)
+zidbDrawVignette(rawimg, type, item, nx = 5, ny = 5, vmar = 0.01)
 }
 
 \arguments{
@@ -55,8 +55,9 @@ zidbDrawVignette(rawimg, type = "jpg", item, nx = 5, ny = 5, vmar = 0.01)
   \item{zisfiles}{ the path of a series of .zis files that contain description
     of the processed samples. }
   \item{type}{ the ZI file format, currently only 'ZI5' type is supported. For
-    \code{zidbDrawVignette(), it is the type of vignette image. Currently, it
-    can be either "jpg", or "png". }}
+    \code{zidbDrawVignette()}, it is the type of vignette image. Currently, it
+    can be either "jpg", or "png". If not provided, it will be guessed by the
+    function. }
   \item{smptime}{ the time the sample was collected. This value will replace a
     \code{<<<TIME>>>} placeholder in the metadata. You can also use
     \code{<<<SMP>>>} and \code{<<<DATE>>>} placeholders in corresponding metadata

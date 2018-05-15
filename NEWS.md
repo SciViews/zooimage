@@ -1,5 +1,11 @@
 # zooimage News
 
+## Changes in zooimage 5.5.1
+
+* In makeZIVignettes(), scale bars are now recalculated and regenerated
+  according to PixelSize/PixelUnit metadata.
+
+
 ## Changes in zooimage 5.5.0
 
 * Reconcile the new process introduced in ZooImage 5.4-10 (ZI5 files with

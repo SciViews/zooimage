@@ -512,13 +512,24 @@ makeZidb <- function ()
       length(dir(workdir, pattern = "_dat5\\.zim$"))) {
     #cleanit <- (dlgMessage("Keep temporary files?\n(only answer <No> if you think you could be limited in disk space!)", type = "yesno")$res == "no")
     cleanit <- FALSE
-    makeZIVignettes(orig.dir = workdir, target.dir = smpdir, clean.work = cleanit)
+    res <- makeZIVignettes(orig.dir = workdir, target.dir = smpdir, clean.work = cleanit)
   } else {
     ## Old ZI1-3 approach: call zidbMake() function
     #### TODO: create zim and _dat1.zim files
-    zidbMake(smpdir, type = "ZI1", check = TRUE,
+    res <- zidbMake(smpdir, type = "ZI1", check = TRUE,
       check.vignettes = TRUE, replace = FALSE, delete.source = FALSE)
-	}
+  }
+  if (res) {# Process was correct
+    # Move data from _work to _work_to_delete
+    workdeldir <- file.path(smpdir, "_work_to_delete")
+    if (!file.exists(workdeldir))
+      dir.create(workdeldir)
+    files <- dir(workdir)
+    file.rename(file.path(workdir, files), file.path(workdeldir, files))
+    message("You can now archive data in the '_raw' subdirectory and delete '_work_to_delete' to save disk space")
+  } else {# At least one sample was not processed correctly
+    message("Problem(s) when processing these samples: check error messages, apply corrections and reprocess...")
+  }
 }
 
 makeZidbFlowCAM <- function ()
