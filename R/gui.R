@@ -506,7 +506,7 @@ makeZidb <- function ()
 	if (!length(smpdir) || !file.exists(smpdir) || !file.info(smpdir)$isdir)
 		return(invisible(NULL))
 
-  ## Check if this is a ZI5 sample where we also need to create vignettes
+  ## Check if this is a sample where we also need to create vignettes
   workdir <- file.path(smpdir, "_work")
   if (file.exists(workdir) && file.info(workdir)$isdir &&
       length(dir(workdir, pattern = "_dat5\\.zim$"))) {

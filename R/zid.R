@@ -482,18 +482,6 @@ zidDatMake <- function (zidir, type = "ZI5", replace = FALSE)
     list.allmeta <- Filter(notnull.filter, lapply(results, "[[", "meta"))
     list.allmes <- Filter(notnull.filter, lapply(results, "[[", "mes"))
 
-    listCombine <- function (.list) {
-        force(.list)
-        mergefun <- function (x, y) {
-            if (all(sort(names(x)) == sort(names(y)))) {
-                rbind(x, y)
-            } else {
-                merge(x, y, all = TRUE)
-            }
-        }
-        Reduce(mergefun, .list)
-    }
-
 	listMerge <- function (x, y) {
 		xitems <- names(x)
 		yitems <- names(y)
@@ -516,12 +504,22 @@ zidDatMake <- function (zidir, type = "ZI5", replace = FALSE)
 
     list.allmeta <- list.allmeta[!fracdup] # only the levels of not duplicated metadata
     lmeta <- length(list.allmeta[])
-    if (lmeta == 1) {
-        allmeta <- listCombine(list.allmeta)
-    } else {
-        allmeta <- NULL
-        for (i in 1:(lmeta - 1))
-            allmeta <- listMerge(list.allmeta[[i]], list.allmeta[[i + 1]])
+    allmeta <- list.allmeta[[1]]
+    if (lmeta > 1) {
+      for (i in 2:lmeta)
+        allmeta <- listMerge(allmeta, list.allmeta[[i]])
+    }
+
+    listCombine <- function (lst) {
+      force(lst)
+      mergefun <- function (x, y) {
+        if (all(sort(names(x)) == sort(names(y)))) {
+          rbind(x, y)
+        } else {
+          merge(x, y, all = TRUE)
+        }
+      }
+      Reduce(mergefun, lst)
     }
 
     allmes <- listCombine(list.allmes)

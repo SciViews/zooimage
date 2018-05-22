@@ -463,6 +463,21 @@ zidbDatRead <- function (zidbfile) {
 zidbSampleRead <- function (zidbfile)
 	zidbLink(zidbfile)$.SampleData
 
+## Get a quick numerical summary for a zidb file
+zidbSummary <- function(zidbfile, n = 3) {
+  cat("== Sample metadata ==\n")
+  print(zidbSampleRead(zidbfile))
+  dat <- zidbDatRead(zidbfile)
+  cat("\n")
+  print(attr(dat, "metadata"))
+  if (n > 0) {
+    cat("\n== Sample data (first ", n, " lines on ", nrow(dat), ") ==\n",
+      sep = "")
+    print(head(dat, n = n))
+  }
+  invisible(dat)
+}
+
 ## Functions to plot a collage
 zidbPlotNew <- function (main = "ZooImage collage", ...)
 {
@@ -558,4 +573,29 @@ vmar = 0.01)
 
 	## Now, display that vignette in the collage
 	rasterImage(vigimg, xleft, ybottom, xright, ytop, interpolate = interpolate)
+}
+
+## Plot vignettes page by page (25, 5x5 each page)
+zidbPlotPage <- function(zidbfile, page = 1, title = NULL, type = "guess") {
+  db <- zidbLink(zidbfile)
+  # Default title
+  if (is.null(title))
+    title <- zidbSampleRead(zidbfile)$Label
+  # Get the list of all vignettes for this sample
+  items <- ls(db)
+  vigs <- items[-grep("_dat1", items)]
+  l <- length(vigs)
+  pages <- ceiling(l / 25)
+  if (!is.numeric(page) || page < 1 || page > pages)
+    stop("'page' must be a number between 1 and ", pages)
+  if (page == pages) {
+    n <- l %% 25
+    if (n == 0) n <- 25
+  } else n <- 25
+  offset <- (page - 1) * 25
+  # Plot the graph
+  zidbPlotNew(paste0(title, " - page ", page))
+  for (i in 1:n)
+    zidbDrawVignette(db[[vigs[offset + i]]], item = i, nx = 5, ny = 5,
+      type = type)
 }

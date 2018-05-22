@@ -5,6 +5,13 @@
 * In makeZIVignettes(), scale bars are now recalculated and regenerated
   according to PixelSize/PixelUnit metadata.
 
+* Two new functions to help visualize the content of .zidb files: zibdSummary()
+  displays all numerical data and all the metadata, and zidbPlotPage() plots
+  the vignettes page by page (by 25 items on each page).
+
+* In zidDatMake(), only the two last image metadata was kept. This bug is
+  corrected now.
+
 
 ## Changes in zooimage 5.5.0
 

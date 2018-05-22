@@ -8,15 +8,18 @@
 \alias{zidbLink}
 \alias{zidbDatRead}
 \alias{zidbSampleRead}
+\alias{zidbSummary}
 \alias{zidbPlotNew}
 \alias{zidbDrawVignette}
+\alias{zidbPlotPage}
 
 \title{ Manage .zidb files (ZooImage Databases) }
 \description{
   Compress, uncompress .zidb files that contain data for a sample. Starting from
   ZooImage 3, the new format uses filehash tables for better performances.
   Conversion from and to the old .zid format (a zip archive indeed) is supported
-  for compatibility with old datasets.
+  for compatibility with old datasets. Display content of a .zidb file is a
+  simple way (both data/metadata and vignettes)
 }
 
 \usage{
@@ -39,9 +42,11 @@ zidbToZidAll(path = ".", zidbfiles, zisfiles = file.path(dirname(zidbfiles),
 zidbLink(zidbfile)
 zidbDatRead(zidbfile)
 zidbSampleRead(zidbfile)
+zidbSummary(zidbfile, n = 3)
 
 zidbPlotNew(main = "ZooImage collage", ...)
 zidbDrawVignette(rawimg, type, item, nx = 5, ny = 5, vmar = 0.01)
+zidbPlotPage(zidbfile, page = 1, title = NULL, type = "guess")
 }
 
 \arguments{
@@ -55,9 +60,9 @@ zidbDrawVignette(rawimg, type, item, nx = 5, ny = 5, vmar = 0.01)
   \item{zisfiles}{ the path of a series of .zis files that contain description
     of the processed samples. }
   \item{type}{ the ZI file format, currently only 'ZI5' type is supported. For
-    \code{zidbDrawVignette()}, it is the type of vignette image. Currently, it
-    can be either "jpg", or "png". If not provided, it will be guessed by the
-    function. }
+    \code{zidbDrawVignette()} and \code{zidbPlotPage()}, it is the type of
+    vignette image. Currently, it can be either "jpg", or "png". If not
+    provided, or if \code{type = "guess"} it will be guessed by the function. }
   \item{smptime}{ the time the sample was collected. This value will replace a
     \code{<<<TIME>>>} placeholder in the metadata. You can also use
     \code{<<<SMP>>>} and \code{<<<DATE>>>} placeholders in corresponding metadata
@@ -69,6 +74,8 @@ zidbDrawVignette(rawimg, type, item, nx = 5, ny = 5, vmar = 0.01)
     5.5 processes. }
   \item{replace}{ do we replace existing files? }
   \item{delete.source}{ do we delete source files after compression? }
+  \item{n}{ the number of line of the data to print. If \code{n <= 0} no data is
+    printed (only metadata). }
   \item{path}{ look for files in this path. }
   \item{samples}{ a list of 'samples', i.e., subdirectories to process. }
   \item{main}{ the title of the new plot. }
@@ -79,6 +86,8 @@ zidbDrawVignette(rawimg, type, item, nx = 5, ny = 5, vmar = 0.01)
   \item{nx}{ the number of vignettes in a column. }
   \item{ny}{ the number of vignettes in a row. }
   \item{vmar}{ the relative size of vignette margins. }
+  \item{page}{ the page to display (each page contains 25 vignettes). }
+  \item{title}{ the title of the page. }
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }

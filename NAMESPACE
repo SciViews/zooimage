@@ -61,8 +61,10 @@ export(zidbToZidAll)
 export(zidbLink)
 export(zidbDatRead)
 export(zidbSampleRead)
+export(zidbSummary)
 export(zidbPlotNew)
 export(zidbDrawVignette)
+export(zidbPlotPage)
 
 # Zie
 export(ZIE)
