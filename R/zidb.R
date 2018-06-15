@@ -618,6 +618,8 @@ method = NULL, class = NULL) {
   }
 
   l <- length(vigs)
+  if (l < 1)
+    stop("No items in class, or class not found in this sample")
   pages <- ceiling(l / 25)
   if (!is.numeric(page) || page < 1 || page > pages)
     stop("'page' must be a number between 1 and ", pages)
