@@ -6,7 +6,10 @@ importFrom("graphics", "abline", "axis", "barplot", "box", "grid",
 importFrom("stats", "anova", "as.formula", "coef", "lm", "lowess",
            "na.omit", "predict", "runif", "xtabs")
 import(digest)
-import(utils)
+#import(utils)
+importFrom("utils", "packageDescription", "browseURL", "flush.console", "head",
+           "read.delim", "read.table", "tail", "type.convert", "unzip",
+           "write.table", "zip")
 import(tools)
 #import(tcltk)
 #import(tcltk2)

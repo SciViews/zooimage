@@ -46,7 +46,8 @@ zidbSummary(zidbfile, n = 3)
 
 zidbPlotNew(main = "ZooImage collage", ...)
 zidbDrawVignette(rawimg, type, item, nx = 5, ny = 5, vmar = 0.01)
-zidbPlotPage(zidbfile, page = 1, title = NULL, type = "guess")
+zidbPlotPage(zidbfile, page = 1, title = NULL, type = "guess", method = NULL,
+class = NULL)
 }
 
 \arguments{
@@ -88,6 +89,10 @@ zidbPlotPage(zidbfile, page = 1, title = NULL, type = "guess")
   \item{vmar}{ the relative size of vignette margins. }
   \item{page}{ the page to display (each page contains 25 vignettes). }
   \item{title}{ the title of the page. }
+  \item{method}{ the name of the validation method to use to extract validation
+    data. }
+  \item{class}{ a character vector with one or more classes for the validation
+    data that we want to keep. }
 }
 
 \author{ Philippe Grosjean <Philippe.Grosjean@umons.ac.be> }

@@ -12,6 +12,9 @@
 * In zidDatMake(), only the two last image metadata was kept. This bug is
   corrected now.
 
+* zidbPlotPage() has now two more arguments: method & class to use validated
+  data and define the class to filter before displaying vignettes.
+
 
 ## Changes in zooimage 5.5.0
 

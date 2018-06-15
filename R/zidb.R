@@ -576,7 +576,8 @@ vmar = 0.01)
 }
 
 ## Plot vignettes page by page (25, 5x5 each page)
-zidbPlotPage <- function(zidbfile, page = 1, title = NULL, type = "guess") {
+zidbPlotPage <- function(zidbfile, page = 1, title = NULL, type = "guess",
+method = NULL, class = NULL) {
   db <- zidbLink(zidbfile)
   # Default title
   if (is.null(title))
@@ -584,6 +585,38 @@ zidbPlotPage <- function(zidbfile, page = 1, title = NULL, type = "guess") {
   # Get the list of all vignettes for this sample
   items <- ls(db)
   vigs <- items[-grep("_dat1", items)]
+
+  # Do we use data from a _valid.RData file, and sort for given class(es)?
+  valid_file <- NULL
+  if (!is.null(method)) {
+    # Look for a _valid.RData file there
+    valid_file <- file.path(dirname(zidbfile), "_analyses", method,
+      paste0(sub("\\.zidb$", "", basename(zidbfile)), "_valid.RData"))
+  }
+  if (!is.null(valid_file)) {
+    if (!file.exists(valid_file)) {
+      stop("file '", valid_file, "' not found")
+    } else {
+      obj <- load(valid_file)
+      valid <- get(obj)
+      # Only keep objects in class
+      if (!is.null(class)) {
+        valid <- valid[valid$Class %in% class, ]
+        if (!length(valid)) {
+          stop("No items found for 'class' in 'valid_file'")
+        } else {
+          # Only keep these items
+          keep <- valid$Id
+          if (!all(keep %in% vigs)) {
+            stop("Mismatch between the .zidb file and the _valid.RData file")
+          } else {
+            vigs <- as.character(keep)
+          }
+        }
+      }
+    }
+  }
+
   l <- length(vigs)
   pages <- ceiling(l / 25)
   if (!is.numeric(page) || page < 1 || page > pages)
