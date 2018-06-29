@@ -56,7 +56,7 @@ expected.sections = c("Description", "Series", "Cruises", "Stations", "Samples")
 	names(readData) <- sections
 	Samples <- readData[["Samples"]]
 	# I may have <<<DATE>>> indicator too!
-    if (Samples$Date != "<<<DATE>>>") {
+    if (length(Samples$Date) == 1 && Samples$Date != "<<<DATE>>>") {
          res <- try(Samples$Date <- as.Date(Samples$Date), silent = TRUE)
          if (inherits(res, "try-error"))
              warning(res)

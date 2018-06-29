@@ -23,8 +23,8 @@ smptime = "", check = FALSE, check.vignettes = FALSE, replace = FALSE,
 delete.source = replace)
 {
 	## Check the format
-	if (type != "ZI5") {
-		warning("only 'ZI5' is currently supported for 'type'")
+	if (!type %in% c("ZI1", "ZI3", "ZI5")) {
+		warning("only 'ZI1', 'ZI3', or 'ZI5' are currently supported for 'type'")
 		return(invisible(FALSE))
 	}
 
@@ -74,6 +74,8 @@ delete.source = replace)
 	}
 	zisData <- zisRead(zisfile)
 	# Replace <<<SMP>>>, <<<DATE>>> and <<<TIME>>> by the correct values
+	# in case we got only one entry
+	if (length(zisData$Label) == 1) {
     if (zisData$Label == "<<<SMP>>>")
       zisData$Label <- basename(zidir)
     if (zisData$Date == "<<<DATE>>>")
@@ -81,6 +83,7 @@ delete.source = replace)
       #zisData$Date <- as.Date(sub("^.+\\.([0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9])\\..+$", "\\1", basename(zidir)))
     if (zisData$Time == "<<<TIME>>>")
       zisData$Time <- smptime
+	}
 	isSample <- (zisData$Label == basename(zidir))
 	if (!length(isSample) || sum(isSample) < 1) {
 		warning("Incorrect .zis file, or the file does not contain data for this sample")
@@ -165,8 +168,8 @@ zidbMakeAll <- function (path = ".", samples,
 zisfiles = file.path(dirname(samples), "Description.zis"), type = "ZI5",
 check = FALSE, check.vignettes = FALSE, replace = FALSE, delete.source = replace)
 {
-	if (type != "ZI5")
-		stop("only 'ZI5' is currently supported for 'type'")
+	if (!type %in%  c("ZI1", "ZI3", "ZI5"))
+		stop("only 'ZI1', 'ZI3', or ZI5' are currently supported for 'type'")
 
 	## First, switch to that directory
 	if (!checkDirExists(path)) return(invisible(FALSE))

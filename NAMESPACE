@@ -1,19 +1,18 @@
-importFrom("grDevices", "dev.cur", "dev.list", "dev.new", "dev.off",
-           "dev.size", "png")
-importFrom("graphics", "abline", "axis", "barplot", "box", "grid",
-           "hist", "legend", "lines", "locator", "mtext", "par",
-           "plot", "points", "rasterImage", "text", "title")
-importFrom("stats", "anova", "as.formula", "coef", "lm", "lowess",
-           "na.omit", "predict", "runif", "xtabs")
+importFrom(grDevices, "dev.cur", "dev.list", "dev.new", "dev.off", "dev.size",
+  "png")
+importFrom(graphics, "abline", "axis", "barplot", "box", "grid", "hist",
+  "legend", "lines", "locator", "mtext", "par", "plot", "points", "rasterImage",
+  "text", "title")
+importFrom(stats, "anova", "as.formula", "coef", "lm", "lowess", "na.omit",
+  "predict", "runif", "xtabs")
 import(digest)
-#import(utils)
-importFrom("utils", "packageDescription", "browseURL", "flush.console", "head",
-           "read.delim", "read.table", "tail", "type.convert", "unzip",
-           "write.table", "zip")
+importFrom(utils, "packageDescription", "browseURL", "flush.console", "head",
+  "read.delim", "read.table", "tail", "type.convert", "unzip", "write.table",
+  "zip")
 import(tools)
+import(svMisc)
 #import(tcltk)
 #import(tcltk2)
-import(svMisc)
 #import(svWidgets)
 import(svDialogs)
 import(filehash)
@@ -31,10 +30,13 @@ import(tiff)
 #import(RWeka)
 import(mlearning)
 #import(party)
-importFrom(MASS, lda)
-importFrom(mda, mda, gen.ridge)
-importFrom(shiny, updateSelectInput, shinyServer, reactive, isolate, renderPrint, updateTabsetPanel, renderPlot, shinyUI, fluidPage, fluidRow, sidebarPanel, selectInput, actionButton, mainPanel, tabsetPanel, tabPanel, verbatimTextOutput, plotOutput)
-importFrom(DT, dataTableOutput, renderDataTable)
+importFrom(MASS, "lda")
+importFrom(mda, "mda", "gen.ridge")
+importFrom(shiny, "updateSelectInput", "shinyServer", "reactive", "isolate",
+  "renderPrint", "updateTabsetPanel", "renderPlot", "shinyUI", "fluidPage",
+  "fluidRow", "sidebarPanel", "selectInput", "actionButton", "mainPanel",
+  "tabsetPanel", "tabPanel", "verbatimTextOutput", "plotOutput")
+importFrom(DT, "dataTableOutput", "renderDataTable")
 
 # planktonSorter
 export(correctError)
