@@ -1,5 +1,8 @@
 importFrom(grDevices, "dev.cur", "dev.list", "dev.new", "dev.off", "dev.size",
   "png")
+if(.Platform$OS.type == "windows") {
+  importFrom(grDevices, "bringToTop")
+}
 importFrom(graphics, "abline", "axis", "barplot", "box", "grid", "hist",
   "legend", "lines", "locator", "mtext", "par", "plot", "points", "rasterImage",
   "text", "title")
@@ -11,7 +14,7 @@ importFrom(utils, "packageDescription", "browseURL", "flush.console", "head",
   "zip")
 importFrom(tools, "startDynamicHelp")
 importFrom(svMisc, "assignTemp", "batch", "fileEdit", "getTemp", "isMac",
-  "isRgui", "isWin", "progress", "rmTemp", "TempEnv")
+  "isRgui", "isWin", "progress", "rmTemp", "TempEnv", "compareRVersion")
 #import(tcltk)
 #import(tcltk2)
 #import(svWidgets)

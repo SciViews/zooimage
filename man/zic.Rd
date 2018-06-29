@@ -26,7 +26,7 @@ zicCheck(zicfile)
 
 \examples{
 ## Check that Detailed.zic file in the /etc subdir is correct
-zicCheck(file.path(getTemp("ZIetc"), "Detailed.zic"))
+zicCheck(file.path(svMisc::getTemp("ZIetc"), "Detailed.zic"))
 }
 
 \keyword{ utilities }

@@ -8,6 +8,9 @@
 * Change import() to importFrom() in NAMESPACE for many dependencies for a more
   robust management of these dependencies.
 
+* importImg(), zieCompile() and zieCompileFlowCAM() are adapted to detect if a
+  "regular" set of images, or FlowCAM data are compiled.
+
 
 ## Changes in zooimage 5.5.1
 

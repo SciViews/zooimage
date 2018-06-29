@@ -340,39 +340,41 @@ importImg <- function ()
 	## Look if there is at least one image selected
 	if (!length(Images)) return(invisible(FALSE))
 	dir <- dirname(Images[1])
-	Images <- basename(Images)
+	ImagesFiles <- basename(Images)
 
 	has <- function (file, pattern)
-		grepl(pattern, Images[1])
+		grepl(pattern, file)
 
 	## Determine which kind of data it is
-	if (has(Images[1], pattern = "^Import_.*[.]zie$")) {
+	if (has(ImagesFiles[1], pattern = "^Import.*[.]zie$")) {
 		if (length(Images) > 1)
 			warning("you cannot select more than one ZIE file; using the first one")
 
-		return(invisible(zieMake(path = dir, Filemap = Images[1], check = TRUE)))
+		return(invisible(zieMake(path = dir, Filemap = ImagesFiles[1],
+		  check = TRUE)))
 
-	} else if (has(Images[1], "[.]txt$")) {
+	} else if (has(ImagesFiles[1], "[.]txt$")) {
 		## Special Case for FlowCAM images
 		if (length(Images) > 1)
 			warning("you cannot select more than one TXT file; using the first one")
 
 		## I also need the "ImportTemplate.zie" file in the same path
 		txtFile <- Images
-		zieTemplate <- file.path(dirname(txtFile), "ImportTemplate.zie")
-		if (!checkFileExists(zieTemplate, "zie", force.file = TRUE))
-			return(invisible(FALSE))
+		zieTemplate <- file.path(dir, "ImportTemplate.zie")
+		if (!checkFileExists(zieTemplate, "zie", force.file = TRUE)) {
+			message("Missing ImportTemplate.zie file in the same directory")
+		  return(invisible(FALSE))
+		}
 
 		## Create .zim files + FitVisParameters.csv file for the FlowCAM
-		message("Creating .zim files and FitVisParameters.csv...")
 		res <- zieCompileFlowCAM(path = dirname(txtFile), Tablefile = txtFile,
 			Template = zieTemplate, check.names = FALSE)
 		return(invisible(res))
 
-	} else if (has(Images[1], "[.][tT][iI][fF]$")) {
+	} else if (has(ImagesFiles[1], "[.][tT][iI][fF]$")) {
 		pattern <- extensionPattern(".tif")
 
-	} else if (has(Images[1], "[.][jJ][pP][gG]$")) {
+	} else if (has(ImagesFiles[1], "[.][jJ][pP][gG]$")) {
         pattern <- extensionPattern("jpg")
 
 	} else {
@@ -382,7 +384,7 @@ importImg <- function ()
 
 	## If there is no special treatment, just make all required .zim files
 	## for currently selected images
-	invisible(zimMake(dir = dir, pattern = pattern, images = Images))
+	invisible(zimMake(dir = dir, pattern = pattern, images = ImagesFiles))
 }
 
 ## TODO: the text appears only on one line on the Mac???

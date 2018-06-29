@@ -98,7 +98,11 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 	## Get everything before '[Map]' as template data for the .zim file
 	posMap <- getSectionPos("Map",
 		"The file is corrupted: no or duplicated [Map] section found!")
-	if (!length(posMap)) return(invisible(FALSE))
+	if (!length(posMap)) {
+	  message("No [Map] section found in the .zie file: either incorrect file,",
+	    " or data provided in a separate .txt file (select it instead)")
+	  return(invisible(FALSE))
+	}
 
 	## Setup the zim data
 	zimData <- Lines[1:(posMap - 1)]
@@ -433,7 +437,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 					finalname <- paste(noExtension(FileConvName), "zip",
 						sep = ".")
 				} else finalname <- FileConvName
-				message("Converting image '", File, "' into '", finalname, "'")
+				#message("Converting image '", File, "' into '", finalname, "'")
 				if (replace || !file.exists(FileExt)) {
 					## Create variables Rawbase and Rawnoext
 					Rawbase <- File
@@ -447,9 +451,10 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 							File, "'")
 					}
 					## Look if the converted file is created
-					if (!file.exists(FileConv)) {
+					if (!file.exists(finalname)) {
 						ok <- FALSE
-						warning("problem: converted file not found '", File, "'")
+						warning("problem: converted file not found '", finalname, "',",
+						  " from '", File, "'")
 					}
 				}
 			} else {
@@ -533,14 +538,13 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 				WorkFileConv <- file.path(getwd(), "_work", FileConvName)
 				## Move it, except if it is a blank-field file, then, copy it!
 				if (length(grep("^_CalibBF", FileConvName)) > 0) {
-					file.copy(FileConv, WorkFileConv)
-                	file.rename(FileConv, FileConvName)
+          file.copy(FileConvName, WorkFileConv)
 				} else {
-					file.copy(FileConv, WorkFileConv)
+					file.rename(FileConvName, WorkFileConv)
 				}
 				if (!file.exists(WorkFileConv)) {
 					warning("problem moving the converted file into '_work' subdirectory for '",
-						File,"'")
+						FileConvName, "'")
 					return(invisible(FALSE))
 				} else {
 					## Do we zip the resulting images, using the zim file
@@ -564,7 +568,6 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 							if (!zipNoteAdd(zipfile,
 								file.path(curdir, zimfile))) {}
 
-							setwd(curdir)
 							## Verify that the .zip file is created
 							if (!file.exists(zipfile)) {
 								warning(sprintf(
@@ -572,6 +575,7 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 									zipfile))
 								return(invisible(FALSE))
 							}
+							setwd(curdir)
 						} else {
 							### TODO: what do we have to do here????
 						}
@@ -608,7 +612,8 @@ replace = FALSE, move.to.raw = TRUE, zip.images = "[.]tif$")
 
 zieCompile <- function (path = ".", Tablefile = "Table.txt",
 Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefile),
-".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE)
+".zie", sep = ""), Nrange = c(1, 1000), replace = TRUE, make.it = FALSE,
+zip.images = "[.]tif$")
 {
 	message("Creating .zie file...")
 
@@ -716,7 +721,8 @@ Template = "ImportTemplate.zie", Filemap = paste("Import_", noExtension(Tablefil
 
 	## Do we make it also?
 	if (isTRUE(make.it)) {
-		res <- zieMake(path = path, Filemap = Filemap, check = TRUE)
+		res <- zieMake(path = path, Filemap = Filemap, check = TRUE,
+		  zip.images = zip.images)
 		if (res) { # Everything is fine...
 			## Move the table and copy the template to the '_raw' subdir too
 			file.rename(Tablefile, file.path(path, "_raw", basename(Tablefile)))
@@ -756,6 +762,13 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 	ImportFile <- read.table(Tablefile, header = TRUE, sep = "\t", dec = ".")
 
 	## Check colnames
+	if (any(c("Image", "SubPart", "CellPart", "Replicates", "DepthMax", "VolIni",
+	  "PixelSize", "WhitePoint", "BlackPoint") %in% colnames(ImportFile))) {
+	  message("Note: ZooImage import file (not FlowCAM)")
+	  return(invisible(zieCompile(path = path, Tablefile = Tablefile,
+	    Template = Template, make.it = TRUE, zip.images = "")))
+	}
+
 	if (isTRUE(as.logical(check.names))) {
 		ColNames <- c("Station", "Date", "FlowCell", "Mode", "Magnification",
 			"Exp_Name", "Sample", "Dilution", "Sieve", "Volume", "Pump_Speed",
@@ -771,6 +784,8 @@ Template = "ImportTemplate.zie", check.names = TRUE)
 			return(invisible(FALSE))
 		}
 	}
+
+	message("Creating .zim files and FitVisParameters.csv...")
 
 	## Check if the ImportTemplate.zie is present in the directory
 	Zie <- file.path(dirname(path), basename(Template))
