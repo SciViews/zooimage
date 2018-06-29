@@ -1,5 +1,14 @@
 # zooimage News
 
+## Changes in zooimage 5.5.2
+
+* Bugs corrected in zidToZidb(), zidbMake() and sampleInfo() that prevented to
+  convert old (zooimage v.1) .zid files to .zidb files.
+
+* Change import() to importFrom() in NAMESPACE for many dependencies for a more
+  robust management of these dependencies.
+
+
 ## Changes in zooimage 5.5.1
 
 * In makeZIVignettes(), scale bars are now recalculated and regenerated

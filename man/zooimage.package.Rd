@@ -16,8 +16,8 @@
   \tabular{ll}{
     Package: \tab zooimage\cr
     Type: \tab Package\cr
-    Version: \tab 5.5.1\cr
-    Date: \tab 2018-05-15\cr
+    Version: \tab 5.5.2\cr
+    Date: \tab 2018-06-28\cr
     License: \tab GPL 2 or above at your convenience.\cr
   }
 }
