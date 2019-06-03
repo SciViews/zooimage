@@ -100,6 +100,157 @@ addClass <- function(ZIDat, ZIobj) {
   ZIDat
 }
 
+# Reanalyze images using scikit-image (python via reticulate)
+skimageVars <- function(zidbfile) {
+  use_python("/usr/bin/python3")
+  #use_virtualenv("skimage")
+  skimage <- import("skimage")
+  np <- import("numpy", convert = FALSE)
+
+  # Lazy loading data from one ZIDB file in R
+  db1 <- zidbLink(zidbfile)
+
+  # Get the list of all vignettes in this dataset
+  items1 <- ls(db1) # Contains data in *_dat1 and vignettes in *_nn
+  vigs1 <- items1[-grep("_dat", items1)]
+  lvigs1 <- length(vigs1)
+  if (!lvigs1)
+    stop("No vignettes found in the file '", zidbfile,
+      "'. Are you sure it is correct?")
+
+  # Read one vignette at a time into R, and calculate skimage attributes
+  for (i in 1:lvigs1) {
+    # Note: (try 1 for good vignette -only one item- and
+    # 18 for a bad vignette with two items)
+    vig <- vigs1[i]
+    png <- db1[[vig]]
+    img <- readPNG(png, native = FALSE)
+
+    # Blue channel: the mask is greylevel 50, and the rest is visual again
+    mask <- (img[ , , 3] != 50/255) + 0
+
+    # We convert the [0, 1] scale of png into [0, 255] and get it as Numpy array
+    # But we first need integer inside our object
+    mask2 <- as.integer(mask * 255L)
+    dim(mask2) <- dim(mask)
+    mask3 <- skimage$util$img_as_ubyte(np$array(mask2)) < 128
+    # Note: connectivity is supposed to be mask3.ndim in Python, with value = 2L here
+    label_mask3 <- skimage$measure$label(mask3, connectivity = 2L)
+    # Again, in R, automatic conversion into numeric!
+    dim_lm3 <- dim(label_mask3)
+    label_mask3 <- as.integer(label_mask3)
+    dim(label_mask3) <- dim_lm3
+    # Get the inverted OD image
+    invod <- as.integer(img[ , , 1] * 255L)
+    dim(invod) <- dim(img[ , , 1])
+
+    # Measure the particles
+    # This does not work for convex_area and solidity because an array
+    # passed from R to Python is F-contiguous while a C-contiguous array is needed!
+    #props <- skimage$measure$regionprops(label_image = label_mask3, intensity_image = invod)
+    py$mask <- label_mask3
+    py$invod <- invod
+    py_run_string("import skimage; props = skimage.measure.regionprops(label_image = skimage.util.img_as_uint(mask.copy(order = 'C')), intensity_image = invod.copy(order = 'C'))", convert = FALSE)
+    props <- py$props
+    # In case we got several blobs, check which one is the right one
+    item <- 1
+    l <- length(props)
+    # In case we got several items, check which one is better filling the area
+    # (ZooImage increases the bbox by 150%, but sometimes, it fails because the
+    # object is too close to the border(s)!)
+    if (l > 1) {
+      idim <- dim(mask)
+      deltas <- numeric(0)
+      for (j in 1:l) {
+        bbox <- unlist(props[[j]]$bbox)
+        deltas[[j]] <- (idim[1] - (bbox[3] - bbox[1]) * 1.5) +
+          (idim[2] - (bbox[4] - bbox[2]) * 1.5)
+      }
+      item <- which.min(deltas)
+    }
+    prop <- props[[item]]
+
+    # Now, get items (note: same columns as for the ZOoscan dataset)
+    inertia_tensor <- as.numeric(prop$inertia_tensor)
+    inertia_tensor_eigvals <- as.numeric(prop$inertia_tensor_eigvals)
+    moments_hu <- as.numeric(prop$moments_hu)
+    moments_normalized <- as.numeric(prop$moments_normalized)
+    weighted_moments_hu <- as.numeric(prop$weighted_moments_hu)
+    weighted_moments_normalized <- as.numeric(prop$weighted_moments_normalized)
+    res1 <- data.frame(
+      objid = vig,
+      area = prop$area,
+      convex_area = prop$convex_area,
+      eccentricity = prop$eccentricity,
+      equivalent_diameter = prop$equivalent_diameter,
+      euler_number = prop$euler_number,
+      filled_area = prop$filled_area,
+      inertia_tensor0 = inertia_tensor[1],
+      inertia_tensor1 = inertia_tensor[2],
+      inertia_tensor2 = inertia_tensor[3],
+      inertia_tensor3 = inertia_tensor[4],
+      inertia_tensor_eigvals0 = inertia_tensor_eigvals[1],
+      inertia_tensor_eigvals1 = inertia_tensor_eigvals[2],
+      major_axis_length = prop$major_axis_length,
+      max_intensity = prop$max_intensity,
+      mean_intensity = prop$mean_intensity,
+      min_intensity = prop$min_intensity,
+      minor_axis_length = prop$minor_axis_length,
+      moments_hu0 = moments_hu[1],
+      moments_hu1 = moments_hu[2],
+      moments_hu2 = moments_hu[3],
+      moments_hu3 = moments_hu[4],
+      moments_hu4 = moments_hu[5],
+      moments_hu5 = moments_hu[6],
+      moments_hu6 = moments_hu[7],
+      moments_normalized0 = moments_normalized[1],
+      moments_normalized1 = moments_normalized[2],
+      moments_normalized2 = moments_normalized[3],
+      moments_normalized3 = moments_normalized[4],
+      moments_normalized4 = moments_normalized[5],
+      moments_normalized5 = moments_normalized[6],
+      moments_normalized6 = moments_normalized[7],
+      moments_normalized7 = moments_normalized[8],
+      moments_normalized8 = moments_normalized[9],
+      moments_normalized9 = moments_normalized[10],
+      moments_normalized10 = moments_normalized[11],
+      moments_normalized11 = moments_normalized[12],
+      moments_normalized12 = moments_normalized[13],
+      moments_normalized13 = moments_normalized[14],
+      moments_normalized14 = moments_normalized[15],
+      moments_normalized15 = moments_normalized[16],
+      perimeter = prop$perimeter,
+      solidity = prop$solidity,
+      weighted_moments_hu0 = weighted_moments_hu[1],
+      weighted_moments_hu1 = moments_hu[2],
+      weighted_moments_hu2 = moments_hu[3],
+      weighted_moments_hu3 = moments_hu[4],
+      weighted_moments_hu4 = moments_hu[5],
+      weighted_moments_hu5 = moments_hu[6],
+      weighted_moments_hu6 = moments_hu[7],
+      weighted_moments_normalized0 = weighted_moments_normalized[1],
+      weighted_moments_normalized1 = weighted_moments_normalized[2],
+      weighted_moments_normalized2 = weighted_moments_normalized[3],
+      weighted_moments_normalized3 = weighted_moments_normalized[4],
+      weighted_moments_normalized4 = weighted_moments_normalized[5],
+      weighted_moments_normalized5 = weighted_moments_normalized[6],
+      weighted_moments_normalized6 = weighted_moments_normalized[7],
+      weighted_moments_normalized7 = weighted_moments_normalized[8],
+      weighted_moments_normalized8 = weighted_moments_normalized[9],
+      weighted_moments_normalized9 = weighted_moments_normalized[10],
+      weighted_moments_normalized10 = weighted_moments_normalized[11],
+      weighted_moments_normalized11 = weighted_moments_normalized[12],
+      weighted_moments_normalized12 = weighted_moments_normalized[13],
+      weighted_moments_normalized13 = weighted_moments_normalized[14],
+      weighted_moments_normalized14 = weighted_moments_normalized[15],
+      weighted_moments_normalized15 = weighted_moments_normalized[16]
+    )
+    # What about centroid, weighted_centroid, moments, moments_central, orientation,   and weighted_moments?
+    if (i == 1) res <- res1 else res <- rbind(res, res1)
+  }
+  res
+}
+
 # Default list of variables to drop
 # Version 3.0-1: added a list of useless FIT variables to be dropped
 dropVars <- function() {

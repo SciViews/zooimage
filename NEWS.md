@@ -1,5 +1,12 @@
 # zooimage News
 
+## Changes in zooimage 5.6.0
+
+* Function skimageVars() added to calculate additional attributes using Python
+  and Scikit-Image. The numpy and skimage Python packages are required and
+  Python 3 is used. The reticulate R package is also needed now.
+
+
 ## Changes in zooimage 5.5.2
 
 * Bugs corrected in zidToZidb(), zidbMake() and sampleInfo() that prevented to

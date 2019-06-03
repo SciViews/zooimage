@@ -43,6 +43,7 @@ importFrom(shiny, "updateSelectInput", "shinyServer", "reactive", "isolate",
   "fluidRow", "sidebarPanel", "selectInput", "actionButton", "mainPanel",
   "tabsetPanel", "tabPanel", "verbatimTextOutput", "plotOutput")
 importFrom(DT, "dataTableOutput", "renderDataTable")
+importFrom(reticulate, "import", "use_python", "py", "py_run_string")
 
 # planktonSorter
 export(correctError)
@@ -142,6 +143,7 @@ export(listSamples)
 export(makeId)
 export(parseIni)
 export(sampleInfo)
+export(skimageVars)
 export(trimString)
 export(underscoreToSpace)
 export(zipNoteAdd)

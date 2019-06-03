@@ -7,6 +7,7 @@
 \alias{addClass}
 \alias{calcVars}
 \alias{dropVars}
+\alias{skimageVars}
 \alias{ecd}
 \alias{parseIni}
 \alias{calibrate}
@@ -33,6 +34,8 @@ makeId(ZIDat)
 addClass(ZIDat, ZIobj)
 calcVars(x, drop.vars = NULL, drop.vars.def = dropVars())
 dropVars()
+
+skimageVars(zidbfile)
 
 ecd(area, cells = 1)
 
@@ -72,6 +75,7 @@ makeZIVignettes(orig.dir = getwd(), target.dir = dirname(orig.dir), clean.work =
     are obviously non informative and that are dropped by default. It can be
     gathered automatically using \code{dropVars()}. That list includes Id,
     Label, Dil, ... (see details, variables with an asterisk). }
+  \item{zidbfile}{ the path to a .zidb file. }
   \item{area}{ a numerical vector with areas from which ECDs are calculated
     (Equivalent Circular Diameter, a more suitable term for 2D images than ESD,
 	Equivalent Spherical Diameter). }
@@ -104,6 +108,9 @@ makeZIVignettes(orig.dir = getwd(), target.dir = dirname(orig.dir), clean.work =
   altogether with a list provided explicitly in the \code{drop.vars =} argument.
   The list of variable names to drop automatically and silently can be stored in
   a variable named \code{ZI.dropVarsDef} or in \code{options(ZI.dropVarsDef = ....)}.
+
+  A data frame with skimage attributes for all items in the .zidb file for
+  \code{skimageVars()}.
 
   A vector of numerical values for \code{ecd()}.
 
