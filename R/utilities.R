@@ -475,7 +475,7 @@ parseIni <- function(data, label = "1") {
   # Transform a vector of characters into a data frame,
   # possibly with type conversion
   vector.convert <- function(vec)
-    as.data.frame(lapply(as.list(vec), type.convert))
+    as.data.frame(lapply(as.list(vec), type.convert, as.is = FALSE))
 
   if (!length(data) || !inherits(data, "character"))
     return(character(0))
