@@ -537,7 +537,10 @@ zidDatMake <- function (zidir, type = "ZI5", replace = FALSE)
 			allmes <- data.frame(allmes[, 1:2], ECD = ECD,
 				allmes[, 3:ncol(allmes)])
 		}
-	}
+    }
+    # Make sure that Label is character
+    allmes$Label <- as.character(allmes$Label)
+    # Add attributes
     attr(allmes, "metadata") <- allmeta
     class(allmes) <- c("ZI5Dat", "ZIDat", "data.frame")
     ZI.sample <- allmes

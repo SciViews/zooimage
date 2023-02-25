@@ -2,7 +2,9 @@
 
 ## Changes in zooimage 5.6.1
 
--   parseini() -\> type.convert(..., as.is = FALSE) = argument added.
+-   parseini() -\> type.convert(..., as.is = TRUE) = argument added to avoid spurious warnings.
+
+-   zidDatMake(): make sure Label column is character, not factor.
 
 ## Changes in zooimage 5.6.0
 
