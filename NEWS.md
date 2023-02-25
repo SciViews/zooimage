@@ -6,6 +6,10 @@
 
 -   zidDatMake(): make sure Label column is character, not factor.
 
+-   getTrain(): make sure Class is factor.
+
+-   Define auxiliary programs for Linux
+
 ## Changes in zooimage 5.6.0
 
 -   Function skimageVars() added to calculate additional attributes using Python and Scikit-Image. The numpy and skimage Python packages are required and Python 3 is used. The reticulate R package is also needed now.

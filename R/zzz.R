@@ -92,65 +92,100 @@
 	}
 
 	## Determine where to find ImageJ
-	## TODO... currently, it is in a fixed position
-	## TODO: no need to ship the exe file, we can just ship a simple
-	## bat file with java -jar ij.jar -ijpath=./plugins
+	options(ImageEditor = "")
 	if (interactive()) {
 		if (isWin()) {
 			ImageJExe <- file.path(bindir, "Fiji.app", "ImageJ.exe")
 			if (!file.exists(ImageJExe))
 				ImageJExe <- file.path(bindir, "ImageJ", "ImageJ.exe")
+			if (file.exists(ImageJExe)) options(ImageEditor = ImageJExe)
 		} else if (isMac()) {
 			#ImageJExe <- "/Applications/Fiji/Fiji.app/Contents/MacOS/fiji-macosx"
 			ImageJExe <- "open /Applications/Fiji/Fiji.app"
+			if (file.exists(ImageJExe)) options(ImageEditor = ImageJExe)
 		} else {
-			## TODO... Get ImageJ executable
-			ImageJExe <- "fiji"
+			# Check for fiji and imagej
+			if (system("which fiji > /dev/null") == 0) {
+			  ImageJExe <- "fiji"
+			} else if (system("which imagej > /dev/null") == 0) {
+			  ImageJExe <- "imagej"
+			} else {
+			  ImageJExe <- ""
+			}
+		  options(ImageEditor = ImageJExe)
 		}
-		if (file.exists(ImageJExe)) options(ImageEditor = ImageJExe)
-	} else options(ImageEditor = "")
+	}
 
 	## Determine where to find XnView
-	## TODO... currently, it is in a fixed position
+	options(ImageViewer = "")
 	if (interactive()) {
 		if (isWin()) {
 			XnViewExe <- file.path(bindir, "XnView", "XnView.exe")
+			if (file.exists(XnViewExe)) options(ImageViewer = XnViewExe)
 		} else if (isMac()) {
 			XnViewExe <- "/Applications/Utilities/XnViewMP.app/Contents/MacOS/xnview"
-		} else {
-			XnViewExe <- "nautilus --geometry 600x600"
+			if (file.exists(XnViewExe)) options(ImageViewer = XnViewExe)
+		} else {# Linux
+		  if (system("which xnview > /dev/null") == 0) {
+		    XnViewExe <- "xnview"
+		  } else if (system("which nautilus > /dev/null") == 0) {
+		    XnViewExe <- "nautilus" # Gnome file manager
+		  } else if (system("which dolphin > /dev/null") == 0) {
+		    XnViewExe <- "dolphin" # KDE file manager
+		  } else if (system("which thunar > /dev/null") == 0) {
+		    XnViewExe <- "thunar" # XFCE file manager
+		  } else {
+		    XnViewExe <- ""
+		  }
+		  options(ImageViewer = XnViewExe)
 		}
-		if (file.exists(XnViewExe)) options(ImageViewer = XnViewExe)
-	} else options(ImageViewer = "")
-	
+	}
+
 	## Determine where to find VueScan
-	## TODO... currently, it is in a fixed position
+	options(VueScan = "")
 	if (interactive()) {
 		if (isWin()) {
 			VueScanExe <- file.path(bindir, "VueScan", "VueScan.exe")
+			if (file.exists(VueScanExe)) options(VueScan = VueScanExe)
 		} else if (isMac()) {
 			VueScanExe <- "/Applications/VueScan.app/Contents/MacOS/VueScan"
-		} else {
-			## TODO: other locations for Mac or Linux?!
-			VueScanExe <- "vuescan"
+			if (file.exists(VueScanExe)) options(VueScan = VueScanExe)
+		} else {# Linux
+		  if (system("which vuescan > /dev/null") == 0) {
+		    VueScanExe <- "vuescan"
+		  } else {
+		    VueScanExe <- ""
+		  }
+		  options(VueScan = VueScanExe)
 		}
-		if (file.exists(VueScanExe)) options(VueScan = VueScanExe)
-	} else options(VueScan = "")
-	
-	## Under Windows, define the metadata editor
+	}
+
+	## Define the metadata editor
+	options(fileEditor = "")
 	if (interactive()) {
 		if (isWin()) {
 			Metaeditor <- file.path(bindir, "MetaEditor", "Sc1.exe")
+			if (file.exists(Metaeditor)) options(fileEditor = Metaeditor)
 		} else if (isMac()) {
-			## TODO: which one to use?
-			Metaeditor <- ""
-		} else {
-			## TODO: other locations for Linux?!
-			Metaeditor <- ""
+			Metaeditor <- "open -t"
+			options(fileEditor = Metaeditor)
+		} else {# Linux
+		  if (system("which gedit > /dev/null") == 0) {
+		    Metaeditor <- "gedit" # Gnome text manager
+		  } else if (system("which kate > /dev/null") == 0) {
+		    Metaeditor <- "kate" # KDE text manager
+		  } else if (system("which mousepad > /dev/null") == 0) {
+		    Metaeditor <- "mousepad" # XFCE text manager
+		  } else if (system("which editor > /dev/null") == 0) {
+		    Metaeditor <- "editor" # Default text manager
+		  } else {
+		    Metaeditor <- ""
+		  }
+		  options(fileEditor = Metaeditor)
 		}
-		if (file.exists(Metaeditor)) options(fileEditor = Metaeditor)
+
 	} else options(fileEditor = "")
-	
+
 	## Possibly load the ZooImage assistant
 	LoadIt <- getOption("ZIAssistant")
 	if (is.null(LoadIt) || LoadIt == TRUE) ZIDlg()
