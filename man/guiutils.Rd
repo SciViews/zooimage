@@ -20,7 +20,7 @@ selectObject(class = "data.frame", default = "", multiple = FALSE,
 selectList(class = "data.frame", default = "", multiple = FALSE,
     title = paste0("Choose a list (of ", class, "s):"))
 selectFile(type = c("ZipZid", "ZimZis", "LstZid", "ZidZidb", "Zip", "Zid", "Zidb",
-    "Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData"), multiple = FALSE,
+    "Zim", "Zis", "Zie", "Zic", "Img", "TifPgm", "RData", "R"), multiple = FALSE,
     quote = TRUE, title = NULL)
 selectGroups(groups, multiple = TRUE, title = "Select taxa you want to plot")
 
@@ -68,19 +68,19 @@ modalAssistant(title, text, init, options = NULL, check = NULL,
   A string or vector of strings of selected items. \code{character(0)} is
   returned to indicate the user clicked 'Cancel', while an empty string
   (\code{""}) is returned in case there is no corresponding element found.
-  
+
   \code{createThreshold()} proposes a dialog box to create a threshold on one
   variable in a ZIDat object (indicate minimum and maximum value allowed for
   that variable).
-  
+
   For \code{imageViewer()}, \code{TRUE} or \code{FALSE} is returned invisibly,
   depending if the program could be lauched or not. The problem is reported in
   a warning.
-  
+
   \code{startPgm()} is mostly invoked for its side effect of starting an
   external program. Status code returned by the program is returned if
   \code{wait = TRUE}.
-  
+
   \code{modalAssistant()} is currently disabled, and it will thus display no
   dialog box and return \code{returnValOnCancel} directly.
 }

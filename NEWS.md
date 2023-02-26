@@ -8,7 +8,11 @@
 
 -   getTrain(): make sure Class is factor.
 
--   Define auxiliary programs for Linux
+-   Define auxiliary programs for Linux.
+
+-   Bug correction in selectFile(): now filters are correct.
+
+-   Bug correction in saveObjects(): multiple= is not an argument for the Unix version of the dlgOpen() dialog box + filters corrected.
 
 ## Changes in zooimage 5.6.0
 

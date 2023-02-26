@@ -70,23 +70,23 @@ ZIDlg <- function ()
 	menuAdd("Utilities")
 	menuAddItem("Utilities", "Calibrate grayscale (16bit)", "calib()")
 	menuAddItem("Utilities", "Biomass conversion specification",
-		"fileEdit(file.path(getTemp('ZIetc'), 'Conversion.txt'))")
+		"svMisc::fileEdit(file.path(svMisc::getTemp('ZIetc'), 'Conversion.txt'))")
 	menuAddItem("Utilities", "-", "")
 	menuAddItem("Utilities", "Image viewer( XnView)", 'startPgm("ImageViewer")')
 	menuAddItem("Utilities", "Image analyzer (ImageJ)",
 		'startPgm("ImageEditor", switchdir = TRUE, iconize = TRUE)')
 	menuAddItem("Utilities", "Metadata editor",
-		'fileEdit(selectFile("ZimZis"))')
+		'svMisc::fileEdit(selectFile("ZimZis"))')
 	menuAddItem("Utilities", "Simple acquisition (Vuescan)",
 		'startPgm("VueScan", switchdir = TRUE)')
 	menuAddItem("Utilities", "--", "")
 	menuAddItem("Utilities", "New R graph", "dev.new()")
 	menuAddItem("Utilities", "Activate next graph",
-		"{dev.set(); if (isRgui()) bringToTop()}")
+		"{dev.set(); if (svMisc::isRgui()) bringToTop()}")
 	menuAddItem("Utilities", "Close all graphs", "graphics.off()")
 	menuAdd("Utilities/Options")
 	menuAddItem("Utilities/Options", "Change active dir...",
-		"setwd(dlgDir()$res)")
+		"setwd(svDialogs::dlgDir()$res)")
 	menuAddItem("Utilities/Options", "-", "")
 	menuAddItem("Utilities/Options", "Define decimal separator",
 		"optInOutDecimalSep()")
@@ -191,8 +191,12 @@ aboutZI <- function (graphical = FALSE)
 	msg <- getTemp("ZIverstring")
 	### TODO: add more information here (copyright, authors, ...)
 	if (isTRUE(as.logical(graphical))) {
-		dlgMessage(message = msg, title = "About...", icon = "info",
-			type = "ok")
+		if (isWin() || isMac()) {
+		  dlgMessage(message = msg, title = "About...", icon = "info",
+		    type = "ok")
+		} else {# Linux (title and icon not used here)
+		  dlgMessage(message = msg, type = "ok")
+		}
 	} else cat(msg, "\n")
 }
 
@@ -1596,9 +1600,8 @@ saveObjects <- function ()
 	if (!length(Objects) || (length(Objects) == 1 && Objects == ""))
 		return(invisible(FALSE))
 	file <- dlgSave(default = paste(getTemp("ZIname"), ".RData", sep = ""),
-		title = paste("Save", getTemp("ZIname"), "data under..."),
-		multiple = FALSE, filters = matrix(c("R data", ".RData"),
-		ncol = 2, byrow = TRUE))$res
+		title = paste("Save", getTemp("ZIname"), "data under..."), filters =
+	    matrix(c("R data (*.Rdata)", "*.RData"), ncol = 2, byrow = TRUE))$res
 	if (!length(file)) return(invisible(NULL))
 	if (regexpr("[.][rR][dD][aA][tT][aA]$", file) < 0)
 		file <- paste(file, ".RData", sep = "")
